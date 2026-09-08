@@ -1,0 +1,41 @@
+## Interface: 120007, 120100
+## Title: RollAway
+## Notes: Bonus Roll automation, loot history cleanup, and group quality-of-life tools for Midnight Season 2.
+## Notes-deDE: Bonus-Roll-Automatisierung, Loot-Verlauf-Bereinigung und Gruppen-QoL-Tools für Midnight Season 2.
+## Author: Nightwalker559
+## Version: 3.0.0
+## SavedVariables: RollAwayDB
+## SavedVariablesPerCharacter: RollAwayDBChar
+## OptionalDeps: ElvUI
+## IconTexture: Interface\AddOns\RollAway\Media\Icon
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+
+Locale\RollAwayLocale_enUS.lua
+Locale\RollAwayLocale_deDE.lua
+Data\Dungeons.lua
+Data\Delves.lua
+Data\Raids.lua
+Data\LegacyRaids.lua
+Data\WorldBosses.lua
+Core.lua
+Modules\WhatsNew.lua
+Modules\AutoPass.lua
+Modules\AutoRoll.lua
+Modules\RollConfirm.lua
+Modules\Reminder.lua
+Modules\TeleportReminder.lua
+Modules\QoL.lua
+Modules\CharFrameButtons.lua
+Modules\VendorFilter.lua
+Modules\Paragon.lua
+Modules\GreatVault.lua
+Modules\LFGQuickCreate.lua
+Modules\Logs.lua
+Options\OptionsHelpers.lua
+Options\OptionsQoL.lua
+Options.lua
+Debug.lua
+ElvUI_Skin.lua
