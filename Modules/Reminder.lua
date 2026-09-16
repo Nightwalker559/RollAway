@@ -81,6 +81,7 @@ local function CreateReminderFrame()
             RA.OpenOptionsTab(currentTabKey)
         end
     end)
+    if RA.SkinPopupButton then RA.SkinPopupButton(reminderFrame.btn) end
 
     -- OnShow: resize to fit text content, then start countdown timer
     reminderFrame:SetScript("OnShow", function(self)
@@ -98,20 +99,7 @@ local function CreateReminderFrame()
 
     reminderFrame:SetScript("OnHide", reminderTimer.Stop)
 
-    -- Combat → hide frame. GROUP_LEFT → hide + reset. GROUP_JOINED → reset for new group.
-    reminderFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-    reminderFrame:RegisterEvent("GROUP_LEFT")
-    reminderFrame:RegisterEvent("GROUP_JOINED")
-    reminderFrame:SetScript("OnEvent", function(self, event)
-        self:Hide()
-        if event == "GROUP_LEFT" then
-            RollAwayDB.lastReminderInstID = nil
-            DBG("Reminder: GROUP_LEFT – lastReminderInstID reset")
-        elseif event == "GROUP_JOINED" then
-            RollAwayDB.lastReminderInstID = nil
-            DBG("Reminder: GROUP_JOINED – lastReminderInstID reset")
-        end
-    end)
+    RA.SetupInstanceReminderLifecycle(reminderFrame, "lastReminderInstID")
 end
 
 ------------------------------------------------------------------------
@@ -171,13 +159,7 @@ function RA.ShowReminder()
 
     -- Stack below the Paragon frame if it's currently shown, to avoid
     -- both notifications overlapping at the same default position.
-    reminderFrame:ClearAllPoints()
-    local paragonFrame = _G["RollAwayParagonFrame"]
-    if paragonFrame and paragonFrame:IsShown() then
-        reminderFrame:SetPoint("TOP", paragonFrame, "BOTTOM", 0, -10)
-    else
-        reminderFrame:SetPoint("TOP", UIParent, "TOP", 0, -180)
-    end
+    RA.StackPopupFrame(reminderFrame, { "RollAwayParagonFrame" }, -180)
 
     -- Update content (no new closures created here)
     currentTabKey = tabKey

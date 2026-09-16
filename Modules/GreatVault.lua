@@ -58,16 +58,7 @@ function RA.ShowGreatVaultFrame()
     CreateVaultFrame()
 
     -- Stack below Reminder/Paragon frames if shown, to avoid overlap.
-    vaultFrame:ClearAllPoints()
-    local paragonFrame  = _G["RollAwayParagonFrame"]
-    local reminderFrame = _G["RollAwayReminderFrame"]
-    if paragonFrame and paragonFrame:IsShown() then
-        vaultFrame:SetPoint("TOP", paragonFrame, "BOTTOM", 0, -10)
-    elseif reminderFrame and reminderFrame:IsShown() then
-        vaultFrame:SetPoint("TOP", reminderFrame, "BOTTOM", 0, -10)
-    else
-        vaultFrame:SetPoint("TOP", UIParent, "TOP", 0, -260)
-    end
+    RA.StackPopupFrame(vaultFrame, { "RollAwayParagonFrame", "RollAwayReminderFrame" }, -260)
 
     vaultFrame.msg:SetText(RA_L["greatvault_alert_msg"])
     vaultFrame:Show()

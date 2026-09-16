@@ -56,16 +56,7 @@ StaticPopupDialogs["ROLLAWAY_CONFIRM_ROLL"] = {
         local rollID, rollType = data.rollID, data.rollType
         local function DoConfirm()
             if ConfirmLootRoll then pcall(ConfirmLootRoll, rollID, rollType) end
-            for i = 1, 10 do
-                local popup = _G[STATIC_POPUPS[i]]
-                if popup and popup:IsShown() then
-                    local which = popup.which or ""
-                    if which:find("LOOT_ROLL") or which:find("CONFIRM_ROLL") then
-                        popup:Hide()
-                        DBG("[RollConfirm] Closed native BoP popup:", which)
-                    end
-                end
-            end
+            RA.CloseLootRollPopups("[RollConfirm]")
         end
         if C_Timer_After then C_Timer_After(0.15, DoConfirm) else DoConfirm() end
     end,

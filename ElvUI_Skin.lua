@@ -116,28 +116,37 @@ local function SkinWhatsNewFrame()
 end
 
 ------------------------------------------------------------------------
--- Skin Reminder frame
+-- Skin popup frames built on RA.CreatePopupFrame (Reminder, Paragon,
+-- GreatVault, AdvLog). Called directly from CreatePopupFrame itself right
+-- after construction - not via hooksecurefunc on each module's own Show
+-- function, since that pattern requires every caller to route through the
+-- RA.table field consistently (a local-upvalue slip breaks it silently,
+-- as happened with the AdvLog reminder). One call site, no such pitfall.
 ------------------------------------------------------------------------
 
-local function SkinReminderFrame()
-    local f = _G["RollAwayReminderFrame"]
-    if not f then return end
-    if S.HandleFrame then S:HandleFrame(f) end
+function RA.SkinPopupFrame(frame)
+    if not (E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable) then return end
+    if S.HandleFrame then S:HandleFrame(frame) end
     -- ElvUI's backdrop child can sit above our directly-parented icon
     -- texture; force the icon's holder frame above it explicitly.
-    if f.iconHolder then
-        f.iconHolder:SetFrameLevel(f:GetFrameLevel() + 10)
-        if f.icon then f.icon:Show() end
+    if frame.iconHolder then
+        frame.iconHolder:SetFrameLevel(frame:GetFrameLevel() + 10)
+        if frame.icon then frame.icon:Show() end
     end
-    local bar = f.bar
-    if bar then
-        if S.HandleStatusBar then S:HandleStatusBar(bar) end
-        bar:SetStatusBarColor(0.8, 0.7, 0.1, 0.9)
+    if frame.bar then
+        if S.HandleStatusBar then S:HandleStatusBar(frame.bar) end
+        frame.bar:SetStatusBarColor(0.8, 0.7, 0.1, 0.9)
     end
-    local okayBtn = _G["RollAwayReminderOkay"]
-    if okayBtn and S.HandleButton then S:HandleButton(okayBtn) end
-    local optBtn = _G["RollAwayReminderBtn"]
-    if optBtn and S.HandleButton then S:HandleButton(optBtn) end
+    if frame.okayBtn and S.HandleButton then S:HandleButton(frame.okayBtn) end
+end
+
+-- For any extra button a caller adds to a popup frame after CreatePopupFrame
+-- already returned (e.g. Reminder.lua's "Options" button) - same skin, on
+-- demand, called right where the button is created.
+function RA.SkinPopupButton(btn)
+    if not btn then return end
+    if not (E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable) then return end
+    if S.HandleButton then S:HandleButton(btn) end
 end
 
 ------------------------------------------------------------------------
@@ -155,46 +164,39 @@ local function SkinTeleportReminderFrame()
 end
 
 ------------------------------------------------------------------------
--- Skin Paragon frame
+-- Skin Debug Log window (dev-only, /rawlog)
 ------------------------------------------------------------------------
 
-local function SkinParagonFrame()
-    local f = _G["RollAwayParagonFrame"]
-    if not f then return end
+local function SkinDebugLogFrame()
+    local f = _G["RollAwayDebugLogFrame"]
+    if not f or f.RA_ElvSkinned then return end
     if S.HandleFrame then S:HandleFrame(f) end
-    if f.iconHolder then
-        f.iconHolder:SetFrameLevel(f:GetFrameLevel() + 10)
-        if f.icon then f.icon:Show() end
-    end
-    local bar = f.bar
-    if bar then
-        if S.HandleStatusBar then S:HandleStatusBar(bar) end
-        bar:SetStatusBarColor(0.8, 0.7, 0.1, 0.9)
-    end
-    local okayBtn = _G["RollAwayParagonOkay"]
-    if okayBtn and S.HandleButton then S:HandleButton(okayBtn) end
+
+    local scrollBar = _G["RollAwayDebugLogScrollScrollBar"]
+    if scrollBar and S.HandleScrollBar then S:HandleScrollBar(scrollBar) end
+
+    local editBox = _G["RollAwayDebugLogEditBox"]
+    if editBox and S.HandleEditBox then S:HandleEditBox(editBox) end
+
+    local closeBtn = _G["RollAwayDebugLogClose"]
+    if closeBtn and S.HandleCloseButton then S:HandleCloseButton(closeBtn) end
+
+    local selectAllBtn = _G["RollAwayDebugLogSelectAll"]
+    if selectAllBtn and S.HandleButton then S:HandleButton(selectAllBtn) end
+
+    local clearBtn = _G["RollAwayDebugLogClear"]
+    if clearBtn and S.HandleButton then S:HandleButton(clearBtn) end
+
+    f.RA_ElvSkinned = true
 end
 
-------------------------------------------------------------------------
--- Skin Great Vault reminder frame
-------------------------------------------------------------------------
-
-local function SkinGreatVaultFrame()
-    local f = _G["RollAwayGreatVaultFrame"]
-    if not f then return end
-    if S.HandleFrame then S:HandleFrame(f) end
-    if f.iconHolder then
-        f.iconHolder:SetFrameLevel(f:GetFrameLevel() + 10)
-        if f.icon then f.icon:Show() end
+-- AppendDebugLog fires on every log line; SkinDebugLogFrame's guard above
+-- keeps this a no-op after the first (lazy-created) call.
+hooksecurefunc(RA, "AppendDebugLog", function()
+    if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
+        SkinDebugLogFrame()
     end
-    local bar = f.bar
-    if bar then
-        if S.HandleStatusBar then S:HandleStatusBar(bar) end
-        bar:SetStatusBarColor(0.8, 0.7, 0.1, 0.9)
-    end
-    local okayBtn = _G["RollAwayGreatVaultOkay"]
-    if okayBtn and S.HandleButton then S:HandleButton(okayBtn) end
-end
+end)
 
 ------------------------------------------------------------------------
 -- Skin Omniumfoliant / Great Vault CharacterFrame buttons
@@ -221,67 +223,24 @@ local function SkinVaultButton()
 end
 
 ------------------------------------------------------------------------
--- Force AceGUI checkboxes to ElvUI's default accent color instead of
--- class color, regardless of the user's own "use class color" setting.
--- ElvUI skins every AceGUI:Create() widget globally via its own hook;
--- this runs after that hook (called last in Options.lua's MakeCB) and
--- overrides the checked-texture's vertex color.
+-- No checkbox/slider color forcing anymore. Both attempts (fixed accent,
+-- then real class color) fought ElvUI's own AceGUI skin hook unreliably.
+-- Left as plain ElvUI-native styling now, matching what ElvUI does by
+-- default for every other addon's options.
 ------------------------------------------------------------------------
 
-function RA.ForceCheckboxDefaultColor(cb)
-    if not cb then return end
-    local color = (E.media and E.media.rgbvaluecolor) or { 0.85, 0.73, 0.25 }
-    if cb.check   then cb.check:SetVertexColor(unpack(color)) end
-    if cb.checkbg then cb.checkbg:SetVertexColor(1, 1, 1, 1) end
-    if cb.frame and cb.frame.SetBackdropBorderColor then
-        local bg, bd = RA.GetElvUIColors()
-        cb.frame:SetBackdropColor(unpack(bg))
-        cb.frame:SetBackdropBorderColor(unpack(bd))
-    end
-end
-
--- Same neutralization for sliders (native Blizzard OptionsSliderTemplate or
--- an AceGUI Slider widget's inner .slider frame) - overrides the thumb
--- texture's vertex color back to ElvUI's default accent, not class color.
-function RA.ForceSliderDefaultColor(slider)
-    if not slider then return end
-    local color = (E.media and E.media.rgbvaluecolor) or { 0.85, 0.73, 0.25 }
-    local thumb = (slider.GetThumbTexture and slider:GetThumbTexture()) or slider.thumb
-    if thumb then thumb:SetVertexColor(unpack(color)) end
-    if slider.StatusBar then slider.StatusBar:SetStatusBarColor(unpack(color)) end
-end
-
 ------------------------------------------------------------------------
--- Apply all skins
--- Reminder/Paragon/WhatsNew are lazy-created, so skinning happens via
--- hooksecurefunc on Show below, not at ADDON_LOADED.
+-- Apply remaining skins
+-- Reminder/Paragon/GreatVault/AdvLog are skinned directly inside
+-- RA.CreatePopupFrame (see RA.SkinPopupFrame above) - no hook needed here.
+-- TeleportReminder/WhatsNew use a different frame shape, so they still get
+-- their own hook.
 ------------------------------------------------------------------------
-
--- Re-skin reminder frame whenever it is shown
-hooksecurefunc(RA, "ShowReminder", function()
-    if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
-        SkinReminderFrame()
-    end
-end)
 
 -- Skin Teleport Reminder frame on first show (frame is created lazily)
 hooksecurefunc(RA, "ShowTeleportReminder", function()
     if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
         SkinTeleportReminderFrame()
-    end
-end)
-
--- Skin Paragon frame on first show (frame is created lazily)
-hooksecurefunc(RA, "ShowParagonFrame", function()
-    if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
-        SkinParagonFrame()
-    end
-end)
-
--- Skin Great Vault reminder frame on first show (frame is created lazily)
-hooksecurefunc(RA, "ShowGreatVaultFrame", function()
-    if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
-        SkinGreatVaultFrame()
     end
 end)
 

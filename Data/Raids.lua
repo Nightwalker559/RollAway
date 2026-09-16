@@ -48,8 +48,8 @@ RA.RAIDS[2][#RA.RAIDS[2] + 1] =
 
 ------------------------------------------------------------------------
 -- The Unbinding of Kith'ix (12.1.5, PTR) – single-boss raid, mid-season
--- addition like Sporefall in S1. Kept as pendingTest placeholder until
--- encounterID is confirmed and the encounter has been tested.
+-- addition like Sporefall in S1. encounterID confirmed via DungeonEncounter.db2
+-- (wago.tools, ID 3513). Kept as pendingTest until verified live in-game.
 ------------------------------------------------------------------------
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
-    { key = "kithix", encounterID = nil, raid = "unbinding_of_kithix", pendingTest = true }
+    { key = "kithix", encounterID = 3513, raid = "unbinding_of_kithix", pendingTest = true }

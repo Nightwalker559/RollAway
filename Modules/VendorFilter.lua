@@ -150,6 +150,12 @@ end
 -- Applying the dim to merchant buttons
 ------------------------------------------------------------------------
 
+-- Debug-log dedup: MerchantFrame_UpdateMerchantInfo can fire many times in
+-- quick succession while item data streams in (Blizzard re-runs it as each
+-- item's data finishes loading), producing dozens of identical DBG lines
+-- per vendor open. Only log when a button's result actually changed.
+local lastDebugState = {}
+
 local function GetMerchantItemID(index)
     local link = GetMerchantItemLink and GetMerchantItemLink(index)
     if not link then return nil end
@@ -164,11 +170,10 @@ local function ApplyVendorFilterButton(button, itemButton)
     -- wider frames, etc.), unlike recomputing it from a fixed
     -- items-per-page constant.
     local index = itemButton and itemButton:GetID()
+    local name  = button:GetName()
+
     if not index or index <= 0 then
         button:SetAlpha(1)
-        if RollAwayDB and RollAwayDB.debug then
-            DBG("[VendorFilter]", button:GetName(), "skipped - index:", tostring(index))
-        end
         return
     end
 
@@ -182,7 +187,11 @@ local function ApplyVendorFilterButton(button, itemButton)
     button:SetAlpha(alpha)
 
     if RollAwayDB and RollAwayDB.debug then
-        DBG("[VendorFilter]", button:GetName(), "index:", index, "itemID:", tostring(itemID), "known:", tostring(known))
+        local state = index .. ":" .. tostring(itemID) .. ":" .. tostring(known)
+        if lastDebugState[name] ~= state then
+            lastDebugState[name] = state
+            DBG("[VendorFilter]", name, "index:", index, "itemID:", tostring(itemID), "known:", tostring(known))
+        end
     end
 end
 
@@ -204,6 +213,7 @@ end
 -- or the merchant window closes).
 function RA.ResetVendorFilterButtons()
     ForEachMerchantButton(function(button) button:SetAlpha(1) end)
+    wipe(lastDebugState)
 end
 
 function RA.ApplyVendorFilterFeature()

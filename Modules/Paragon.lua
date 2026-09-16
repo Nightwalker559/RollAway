@@ -145,13 +145,7 @@ function RA.ShowParagonFrame(quests)
 
     -- Stack below the Reminder frame if it's currently shown, to avoid
     -- both notifications overlapping at the same default position.
-    paragonFrame:ClearAllPoints()
-    local reminderFrame = _G["RollAwayReminderFrame"]
-    if reminderFrame and reminderFrame:IsShown() then
-        paragonFrame:SetPoint("TOP", reminderFrame, "BOTTOM", 0, -10)
-    else
-        paragonFrame:SetPoint("TOP", UIParent, "TOP", 0, -220)
-    end
+    RA.StackPopupFrame(paragonFrame, { "RollAwayReminderFrame" }, -220)
 
     local countKey = (#quests == 1) and "paragon_count_one" or "paragon_count_many"
     paragonFrame.header:SetText(string.format(RA_L[countKey], #quests))

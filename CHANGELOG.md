@@ -2,6 +2,95 @@
 
 ---
 
+## 3.0.5
+
+### Added
+- QoL: option to auto-accept group invites from guild/friends (Default UI only; ElvUI has its own).
+
+### Fixed
+- Teleport Reminder could silently fail to show after applying to a Group Finder listing - the browse cache entry could already be gone by the time the invite was accepted. Now falls back to a cached activity ID from the application.
+- Auto-accept invite: fixed `'for' limit must be a number` error - `STATICPOPUP_NUMDIALOGS` was removed in patch 11.2, so the invite popup never closed after auto-accepting.
+
+### Internal
+- Auto-accept invite moved to its own module (Modules\Misc.lua) with a new "Misc" settings tab, separate from Reminder.
+
+## 3.0.4
+
+### Fixed
+- LFG Quick Create's auto-playstyle could taint the Group Finder's EntryCreation frame, causing `ADDON_ACTION_BLOCKED` (`SetEntryTitle`) on later genuine clicks (e.g. Edit in the Application Viewer) until `/reload`. No longer calls the playstyle dropdown's Blizzard API; sets the underlying value directly instead.
+
+## 3.0.3
+
+### Fixed
+- Teleport Reminder no longer closes on Esc (was in UISpecialFrames, closing unintentionally during normal play). Close via the X button, a portal click, or it auto-clears on combat/group change.
+- Omniumfoliant/Great Vault character-frame buttons could vanish mid-session and not return even after toggling the option off/on (only /reload fixed it). Now self-heal parent/strata/anchor every reapply, not just Show().
+- Dungeon/AdvLog reminder could disappear instantly when queuing as a partial group (e.g. 2 of 5) via the automatic Dungeon Finder: GROUP_JOINED fired right after entering and hid the just-shown popup. GROUP_JOINED no longer hides an active reminder, only resets the dedup key.
+
+### Internal
+- Debug log auto-scrolls to the newest line.
+- /rawlog reopens the debug log without needing debug logging on.
+- Debug log shows a divider between instance-entry sections (time-gap based; also triggers on group leave/join, e.g. Delves).
+- Reminder check no longer runs twice on instance entry.
+- VendorFilter no longer spams identical debug lines on vendor open.
+
+## 3.0.2
+
+### Fixed
+- Fixed Ctrl+C on profile export closing the popup before the copy fired.
+
+## 3.0.1
+
+### New
+- ElvUI skin support for the Advanced Combat Logging reminder popup.
+- New popup reminder if Advanced Combat Logging is off when entering M+/raid.
+- Logs info text now notes Advanced Combat Logging is enabled automatically.
+- Settings are now per-character via AceDB-3.0, groundwork for named profiles.
+- "Apply Legacy settings to all characters" remains account-wide only.
+- One-time login popup: keep old settings or start fresh per character.
+- New "Profile" tab: switch, create, copy, delete, reset profiles.
+- Export/Import profiles as text codes (CBOR+Base64, no extra library).
+- Importing a profile code always creates a new named profile.
+
+### Fixed
+- Fixed error on BoP confirm after Need roll: bad STATIC_POPUPS reference.
+- Profile reset now also clears Dungeons/Raids/Delves/Prey selections.
+- Fixed AdvLog reminder not ElvUI-skinned when opened via /rawreminder.
+- Fixed AdvLog ElvUI skin hook never firing (bypassed via local upvalue).
+- Fixed AdvLog reminder overlapping other popups; stacking now shared.
+- Fixed reminder check firing twice on zone entry; now debounced.
+- Fixed stray space before closing parenthesis in debug log lines.
+- "Other profile" dropdown no longer gets stuck open when empty.
+
+### Changed
+- Moved generic popup/timer/table helpers out of Core.lua into new Helpers.lua.
+- Extracted shared reminder-popup lifecycle helper (combat/group reset).
+- Removed unused debug leftovers in CharFrameButtons.lua and LFGQuickCreate.lua.
+- New/default profiles start with everything disabled (timers/fonts unaffected).
+- Default keystone companion addon is now "None" instead of BigWigs.
+- BigWigs/Details Keystones now stay open until a portal is cast, up to 20s.
+- Updated options info text for the new keystone close behavior.
+- Kith'ix (12.1.5) encounterID confirmed, still pending in-game verification.
+- ElvUI popup skinning consolidated into RA.CreatePopupFrame (was 4 duplicates).
+- Removed checkbox/slider color forcing; both use plain ElvUI styling now.
+- Debug output moved to a dedicated, copyable log window instead of chat.
+- Zone-change debug output reduced to one compact line (was 3x duplicated).
+- Debug summary now reflects real auto-pass state (was missing "pass all").
+- Raw GetInstanceInfo dump moved to a dedicated /rawdump command.
+- AutoRoll ElvUI button cache: 5 log lines collapsed into 1 summary line.
+- Combat log zone checkboxes grey out while master toggle is off.
+- Profile panel flags pending reload (red/green) after profile changes.
+- Legacy migration popup now shows a few seconds after login, not instantly.
+- Profile export popup now closes automatically on Ctrl+C.
+
+### Internal
+- Rigorous pre-release code review: 0 syntax errors, 0 real lint warnings.
+- Removed unused HideTeleportReminder function (dead code).
+- /rawreminder now also triggers Great Vault and Advanced Logging test popups.
+- Added /rawlog to reopen the debug log window if closed.
+- Added ElvUI skin support for the debug log window.
+
+---
+
 ## 3.0.0
 
 ### New

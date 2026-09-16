@@ -105,6 +105,85 @@ local function ApplyDesiredLogState()
 end
 RA.ApplyDesiredLogState = ApplyDesiredLogState
 
+------------------------------------------------------------------------
+-- Advanced Combat Logging reminder popup - shown once per M+/raid instance
+-- if advancedCombatLogging is still off after ApplyDesiredLogState() ran
+-- (i.e. RollAway's own auto-log isn't handling this content/isn't enabled).
+------------------------------------------------------------------------
+local TIMER_DURATION = 20
+local advLogFrame
+
+local function CreateAdvLogFrame()
+    if advLogFrame then return end
+
+    advLogFrame = RA.CreatePopupFrame({
+        name     = "RollAwayAdvLogFrame",
+        okayName = "RollAwayAdvLogOkay",
+        width    = 300,
+        height   = 110,
+        yOffset  = -260,
+    })
+
+    advLogFrame.msg = advLogFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    advLogFrame.msg:SetPoint("TOPLEFT",  advLogFrame, "TOPLEFT",  10, -40)
+    advLogFrame.msg:SetPoint("TOPRIGHT", advLogFrame, "TOPRIGHT", -10, -40)
+    advLogFrame.msg:SetJustifyH("LEFT")
+    advLogFrame.msg:SetNonSpaceWrap(true)
+    advLogFrame.msg:SetText(RA.RA_L["advlog_reminder_msg"])
+
+    advLogFrame:SetScript("OnShow", function(self)
+        if RA.C_Timer_After then
+            RA.C_Timer_After(0, function()
+                if not self:IsShown() then return end
+                local msgH = self.msg:GetStringHeight()
+                -- top(10) + header(24) + gap(6) + msg + gap(8) + btn(22) + bar(8) + pad(18)
+                self:SetHeight(math.max(110, 10 + 24 + 6 + msgH + 8 + 22 + 8 + 18))
+            end)
+        end
+        self.timer.Start(TIMER_DURATION)
+    end)
+    advLogFrame:SetScript("OnHide", advLogFrame.timer.Stop)
+
+    RA.SetupInstanceReminderLifecycle(advLogFrame, "lastAdvLogReminderInstID")
+end
+
+-- Shared by RA.ShowAdvLogReminder (real gating) and the dev test below.
+-- Also stacks below any other popup notification already shown (Great
+-- Vault/Paragon/Reminder), matching the same pattern those use, so
+-- /rawreminder's four test popups never land on top of each other.
+local function ShowAdvLogFrameNow()
+    CreateAdvLogFrame()
+    RA.StackPopupFrame(advLogFrame,
+        { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -260)
+    advLogFrame:Show()
+end
+RA.ShowAdvLogFrameNow = ShowAdvLogFrameNow
+
+function RA.ShowAdvLogReminder()
+    if not RollAwayDB or not RollAwayDB.advLogReminderEnabled then return end
+
+    local iType  = RA.cachedInstanceType
+    local instID = RA.cachedInstanceID
+    local isMPlus = iType == "party" and MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID]
+    local isRaid  = iType == "raid"
+    if not (isMPlus or isRaid) then return end
+
+    if RollAwayDB.lastAdvLogReminderInstID == instID then return end
+    if C_CVar.GetCVar("advancedCombatLogging") == "1" then return end
+
+    RollAwayDB.lastAdvLogReminderInstID = instID
+    DBG("Advanced Combat Logging reminder | instanceID:", instID)
+
+    RA.ShowAdvLogFrameNow()
+end
+
+-- Dev-only test (/rawreminder): shows the frame regardless of settings,
+-- instance type, cvar state, or per-instance dedup.
+local function TestShow()
+    RA.ShowAdvLogFrameNow()
+end
+RA.AdvLogTestShow = TestShow
+
 -- Re-evaluate on zone change. Not using hooksecurefunc(RA, "UpdateInstanceCache", ...)
 -- here: Core.lua's own event handler calls the local UpdateInstanceCache()
 -- upvalue directly (not RA.UpdateInstanceCache()), so a table-field hook
@@ -120,6 +199,7 @@ local function CheckLogState()
     if not RA.initialized then return end
     if RA.UpdateInstanceCache then RA.UpdateInstanceCache() end
     ApplyDesiredLogState()
+    RA.ShowAdvLogReminder()
 end
 
 local logsEventFrame = CreateFrame("Frame")

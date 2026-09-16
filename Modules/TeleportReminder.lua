@@ -85,8 +85,10 @@ local function CreateReminderFrame()
     RA.MakeDraggable(reminderFrame)
     reminderFrame:Hide()
 
-    tinsert(UISpecialFrames, "RollAwayTeleportReminderFrame")
-
+    -- Deliberately NOT added to UISpecialFrames: Esc is used constantly
+    -- while playing (canceling casts, closing other windows, etc.) and
+    -- was closing this reminder unintentionally. Closing it now requires
+    -- the explicit X button, a portal click, or /reload.
     reminderFrame:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -183,10 +185,6 @@ function RA.ShowTeleportReminder(instanceName, dungeon)
     end
 
     reminderFrame:Show()
-end
-
-function RA.HideTeleportReminder()
-    if reminderFrame and reminderFrame:IsShown() then reminderFrame:Hide() end
 end
 
 ------------------------------------------------------------------------

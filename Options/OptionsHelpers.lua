@@ -50,24 +50,10 @@ local function MakeCB(parent, label, checked, onChange, widthOverride)
     cb:SetWidth(widthOverride or (24 + (cb.text:GetStringWidth() or 200) + 10))
     cb:SetCallback("OnValueChanged", function(widget, _, value)
         if onChange then onChange(value) end
-        -- Re-neutralize color on every click too - ElvUI's AceGUI skin
-        -- hook likely re-applies class color on SetValue, which runs
-        -- before this callback fires.
-        if RA.ForceCheckboxDefaultColor then RA.ForceCheckboxDefaultColor(cb) end
     end)
     cb.frame:SetParent(parent)
     cb.frame:ClearAllPoints()
     cb.frame:Show()
-    -- Neutralize ElvUI's global AceGUI skin (class-colored checkmark) back
-    -- to ElvUI's own default accent color, if ElvUI is loaded. Re-applied
-    -- one frame later too, in case ElvUI's own skin hook runs after ours,
-    -- and tracked so it can be re-applied again on every panel OnShow.
-    if RA.ForceCheckboxDefaultColor then
-        RA.ForceCheckboxDefaultColor(cb)
-        C_Timer.After(0, function() RA.ForceCheckboxDefaultColor(cb) end)
-        RA.AllCheckboxes = RA.AllCheckboxes or {}
-        table.insert(RA.AllCheckboxes, cb)
-    end
     return cb
 end
 
@@ -313,12 +299,12 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
                 end
                 local capturedKey = b.key
                 local isPending = b.pendingTest
-                local labelText = RA_L["boss_"..b.key]
+                local bossLabelText = RA_L["boss_"..b.key]
                 if isPending then
-                    labelText = labelText .. " |cff888888(coming soon)|r"
+                    bossLabelText = bossLabelText .. " |cff888888(coming soon)|r"
                     dbTable[capturedKey] = false
                 end
-                local cb = MakeCB(entry, labelText, dbTable[b.key], function(checked)
+                local cb = MakeCB(entry, bossLabelText, dbTable[b.key], function(checked)
                     dbTable[capturedKey] = checked
                 end)
                 if cb then

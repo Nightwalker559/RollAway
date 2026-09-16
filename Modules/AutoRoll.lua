@@ -16,6 +16,8 @@ local C_Timer_After       = RA.C_Timer_After
 local elvButtonCache = {}  -- [frameIndex] = { needBtn, greedBtn, transmogBtn }
 
 local function BuildElvButtonCache()
+    local cachedCount = 0
+    local incomplete = {}
     for i = 1, 5 do
         local elvFrame = _G["ElvUI_LootRollFrame"..i]
         if elvFrame then
@@ -34,11 +36,17 @@ local function BuildElvButtonCache()
                 end
             end
             elvButtonCache[i] = { need = needBtn, greed = greedBtn, transmog = transmogBtn }
-            DBG("[AutoRoll] Cached ElvUI_LootRollFrame"..i.." | need=",
-                tostring(needBtn and needBtn:GetName()),
-                "| greed=", tostring(greedBtn and greedBtn:GetName()),
-                "| transmog=", tostring(transmogBtn and transmogBtn:GetName()))
+            cachedCount = cachedCount + 1
+            if not (needBtn and greedBtn and transmogBtn) then
+                incomplete[#incomplete + 1] = i
+            end
         end
+    end
+    if cachedCount > 0 then
+        DBG("[AutoRoll] Cached", cachedCount, "ElvUI_LootRollFrame button set(s)")
+    end
+    if #incomplete > 0 then
+        DBG("[AutoRoll] WARNING: incomplete button set for frame(s):", table.concat(incomplete, ", "))
     end
 end
 

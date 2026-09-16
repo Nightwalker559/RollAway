@@ -1,29 +1,18 @@
-local RA = _G.RollAway
+local RA   = _G.RollAway
+local RA_L = RA.RA_L
 
 -- Bump this whenever a new feature entry is added below.
-local WHATS_NEW_VERSION = "3.0.0"
+local WHATS_NEW_VERSION = "3.0.5"
 
--- Each entry: { title, description, location }
---   title       : feature name (shown in gold) — not localized
---   description : one or two sentences explaining the feature
---   location    : path inside the addon options (use " > " as separator)
+-- Each entry: { title, description, location } - all three pulled from
+-- RA_L so this shows correctly in both enUS and deDE.
 -- Only entries for the CURRENT version (WHATS_NEW_VERSION above) belong
 -- here - clear this list out and replace it whenever that version bumps.
 local FEATURES = {
     {
-        title       = "Premade Group Companion Addon",
-        description = "Choose BigWigs or Details! Keystones separately for manually formed (premade) groups, independent of the Group Finder setting.",
-        location    = "QoL > Reminder",
-    },
-    {
-        title       = "Chonky Character Sheet Support",
-        description = "The Omnium and Great Vault buttons now show up correctly with Chonky Character Sheet installed.",
-        location    = "QoL > Filter",
-    },
-    {
-        title       = "Patch 12.1.5 Preview",
-        description = "Labyrinth of Kindo'jan and the Kith'ix raid are listed as \"coming soon\" ahead of release.",
-        location    = "Delves / Raids",
+        title       = RA_L["whatsnew_autoaccept_title"],
+        description = RA_L["whatsnew_autoaccept_desc"],
+        location    = RA_L["whatsnew_autoaccept_location"],
     },
 }
 

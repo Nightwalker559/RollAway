@@ -22,7 +22,6 @@ local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
 local C_Timer_After    = RA.C_Timer_After
-local C_Timer_NewTimer = RA.C_Timer_NewTimer
 
 local omniCharButton
 local vaultCharButton
@@ -57,17 +56,31 @@ end
 -- if a future Chonky update shifts CharacterFrameBg differently.
 local chonkyXOffsetBonus = -260
 
-local function RepositionCharFrameButtons()
+-- Full self-heal for one button: some external UI code (combat-log driven
+-- PaperDollFrame redraws, other addons enumerating/hiding "unknown" children,
+-- etc.) has been observed to leave the button's frame object intact but with
+-- its parent, strata, or anchor points reset/invalidated. A plain :Show()
+-- on such a button does nothing visible, which is why toggling the option
+-- off/on in Settings previously failed to bring it back (only /reload, which
+-- recreates everything from scratch, fixed it). Re-asserting parent/strata/
+-- level/points every time - not just Show() - makes this self-correcting.
+local function HealCharFrameButton(btn, xOffset)
+    if not btn or not PaperDollFrame then return end
     local anchor = GetCharFrameButtonAnchor()
     local bonus = IsChonkyLoaded() and chonkyXOffsetBonus or 0
-    if omniCharButton then
-        omniCharButton:ClearAllPoints()
-        omniCharButton:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", -8 + bonus, 8)
+    if btn:GetParent() ~= PaperDollFrame then
+        btn:SetParent(PaperDollFrame)
+        DBG("[CharFrameButtons]", btn:GetName(), "reparented back to PaperDollFrame (was detached)")
     end
-    if vaultCharButton then
-        vaultCharButton:ClearAllPoints()
-        vaultCharButton:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", -36 + bonus, 8)
-    end
+    btn:SetFrameStrata("DIALOG")
+    btn:SetFrameLevel(PaperDollFrame:GetFrameLevel() + 10)
+    btn:ClearAllPoints()
+    btn:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", xOffset + bonus, 8)
+end
+
+local function RepositionCharFrameButtons()
+    if omniCharButton then HealCharFrameButton(omniCharButton, -8) end
+    if vaultCharButton then HealCharFrameButton(vaultCharButton, -36) end
 end
 RA.RepositionCharFrameButtons = RepositionCharFrameButtons
 
@@ -248,6 +261,7 @@ local function ApplyOmniumfoliantFeature()
         btn.RA_forceHidden = true
         CreateOmniCharButton()
         if omniCharButton then
+            HealCharFrameButton(omniCharButton, -8)
             if CharFrameButtonsAllowed() then
                 omniCharButton:Show()
             else
@@ -270,7 +284,7 @@ function RA.InitOmniumfoliant()
     local function TryInit(attempt)
         attempt = attempt or 1
         if ApplyOmniumfoliantFeature() then
-            DBG("[CharFrameButtons] Omniumfoliant button hooked (attempt", attempt, ")")
+            DBG("[CharFrameButtons] Omniumfoliant button hooked (attempt "..attempt..")")
             return
         end
         if attempt >= 10 then
@@ -329,6 +343,7 @@ local function ApplyVaultButtonFeature()
     if active then
         CreateVaultCharButton()
         if vaultCharButton then
+            HealCharFrameButton(vaultCharButton, -36)
             if CharFrameButtonsAllowed() then
                 vaultCharButton:Show()
             else

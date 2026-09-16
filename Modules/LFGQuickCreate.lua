@@ -137,20 +137,18 @@ local function ApplyDefaultPlaystyle(ec)
     if not RollAwayDB then return end
     local ps = RollAwayDB.lfgDefaultPlaystyle
     if not ps or ps == 0 then return end
+    -- Only set the plain data field. Do NOT call dd:SetSelectedValue()/
+    -- GenerateMenu(): that routes into Blizzard's OnPlayStyleSelectedInternal
+    -- -> SetTitleFromActivityInfo -> protected SetEntryTitle(). Calling it from
+    -- insecure code (no hardware event) doesn't just fail once - it taints the
+    -- EntryCreation frame/dropdown, and that taint persists until /reload,
+    -- causing ADDON_ACTION_BLOCKED later even on genuine hardware-event clicks
+    -- (e.g. "Edit" in the Application Viewer). The dropdown label simply won't
+    -- reflect the default visually; our own CreateListing() call and Blizzard's
+    -- native "List Group" both read ec.generalPlaystyle directly, so behavior
+    -- is unaffected.
     ec.generalPlaystyle = ps
     DBG("[LFGQuickCreate] Playstyle set:", ps)
-    local dd = ec.PlayStyleDropdown
-    if not dd then return end
-    -- dd:SetSelectedValue() routes into protected SetEntryTitle(); called from
-    -- a C_Timer (no hardware event), it taints and triggers ADDON_ACTION_BLOCKED
-    -- (uncatchable by pcall). We don't need auto title fill, so no-op that
-    -- one Blizzard function during our call, then restore it.
-    local origSetTitle = LFGListEntryCreation_SetTitleFromActivityInfo
-    LFGListEntryCreation_SetTitleFromActivityInfo = function() end
-    if dd.SetSelectedValue then pcall(dd.SetSelectedValue, dd, ps) end
-    if dd.GenerateMenu    then pcall(dd.GenerateMenu, dd)          end
-    LFGListEntryCreation_SetTitleFromActivityInfo = origSetTitle
-    -- Trigger Blizzard's button validation so "List Group" becomes clickable.
     if LFGListEntryCreation_UpdateValidState then
         pcall(LFGListEntryCreation_UpdateValidState, ec)
         DBG("[LFGQuickCreate] UpdateValidState triggered")
@@ -334,19 +332,6 @@ function RA.InitLFGQuickCreate()
             self:UnregisterEvent("PLAYER_ENTERING_WORLD")
         end
     end)
-
-    if RA.DEV_CHARS and RA.DEV_CHARS[UnitName("player")] then
-        SLASH_RAWQCDBG1 = "/rawqcdbg"
-        SlashCmdList["RAWQCDBG"] = function()
-            if not (RollAwayDB and RollAwayDB.debug) then return end
-            local ec = LFGListFrame and LFGListFrame.EntryCreation
-            if not ec then print("|cffff4444[QC]|r EntryCreation not open"); return end
-            print("|cff33ff99[QC]|r EntryCreation children:")
-            for _, c in next, { ec:GetChildren() } do
-                print("  " .. c:GetObjectType() .. "  " .. tostring(c.GetName and c:GetName() or "(no name)"))
-            end
-        end
-    end
 
     DBG("[LFGQuickCreate] Ready")
 end

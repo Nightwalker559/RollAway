@@ -413,6 +413,88 @@ local function ToggleKeyAddon(context)
 end
 
 ------------------------------------------------------------------------
+-- Keystone companion addon – safety-close timer.
+-- Whenever we auto-open BigWigs/Details Keystones for the player, it stays
+-- open until either they cast a known M+ portal spell (closes immediately)
+-- or a 20s safety timer runs out (closes automatically either way).
+------------------------------------------------------------------------
+
+local keyAddonSafetyTimer    = nil   -- pending 20s safety-close timer handle
+local keyAddonReminderOpen   = false -- true while we're holding it open
+local keyAddonReminderContext = nil  -- "premade" or nil - remembers which choice opened it
+
+local function CancelKeyAddonSafetyTimer()
+    if keyAddonSafetyTimer then
+        RA.SafeCancelTimer(keyAddonSafetyTimer)
+        keyAddonSafetyTimer = nil
+    end
+end
+
+-- Closes the keystone companion addon if we're the ones holding it open,
+-- and cancels any pending safety timer. Called on timeout or portal cast.
+local function CloseKeyAddonReminder()
+    CancelKeyAddonSafetyTimer()
+    if keyAddonReminderOpen then
+        keyAddonReminderOpen = false
+        DBG("[QoL] Closing keystone companion addon")
+        ToggleKeyAddon(keyAddonReminderContext)
+        keyAddonReminderContext = nil
+    end
+end
+
+-- Starts (or restarts) the 20s safety-close timer. context: "premade" or nil,
+-- matching the RollAwayDB choice that determines which addon gets toggled.
+local function StartKeyAddonSafetyTimer(context)
+    CancelKeyAddonSafetyTimer()
+    keyAddonReminderOpen    = true
+    keyAddonReminderContext = context
+    if C_Timer_NewTimer then
+        keyAddonSafetyTimer = C_Timer_NewTimer(20, function()
+            keyAddonSafetyTimer = nil
+            if keyAddonReminderOpen then
+                DBG("[QoL] Safety timer expired – closing keystone companion addon")
+                keyAddonReminderOpen = false
+                ToggleKeyAddon(context)
+                keyAddonReminderContext = nil
+            end
+        end)
+    elseif C_Timer_After then
+        C_Timer_After(20, function()
+            keyAddonSafetyTimer = nil
+            if keyAddonReminderOpen then
+                DBG("[QoL] Safety timer expired – closing keystone companion addon")
+                keyAddonReminderOpen = false
+                ToggleKeyAddon(context)
+                keyAddonReminderContext = nil
+            end
+        end)
+        keyAddonSafetyTimer = true
+    end
+end
+
+-- Checks if spellID is one of the current season's M+ portal spells.
+local function IsKnownPortalSpell(spellID)
+    local dungeons = RA.DUNGEONS[RA.ACTIVE_SEASON] or {}
+    for _, d in ipairs(dungeons) do
+        if d.portalSpellID == spellID then return true end
+    end
+    return false
+end
+
+-- Closes early the moment the player actually casts a portal, regardless of
+-- whether it was clicked in BigWigs/Details, RollAway's own teleport
+-- reminder, the spellbook, or a macro.
+local portalWatcher = CreateFrame("Frame")
+portalWatcher:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+portalWatcher:SetScript("OnEvent", function(_, _, unit, _, spellID)
+    if unit ~= "player" or not keyAddonReminderOpen then return end
+    if IsKnownPortalSpell(spellID) then
+        DBG("[QoL] Portal cast detected – closing keystone companion addon early")
+        CloseKeyAddonReminder()
+    end
+end)
+
+------------------------------------------------------------------------
 -- Instance Join reminder – shows instance name when joining a group
 ------------------------------------------------------------------------
 
@@ -472,35 +554,32 @@ local function ShowJoinReminder(instanceName, forceTimer)
         C_Timer_After(0.3, ToggleKeyAddon)
     end
 
-    -- Helper: start the 6s hide timer and close the companion addon after
+    -- Helper: hide the join text banner after 6s. The keystone companion
+    -- addon (if opened) is handed off to the 20s safety timer instead, so
+    -- it stays open independently until a portal is cast or it times out.
     local function StartHideTimer()
         StopJoinTimer()
         if C_Timer_NewTimer then
             joinTimer = C_Timer_NewTimer(6, function()
                 joinTimer = nil
                 if joinFrame then joinFrame:Hide() end
-                if keyAddonOpened then
-                    DBG("[QoL] Closing keystone companion addon after reminder timeout")
-                    ToggleKeyAddon()
-                    keyAddonOpened = false
-                end
             end)
         elseif C_Timer_After then
             C_Timer_After(6, function()
                 if joinFrame and joinFrame:IsShown() then joinFrame:Hide() end
-                if keyAddonOpened then
-                    DBG("[QoL] Closing keystone companion addon after reminder timeout")
-                    ToggleKeyAddon()
-                    keyAddonOpened = false
-                end
             end)
+        end
+        if keyAddonOpened then
+            StartKeyAddonSafetyTimer()
+            keyAddonOpened = false -- ownership passed to the safety timer
         end
     end
 
     -- Raids: start immediately. Party: wait for full group (5). forceTimer
     -- (test mode) skips the group check. Fallback: start after 30s anyway.
     if forceTimer or IsInRaid() or GetNumGroupMembers() >= 5 then
-        DBG("[QoL] Timer starting immediately (force:", tostring(forceTimer), "/ raid:", tostring(IsInRaid()), "/ full:", tostring(GetNumGroupMembers() >= 5), ")")
+        DBG("[QoL] Timer starting immediately (force: "..tostring(forceTimer)..
+            " / raid: "..tostring(IsInRaid()).." / full: "..tostring(GetNumGroupMembers() >= 5)..")")
         StartHideTimer()
     else
         DBG("[QoL] Waiting for full group before starting hide timer")
@@ -571,7 +650,7 @@ local function GetNameFromActivityID(activityID)
     if not act then return nil end
     -- Only show reminder for Mythic+ dungeons or current season raids
     if not (act.isMythicPlusActivity or act.isCurrentRaidActivity) then
-        DBG("[QoL] Join reminder filtered out – not M+ or current raid (activityID:", activityID, ")")
+        DBG("[QoL] Join reminder filtered out – not M+ or current raid (activityID: "..tostring(activityID)..")")
         return nil
     end
 
@@ -621,7 +700,6 @@ local function InitJoinReminder()
     -- Spam protection: only one pending check at a time
     local rosterCheckPending = false
     -- Timer for delayed BigWigs close after own listing group fills up
-    local creationCloseTimer = nil
     -- Persists until the group is left; prevents GROUP_ROSTER_UPDATE spam
     -- (ready checks, buffs, etc.) from re-opening the addon after the
     -- 6s auto-close timer runs.
@@ -632,6 +710,13 @@ local function InitJoinReminder()
     -- during that removal, which raced with the creation-close timer and
     -- caused the companion addon to toggle open/close/open.
     local hadOwnListingThisGroup = false
+    -- Cache of searchResultID -> activityIDs, filled on every application
+    -- status update while the result is still fresh. C_LFGList.GetSearchResultInfo
+    -- can return nil by the time "inviteaccepted" fires (the browse cache
+    -- entry may already be gone, e.g. if the Group Finder window was closed
+    -- right after applying) - falls back to this instead of silently
+    -- dropping the reminder.
+    local cachedApplicationActivityIDs = {}
 
     -- Fallback: group formed manually (direct invites/premade), not via LFG
     -- Group Finder. There's no LFG activity to resolve an instance name from,
@@ -648,13 +733,7 @@ local function InitJoinReminder()
         DBG("[QoL] Premade group full – opening keystone companion addon")
         premadeHandledThisGroup = true
         ToggleKeyAddon("premade")
-
-        if C_Timer_NewTimer then
-            C_Timer_NewTimer(6, function()
-                DBG("[QoL] Closing keystone companion addon after premade timeout")
-                ToggleKeyAddon("premade")
-            end)
-        end
+        StartKeyAddonSafetyTimer("premade")
     end
 
     local function TryShowFromActiveEntry()
@@ -665,6 +744,7 @@ local function InitJoinReminder()
             lastShownEntryID = nil
             premadeHandledThisGroup = false
             hadOwnListingThisGroup = false
+            wipe(cachedApplicationActivityIDs)
             return
         end
         local entryInfo = C_LFGList.GetActiveEntryInfo()
@@ -685,16 +765,24 @@ local function InitJoinReminder()
     f:SetScript("OnEvent", function(_, event, searchResultID, newStatus)
         if event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
             DBG("[QoL] LFG_LIST_APPLICATION_STATUS_UPDATED: searchResultID=", searchResultID, "status=", newStatus)
-            if newStatus ~= "inviteaccepted" then return end
             local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
-            if not (resultInfo and resultInfo.activityIDs) then
-                DBG("[QoL] Join reminder: no activityIDs in resultInfo")
+            if resultInfo and resultInfo.activityIDs then
+                -- Cache while the result is still resolvable (e.g. at "applied"/
+                -- "invited") so it survives the browse entry being purged later.
+                cachedApplicationActivityIDs[searchResultID] = resultInfo.activityIDs
+            end
+            if newStatus ~= "inviteaccepted" then return end
+
+            local activityIDs = (resultInfo and resultInfo.activityIDs) or cachedApplicationActivityIDs[searchResultID]
+            cachedApplicationActivityIDs[searchResultID] = nil
+            if not activityIDs then
+                DBG("[QoL] Join reminder: no activityIDs (live or cached) for searchResultID")
                 return
             end
-            local name, isMythicPlus, dungeon = GetNameFromActivityID(resultInfo.activityIDs[1])
+            local name, isMythicPlus, dungeon = GetNameFromActivityID(activityIDs[1])
             DBG("[QoL] Join reminder: resolved name=", name or "nil")
             if name then
-                lastShownEntryID = resultInfo.activityIDs[1]
+                lastShownEntryID = activityIDs[1]
                 DispatchJoinReminder(name, isMythicPlus, dungeon)
             end
 
@@ -743,22 +831,13 @@ local function InitJoinReminder()
                 -- Listing removed (cancelled or group full)
                 if not keyAddonOpenedByCreation then return end
                 keyAddonOpenedByCreation = false
-                if creationCloseTimer then
-                    RA.SafeCancelTimer(creationCloseTimer)
-                    creationCloseTimer = nil
-                end
+                CancelKeyAddonSafetyTimer()
                 -- Only toggle the companion addon if it was opened by M+ creation
                 if keyAddonOpenedByCreationMplus then
                     keyAddonOpenedByCreationMplus = false
                     if GetNumGroupMembers() >= 5 then
-                        DBG("[QoL] Group full – closing keystone companion addon in 6s")
-                        if C_Timer_NewTimer then
-                            creationCloseTimer = C_Timer_NewTimer(6, function()
-                                creationCloseTimer = nil
-                                DBG("[QoL] Closing keystone companion addon after creation timer")
-                                ToggleKeyAddon()
-                            end)
-                        end
+                        DBG("[QoL] Group full – starting keystone companion addon safety timer")
+                        StartKeyAddonSafetyTimer()
                     else
                         DBG("[QoL] Listing cancelled – closing keystone companion addon immediately")
                         ToggleKeyAddon()

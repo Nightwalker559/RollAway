@@ -46,6 +46,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         { key = "filter",   label = RA_L["qol_filter_section"]   },
         { key = "lfg",       label = RA_L["qol_nav_lfg"]          },
         { key = "logs",       label = RA_L["qol_nav_logs"]        },
+        { key = "misc",      label = RA_L["qol_nav_misc"]         },
         { key = "reminder", label = RA_L["qol_reminder_section"] },
     }
 
@@ -135,12 +136,31 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     local filterPanel,   filter   = CreateQolCategoryPanel("Filter",   430, false)
     local lfgPanel,      lfg      = CreateQolCategoryPanel("Lfg",      260, true)
     local logsPanel,     logs     = CreateQolCategoryPanel("Logs",     380, true)
-    local reminderPanel, reminder = CreateQolCategoryPanel("Reminder", 690, true)
+    local miscPanel,     misc     = CreateQolCategoryPanel("Misc",     120, true)
+    local reminderPanel, reminder = CreateQolCategoryPanel("Reminder", 660, true)
 
     qolCatPanels.filter   = filterPanel
     qolCatPanels.lfg      = lfgPanel
     qolCatPanels.logs     = logsPanel
+    qolCatPanels.misc     = miscPanel
     qolCatPanels.reminder = reminderPanel
+
+    -- ── Category: Misc ────────────────────────────────────────────────
+    -- Catch-all for settings that don't fit Filter/LFG/Logs/Reminder.
+
+    local qolAutoAcceptCB = MakeCB(misc, RA_L["qol_autoaccept_label"], RollAwayDB.autoAcceptInvite, function(checked)
+        RollAwayDB.autoAcceptInvite = checked
+    end)
+    qolAutoAcceptCB.frame:SetPoint("TOPLEFT", misc, "TOPLEFT", 0, -8)
+    if ElvUI then
+        qolAutoAcceptCB:SetDisabled(true)
+    end
+
+    local qolAutoAcceptInfo = misc:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    qolAutoAcceptInfo:SetPoint("TOPLEFT", qolAutoAcceptCB.frame, "BOTTOMLEFT", 20, -6)
+    qolAutoAcceptInfo:SetWidth(400); qolAutoAcceptInfo:SetJustifyH("LEFT")
+    qolAutoAcceptInfo:SetTextColor(0.6, 0.6, 0.6, 1)
+    qolAutoAcceptInfo:SetText(RA_L["qol_autoaccept_info"])
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
 
@@ -180,17 +200,11 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
             local v = math.floor(value)
             RollAwayDB.talentFontSize = v
             widget:SetLabel(string.format("%s  %d", RA_L["qol_fontsize_label"], v))
-            if RA.ForceSliderDefaultColor then RA.ForceSliderDefaultColor(widget.slider) end
         end)
         fontSlider.frame:SetParent(reminder)
         fontSlider.frame:ClearAllPoints()
         fontSlider.frame:SetPoint("TOPLEFT", qolParagonInfo, "BOTTOMLEFT", -20, -12)
         fontSlider.frame:Show()
-        if RA.ForceSliderDefaultColor then
-            RA.ForceSliderDefaultColor(fontSlider.slider)
-            RA.AllSliders = RA.AllSliders or {}
-            table.insert(RA.AllSliders, fontSlider.slider)
-        end
         -- AceGUI's layout pass calls Show() on the editbox; hook OnShow to keep it hidden.
         if fontSlider.editbox then
             fontSlider.editbox:SetScript("OnShow", function(self) self:Hide() end)
@@ -217,14 +231,8 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         sliderTalent:SetScript("OnValueChanged", function(_, value)
             RollAwayDB.talentFontSize = math.floor(value)
             qolSizeVal:SetText(string.format(RA_L["qol_fontsize_value"], RollAwayDB.talentFontSize))
-            if RA.ForceSliderDefaultColor then RA.ForceSliderDefaultColor(sliderTalent) end
         end)
         if S and S.HandleSliderFrame then S:HandleSliderFrame(sliderTalent) end
-        if RA.ForceSliderDefaultColor then
-            RA.ForceSliderDefaultColor(sliderTalent)
-            RA.AllSliders = RA.AllSliders or {}
-            table.insert(RA.AllSliders, sliderTalent)
-        end
         fontSlider = { frame = sliderTalent }
     end
 
@@ -291,12 +299,6 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
 
         cbBigWigs:SetDisabled(not bwOK)
         cbDetails:SetDisabled(not dtOK)
-
-        if RA.ForceCheckboxDefaultColor then
-            RA.ForceCheckboxDefaultColor(cbBigWigs)
-            RA.ForceCheckboxDefaultColor(cbDetails)
-            RA.ForceCheckboxDefaultColor(cbTeleport)
-        end
     end
 
     cbBigWigs:SetCallback("OnValueChanged", function(widget, _, value)
@@ -353,11 +355,6 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
 
         cbPremadeBigWigs:SetDisabled(not bwOK)
         cbPremadeDetails:SetDisabled(not dtOK)
-
-        if RA.ForceCheckboxDefaultColor then
-            RA.ForceCheckboxDefaultColor(cbPremadeBigWigs)
-            RA.ForceCheckboxDefaultColor(cbPremadeDetails)
-        end
     end
 
     cbPremadeBigWigs:SetCallback("OnValueChanged", function(widget, _, value)
@@ -522,7 +519,6 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
             local v = math.floor(value)
             RollAwayDB.vendorFilterAlpha = v / 100
             widget:SetLabel(string.format("%s  %d%%", RA_L["qol_vendor_filter_alpha_label"], v))
-            if RA.ForceSliderDefaultColor then RA.ForceSliderDefaultColor(widget.slider) end
             if RollAwayDB.vendorFilterEnabled and RA.ApplyVendorFilterFeature then
                 RA.ApplyVendorFilterFeature()
             end
@@ -531,11 +527,6 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         vendorAlphaSlider.frame:ClearAllPoints()
         vendorAlphaSlider.frame:SetPoint("TOPLEFT", qolVendorFilterInfo, "BOTTOMLEFT", -20, -12)
         vendorAlphaSlider.frame:Show()
-        if RA.ForceSliderDefaultColor then
-            RA.ForceSliderDefaultColor(vendorAlphaSlider.slider)
-            RA.AllSliders = RA.AllSliders or {}
-            table.insert(RA.AllSliders, vendorAlphaSlider.slider)
-        end
         if vendorAlphaSlider.editbox then
             vendorAlphaSlider.editbox:SetScript("OnShow", function(self) self:Hide() end)
             C_Timer.After(0, function() if vendorAlphaSlider.editbox then vendorAlphaSlider.editbox:Hide() end end)
@@ -562,24 +553,27 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
             local v = math.floor(value)
             RollAwayDB.vendorFilterAlpha = v / 100
             vendorAlphaVal:SetText(string.format("%d%%", v))
-            if RA.ForceSliderDefaultColor then RA.ForceSliderDefaultColor(sliderVendorAlpha) end
             if RollAwayDB.vendorFilterEnabled and RA.ApplyVendorFilterFeature then
                 RA.ApplyVendorFilterFeature()
             end
         end)
         if S and S.HandleSliderFrame then S:HandleSliderFrame(sliderVendorAlpha) end
-        if RA.ForceSliderDefaultColor then
-            RA.ForceSliderDefaultColor(sliderVendorAlpha)
-            RA.AllSliders = RA.AllSliders or {}
-            table.insert(RA.AllSliders, sliderVendorAlpha)
-        end
     end
 
     -- ── Category: Logs ─────────────────────────────────────────────────
 
     -- Master toggle
+    local logSubCBs = {}
+    local function UpdateLogSubCBsState()
+        local enabled = RollAwayDB.autoLogEnabled
+        for _, cb in ipairs(logSubCBs) do
+            cb:SetDisabled(not enabled)
+        end
+    end
+
     local qolLogMasterCB = MakeCB(logs, RA_L["qol_log_enable_label"], RollAwayDB.autoLogEnabled, function(checked)
         RollAwayDB.autoLogEnabled = checked
+        UpdateLogSubCBsState()
     end)
     qolLogMasterCB.frame:SetPoint("TOPLEFT", logs, "TOPLEFT", 0, -8)
 
@@ -614,6 +608,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         cb.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", isFirstLogZone and -20 or 0, -10)
         isFirstLogZone = false
         logZoneAnchor = cb.frame
+        table.insert(logSubCBs, cb)
     end
 
     -- Chat notification toggle (own line, separated from the zone list)
@@ -621,6 +616,16 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         RollAwayDB.autoLogChatNotify = checked
     end)
     qolLogChatCB.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", 0, -16)
+    table.insert(logSubCBs, qolLogChatCB)
+
+    -- Advanced Combat Logging reminder popup toggle - independent of the
+    -- master toggle above, so it still works for players who log manually.
+    local qolLogAdvReminderCB = MakeCB(logs, RA_L["qol_log_advlog_reminder_label"], RollAwayDB.advLogReminderEnabled, function(checked)
+        RollAwayDB.advLogReminderEnabled = checked
+    end)
+    qolLogAdvReminderCB.frame:SetPoint("TOPLEFT", qolLogChatCB.frame, "BOTTOMLEFT", 0, -10)
+
+    UpdateLogSubCBsState()
 
     -- ── Category: LFG (alphabetical by label) ─────────────────────────────
 
@@ -682,7 +687,6 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     lfgqcAutoPSCB:SetCallback("OnValueChanged", function(widget, _, checked)
         RollAwayDB.lfgAutoPlaystyle = checked
         UpdatePSState(checked)
-        if RA.ForceCheckboxDefaultColor then RA.ForceCheckboxDefaultColor(widget) end
     end)
 
     -- Enable checkbox (last alphabetically: "Show dungeon quick-create...")

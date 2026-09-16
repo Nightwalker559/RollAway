@@ -31,6 +31,63 @@ local function GetCurrentRaidBossKey()
 end
 
 ------------------------------------------------------------------------
+-- Auto-pass matching logic – pure/read-only. Shared by TryAutoPass (which
+-- acts on the result) and Core.lua's zone-change debug summary (which only
+-- previews it). Keeping this in one place means the debug preview can
+-- never drift out of sync with what actually gets auto-passed.
+------------------------------------------------------------------------
+
+local function ComputeAutoPassState()
+    if not RollAwayDB or not RollAwayDBChar then return false end
+    if not RA.BONUS_ROLLS_ENABLED then return false end
+
+    -- 1. Dungeon (party, matched by mapID) - either the specific dungeon is
+    -- checked, OR the "auto-pass all dungeons" master switch is on.
+    local key = GetCurrentDungeonKey()
+    if key and (
+        (RollAwayDBChar.dungeons    and RollAwayDBChar.dungeons[key]) or
+        (RollAwayDBChar.dungeons_s2 and RollAwayDBChar.dungeons_s2[key]) or
+        RollAwayDBChar.dungeonAutoPassAll
+    ) then
+        local reason = RollAwayDBChar.dungeonAutoPassAll and "dungeon_all" or ("dungeon:" .. key)
+        return true, reason
+    end
+
+    -- 2. Delve (scenario, matched by mapID) - either the specific delve is
+    -- checked, OR the "auto-pass all delves" master switch is on.
+    key = GetCurrentDelveKey()
+    if key and (
+        (RollAwayDBChar.delves    and RollAwayDBChar.delves[key]) or
+        (RollAwayDBChar.delves_s2 and RollAwayDBChar.delves_s2[key]) or
+        RollAwayDBChar.delveAutoPassAll
+    ) then
+        local reason = RollAwayDBChar.delveAutoPassAll and "delve_all" or ("delve:" .. key)
+        return true, reason
+    end
+
+    -- 3. Raid boss (matched by lastEncounterID from ENCOUNTER_END) - either
+    -- the specific boss is checked, OR the whole difficulty bucket is.
+    key = GetCurrentRaidBossKey()
+    if key and RollAwayDBChar.raids and RollAwayDBChar.raids[key] then
+        return true, "raid:" .. key
+    elseif RA.cachedInstanceType == "raid" then
+        local bucket = RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
+        if bucket and RollAwayDBChar.raidAutoPassDifficulty
+           and RollAwayDBChar.raidAutoPassDifficulty[bucket] then
+            return true, "raid_difficulty:" .. bucket
+        end
+    end
+
+    -- 4. Prey (open world – any BonusRollFrame outside an instance)
+    if RA.cachedInstanceType == "none" and RollAwayDBChar.prey then
+        return true, "prey"
+    end
+
+    return false
+end
+RA.ComputeAutoPassState = ComputeAutoPassState
+
+------------------------------------------------------------------------
 -- Auto-pass main function
 ------------------------------------------------------------------------
 
@@ -41,61 +98,7 @@ local function TryAutoPass()
         return
     end
 
-    local shouldPass = false
-    local reason     -- only built when debug is on
-
-    -- 1. Dungeon (party, matched by mapID) - either the specific dungeon is
-    -- checked, OR the "auto-pass all dungeons" master switch is on.
-    local key = GetCurrentDungeonKey()
-    if key and (
-        (RollAwayDBChar.dungeons    and RollAwayDBChar.dungeons[key]) or
-        (RollAwayDBChar.dungeons_s2 and RollAwayDBChar.dungeons_s2[key]) or
-        RollAwayDBChar.dungeonAutoPassAll
-    ) then
-        shouldPass = true
-        if RollAwayDB.debug then
-            reason = RollAwayDBChar.dungeonAutoPassAll and "dungeon_all" or ("dungeon:" .. key)
-        end
-    end
-
-    -- 2. Delve (scenario, matched by mapID) - either the specific delve is
-    -- checked, OR the "auto-pass all delves" master switch is on.
-    if not shouldPass then
-        key = GetCurrentDelveKey()
-        if key and (
-            (RollAwayDBChar.delves    and RollAwayDBChar.delves[key]) or
-            (RollAwayDBChar.delves_s2 and RollAwayDBChar.delves_s2[key]) or
-            RollAwayDBChar.delveAutoPassAll
-        ) then
-            shouldPass = true
-            if RollAwayDB.debug then
-                reason = RollAwayDBChar.delveAutoPassAll and "delve_all" or ("delve:" .. key)
-            end
-        end
-    end
-
-    -- 3. Raid boss (matched by lastEncounterID from ENCOUNTER_END) - either
-    -- the specific boss is checked, OR the whole difficulty bucket is.
-    if not shouldPass then
-        key = GetCurrentRaidBossKey()
-        if key and RollAwayDBChar.raids and RollAwayDBChar.raids[key] then
-            shouldPass = true
-            if RollAwayDB.debug then reason = "raid:" .. key end
-        elseif RA.cachedInstanceType == "raid" then
-            local bucket = RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
-            if bucket and RollAwayDBChar.raidAutoPassDifficulty
-               and RollAwayDBChar.raidAutoPassDifficulty[bucket] then
-                shouldPass = true
-                if RollAwayDB.debug then reason = "raid_difficulty:" .. bucket end
-            end
-        end
-    end
-
-    -- 4. Prey (open world – any BonusRollFrame outside an instance)
-    if not shouldPass and RA.cachedInstanceType == "none" and RollAwayDBChar.prey then
-        shouldPass = true
-        if RollAwayDB.debug then reason = "prey" end
-    end
+    local shouldPass, reason = ComputeAutoPassState()
 
     if RollAwayDB.debug then
         DBG("[AutoPass] Check | instanceID:", RA.cachedInstanceID,

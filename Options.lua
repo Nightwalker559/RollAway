@@ -256,14 +256,8 @@ function RA.InitOptions()
     slider:SetScript("OnValueChanged", function(_, value)
         RollAwayDB.delay = math.floor(value)
         sliderDelayVal:SetText(string.format(RA_L["slider_label"], RollAwayDB.delay))
-        if RA.ForceSliderDefaultColor then RA.ForceSliderDefaultColor(slider) end
     end)
     if S and S.HandleSliderFrame then S:HandleSliderFrame(slider) end
-    if RA.ForceSliderDefaultColor then
-        RA.ForceSliderDefaultColor(slider)
-        RA.AllSliders = RA.AllSliders or {}
-        table.insert(RA.AllSliders, slider)
-    end
 
     local timeoutLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     timeoutLabel:SetPoint("TOPLEFT", delayLabel, "TOPLEFT", 280, 0)
@@ -293,14 +287,8 @@ function RA.InitOptions()
     sliderTimeout:SetScript("OnValueChanged", function(_, value)
         RollAwayDB.rollTimeout = math.floor(value)
         sliderTimeoutVal:SetText(string.format(RA_L["timeout_slider_label"], RollAwayDB.rollTimeout))
-        if RA.ForceSliderDefaultColor then RA.ForceSliderDefaultColor(sliderTimeout) end
     end)
     if S and S.HandleSliderFrame then S:HandleSliderFrame(sliderTimeout) end
-    if RA.ForceSliderDefaultColor then
-        RA.ForceSliderDefaultColor(sliderTimeout)
-        RA.AllSliders = RA.AllSliders or {}
-        table.insert(RA.AllSliders, sliderTimeout)
-    end
 
     -- Row 2: Sichtbarkeit - hide the Group Loot History frame, per raid difficulty.
     local hideLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -760,18 +748,17 @@ function RA.InitOptions()
         local db = RA.GetLegacyRaidsDB()
         for _, entry in ipairs(legacyRaidCBs) do
             entry.cb:SetValue(db and db[entry.key])
-            if RA.ForceCheckboxDefaultColor then RA.ForceCheckboxDefaultColor(entry.cb) end
         end
     end
 
-    local legacyAccountWideCB = MakeCB(legacyPanel, RA_L["legacy_account_wide_label"], RollAwayDB.legacyAccountWide, function(checked)
+    local legacyAccountWideCB = MakeCB(legacyPanel, RA_L["legacy_account_wide_label"], RA.db.global.legacyAccountWide, function(checked)
         if checked then
             -- Carry the current character's selection over to the account-wide table.
             for k, v in pairs(RollAwayDBChar.legacy_raids) do
-                RollAwayDB.legacy_raids[k] = v
+                RA.db.global.legacy_raids[k] = v
             end
         end
-        RollAwayDB.legacyAccountWide = checked
+        RA.db.global.legacyAccountWide = checked
         RefreshLegacyRaidCheckboxes()
     end)
     legacyAccountWideCB.frame:SetPoint("TOPLEFT", legacyHint, "BOTTOMLEFT", 0, -14)
@@ -857,7 +844,6 @@ function RA.InitOptions()
         if not RollAwayDB.legacy and tabPanels["legacy"]:IsShown() then
             ShowTab("general")
         end
-        if RA.ForceCheckboxDefaultColor then RA.ForceCheckboxDefaultColor(widget) end
     end)
 
     -- Expose OpenOptionsTab so Reminder.lua can open a specific tab
@@ -874,21 +860,7 @@ function RA.InitOptions()
     -- Built in Options/OptionsQoL.lua.
     ------------------------------------------------------------
     RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactive)
-
-    -- Re-neutralize checkbox/slider colors every time the panel is (re)opened,
-    -- in case ElvUI's own AceGUI skin hook re-applies class color on show.
-    if RA.ForceCheckboxDefaultColor and RA.AllCheckboxes then
-        panel:HookScript("OnShow", function()
-            for _, cb in ipairs(RA.AllCheckboxes) do
-                RA.ForceCheckboxDefaultColor(cb)
-            end
-            if RA.ForceSliderDefaultColor and RA.AllSliders then
-                for _, sl in ipairs(RA.AllSliders) do
-                    RA.ForceSliderDefaultColor(sl)
-                end
-            end
-        end)
-    end
+    RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabInactive)
 
     ShowTab("general")
     Settings.RegisterAddOnCategory(category)

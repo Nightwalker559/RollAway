@@ -38,7 +38,7 @@ RA.DEV_CHARS = DEV_CHARS
 
 local function DBG(...)
     if RollAwayDB and RollAwayDB.debug and DEV_CHARS[UnitName("player")] then
-        print("|cff33ff99RollAway-DEBUG:|r", ...)
+        if RA.AppendDebugLog then RA.AppendDebugLog(...) end
     end
 end
 RA.DBG = DBG
@@ -49,6 +49,7 @@ RA.DBG = DBG
 local GetLootRollItemLink = GetLootRollItemLink
 local GetInstanceInfo     = GetInstanceInfo
 local hooksecurefunc      = hooksecurefunc
+local GetTime             = GetTime
 local C_Timer_After       = C_Timer and C_Timer.After
 local C_Timer_NewTimer    = C_Timer and C_Timer.NewTimer
 
@@ -121,51 +122,68 @@ RA.rollTimers            = {}
 
 ------------------------------------------------------------------------
 -- Saved variable defaults
+--
+-- 3.0.1+: settings are managed by AceDB-3.0 (RollAwayDBAccount), which is
+-- character-specific by default (one profile per character, switchable).
+-- RA.defaults.profile  -> per-character settings (was flat RollAwayDB pre-3.0.1)
+-- RA.defaults.global   -> true account-wide settings, shared by all profiles
+-- RA.defaultsChar       -> unchanged: SavedVariablesPerCharacter, always
+--                          strictly per-character, never part of a profile.
 ------------------------------------------------------------------------
 RA.defaults = {
-    delay              = 5,
-    hideInRaidBuckets  = { lfr = false, normal = false, heroic = false, mythic = false },
-    rollTimeout        = 60,
-    lootFrameAutoCloseDisabled = false,
-    legacy             = false,
-    legacyNeed         = false,
-    legacyGreed        = true,
-    legacyTransmog     = false,
-    legacyAccountWide  = false,
-    showReminder       = true,
-    readyCheckReminder = true,
-    lastReminderInstID = nil,
-    durabilityWarning    = true,
-    expansionFilterAH    = false,
-    vaultCurrencyDisplay = true,
-    instanceJoinReminder = false,
-    joinReminderKeyAddon = "bigwigs", -- "none" | "bigwigs" | "details" | "teleport" – mutually exclusive
-    premadeKeyAddon      = "none",    -- "none" | "bigwigs" | "details" – separate choice for manually formed (premade) groups; teleport reminder not offered here (no LFG activity to resolve the exact dungeon)
-    lfgQuickCreate       = false,
-    lfgAutoPlaystyle     = false,
-    lfgDefaultPlaystyle  = 0,
-    hideOmniumfoliantMinimap = false,
-    vaultButtonCharFrame     = false,
-    hideMapActivityTracker   = false,
-    hideCraftingOutputLog    = false,
-    paragonAlert             = false,
-    greatVaultAlert          = false,
-    talentFontSize     = 20,
-    autoLogEnabled       = false,
-    autoLogScenario      = false,
-    autoLogMythicDungeon = false,
-    autoLogRaidMythic    = true,
-    autoLogRaidHeroic    = true,
-    autoLogRaidNormal    = false,
-    autoLogRaidLFR       = false,
-    autoLogDelve         = false,
-    autoLogArena         = false,
-    autoLogChatNotify    = true,
-    debug              = false,
-    whatsNewSeen       = "",
-    vendorFilterEnabled = false,
-    vendorFilterAlpha   = 0.35,
-    confirmRoll         = { need = false, greed = false, transmog = false, pass = false },
+    profile = {
+        delay              = 5,
+        hideInRaidBuckets  = { lfr = false, normal = false, heroic = false, mythic = false },
+        rollTimeout        = 60,
+        lootFrameAutoCloseDisabled = false,
+        legacy             = false,
+        legacyNeed         = false,
+        legacyGreed        = false,
+        legacyTransmog     = false,
+        showReminder       = false,
+        readyCheckReminder = false,
+        lastReminderInstID = nil,
+        lastAdvLogReminderInstID = nil,
+        durabilityWarning    = false,
+        expansionFilterAH    = false,
+        vaultCurrencyDisplay = false,
+        instanceJoinReminder = false,
+        autoAcceptInvite     = false,
+        joinReminderKeyAddon = "none",    -- "none" | "bigwigs" | "details" | "teleport" – mutually exclusive
+        premadeKeyAddon      = "none",    -- "none" | "bigwigs" | "details" – separate choice for manually formed (premade) groups; teleport reminder not offered here (no LFG activity to resolve the exact dungeon)
+        lfgQuickCreate       = false,
+        lfgAutoPlaystyle     = false,
+        lfgDefaultPlaystyle  = 0,
+        hideOmniumfoliantMinimap = false,
+        vaultButtonCharFrame     = false,
+        hideMapActivityTracker   = false,
+        hideCraftingOutputLog    = false,
+        paragonAlert             = false,
+        greatVaultAlert          = false,
+        talentFontSize     = 20,
+        autoLogEnabled       = false,
+        autoLogScenario      = false,
+        autoLogMythicDungeon = false,
+        autoLogRaidMythic    = false,
+        autoLogRaidHeroic    = false,
+        autoLogRaidNormal    = false,
+        autoLogRaidLFR       = false,
+        autoLogDelve         = false,
+        autoLogArena         = false,
+        autoLogChatNotify    = false,
+        advLogReminderEnabled = false,
+        debug              = false,
+        whatsNewSeen       = "",
+        vendorFilterEnabled = false,
+        vendorFilterAlpha   = 0.35,
+        confirmRoll         = { need = false, greed = false, transmog = false, pass = false },
+    },
+    global = {
+        -- The one setting that stays account-wide on purpose: whether legacy
+        -- raid roll selections are shared across all characters/profiles.
+        legacyAccountWide = false,
+        legacy_raids      = {},
+    },
 }
 
 RA.defaultsChar = {
@@ -181,237 +199,124 @@ RA.defaultsChar = {
     prey         = false,
 }
 
--- Active Legacy Raids table: account-wide or per-character.
+-- Active Legacy Raids table: account-wide (RA.db.global) or per-character.
 local function GetLegacyRaidsDB()
-    if RollAwayDB and RollAwayDB.legacyAccountWide then
-        return RollAwayDB.legacy_raids
+    if RA.db and RA.db.global.legacyAccountWide then
+        return RA.db.global.legacy_raids
     end
     return RollAwayDBChar and RollAwayDBChar.legacy_raids
 end
 RA.GetLegacyRaidsDB = GetLegacyRaidsDB
 
 ------------------------------------------------------------------------
--- Utility functions
+-- Profile migration (3.0.1): pre-3.0.1 RollAwayDB was a single flat,
+-- account-wide table. 3.0.1 switches to AceDB-3.0 profiles, character-
+-- specific by default, so every character now starts on a blank Default
+-- profile. On each character's first login after the update we offer to
+-- carry the old (already-customized) values over instead, or start that
+-- character fresh on defaults - see RA_L["profile_migration_popup_text"].
+-- (DeepCopy helper lives in Helpers.lua, shared with other modules.)
 ------------------------------------------------------------------------
-
--- StaticPopup names – shared by AutoRoll.lua and RollConfirm.lua to close
--- Blizzard's own BoP roll-confirmation popup after we've handled it ourselves.
-local STATIC_POPUPS = {}
-for i = 1, 10 do STATIC_POPUPS[i] = "StaticPopup"..i end
-RA.STATIC_POPUPS = STATIC_POPUPS
-
--- Closes any shown native loot-roll/confirm-roll popup. Used right after we
--- programmatically roll or confirm a roll, so Blizzard's own popup for the
--- same action doesn't linger on screen.
-local function CloseLootRollPopups(debugTag)
-    for i = 1, 10 do
-        local popup = _G[STATIC_POPUPS[i]]
-        if popup and popup:IsShown() then
-            local which = popup.which or ""
-            if which:find("LOOT_ROLL") or which:find("CONFIRM_ROLL") then
-                popup:Hide()
-                DBG(debugTag or "[Core]", "Closed popup:", which)
-            end
+function RA.RunProfileMigration(legacyFlatSV)
+    -- The two settings that moved to RA.db.global are applied once ever,
+    -- account-wide, regardless of what each character chooses below.
+    if legacyFlatSV and not RA.db.global.legacyMigrated then
+        if legacyFlatSV.legacyAccountWide ~= nil then
+            RA.db.global.legacyAccountWide = legacyFlatSV.legacyAccountWide
         end
-    end
-end
-RA.CloseLootRollPopups = CloseLootRollPopups
-
-local function SafeCancelTimer(timer)
-    if timer and type(timer) == "table" and timer.Cancel then
-        pcall(timer.Cancel, timer)
-    end
-end
-RA.SafeCancelTimer = SafeCancelTimer
-
--- Standard left-click-drag behavior for RollAway popups.
-function RA.MakeDraggable(frame)
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
-end
-
--- Runs fn() immediately, unless we're in combat (protected/secure API calls
--- like Settings.OpenToCategory are blocked during combat lockdown). In that
--- case fn is queued and runs automatically on the next PLAYER_REGEN_ENABLED.
--- Only one action can be queued at a time; a newer call replaces the older one.
-function RA.RunProtectedOrQueue(fn)
-    if InCombatLockdown() then
-        RA.pendingProtectedAction = fn
-        print("|cff33ff99RollAway:|r " .. RA_L["combat_action_queued"])
-        return false
-    end
-    fn()
-    return true
-end
-
--- Countdown StatusBar for auto-hide popups. Returns { bar, barText, Start, Stop }.
-function RA.CreateTimerBar(parent, onExpire)
-    local bar = CreateFrame("StatusBar", nil, parent)
-    bar:SetPoint("BOTTOMLEFT",  parent, "BOTTOMLEFT",  8, 6)
-    bar:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -8, 6)
-    bar:SetHeight(8)
-    bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    bar:SetStatusBarColor(0.8, 0.7, 0.1, 0.9)
-
-    local barBg = bar:CreateTexture(nil, "BACKGROUND")
-    barBg:SetAllPoints(bar)
-    barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    barBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
-
-    local barText = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    barText:SetPoint("RIGHT", bar, "RIGHT", -2, 0)
-    barText:SetTextColor(1, 1, 1, 0.9)
-
-    local lastShownSecond = -1
-
-    local function Stop()
-        bar:SetScript("OnUpdate", nil)
-        lastShownSecond = -1
-    end
-
-    local function Start(duration)
-        Stop()
-        local elapsed = 0
-        bar:SetMinMaxValues(0, duration)
-        bar:SetValue(duration)
-        lastShownSecond = duration
-        barText:SetText(duration)
-
-        bar:SetScript("OnUpdate", function(_, dt)
-            elapsed = elapsed + dt
-            local remaining = duration - elapsed
-            if remaining <= 0 then
-                Stop()
-                if onExpire then onExpire() end
-                return
-            end
-            bar:SetValue(remaining)
-            local ceiled = math.ceil(remaining)
-            if ceiled ~= lastShownSecond then
-                lastShownSecond = ceiled
-                barText:SetText(ceiled)
-            end
-        end)
-    end
-
-    return { bar = bar, barText = barText, Start = Start, Stop = Stop }
-end
-
-------------------------------------------------------------------------
--- Shared popup-notification frame factory - Reminder.lua, Paragon.lua and
--- GreatVault.lua each show a small backdrop popup at the top of the screen
--- with the same chrome: draggable, ESC-closable, gold "RollAway" title next
--- to the addon icon, a countdown bar, and an "Okay" button that hides the
--- frame. This factory builds exactly that shared chrome; callers add their
--- own content (message text, rows, extra buttons) and are still responsible
--- for the OnShow height calc and starting/stopping the returned timer,
--- since those differ per popup.
---
--- opts:
---   name      - global frame name (also used for the ESC-close registration)
---   okayName  - global name for the "Okay" button
---   width, height - initial SetSize (height is typically recalculated by
---                   the caller's OnShow once content is laid out)
---   yOffset   - initial TOP anchor Y offset below UIParent's TOP
---
--- Returns the frame with these extra fields already set up:
---   .iconHolder, .icon, .titleText - header chrome
---   .okayBtn                       - bottom-right button, wired to Hide()
---   .bar, .barText, .timer         - from RA.CreateTimerBar (timer = {Start, Stop})
--- Global frame/button names are kept explicit (not derived) so ElvUI_Skin.lua's
--- _G[...] lookups for these frames keep working unchanged.
-------------------------------------------------------------------------
-function RA.CreatePopupFrame(opts)
-    local frame = CreateFrame("Frame", opts.name, UIParent, "BackdropTemplate")
-    frame:SetSize(opts.width, opts.height)
-    frame:SetPoint("TOP", UIParent, "TOP", 0, opts.yOffset)
-    frame:SetFrameStrata("HIGH")
-    frame:SetClampedToScreen(true)
-    RA.MakeDraggable(frame)
-    frame:Hide()
-
-    -- ESC closes the frame
-    tinsert(UISpecialFrames, opts.name)
-
-    frame:SetBackdrop({
-        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 },
-    })
-    frame:SetBackdropColor(0.05, 0.05, 0.05, 0.95)
-    frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
-
-    -- Own holder frame to stay above ElvUI's backdrop child after skinning.
-    local iconHolder = CreateFrame("Frame", nil, frame)
-    iconHolder:SetSize(24, 24)
-    iconHolder:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -10)
-    frame.iconHolder = iconHolder
-
-    local icon = iconHolder:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints()
-    icon:SetTexture("Interface\\AddOns\\RollAway\\Media\\Icon")
-    frame.icon = icon
-
-    -- Title
-    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("LEFT", iconHolder, "RIGHT", 6, 0)
-    titleText:SetText("|cffD4AF37RollAway|r")
-    frame.titleText = titleText
-
-    -- Okay button (bottom right) - closes the popup
-    local okayBtn = CreateFrame("Button", opts.okayName, frame, "UIPanelButtonTemplate")
-    okayBtn:SetSize(80, 22)
-    okayBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 18)
-    okayBtn:SetText(RA.RA_L["reminder_okay"])
-    okayBtn:SetScript("OnClick", function() frame:Hide() end)
-    frame.okayBtn = okayBtn
-
-    -- Countdown status bar - caller starts/stops it (duration and OnShow/OnHide differ per popup).
-    local timer = RA.CreateTimerBar(frame, function() frame:Hide() end)
-    frame.bar     = timer.bar
-    frame.barText = timer.barText
-    frame.timer   = timer
-
-    return frame
-end
-
--- Simple Start()/Stop() one-shot timer for short-lived QoL popups.
-function RA.CreateOneShotTimer(seconds, callback)
-    local timer
-
-    local function Stop()
-        if timer then SafeCancelTimer(timer); timer = nil end
-    end
-
-    local function Start()
-        Stop()
-        if C_Timer_NewTimer then
-            timer = C_Timer_NewTimer(seconds, function()
-                timer = nil
-                callback()
-            end)
-        elseif C_Timer_After then
-            C_Timer_After(seconds, callback)
+        if type(legacyFlatSV.legacy_raids) == "table" then
+            RA.db.global.legacy_raids = RA.DeepCopy(legacyFlatSV.legacy_raids)
         end
+        RA.db.global.legacyMigrated = true
     end
 
-    return { Start = Start, Stop = Stop }
+    -- Already asked this character - nothing more to do.
+    if RollAwayDBChar.profileMigrationAsked then return end
+    RollAwayDBChar.profileMigrationAsked = true
+
+    -- Cache the first flat snapshot seen account-wide, so alts logging in
+    -- later still get the same offer even though the per-character
+    -- RollAwayDB alias has since moved on to point at their own profile.
+    if legacyFlatSV and next(legacyFlatSV) then
+        RA.db.global.legacyMigrationSnapshot = RA.db.global.legacyMigrationSnapshot or RA.DeepCopy(legacyFlatSV)
+    end
+
+    local snapshot = RA.db.global.legacyMigrationSnapshot
+    if type(snapshot) ~= "table" or not next(snapshot) then return end -- nothing to offer (fresh install)
+
+    StaticPopupDialogs["ROLLAWAY_PROFILE_MIGRATION"] = {
+        text          = RA_L["profile_migration_popup_text"],
+        button1       = RA_L["profile_migration_keep"],
+        button2       = RA_L["profile_migration_default"],
+        OnAccept      = function()
+            for k, v in pairs(snapshot) do
+                if RA.defaults.profile[k] ~= nil then
+                    RA.db.profile[k] = RA.DeepCopy(v)
+                end
+            end
+        end,
+        timeout       = 0,
+        whileDead     = true,
+        hideOnEscape  = false,
+        preferredIndex = 3,
+    }
+    -- Shown a few seconds after ADDON_LOADED instead of immediately: a
+    -- StaticPopup this early in the login sequence, before Blizzard's own
+    -- UI (guild frame included) has finished initializing, is a plausible
+    -- contributor to ADDON_ACTION_FORBIDDEN/IsUserOAuthed reports seen only
+    -- on a character's very first login. Cheap to try, can't make things
+    -- worse either way.
+    C_Timer.After(3, function()
+        StaticPopup_Show("ROLLAWAY_PROFILE_MIGRATION")
+    end)
 end
+
+------------------------------------------------------------------------
+-- Generic popup/timer/table utilities (MakeDraggable, CreatePopupFrame,
+-- CreateTimerBar, CreateOneShotTimer, SafeCancelTimer, DeepCopy, etc.)
+-- now live in Helpers.lua, loaded right after this file.
+------------------------------------------------------------------------
 
 local function UpdateInstanceCache()
-    local ok, instName, instType, diffID, _, _, _, _, instanceID = pcall(GetInstanceInfo)
+    local ok, _, instType, diffID, _, _, _, _, instanceID = pcall(GetInstanceInfo)
     RA.cachedInstanceType = (ok and instType)   or "none"
     RA.cachedInstanceID   = (ok and instanceID) or 0
     RA.cachedDiffID       = (ok and diffID)     or 0
-    DBG("Instance:", (ok and instName) or "?", "| Type:", RA.cachedInstanceType, "| ID:", RA.cachedInstanceID, "| Diff:", RA.cachedDiffID)
 end
 RA.UpdateInstanceCache = UpdateInstanceCache
 
--- Full GetInstanceInfo dump – only called on zone change or via /rawtest.
+-- Compact, single-line zone-change summary: instance identity + matched
+-- dungeon/delve + whether auto-pass would currently trigger. Replaces the
+-- old multi-line dump for normal use (raw field dump moved to /rawdump).
+local function LogInstanceSummary()
+    if not RollAwayDB or not RollAwayDB.debug then return end
+    local ok, instName = pcall(GetInstanceInfo)
+    local id = RA.cachedInstanceID
+
+    local matchLabel = "no match"
+    if id ~= 0 then
+        local dungKey  = DUNGEON_MAP[id]
+        local delveKey = DELVE_MAP[id]
+        if dungKey then
+            matchLabel = "Dungeon: " .. RA_L["dungeon_"..dungKey]
+        elseif delveKey then
+            matchLabel = "Delve: " .. RA_L["delve_"..delveKey]
+        end
+    end
+
+    local shouldPass, reason = false, nil
+    if RA.ComputeAutoPassState then
+        shouldPass, reason = RA.ComputeAutoPassState()
+    end
+    local passLabel = shouldPass and ("yes (" .. tostring(reason) .. ")") or "no"
+
+    DBG(string.format("Instance: %s | Type: %s | ID: %d | Diff: %d | %s | Auto-pass: %s",
+        (ok and instName) or "?", RA.cachedInstanceType, id, RA.cachedDiffID, matchLabel, passLabel))
+end
+RA.LogInstanceSummary = LogInstanceSummary
+
+-- Raw GetInstanceInfo field dump – manual use only via /rawdump. The
+-- matched-content + auto-pass summary lives in LogInstanceSummary above.
 local function DebugInstanceDump()
     if not RollAwayDB or not RollAwayDB.debug then return end
     local ok, instName, instType, diffID, diffName, maxPlayers, dynDiff, isDynamic, instanceID, groupSize, lfgID = pcall(GetInstanceInfo)
@@ -432,29 +337,9 @@ local function DebugInstanceDump()
     DBG("  lfgDungeonID=", tostring(lfgID))
     DBG("  cmID (live) =", tostring(C_ChallengeMode and C_ChallengeMode.GetActiveChallengeMapID()))
     DBG("----------------------------")
-    local id = instanceID or 0
-    if id ~= 0 then
-        local dungKey  = DUNGEON_MAP[id]
-        local delveKey = DELVE_MAP[id]
-        if dungKey then
-            DBG("-> Dungeon matched:", RA_L["dungeon_"..dungKey])
-            local entry = DUNGEON_ENTRY_MAP[id]
-            DBG("->   cmID =", entry and tostring(entry.cmID)  or "n/a")
-            DBG("->   lfgID=", entry and tostring(entry.lfgID) or "n/a")
-            DBG("-> Auto-pass:", tostring(RollAwayDBChar and RollAwayDBChar.dungeons and RollAwayDBChar.dungeons[dungKey]))
-        elseif delveKey then
-            DBG("-> Delve matched:", RA_L["delve_"..delveKey])
-            DBG("-> Auto-pass:", tostring(RollAwayDBChar and RollAwayDBChar.delves and RollAwayDBChar.delves[delveKey]))
-        else
-            DBG("-> No Season 1 dungeon/delve (ID:", id, ")")
-        end
-    end
-    if RA.lastEncounterID ~= 0 then
-        local bossKey = RAID_ENCOUNTER_MAP[RA.lastEncounterID]
-        if bossKey then
-            DBG("-> Raid boss:", RA_L["boss_"..bossKey])
-            DBG("-> Auto-pass:", tostring(RollAwayDBChar and RollAwayDBChar.raids and RollAwayDBChar.raids[bossKey]))
-        end
+    local entry = instanceID and DUNGEON_ENTRY_MAP[instanceID]
+    if entry then
+        DBG("-> Dungeon entry | cmID:", tostring(entry.cmID), "| lfgID:", tostring(entry.lfgID))
     end
 end
 RA.DebugInstanceDump = DebugInstanceDump
@@ -495,7 +380,7 @@ RA.HideHistoryFrame = HideHistoryFrame
 local function CancelAllRollTimers()
     for rollID, t in pairs(RA.rollTimers) do
         DBG("Watchdog cancelled:", rollID)
-        SafeCancelTimer(t)
+        RA.SafeCancelTimer(t)
     end
     wipe(RA.rollTimers)
 end
@@ -505,11 +390,26 @@ RA.CancelAllRollTimers = CancelAllRollTimers
 local function ResetState(reason)
     DBG("ResetState:", reason)
     CancelAllRollTimers()
-    if RA.closeTimer then SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
+    if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
     wipe(RA.activeRolls)
     RA.lastEncounterID = 0
 end
 RA.ResetState = ResetState
+
+-- Debug-log section divider: a call more than 3s after the previous one
+-- starts a new section. Time-gap based rather than tied to a fixed event
+-- name, since e.g. Delves only fire ZONE_CHANGED_NEW_AREA and never
+-- PLAYER_ENTERING_WORLD, while a normal instance entry fires both ~1s
+-- apart and should stay one section. Called from zone-change and
+-- group-leave/join handling (see Core.lua and Debug.lua's event logger).
+local function NoteDebugLogSectionEvent()
+    local now = GetTime()
+    if RA.AppendDebugLogSeparator and (not RA.lastZoneEventTime or (now - RA.lastZoneEventTime) > 3) then
+        RA.AppendDebugLogSeparator()
+    end
+    RA.lastZoneEventTime = now
+end
+RA.NoteDebugLogSectionEvent = NoteDebugLogSectionEvent
 
 -- Full reset including hiding the loot history frame (group/raid leave only).
 local function FullReset(reason)
@@ -590,7 +490,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         RA.activeRolls[arg1] = true
 
-        if RA.closeTimer then SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
+        if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
 
         -- Watchdog: force-closes frame if LOOT_ROLLS_COMPLETE never fires cleanly.
         -- Skipped entirely if the whole auto-close feature is disabled in Options.
@@ -625,14 +525,14 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         -- Remove the completed roll and its watchdog.
         RA.activeRolls[arg1] = nil
-        SafeCancelTimer(RA.rollTimers[arg1])
+        RA.SafeCancelTimer(RA.rollTimers[arg1])
         RA.rollTimers[arg1] = nil
 
         -- Clean up stale rolls with no valid item link (concurrent rolls only).
         if next(RA.activeRolls) then
             for rollID in pairs(RA.activeRolls) do
                 if not GetLootRollItemLink(rollID) then
-                    SafeCancelTimer(RA.rollTimers[rollID])
+                    RA.SafeCancelTimer(RA.rollTimers[rollID])
                     RA.rollTimers[rollID] = nil
                     RA.activeRolls[rollID] = nil
                 end
@@ -672,48 +572,87 @@ f:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
         if not RA.initialized then return end  -- wait for ADDON_LOADED
+        NoteDebugLogSectionEvent()
         UpdateInstanceCache()
         ResetState(event)
         RA.lastLegacyEncounterID = 0
         -- Note: lastReminderInstID is only reset on GROUP_LEFT (see Reminder.lua)
-        DBG("Zone changed: instanceType=", RA.cachedInstanceType, "instanceID=", RA.cachedInstanceID)
-        DebugInstanceDump()
+        LogInstanceSummary()
         if ShouldHideInInstance() then HideHistoryFrame() end
-        C_Timer_After(2, function()
+        -- PLAYER_ENTERING_WORLD and ZONE_CHANGED_NEW_AREA both fire for a
+        -- single actual zone change; cancel any pending timer from the
+        -- other one so ShowReminder only runs once, not twice ~1s apart.
+        -- A token guard backs up the cancel call: cancelling a timer that
+        -- is already about to fire can still let its callback through, so
+        -- the callback also checks it's still the most recent request.
+        if RA.reminderShowTimer then RA.SafeCancelTimer(RA.reminderShowTimer) end
+        RA.reminderShowToken = (RA.reminderShowToken or 0) + 1
+        local myReminderToken = RA.reminderShowToken
+        local function FireReminder()
+            RA.reminderShowTimer = nil
+            if RA.reminderShowToken ~= myReminderToken then return end  -- superseded
             if RA.ShowReminder then RA.ShowReminder() end
-        end)
+        end
+        if C_Timer_NewTimer then
+            RA.reminderShowTimer = C_Timer_NewTimer(2, FireReminder)
+        elseif C_Timer_After then
+            C_Timer_After(2, FireReminder)
+        end
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then
 
-        _G.RollAwayDB = _G.RollAwayDB or {}
-        RollAwayDB = _G.RollAwayDB
+        -- Capture the pre-3.0.1 flat, account-wide RollAwayDB *before* AceDB
+        -- touches anything. Nil on a fresh install / already-migrated account.
+        local legacyFlatSV = _G.RollAwayDB
 
-        -- Migration (pre-2.6.3): joinReminderBigWigs (boolean) -> joinReminderKeyAddon (string).
-        if RollAwayDB.joinReminderKeyAddon == nil and RollAwayDB.joinReminderBigWigs ~= nil then
-            RollAwayDB.joinReminderKeyAddon = RollAwayDB.joinReminderBigWigs and "bigwigs" or "none"
-        end
-        RollAwayDB.joinReminderBigWigs = nil
+        if legacyFlatSV then
+            -- Historical migrations, run once on the raw flat snapshot so a
+            -- user jumping straight from a much older version still lands on
+            -- correct values if they choose "keep old settings" below.
 
-        -- Migration (pre-3.0.0): premadeKeyAddon didn't exist yet - default it
-        -- from the old single joinReminderKeyAddon so users who already had
-        -- BigWigs/Details working for premade groups keep that behavior.
-        -- "teleport" isn't carried over: it can't resolve a specific dungeon
-        -- for a manually formed group, so it wasn't useful there anyway.
-        if RollAwayDB.premadeKeyAddon == nil then
-            local old = RollAwayDB.joinReminderKeyAddon
-            RollAwayDB.premadeKeyAddon = (old == "bigwigs" or old == "details") and old or "none"
+            -- Migration (pre-2.6.3): joinReminderBigWigs (boolean) -> joinReminderKeyAddon (string).
+            if legacyFlatSV.joinReminderKeyAddon == nil and legacyFlatSV.joinReminderBigWigs ~= nil then
+                legacyFlatSV.joinReminderKeyAddon = legacyFlatSV.joinReminderBigWigs and "bigwigs" or "none"
+            end
+            legacyFlatSV.joinReminderBigWigs = nil
+
+            -- Migration (pre-3.0.0): premadeKeyAddon didn't exist yet - default it
+            -- from the old single joinReminderKeyAddon so users who already had
+            -- BigWigs/Details working for premade groups keep that behavior.
+            -- "teleport" isn't carried over: it can't resolve a specific dungeon
+            -- for a manually formed group, so it wasn't useful there anyway.
+            if legacyFlatSV.premadeKeyAddon == nil then
+                local old = legacyFlatSV.joinReminderKeyAddon
+                legacyFlatSV.premadeKeyAddon = (old == "bigwigs" or old == "details") and old or "none"
+            end
+
+            -- Migration (pre-2.9.0): hideInRaid (single bool) -> hideInRaidBuckets (per-difficulty).
+            if legacyFlatSV.hideInRaidBuckets == nil and legacyFlatSV.hideInRaid ~= nil then
+                local v = legacyFlatSV.hideInRaid
+                legacyFlatSV.hideInRaidBuckets = { lfr = v, normal = v, heroic = v, mythic = v }
+            end
+            legacyFlatSV.hideInRaid = nil
         end
 
-        -- Migration (pre-2.9.0): hideInRaid (single bool) -> hideInRaidBuckets (per-difficulty).
-        if RollAwayDB.hideInRaidBuckets == nil and RollAwayDB.hideInRaid ~= nil then
-            local v = RollAwayDB.hideInRaid
-            RollAwayDB.hideInRaidBuckets = { lfr = v, normal = v, heroic = v, mythic = v }
-        end
-        RollAwayDB.hideInRaid = nil
+        -- AceDB-3.0: RollAwayDBAccount holds one profile per character (by
+        -- default) plus a "global" namespace for the one setting that must
+        -- stay truly account-wide (legacyAccountWide / its shared table).
+        -- No 3rd arg: each character gets its own default profile (e.g. the
+        -- ElvUI-style "Name - Realm"). Passing "true" here would instead give
+        -- everyone a single shared "Default" profile - not what we want.
+        RA.db = LibStub("AceDB-3.0"):New("RollAwayDBAccount", RA.defaults)
 
-        for k, v in pairs(RA.defaults) do
-            if RollAwayDB[k] == nil then RollAwayDB[k] = v end
+        -- Backward-compat alias: every other module still reads/writes
+        -- "RollAwayDB.foo" directly. Point that name at the active profile
+        -- and keep it in sync whenever the profile is switched/copied/reset.
+        local function SyncCompatAlias()
+            RollAwayDB = RA.db.profile
+            _G.RollAwayDB = RA.db.profile
         end
+        SyncCompatAlias()
+        RA.db.RegisterCallback(RA, "OnProfileChanged", SyncCompatAlias)
+        RA.db.RegisterCallback(RA, "OnProfileCopied",  SyncCompatAlias)
+        RA.db.RegisterCallback(RA, "OnProfileReset",   SyncCompatAlias)
 
         _G.RollAwayDBChar = _G.RollAwayDBChar or {}
         RollAwayDBChar = _G.RollAwayDBChar
@@ -759,11 +698,11 @@ f:SetScript("OnEvent", function(_, event, ...)
             end
         end
 
-        -- Account-wide mirror of legacy_raids (used when legacyAccountWide is enabled).
-        if type(RollAwayDB.legacy_raids) ~= "table" then RollAwayDB.legacy_raids = {} end
+        -- Account-wide (true global) mirror of legacy_raids, used when
+        -- RA.db.global.legacyAccountWide is enabled.
         for _, b in ipairs(SEASON1_LEGACY_RAIDS) do
-            if RollAwayDB.legacy_raids[b.raid] == nil then
-                RollAwayDB.legacy_raids[b.raid] = false
+            if RA.db.global.legacy_raids[b.raid] == nil then
+                RA.db.global.legacy_raids[b.raid] = false
             end
         end
 
@@ -773,13 +712,8 @@ f:SetScript("OnEvent", function(_, event, ...)
             RollAwayDBChar.raidAutoPassDifficulty = { lfr = false, normal = false, heroic = false, mythic = false }
         end
 
-        if type(RollAwayDB.confirmRoll) ~= "table" then
-            RollAwayDB.confirmRoll = { need = false, greed = false, transmog = false, pass = false }
-        else
-            for _, k in ipairs({ "need", "greed", "transmog", "pass" }) do
-                if RollAwayDB.confirmRoll[k] == nil then RollAwayDB.confirmRoll[k] = false end
-            end
-        end
+        -- One-time-per-character migration popup from the pre-3.0.1 flat DB.
+        RA.RunProfileMigration(legacyFlatSV)
 
         -- Sort dungeons and delves alphabetically by localized name.
         table.sort(SEASON1_DUNGEONS, function(a, b)
