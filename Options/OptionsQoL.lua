@@ -136,7 +136,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     local filterPanel,   filter   = CreateQolCategoryPanel("Filter",   430, false)
     local lfgPanel,      lfg      = CreateQolCategoryPanel("Lfg",      260, true)
     local logsPanel,     logs     = CreateQolCategoryPanel("Logs",     380, true)
-    local miscPanel,     misc     = CreateQolCategoryPanel("Misc",     120, true)
+    local miscPanel,     misc     = CreateQolCategoryPanel("Misc",     200, true)
     local reminderPanel, reminder = CreateQolCategoryPanel("Reminder", 660, true)
 
     qolCatPanels.filter   = filterPanel
@@ -161,6 +161,42 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     qolAutoAcceptInfo:SetWidth(400); qolAutoAcceptInfo:SetJustifyH("LEFT")
     qolAutoAcceptInfo:SetTextColor(0.6, 0.6, 0.6, 1)
     qolAutoAcceptInfo:SetText(RA_L["qol_autoaccept_info"])
+
+    -- Auto Repair (dropdown: None / Player / Guild) - same Default-UI-only
+    -- reasoning as Auto-Accept above.
+    local qolAutoRepairLabel = misc:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    qolAutoRepairLabel:SetPoint("TOPLEFT", qolAutoAcceptInfo, "BOTTOMLEFT", -20, -14)
+    qolAutoRepairLabel:SetText(RA_L["qol_autorepair_label"])
+
+    local AUTOREPAIR_LIST  = {
+        ["none"]   = RA_L["qol_autorepair_none"],
+        ["player"] = RA_L["qol_autorepair_player"],
+        ["guild"]  = RA_L["qol_autorepair_guild"],
+    }
+    local AUTOREPAIR_ORDER = { "none", "player", "guild" }
+
+    local autoRepairDD
+    if AceGUI then
+        autoRepairDD = AceGUI:Create("Dropdown")
+        autoRepairDD:SetLabel("")
+        autoRepairDD:SetList(AUTOREPAIR_LIST, AUTOREPAIR_ORDER)
+        autoRepairDD:SetValue(RollAwayDB.autoRepairMode or "none")
+        autoRepairDD:SetWidth(160)
+        autoRepairDD:SetCallback("OnValueChanged", function(_, _, value)
+            RollAwayDB.autoRepairMode = value
+        end)
+        autoRepairDD.frame:SetParent(misc)
+        autoRepairDD.frame:ClearAllPoints()
+        autoRepairDD.frame:SetPoint("TOPLEFT", qolAutoRepairLabel, "BOTTOMLEFT", 0, -4)
+        autoRepairDD.frame:Show()
+        if ElvUI then autoRepairDD:SetDisabled(true) end
+    end
+
+    local qolAutoRepairInfo = misc:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    qolAutoRepairInfo:SetPoint("TOPLEFT", autoRepairDD and autoRepairDD.frame or qolAutoRepairLabel, "BOTTOMLEFT", 20, -6)
+    qolAutoRepairInfo:SetWidth(400); qolAutoRepairInfo:SetJustifyH("LEFT")
+    qolAutoRepairInfo:SetTextColor(0.6, 0.6, 0.6, 1)
+    qolAutoRepairInfo:SetText(RA_L["qol_autorepair_info"])
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
 

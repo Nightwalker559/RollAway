@@ -117,31 +117,37 @@ function RA.InitOptions()
         end
     end
 
-    -- Bonus Roll tabs: hidden when Bonus Rolls are disabled for the current season
+    -- Bonus Roll tabs: hidden when Bonus Rolls are disabled for the current
+    -- season, or when the current character is below max level (Bonus Rolls
+    -- only exist at max level, so the auto-pass config is meaningless
+    -- otherwise). Dev/test characters only bypass the level check with
+    -- debug mode on - otherwise they're gated like everyone else. Since the
+    -- debug checkbox is toggled live (no reload), these tabs are wired into
+    -- the same DevOnlyTabButtons/SeasonTabReflows registries the season
+    -- sub-tabs (OptionsHelpers.lua MakeSeasonTabs) use for their own
+    -- debug-gated tabs, so toggling debug updates them immediately too.
     local BONUS_ROLL_TABS = { dungeons = true, raids = true, delves = true, prey = true }
+    local isDevChar = RA.DEV_CHARS and RA.DEV_CHARS[UnitName("player")]
+    local devOverride = isDevChar and RollAwayDB and RollAwayDB.debug
+    local belowMaxLevel = not devOverride and not (RA.IsMaxLevel and RA.IsMaxLevel())
+    -- Only a dev char who is currently below max level needs live debug
+    -- toggling; a dev char at max level always sees the tabs regardless of
+    -- debug, so it must never be forced hidden by SetShown(RollAwayDB.debug).
+    local devLiveGate = isDevChar and RA.BONUS_ROLLS_ENABLED and not (RA.IsMaxLevel and RA.IsMaxLevel())
 
     -- Tab buttons
-    local prevBtn = nil
+    local TAB_GAP = 4
+    local tabButtonOrder = {}
     for _, def in ipairs(tabDefs) do
         local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
         btn:SetSize(90, 26)
         btn:SetText(def.label)
+        tabButtonOrder[#tabButtonOrder + 1] = btn
 
-        -- Hide bonus roll tabs when disabled
-        local hidden = BONUS_ROLL_TABS[def.key] and not RA.BONUS_ROLLS_ENABLED
+        -- Hide bonus roll tabs when disabled or below max level
+        local hidden = BONUS_ROLL_TABS[def.key] and (not RA.BONUS_ROLLS_ENABLED or belowMaxLevel)
+        if hidden then btn:Hide() end
 
-        if not hidden then
-            if prevBtn then
-                btn:SetPoint("LEFT", prevBtn, "RIGHT", 4, 0)
-            else
-                btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
-            end
-            prevBtn = btn
-        else
-            -- Still anchor (off-screen doesn't matter) but hide
-            btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
-            btn:Hide()
-        end
         local capturedKey = def.key
         btn:SetScript("OnClick", function() ShowTab(capturedKey) end)
 
@@ -149,7 +155,51 @@ function RA.InitOptions()
             RA.ElvSkinTab(btn, tabPanels, capturedKey, classColor)
         end
         tabButtons[def.key] = btn
+
+        if BONUS_ROLL_TABS[def.key] and devLiveGate then
+            RA.DevOnlyTabButtons = RA.DevOnlyTabButtons or {}
+            table.insert(RA.DevOnlyTabButtons, btn)
+        end
     end
+
+    -- Re-anchors visible top-level tabs left-to-right, closing gaps from
+    -- hidden ones. Re-run after the debug checkbox shows/hides dev-gated
+    -- tabs so the row doesn't leave a blank gap or overlap.
+    local function ReflowTopTabButtons()
+        local prevVisible = nil
+        for _, btn in ipairs(tabButtonOrder) do
+            if btn:IsShown() then
+                btn:ClearAllPoints()
+                if prevVisible then
+                    btn:SetPoint("LEFT", prevVisible, "RIGHT", TAB_GAP, 0)
+                else
+                    btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
+                end
+                prevVisible = btn
+            else
+                btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
+            end
+        end
+    end
+    ReflowTopTabButtons()
+
+    RA.SeasonTabReflows = RA.SeasonTabReflows or {}
+    table.insert(RA.SeasonTabReflows, ReflowTopTabButtons)
+
+    -- Falls back to the General tab if debug turns off while a now-hidden
+    -- bonus-roll tab is active (mirrors EnsureValidSeasonSelected below).
+    local function EnsureValidTopTabSelected()
+        if not devLiveGate then return end
+        if RollAwayDB and RollAwayDB.debug then return end
+        for key in pairs(BONUS_ROLL_TABS) do
+            if tabPanels[key]:IsShown() then
+                ShowTab("general")
+                return
+            end
+        end
+    end
+    RA.SeasonTabDebugChecks = RA.SeasonTabDebugChecks or {}
+    table.insert(RA.SeasonTabDebugChecks, EnsureValidTopTabSelected)
 
     ------------------------------------------------------------
     -- Tab: General – wrapped in a ScrollFrame so content never clips
@@ -347,8 +397,11 @@ function RA.InitOptions()
     reminderInfo:SetTextColor(0.6, 0.6, 0.6, 1)
     reminderInfo:SetText(RA_L["reminder_info"])
 
-    -- Hide reminder option when Bonus Rolls are disabled
-    if not RA.BONUS_ROLLS_ENABLED then
+    -- Hide reminder option when Bonus Rolls are disabled, or below max level
+    -- (Bonus Roll reminder is meaningless before max level; same gating as
+    -- the Dungeons/Raids/Delves/Prey tabs above).
+    local showBonusRollReminder = RA.BONUS_ROLLS_ENABLED and not belowMaxLevel
+    if not showBonusRollReminder then
         reminderSectionLabel:Hide()
         cbReminder.frame:Hide()
         reminderInfo:Hide()
@@ -356,8 +409,15 @@ function RA.InitOptions()
 
     -- Row 3: Legacy
     local legacyLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    local legacyAnchor = RA.BONUS_ROLLS_ENABLED and reminderInfo or hideInfo
-    legacyLabel:SetPoint("TOPLEFT", legacyAnchor, "BOTTOMLEFT", -20, -14)
+    -- reminderInfo is indented +20 from the outer margin, so -20 undoes that
+    -- indent back to the margin; hideRow is already at the outer margin, so
+    -- it needs a plain 0 offset - reusing the same -20 here previously
+    -- pushed the label off the left edge of the scroll frame.
+    if showBonusRollReminder then
+        legacyLabel:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -14)
+    else
+        legacyLabel:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
+    end
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, function(checked)
@@ -385,6 +445,7 @@ function RA.InitOptions()
             if RA.SeasonTabButtons then
                 for _, b in ipairs(RA.SeasonTabButtons) do
                     if RollAwayDB.debug then b:Enable() else b:Disable() end
+                    if b.RA_Refresh then b.RA_Refresh() end
                 end
             end
             if RA.SeasonTabReflows then

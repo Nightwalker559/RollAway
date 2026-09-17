@@ -31,45 +31,65 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     btn:SetHighlightTexture("")
     btn:SetPushedTexture("")
     btn:SetDisabledTexture("")
-    -- ElvUI sometimes stores its highlight in btn.backdrop; reset to defaults.
-    if btn.backdrop then
+
+    -- Idle tabs get a background a shade lighter than the panel behind them
+    -- so they read as distinct buttons at rest, not just on hover/active.
+    local function GetIdleColors()
         local bg, bd = RA.GetElvUIColors()
-        btn.backdrop:SetBackdropColor(unpack(bg))
-        btn.backdrop:SetBackdropBorderColor(unpack(bd))
+        local idleBg = {
+            math.min((bg[1] or 0.1) + 0.08, 1),
+            math.min((bg[2] or 0.1) + 0.08, 1),
+            math.min((bg[3] or 0.1) + 0.08, 1),
+            bg[4] or 1,
+        }
+        return idleBg, bd
     end
 
     local function ResetBackdrop()
-        local bg, bd = RA.GetElvUIColors()
+        local idleBg, bd = GetIdleColors()
         if btn.SetBackdropColor then
-            btn:SetBackdropColor(unpack(bg))
+            btn:SetBackdropColor(unpack(idleBg))
             btn:SetBackdropBorderColor(unpack(bd))
         end
         if btn.backdrop then
-            btn.backdrop:SetBackdropColor(unpack(bg))
+            btn.backdrop:SetBackdropColor(unpack(idleBg))
             btn.backdrop:SetBackdropBorderColor(unpack(bd))
         end
     end
+    ResetBackdrop()
 
-    local function ApplyActive()
-        if not btn:IsMouseOver() then
+    local ApplyActive, ApplyInactive
+
+    ApplyActive = function()
+        -- Disabled tabs (season tabs while debug mode is off - see
+        -- OptionsHelpers.lua MakeSeasonTabs) never get the active tint/
+        -- border since they're not actually selectable, but they still
+        -- show which season is current via the gold text.
+        if btn.IsEnabled and not btn:IsEnabled() then
             ResetBackdrop()
-        else
-            if classColor then
-                if btn.SetBackdropColor then
-                    btn:SetBackdropColor(classColor.r, classColor.g, classColor.b, 1)
-                    btn:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b, 0)
-                end
-                if btn.backdrop then
-                    btn.backdrop:SetBackdropColor(classColor.r, classColor.g, classColor.b, 1)
-                    btn.backdrop:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b, 0)
-                end
+            local t = btn:GetFontString()
+            if t then t:SetTextColor(GOLD.r, GOLD.g, GOLD.b, 1) end
+            return
+        end
+        -- Always tinted while active, not only on hover; hover (below) then
+        -- brightens it further via full-alpha classColor.
+        if classColor then
+            if btn.SetBackdropColor then
+                btn:SetBackdropColor(classColor.r, classColor.g, classColor.b, btn:IsMouseOver() and 1 or 0.35)
+                btn:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b, 1)
             end
+            if btn.backdrop then
+                btn.backdrop:SetBackdropColor(classColor.r, classColor.g, classColor.b, btn:IsMouseOver() and 1 or 0.35)
+                btn.backdrop:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b, 1)
+            end
+        else
+            ResetBackdrop()
         end
         local t = btn:GetFontString()
         if t then t:SetTextColor(GOLD.r, GOLD.g, GOLD.b, 1) end
     end
 
-    local function ApplyInactive()
+    ApplyInactive = function()
         ResetBackdrop()
         local t = btn:GetFontString()
         if t then t:SetTextColor(GRAY.r, GRAY.g, GRAY.b, 1) end
@@ -78,8 +98,20 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     btn.RA_ApplyActive   = ApplyActive
     btn.RA_ApplyInactive = ApplyInactive
 
+    -- Re-applies the correct style for the tab's current active/inactive
+    -- state - used after Enable()/Disable() toggles (debug checkbox) where
+    -- nothing else would trigger a redraw until the next hover.
+    btn.RA_Refresh = function()
+        if tabPanels[key] and tabPanels[key]:IsShown() then
+            ApplyActive()
+        else
+            ApplyInactive()
+        end
+    end
+
     -- HookScript runs after ElvUI's own OnEnter, so our color wins.
     btn:HookScript("OnEnter", function(self)
+        if self.IsEnabled and not self:IsEnabled() then return end
         if classColor then
             if self.SetBackdropColor then
                 self:SetBackdropColor(classColor.r, classColor.g, classColor.b, 1)
@@ -95,11 +127,7 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     end)
 
     btn:HookScript("OnLeave", function(self)
-        if tabPanels[key] and tabPanels[key]:IsShown() then
-            ApplyActive()
-        else
-            ApplyInactive()
-        end
+        self.RA_Refresh()
     end)
 end
 

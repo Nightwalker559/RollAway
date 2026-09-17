@@ -14,6 +14,11 @@ local FEATURES = {
         description = RA_L["whatsnew_autoaccept_desc"],
         location    = RA_L["whatsnew_autoaccept_location"],
     },
+    {
+        title       = RA_L["whatsnew_autorepair_title"],
+        description = RA_L["whatsnew_autorepair_desc"],
+        location    = RA_L["whatsnew_autorepair_location"],
+    },
 }
 
 -- ============================================================

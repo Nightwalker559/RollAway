@@ -9,9 +9,14 @@
 -- inactive when ElvUI is loaded (avoids fighting ElvUI's own
 -- PARTY_INVITE_REQUEST handler / double-accepting the same invite).
 -- Setting: RollAwayDB.autoAcceptInvite
+--
+-- Auto Repair: repairs at any merchant, using player or guild funds. Same
+-- Default-UI-only reasoning as above - ElvUI has its own Auto Repair option.
+-- Setting: RollAwayDB.autoRepairMode ("none" | "player" | "guild")
 
-local RA  = _G["RollAway"]
-local DBG = RA.DBG
+local RA   = _G["RollAway"]
+local DBG  = RA.DBG
+local RA_L = RA.RA_L
 
 if ElvUI then return end
 
@@ -49,3 +54,41 @@ autoAcceptFrame:SetScript("OnEvent", function(_, _, _, _, _, _, _, _, inviterGUI
     HidePartyInvitePopup()
     DBG("[Misc] Auto-accepted invite from guild/friend")
 end)
+
+------------------------------------------------------------------------
+-- Auto Repair
+------------------------------------------------------------------------
+
+local function TryAutoRepair()
+    local mode = RollAwayDB and RollAwayDB.autoRepairMode
+    if not mode or mode == "none" then return end
+    if not CanMerchantRepair() then return end
+
+    local cost, canRepair = GetRepairAllCost()
+    if not canRepair or not cost or cost <= 0 then return end
+
+    if mode == "guild" and IsInGuild() and CanGuildBankRepair() then
+        local withdrawLimit = GetGuildBankWithdrawMoney()
+        local guildMoney    = GetGuildBankMoney()
+        local available = (withdrawLimit == -1) and guildMoney or math.min(withdrawLimit, guildMoney)
+        if available >= cost then
+            RepairAllItems(1)
+            print("|cff33ff99RollAway:|r " .. string.format(RA_L["qol_autorepair_msg_guild"], GetCoinTextureString(cost)))
+            DBG("[Misc] Auto-repaired via guild funds:", cost)
+            return
+        end
+        -- Guild funds insufficient - fall through to player funds below.
+    end
+
+    if GetMoney() >= cost then
+        RepairAllItems()
+        print("|cff33ff99RollAway:|r " .. string.format(RA_L["qol_autorepair_msg_player"], GetCoinTextureString(cost)))
+        DBG("[Misc] Auto-repaired via player funds:", cost)
+    else
+        DBG("[Misc] Auto-repair skipped - not enough gold:", cost)
+    end
+end
+
+local autoRepairFrame = CreateFrame("Frame")
+autoRepairFrame:RegisterEvent("MERCHANT_SHOW")
+autoRepairFrame:SetScript("OnEvent", TryAutoRepair)

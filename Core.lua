@@ -149,6 +149,7 @@ RA.defaults = {
         vaultCurrencyDisplay = false,
         instanceJoinReminder = false,
         autoAcceptInvite     = false,
+        autoRepairMode       = "none",   -- "none" | "player" | "guild"
         joinReminderKeyAddon = "none",    -- "none" | "bigwigs" | "details" | "teleport" – mutually exclusive
         premadeKeyAddon      = "none",    -- "none" | "bigwigs" | "details" – separate choice for manually formed (premade) groups; teleport reminder not offered here (no LFG activity to resolve the exact dungeon)
         lfgQuickCreate       = false,

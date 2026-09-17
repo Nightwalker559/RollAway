@@ -4,15 +4,24 @@
 
 ## 3.0.5
 
-### Added
-- QoL: option to auto-accept group invites from guild/friends (Default UI only; ElvUI has its own).
+### New
+- QoL: auto-accept group invites from guild/friends (Default UI only).
+- QoL: Auto Repair (None/Player/Guild) at any merchant (Default UI only).
+
+### Changed
+- Bonus Roll tabs/reminder now hidden below max level.
+- ElvUI skin: tabs now show distinct backgrounds at rest, not just on hover.
+- ElvUI skin: disabled season tabs keep gold text but lose active styling.
 
 ### Fixed
-- Teleport Reminder could silently fail to show after applying to a Group Finder listing - the browse cache entry could already be gone by the time the invite was accepted. Now falls back to a cached activity ID from the application.
-- Auto-accept invite: fixed `'for' limit must be a number` error - `STATICPOPUP_NUMDIALOGS` was removed in patch 11.2, so the invite popup never closed after auto-accepting.
+- Legacy section overlapped and then clipped raid-difficulty checkboxes.
+- Debug toggle on dev chars below max level now reveals tabs without `/reload`.
+- Teleport Reminder no longer fails after applying via Group Finder cache miss.
+- Auto-accept invite: fixed `for` limit error from removed `STATICPOPUP_NUMDIALOGS`.
+- Auto Repair info text now indented like other Misc options.
 
 ### Internal
-- Auto-accept invite moved to its own module (Modules\Misc.lua) with a new "Misc" settings tab, separate from Reminder.
+- Auto-accept invite moved to its own module (Misc.lua, new "Misc" tab).
 
 ## 3.0.4
 
