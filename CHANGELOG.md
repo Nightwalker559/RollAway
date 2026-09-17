@@ -12,6 +12,7 @@
 - Bonus Roll tabs/reminder now hidden below max level.
 - ElvUI skin: tabs now show distinct backgrounds at rest, not just on hover.
 - ElvUI skin: disabled season tabs keep gold text but lose active styling.
+- Profile tab now notes that Bonus Roll selections stay per-character, not per-profile.
 
 ### Fixed
 - Legacy section overlapped and then clipped raid-difficulty checkboxes.

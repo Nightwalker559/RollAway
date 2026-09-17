@@ -292,7 +292,7 @@ L["profile_migration_default"]    = "Reset to defaults"
 ------------------------------------------------------------------------
 L["profile_section_title"]     = "Profile"
 L["profile_panel_title"]       = "Profile"
-L["profile_panel_info"]        = "Settings are character-specific by default. Use profiles to share settings between characters, or keep separate setups per character/spec."
+L["profile_panel_info"]        = "Settings are character-specific by default. Use profiles to share settings between characters, or keep separate setups per character/spec. Bonus Roll selections (Dungeons/Raids/Delves/Prey) are always per-character, never part of a profile."
 L["profile_active_label"]      = "Active profile:"
 L["profile_other_label"]       = "Other profile:"
 L["profile_none_available"]    = "No other profiles"

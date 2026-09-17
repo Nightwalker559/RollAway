@@ -293,7 +293,7 @@ L["profile_migration_default"]    = "Auf Standard zurücksetzen"
 ------------------------------------------------------------------------
 L["profile_section_title"]     = "Profil"
 L["profile_panel_title"]       = "Profil"
-L["profile_panel_info"]        = "Einstellungen sind standardmäßig charakterspezifisch. Nutze Profile, um Einstellungen zwischen Charakteren zu teilen, oder behalte separate Setups pro Charakter/Spec."
+L["profile_panel_info"]        = "Einstellungen sind standardmäßig charakterspezifisch. Nutze Profile, um Einstellungen zwischen Charakteren zu teilen, oder behalte separate Setups pro Charakter/Spec. Bonus-Roll-Auswahlen (Dungeons/Raids/Delves/Prey) sind immer charakterspezifisch und nie Teil eines Profils."
 L["profile_active_label"]      = "Aktives Profil:"
 L["profile_other_label"]       = "Anderes Profil:"
 L["profile_new_button"]        = "Neu"
