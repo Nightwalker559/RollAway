@@ -20,6 +20,7 @@
 - Teleport Reminder no longer fails after applying via Group Finder cache miss.
 - Auto-accept invite: fixed `for` limit error from removed `STATICPOPUP_NUMDIALOGS`.
 - Auto Repair info text now indented like other Misc options.
+- BigWigs Keystones no longer wrongly opens on Timewalking/random queue pops.
 
 ### Internal
 - Auto-accept invite moved to its own module (Misc.lua, new "Misc" tab).

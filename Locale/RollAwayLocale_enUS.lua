@@ -366,18 +366,6 @@ L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 ------------------------------------------------------------------------
 -- What's New (3.0.1)
 ------------------------------------------------------------------------
-L["whatsnew_profiles_title"]       = "Character-Specific Profiles"
-L["whatsnew_profiles_desc"]        = "Settings are now per-character. Switch, create, copy-from, delete and reset profiles under Profile. New profiles start with everything disabled."
-L["whatsnew_profiles_location"]    = "Profile"
-L["whatsnew_premade_title"]        = "Premade Group Companion Addon"
-L["whatsnew_premade_desc"]         = "Choose BigWigs or Details! Keystones separately for manually formed (premade) groups, independent of the Group Finder setting."
-L["whatsnew_premade_location"]     = "QoL > Reminder"
-L["whatsnew_chonky_title"]         = "Chonky Character Sheet Support"
-L["whatsnew_chonky_desc"]          = "The Omnium and Great Vault buttons now show up correctly with Chonky Character Sheet installed."
-L["whatsnew_chonky_location"]      = "QoL > Filter"
-L["whatsnew_1215preview_title"]    = "Patch 12.1.5 Preview"
-L["whatsnew_1215preview_desc"]     = "Labyrinth of Kindo'jan and the Kith'ix raid are listed as \"coming soon\" ahead of release."
-L["whatsnew_1215preview_location"] = "Delves / Raids"
 L["whatsnew_autoaccept_title"]     = "Auto-Accept Guild/Friend Invites"
 L["whatsnew_autoaccept_desc"]      = "Automatically accepts group invites from guild members, friends, and Battle.net friends. Default UI only."
 L["whatsnew_autoaccept_location"]  = "QoL > Misc"

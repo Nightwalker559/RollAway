@@ -366,18 +366,6 @@ L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Gro�
 ------------------------------------------------------------------------
 -- Was ist neu (3.0.1)
 ------------------------------------------------------------------------
-L["whatsnew_profiles_title"]       = "Charakterspezifische Profile"
-L["whatsnew_profiles_desc"]        = "Einstellungen sind jetzt charakterspezifisch. Profile wechseln, erstellen, kopieren, löschen und zurücksetzen unter Profil. Neue Profile starten komplett deaktiviert."
-L["whatsnew_profiles_location"]    = "Profil"
-L["whatsnew_premade_title"]        = "Begleit-Addon für manuelle Gruppen"
-L["whatsnew_premade_desc"]         = "Wähle BigWigs oder Details! Keystones separat für manuell gebildete (Premade) Gruppen, unabhängig von der Gruppensuche-Einstellung."
-L["whatsnew_premade_location"]     = "QoL > Reminder"
-L["whatsnew_chonky_title"]         = "Chonky Character Sheet Unterstützung"
-L["whatsnew_chonky_desc"]          = "Die Omnium- und Große-Schatzkammer-Buttons werden mit Chonky Character Sheet jetzt korrekt angezeigt."
-L["whatsnew_chonky_location"]      = "QoL > Filter"
-L["whatsnew_1215preview_title"]    = "Patch 12.1.5 Vorschau"
-L["whatsnew_1215preview_desc"]     = "Labyrinth von Kindo'jan und der Kith'ix-Raid sind vor dem Release als \"demnächst verfügbar\" gelistet."
-L["whatsnew_1215preview_location"] = "Tiefen / Raids"
 L["whatsnew_autoaccept_title"]     = "Einladungen von Gilde/Freunden automatisch annehmen"
 L["whatsnew_autoaccept_desc"]      = "Nimmt Gruppeneinladungen von Gildenmitgliedern, Freunden und Battle.net-Freunden automatisch an. Nur Standard-UI."
 L["whatsnew_autoaccept_location"]  = "QoL > Sonstiges"

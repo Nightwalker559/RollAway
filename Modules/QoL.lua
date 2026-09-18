@@ -727,6 +727,10 @@ local function InitJoinReminder()
         if not IsInGroup() or IsInRaid() then return end
         if keyAddonOpenedByCreation or premadeHandledThisGroup or hadOwnListingThisGroup then return end
         if GetNumGroupMembers() < 5 then return end
+        -- Queue pops (e.g. Timewalking) form a full 5-man group instantly and
+        -- have no keystone to speak of - IsPartyLFG() is true whenever the
+        -- group came from Dungeon/Raid Finder rather than manual invites.
+        if IsPartyLFG() then return end
 
         if not GetActiveKeyAddon("premade") then return end
 
