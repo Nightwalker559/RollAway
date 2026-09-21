@@ -13,6 +13,7 @@
 
 ### Changed
 - Removed unused abbreviation helper and other dead code in Portal Overview.
+- Removed unused `RA.LEGACY_RAID_TELEPORTS` table in LegacyRaids.lua (abandoned feature, never referenced).
 
 ## 3.0.5
 
