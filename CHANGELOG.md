@@ -14,6 +14,9 @@
 ### Changed
 - Removed unused abbreviation helper and other dead code in Portal Overview.
 - Removed unused `RA.LEGACY_RAID_TELEPORTS` table in LegacyRaids.lua (abandoned feature, never referenced).
+- Portal Overview and Dungeon Quick Select now list dungeons alphabetically instead of data-entry order.
+- Added Siege of Boralus / The MOTHERLODE!! to the "all learned dungeon teleports" overview (faction-specific spell ID resolved at load time).
+- Portal Overview's "Current Season" tab now shows a "Season N" header matching Tab 2's style, so content doesn't shift when switching tabs.
 
 ## 3.0.5
 

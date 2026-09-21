@@ -5,12 +5,15 @@
 -- "all learned dungeon teleports" overview, separate from the current-
 -- season portal reminder in Modules\TeleportReminder.lua.
 -- `expansion` groups entries into category headers in Modules\PortalOverview.lua.
--- Faction-specific teleports (Siege of Boralus / The MOTHERLODE!!) are
--- intentionally omitted - resolving those needs the player's faction at
--- runtime, not a static ID.
+-- Siege of Boralus / The MOTHERLODE!! have separate Horde/Alliance spell
+-- IDs for the same dungeon; resolved once below via UnitFactionGroup().
 
 _G["RollAway"] = _G["RollAway"] or {}
 local RA = _G["RollAway"]
+
+local faction = UnitFactionGroup("player")
+local SIEGE_OF_BORALUS_SPELL = (faction == "Horde") and 464256 or 445418
+local THE_MOTHERLODE_SPELL   = (faction == "Horde") and 467555 or 467553
 
 RA.LEGACY_DUNGEON_TELEPORTS = {
     -- Cataclysm
@@ -48,6 +51,8 @@ RA.LEGACY_DUNGEON_TELEPORTS = {
     { key = "waycrest_manor",              portalSpellID = 424167,  expansion = "bfa"          },
     { key = "underrot",                    portalSpellID = 410074,  expansion = "bfa"          },
     { key = "operation_mechagon",          portalSpellID = 373274,  expansion = "bfa"          },
+    { key = "siege_of_boralus",            portalSpellID = SIEGE_OF_BORALUS_SPELL, expansion = "bfa" },
+    { key = "the_motherlode",              portalSpellID = THE_MOTHERLODE_SPELL,   expansion = "bfa" },
     -- Shadowlands
     { key = "necrotic_wake",               portalSpellID = 354462,  expansion = "shadowlands"  },
     { key = "plaguefall",                  portalSpellID = 354463,  expansion = "shadowlands"  },

@@ -285,3 +285,19 @@ function RA.CreateOneShotTimer(seconds, callback)
 
     return { Start = Start, Stop = Stop }
 end
+
+-- Returns a NEW array with the same elements as `list`, sorted by the
+-- string labelFn(entry) returns - case-insensitive, plain byte order
+-- (WoW's Lua sandbox has no locale-aware collation, so umlauts etc. sort
+-- byte-wise; acceptable for short dungeon/addon-name lists). Does not
+-- mutate `list`, so callers that need a stable index pairing with a
+-- separate structure (e.g. a button pool built in the original order)
+-- should sort before building that structure, not after.
+function RA.SortByLabel(list, labelFn)
+    local sorted = {}
+    for i = 1, #list do sorted[i] = list[i] end
+    table.sort(sorted, function(a, b)
+        return (labelFn(a) or ""):lower() < (labelFn(b) or ""):lower()
+    end)
+    return sorted
+end

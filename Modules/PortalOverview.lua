@@ -75,7 +75,9 @@ end
 
 -- Buckets a flat, already-known-filtered entry list into ordered
 -- { expansion, entries } groups per CATEGORY_ORDER. Empty categories are
--- left out entirely.
+-- left out entirely. Entries within each group are sorted alphabetically
+-- by localized name; the group order itself (newest expansion first)
+-- is untouched.
 local function GroupByExpansion(entries)
     local buckets = {}
     for _, e in ipairs(entries) do
@@ -85,7 +87,8 @@ local function GroupByExpansion(entries)
     local groups = {}
     for _, exp in ipairs(CATEGORY_ORDER) do
         if buckets[exp] then
-            groups[#groups + 1] = { expansion = exp, entries = buckets[exp] }
+            local sorted = RA.SortByLabel(buckets[exp], function(e) return RA_L[e.nameKey] or e.key end)
+            groups[#groups + 1] = { expansion = exp, entries = sorted }
         end
     end
     return groups
@@ -325,16 +328,25 @@ end
 local function LayoutFlatButtons(entries)
     HideAllButtons()
 
+    -- Season header, same style/height as tab 2's expansion headers (reuses
+    -- the same header pool slot 1) so button rows start at the identical Y
+    -- offset in both tabs - no visual jump when switching tabs.
+    local header = AcquireHeader(1, overviewFrame.content)
+    header:ClearAllPoints()
+    header:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", 0, 0)
+    header:SetText(string.format(RA_L["portal_overview_current_season"] or "Season %d", RA.ACTIVE_SEASON))
+    header:Show()
+
     if #entries == 0 then
         overviewFrame.emptyText:Show()
-        overviewFrame.content:SetHeight(1)
+        overviewFrame.content:SetHeight(HEADER_HEIGHT)
         return
     end
     overviewFrame.emptyText:Hide()
 
     local ownedLfgID = GetOwnedKeystone()
     local rows = math.ceil(#entries / BUTTONS_PER_ROW)
-    overviewFrame.content:SetHeight(rows * (BUTTON_SIZE + BUTTON_GAP))
+    overviewFrame.content:SetHeight(HEADER_HEIGHT + rows * (BUTTON_SIZE + BUTTON_GAP))
 
     local btnIndex = 0
     for i, entry in ipairs(entries) do
@@ -348,7 +360,7 @@ local function LayoutFlatButtons(entries)
         local rowWidth = (rowCount * BUTTON_SIZE) + ((rowCount - 1) * BUTTON_GAP)
         local startX = (CONTENT_WIDTH - rowWidth) / 2
         PlaceButton(btn, entry, isKnown,
-            startX + col * (BUTTON_SIZE + BUTTON_GAP), -row * (BUTTON_SIZE + BUTTON_GAP), ownedLfgID)
+            startX + col * (BUTTON_SIZE + BUTTON_GAP), -HEADER_HEIGHT - row * (BUTTON_SIZE + BUTTON_GAP), ownedLfgID)
     end
 end
 
@@ -414,6 +426,7 @@ function RA.RefreshPortalOverview()
                 entries[#entries + 1] = { key = d.key, spellID = d.portalSpellID, nameKey = "dungeon_"..d.key, lfgID = d.lfgID }
             end
         end
+        entries = RA.SortByLabel(entries, function(e) return RA_L[e.nameKey] or e.key end)
         LayoutFlatButtons(entries)
     else
         local known = {}

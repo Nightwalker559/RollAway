@@ -15,14 +15,25 @@ local container    = nil
 local updateTicker = nil
 
 ------------------------------------------------------------------------
+-- Label used for sorting - same source/fallback as MakeButton's tooltip
+-- text, so display order always matches what's actually shown.
+------------------------------------------------------------------------
+local function DungeonSortLabel(d)
+    local actInfo = C_LFGList and C_LFGList.GetActivityInfoTable(d.lfgID)
+    local full = actInfo and actInfo.fullName
+    return (full and full ~= "") and full or d.key
+end
+
+------------------------------------------------------------------------
 -- Filters to dungeons active this season via GetMapTable(); falls back
--- to the full list if the active set is empty.
+-- to the full list if the active set is empty. Result is sorted
+-- alphabetically by display name.
 ------------------------------------------------------------------------
 local function ActiveDungeons()
     local source = RA.DUNGEONS[RA.ACTIVE_SEASON]
-    if not C_ChallengeMode then return source end
+    if not C_ChallengeMode then return RA.SortByLabel(source, DungeonSortLabel) end
     local cmIDs = C_ChallengeMode.GetMapTable()
-    if not cmIDs or #cmIDs == 0 then return source end
+    if not cmIDs or #cmIDs == 0 then return RA.SortByLabel(source, DungeonSortLabel) end
 
     local active = {}
     for i = 1, #cmIDs do active[cmIDs[i]] = true end
@@ -34,7 +45,7 @@ local function ActiveDungeons()
             out[#out + 1] = d
         end
     end
-    return #out > 0 and out or source
+    return RA.SortByLabel(#out > 0 and out or source, DungeonSortLabel)
 end
 
 ------------------------------------------------------------------------
