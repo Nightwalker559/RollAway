@@ -113,10 +113,13 @@ local function CreateReminderFrame()
 
     CreatePortalButtons(reminderFrame, dungeons)
 
-    -- Combat → hide. GROUP_LEFT/GROUP_JOINED → hide (new group, new keys).
+    -- Combat → hide. GROUP_LEFT → hide (stale reminder for a group we've
+    -- since left). Deliberately NOT GROUP_JOINED - that event fires at the
+    -- exact moment we join the very group this reminder is being shown
+    -- for, which used to hide it again immediately after RA.ShowTeleportReminder()
+    -- displayed it.
     reminderFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     reminderFrame:RegisterEvent("GROUP_LEFT")
-    reminderFrame:RegisterEvent("GROUP_JOINED")
     reminderFrame:SetScript("OnEvent", function(self) self:Hide() end)
 end
 

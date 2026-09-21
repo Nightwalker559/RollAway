@@ -52,11 +52,13 @@ local hooksecurefunc      = hooksecurefunc
 local GetTime             = GetTime
 local C_Timer_After       = C_Timer and C_Timer.After
 local C_Timer_NewTimer    = C_Timer and C_Timer.NewTimer
+local C_Timer_NewTicker   = C_Timer and C_Timer.NewTicker
 
 RA.GetLootRollItemLink = GetLootRollItemLink
 RA.hooksecurefunc      = hooksecurefunc
 RA.C_Timer_After       = C_Timer_After
 RA.C_Timer_NewTimer    = C_Timer_NewTimer
+RA.C_Timer_NewTicker   = C_Timer_NewTicker
 
 ------------------------------------------------------------------------
 -- Content data now lives in Data/*.lua (see .toc). Add seasons there.

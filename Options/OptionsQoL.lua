@@ -356,8 +356,9 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     qolPanel:HookScript("OnShow", RefreshKeyAddonCheckboxes)
 
     -- Sub-option: separate companion addon choice for manually formed (premade)
-    -- groups. No teleport option here - RollAway Teleport Reminder needs an
-    -- LFG activity ID to know the exact dungeon, which premade groups don't have.
+    -- groups. No teleport option here - the teleport reminder is a Group
+    -- Finder (LFG) feature only; a premade group has no listing to resolve
+    -- a dungeon from, so it just opens whichever companion addon is chosen.
     -- Thin divider + extra gap so this reads as a clearly separate block from
     -- the Group Finder keyaddon choice above it, not a continuation of it.
     local qolPremadeDivider = reminder:CreateTexture(nil, "ARTWORK")

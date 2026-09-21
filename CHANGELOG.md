@@ -10,6 +10,8 @@
 ### Fixed
 - Teleport Reminder no longer reappears for a dungeon whose portal is on cooldown.
 - Keystone companion addon no longer opens when joining an in-progress key (mid-dungeon backfill).
+- Teleport Reminder no longer hides itself immediately after showing when joining a Group Finder M+ group (was reacting to its own GROUP_JOINED event).
+- Reworked Group Finder join detection in QoL.lua: dungeon is now resolved as soon as an application shows up (not just at invite-accept, when the browse cache may already be gone), and a periodic re-check now catches players added to an already-active LFG listing who never personally applied (previously only the applicant/host got a reminder).
 
 ### Changed
 - Removed unused abbreviation helper and other dead code in Portal Overview.

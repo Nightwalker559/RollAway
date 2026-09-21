@@ -7,6 +7,7 @@ local DBG  = RA.DBG
 
 local C_Timer_After    = RA.C_Timer_After
 local C_Timer_NewTimer = RA.C_Timer_NewTimer
+local C_Timer_NewTicker = RA.C_Timer_NewTicker
 
 local VOIDCORE_CURRENCY_ID = RA.VOIDCORE_CURRENCY_ID
 
@@ -640,20 +641,15 @@ local function GetDungeonEntryByLfgID(activityID)
     return nil
 end
 
--- Resolve instance name from an LFG activity ID.
--- Returns nil if the activity is not a Mythic+ dungeon or current raid.
--- Second return value: true if the activity is Mythic+ (vs. raid).
--- Third return value: the matched dungeon entry (M+ only, if found in the
--- current season's pool) - used by the teleport reminder to show only the
--- relevant portal.
--- For M+ dungeons the name comes from our own locale table (RA_L), not the
--- Blizzard client string, so it always matches the addon's own language
--- setting instead of the game client's.
+-- Resolve name/isMythicPlus/dungeon from an LFG activity ID. Returns nil if
+-- the activity is not a Mythic+ dungeon or current raid. For M+ dungeons the
+-- name comes from our own locale table (RA_L), not the Blizzard client
+-- string, so it always matches the addon's own language setting instead of
+-- the game client's.
 local function GetNameFromActivityID(activityID)
     if not (activityID and C_LFGList) then return nil end
     local act = C_LFGList.GetActivityInfoTable(activityID)
     if not act then return nil end
-    -- Only show reminder for Mythic+ dungeons or current season raids
     if not (act.isMythicPlusActivity or act.isCurrentRaidActivity) then
         DBG("[QoL] Join reminder filtered out – not M+ or current raid (activityID: "..tostring(activityID)..")")
         return nil
@@ -685,126 +681,133 @@ local function DispatchJoinReminder(name, isMythicPlus, dungeon, forceTimer)
     end
 end
 
+------------------------------------------------------------------------
+-- Group Finder (LFG) join detection.
+--
+-- Two ways to end up in an LFG-sourced M+/raid group, both handled below:
+--  1. You post your own listing (LFG_LIST_ACTIVE_ENTRY_UPDATE) - see
+--     TryHandleOwnListing().
+--  2. You apply to someone else's listing, or you're simply a party member
+--     of whoever applied (their application is a party-wide event - every
+--     member's client receives LFG_LIST_APPLICATION_STATUS_UPDATED for it,
+--     not just the one who clicked "Apply"). See applicationDungeons below.
+--
+-- Once in the group, C_LFGList.GetActiveEntryInfo() also reflects the
+-- group's listing for every member while it's still active/recruiting -
+-- not just for whoever created it - so GROUP_ROSTER_UPDATE alone should
+-- resolve it. In practice that resolution can race with the roster/LFG
+-- state actually being ready, so a short poll (pollTicker below) re-checks
+-- it every few seconds as a safety net until it succeeds or the group
+-- turns out to have no LFG listing at all (→ TryOpenForPremadeGroup).
+------------------------------------------------------------------------
+
+local POLL_INTERVAL = 3
+
 local function InitJoinReminder()
     local f = CreateFrame("Frame")
-
-    -- LFG_LIST_APPLICATION_STATUS_UPDATED: fires when the local player's
-    -- own application is accepted via the LFG browser
     f:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
-
-    -- GROUP_ROSTER_UPDATE: fires when joining a group via direct invite.
-    -- We check if the group has an active LFG listing and show its name.
     f:RegisterEvent("GROUP_ROSTER_UPDATE")
-
-    -- LFG_LIST_ACTIVE_ENTRY_UPDATE: fires when the player creates or removes
-    -- their own LFG listing — used to open/close BigWigs Keystones.
     f:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
 
-    -- Track whether we already showed the reminder for the current group listing
-    local lastShownEntryID = nil
-    -- Spam protection: only one pending check at a time
-    local rosterCheckPending = false
-    -- Timer for delayed BigWigs close after own listing group fills up
-    -- Persists until the group is left; prevents GROUP_ROSTER_UPDATE spam
-    -- (ready checks, buffs, etc.) from re-opening the addon after the
-    -- 6s auto-close timer runs.
-    local premadeHandledThisGroup = false
-    -- Persists until the group is left. True once we've ever had our own
-    -- LFG listing for this group (even after Blizzard auto-removes it when
-    -- the group fills up). Prevents the premade-group fallback from firing
-    -- during that removal, which raced with the creation-close timer and
-    -- caused the companion addon to toggle open/close/open.
-    local hadOwnListingThisGroup = false
-    -- Cache of searchResultID -> activityIDs, filled on every application
-    -- status update while the result is still fresh. C_LFGList.GetSearchResultInfo
-    -- can return nil by the time "inviteaccepted" fires (the browse cache
-    -- entry may already be gone, e.g. if the Group Finder window was closed
-    -- right after applying) - falls back to this instead of silently
-    -- dropping the reminder.
-    local cachedApplicationActivityIDs = {}
+    -- Per-group state, all reset together on ungroup (see ResetGroupState).
+    local resolvedEntryID   = nil   -- activityID we've already shown/dispatched for
+    local hadOwnListing     = false -- true once we've ever had our own LFG listing this group
+    local premadeHandled    = false -- true once the premade (no-LFG) fallback has fired this group
+    -- searchResultID -> dungeon entry (or false for "resolved, not M+/raid"),
+    -- filled as soon as an application's activityIDs can be read (as early
+    -- as "applied"/"invited"), so "inviteaccepted" never has to re-resolve
+    -- from a possibly-already-purged browse cache entry.
+    local applicationDungeons = {}
 
-    -- Fallback: group formed manually (direct invites/premade), not via LFG
-    -- Group Finder. There's no LFG activity to resolve an instance name from,
-    -- so just open the companion addon (or the teleport reminder) once the
-    -- party is full.
+    local function ResetGroupState()
+        resolvedEntryID = nil
+        hadOwnListing   = false
+        premadeHandled  = false
+        wipe(applicationDungeons)
+    end
+
+    -- Fallback: group has no LFG listing to read a dungeon from at all (true
+    -- manually-formed premade - direct invites, no Group Finder involved).
+    -- Just opens the configured companion addon once the party is full.
     local function TryOpenForPremadeGroup()
         if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
         if not IsInGroup() or IsInRaid() then return end
-        if keyAddonOpenedByCreation or premadeHandledThisGroup or hadOwnListingThisGroup then return end
+        if keyAddonOpenedByCreation or premadeHandled or hadOwnListing then return end
         if GetNumGroupMembers() < 5 then return end
         -- Queue pops (e.g. Timewalking) form a full 5-man group instantly and
         -- have no keystone to speak of - IsPartyLFG() is true whenever the
         -- group came from Dungeon/Raid Finder rather than manual invites.
         if IsPartyLFG() then return end
-
         if not GetActiveKeyAddon("premade") then return end
 
         DBG("[QoL] Premade group full – opening keystone companion addon")
-        premadeHandledThisGroup = true
+        premadeHandled = true
         ToggleKeyAddon("premade")
         StartKeyAddonSafetyTimer("premade")
     end
 
-    local function TryShowFromActiveEntry()
-        rosterCheckPending = false
+    -- Tries to resolve + show from the group's current LFG listing
+    -- (GetActiveEntryInfo works for any member while a listing is active,
+    -- not just whoever created it). Falls back to the premade path once
+    -- nothing is found. Called from GROUP_ROSTER_UPDATE and pollTicker.
+    local function TryResolveAndShow()
         if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
         if not C_LFGList then return end
         if not IsInGroup() then
-            lastShownEntryID = nil
-            premadeHandledThisGroup = false
-            hadOwnListingThisGroup = false
-            wipe(cachedApplicationActivityIDs)
+            ResetGroupState()
             return
         end
+        if resolvedEntryID then return end -- already shown for this group
+
         local entryInfo = C_LFGList.GetActiveEntryInfo()
-        if not (entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]) then
+        local entryID = entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]
+        if not entryID then
             TryOpenForPremadeGroup()
             return
         end
-        local entryID = entryInfo.activityIDs[1]
-        if entryID == lastShownEntryID then return end  -- already shown for this listing
         local name, isMythicPlus, dungeon = GetNameFromActivityID(entryID)
         DBG("[QoL] Join reminder (active entry): resolved name=", name or "nil")
         if name then
-            lastShownEntryID = entryID
+            resolvedEntryID = entryID
             DispatchJoinReminder(name, isMythicPlus, dungeon)
         end
     end
 
+    -- Safety-net poll: GROUP_ROSTER_UPDATE can fire before the LFG listing
+    -- state is actually queryable yet (a member added to an already-active
+    -- listing doesn't get a creation event of its own to react to). Cheap
+    -- early-exits inside TryResolveAndShow() make this a no-op once resolved
+    -- or ungrouped, so it's safe to just leave running for the session.
+    C_Timer_NewTicker(POLL_INTERVAL, TryResolveAndShow)
+
     f:SetScript("OnEvent", function(_, event, searchResultID, newStatus)
         if event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
             DBG("[QoL] LFG_LIST_APPLICATION_STATUS_UPDATED: searchResultID=", searchResultID, "status=", newStatus)
-            local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
-            if resultInfo and resultInfo.activityIDs then
-                -- Cache while the result is still resolvable (e.g. at "applied"/
-                -- "invited") so it survives the browse entry being purged later.
-                cachedApplicationActivityIDs[searchResultID] = resultInfo.activityIDs
+            -- Resolve as early as possible (applied/invited), not just at
+            -- inviteaccepted - the search-result cache backing
+            -- GetSearchResultInfo can already be gone by then, especially
+            -- for a party member who never personally browsed/applied.
+            if applicationDungeons[searchResultID] == nil then
+                local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
+                local activityID = resultInfo and resultInfo.activityIDs and resultInfo.activityIDs[1]
+                if activityID then
+                    local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
+                    applicationDungeons[searchResultID] = name and { name = name, isMythicPlus = isMythicPlus, dungeon = dungeon } or false
+                end
             end
-            if newStatus ~= "inviteaccepted" then return end
 
-            local activityIDs = (resultInfo and resultInfo.activityIDs) or cachedApplicationActivityIDs[searchResultID]
-            cachedApplicationActivityIDs[searchResultID] = nil
-            if not activityIDs then
-                DBG("[QoL] Join reminder: no activityIDs (live or cached) for searchResultID")
+            if newStatus ~= "inviteaccepted" then return end
+            local resolved = applicationDungeons[searchResultID]
+            applicationDungeons[searchResultID] = nil
+            if not resolved then
+                DBG("[QoL] Join reminder: application never resolved to a name")
                 return
             end
-            local name, isMythicPlus, dungeon = GetNameFromActivityID(activityIDs[1])
-            DBG("[QoL] Join reminder: resolved name=", name or "nil")
-            if name then
-                lastShownEntryID = activityIDs[1]
-                DispatchJoinReminder(name, isMythicPlus, dungeon)
-            end
+            resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
+            DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon)
 
         elseif event == "GROUP_ROSTER_UPDATE" then
-            -- Spam protection: if a check is already queued, skip this event.
-            -- GROUP_ROSTER_UPDATE fires for every roster change (joins, leaves, role changes).
-            if rosterCheckPending then return end
-            rosterCheckPending = true
-            if C_Timer_After then
-                C_Timer_After(0.5, TryShowFromActiveEntry)
-            else
-                TryShowFromActiveEntry()
-            end
+            TryResolveAndShow()
 
         elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
             if not C_LFGList then return end
@@ -815,7 +818,7 @@ local function InitJoinReminder()
                 local activityID = entryInfo.activityIDs[1]
                 local act = C_LFGList.GetActivityInfoTable(activityID)
                 if not (act and (act.isMythicPlusActivity or act.isCurrentRaidActivity)) then return end
-                hadOwnListingThisGroup = true
+                hadOwnListing = true
                 if keyAddonOpenedByCreation then return end  -- already open
                 keyAddonOpenedByCreation = true
 
