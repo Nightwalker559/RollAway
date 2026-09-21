@@ -166,11 +166,28 @@ end
 -- only that dungeon's portal is shown; when nil (dungeon not resolved,
 -- e.g. a manually formed premade group), all portals are shown so the
 -- correct one can still be picked manually.
+-- Ignore GetSpellCooldown durations at/below the GCD - those aren't a real
+-- "on cooldown" state, just the brief global cooldown after any cast.
+local COOLDOWN_THRESHOLD = 3
+
+local function IsPortalOnCooldown(spellID)
+    local cdInfo = C_Spell.GetSpellCooldown(spellID)
+    return cdInfo and cdInfo.startTime > 0 and cdInfo.duration > COOLDOWN_THRESHOLD
+end
+
 function RA.ShowTeleportReminder(instanceName, dungeon)
     if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
     if RollAwayDB.joinReminderKeyAddon ~= "teleport" then return end
 
     CreateReminderFrame()
+
+    -- Specific dungeon known and its portal already on cooldown (i.e. we
+    -- already used it) - don't pop the reminder back up for the same key.
+    if dungeon and buttonByKey[dungeon.key]
+    and IsPortalOnCooldown(buttonByKey[dungeon.key].spellID) then
+        DBG("Teleport reminder skipped - portal on cooldown:", dungeon.key)
+        return
+    end
 
     DBG("Showing teleport reminder | instance:", instanceName or "n/a",
         "| dungeon:", dungeon and dungeon.key or "all")

@@ -385,6 +385,7 @@ local function GetActiveKeyAddon(context)
     local choice = RollAwayDB and (context == "premade" and RollAwayDB.premadeKeyAddon or RollAwayDB.joinReminderKeyAddon)
     if choice == "bigwigs" and IsBigWigsKeyAvailable() then return "bigwigs" end
     if choice == "details" and IsDetailsKeyAvailable() then return "details" end
+    if choice == "own" then return "own" end -- RollAway's own frame, no external addon needed
     return nil
 end
 
@@ -407,6 +408,10 @@ local function ToggleKeyAddon(context)
             DBG("[QoL] Opening Details! Keystones via SlashCmdList[KEYSTONE]")
             SlashCmdList["KEYSTONE"]("")
         end
+        return true
+    elseif which == "own" then
+        DBG("[QoL] Toggling RollAway Portal Overview")
+        if RA.TogglePortalOverview then RA.TogglePortalOverview() end
         return true
     end
     return false

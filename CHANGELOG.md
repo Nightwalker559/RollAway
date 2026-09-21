@@ -2,6 +2,18 @@
 
 ---
 
+## 3.0.6
+
+### New
+- RollAway Portal Overview: own 2-tab portal frame (current season / all learned dungeons, sorted by expansion) for premade groups, no BigWigs/Details needed. Manual toggle via `/rat`.
+
+### Fixed
+- Teleport Reminder no longer reappears for a dungeon whose portal is on cooldown.
+- Keystone companion addon no longer opens when joining an in-progress key (mid-dungeon backfill).
+
+### Changed
+- Removed unused abbreviation helper and other dead code in Portal Overview.
+
 ## 3.0.5
 
 ### New

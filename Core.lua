@@ -735,6 +735,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if RA.InitRollConfirm     then RA.InitRollConfirm()     end
         if RA.InitReminder        then RA.InitReminder()        end
         if RA.InitTeleportReminder then RA.InitTeleportReminder() end
+        if RA.InitPortalOverview  then RA.InitPortalOverview()  end
         if RA.InitQoL             then RA.InitQoL()             end
         if RA.InitVendorFilter    then RA.InitVendorFilter()    end
         if RA.InitParagon         then RA.InitParagon()         end

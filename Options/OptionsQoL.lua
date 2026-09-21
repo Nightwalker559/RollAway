@@ -376,6 +376,9 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     local cbPremadeDetails = MakeCB(reminder, RA_L["qol_join_keyaddon_details"], nil, nil)
     cbPremadeDetails.frame:SetPoint("LEFT", cbPremadeBigWigs.frame, "RIGHT", 10, 0)
 
+    local cbPremadeOwn = MakeCB(reminder, RA_L["qol_premade_keyaddon_own"], nil, nil)
+    cbPremadeOwn.frame:SetPoint("LEFT", cbPremadeDetails.frame, "RIGHT", 10, 0)
+
     local qolPremadeInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     qolPremadeInfo:SetPoint("TOPLEFT", cbPremadeBigWigs.frame, "BOTTOMLEFT", 20, -6)
     qolPremadeInfo:SetWidth(400); qolPremadeInfo:SetJustifyH("LEFT")
@@ -388,6 +391,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
 
         cbPremadeBigWigs:SetValue(RollAwayDB.premadeKeyAddon == "bigwigs")
         cbPremadeDetails:SetValue(RollAwayDB.premadeKeyAddon == "details")
+        cbPremadeOwn:SetValue(RollAwayDB.premadeKeyAddon == "own")
 
         cbPremadeBigWigs:SetDisabled(not bwOK)
         cbPremadeDetails:SetDisabled(not dtOK)
@@ -399,6 +403,10 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     cbPremadeDetails:SetCallback("OnValueChanged", function(widget, _, value)
         RollAwayDB.premadeKeyAddon = value and "details" or "none"
+        RefreshPremadeKeyAddonCheckboxes()
+    end)
+    cbPremadeOwn:SetCallback("OnValueChanged", function(widget, _, value)
+        RollAwayDB.premadeKeyAddon = value and "own" or "none"
         RefreshPremadeKeyAddonCheckboxes()
     end)
 

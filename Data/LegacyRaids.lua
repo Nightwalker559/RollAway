@@ -64,3 +64,18 @@ RA.LEGACY_RAIDS = {
     { key = "nexus_king_salhadaar", encounterID = 3134, raid = "manaforge_omega"        },
     { key = "dimensius",            encounterID = 3135, raid = "manaforge_omega"        },
 }
+
+------------------------------------------------------------------------
+-- Raid teleport ("Return to <raid>") achievement spells, keyed by the
+-- same `raid` identifier used above. Only raids with a confirmed spell
+-- are listed - Nerub-ar Palace and all Midnight-era raids (Voidspire,
+-- Dreamrift, March on Quel'Danas, Sporefall, Venomous Abyss, Tidebound
+-- Grotto, Unbinding of Kith'ix) are unconfirmed for now.
+------------------------------------------------------------------------
+RA.LEGACY_RAID_TELEPORTS = {
+    vault_of_incarnates  = 432254,
+    aberrus              = 432257,
+    amirdrassil          = 432258,
+    liberation_undermine = 1226482,
+    manaforge_omega      = 1239155,
+}

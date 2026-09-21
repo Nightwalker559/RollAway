@@ -192,6 +192,45 @@ local function SkinTeleportReminderFrame()
 end
 
 ------------------------------------------------------------------------
+-- Skin Portal Overview frame (own-frame Mythic+ portal picker, RA.ShowPortalOverview)
+------------------------------------------------------------------------
+
+local function SkinPortalOverviewFrame()
+    local f = _G["RollAwayPortalOverviewFrame"]
+    if not f or f.RA_ElvSkinned then return end
+    if S.HandleFrame then S:HandleFrame(f) end
+    if S.HandleCloseButton then
+        local closeBtn = _G["RollAwayPortalOverviewClose"]
+        if closeBtn then S:HandleCloseButton(closeBtn) end
+    end
+    for i = 1, (f.numTabs or 0) do
+        local tab = _G[f:GetName().."Tab"..i]
+        if tab and S.HandleTab then S:HandleTab(tab) end
+    end
+    -- S:HandleTab only reskins the button (flat backdrop instead of the
+    -- Blizzard tab texture); it doesn't touch anchoring. Re-anchor here so
+    -- the ElvUI-skinned tabs sit correctly - ElvUI insets the tab backdrop
+    -- by 5px on Retail (10px on other clients), so tabs need a matching
+    -- negative gap to butt up against each other instead of the wider
+    -- Blizzard-style gap set in PortalOverview.lua.
+    local offset = E.Retail and -5 or -19
+    local prevTab
+    for i = 1, (f.numTabs or 0) do
+        local tab = _G[f:GetName().."Tab"..i]
+        if tab then
+            if prevTab then
+                tab:ClearAllPoints()
+                tab:SetPoint("TOPLEFT", prevTab, "TOPRIGHT", offset, 0)
+            end
+            prevTab = tab
+        end
+    end
+    -- Scrollbar is force-hidden in PortalOverview.lua (mouse-wheel scroll
+    -- only), so there's nothing to skin there.
+    f.RA_ElvSkinned = true
+end
+
+------------------------------------------------------------------------
 -- Skin Debug Log window (dev-only, /rawlog)
 ------------------------------------------------------------------------
 
@@ -276,6 +315,13 @@ end)
 hooksecurefunc(RA, "ShowWhatsNew", function()
     if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
         SkinWhatsNewFrame()
+    end
+end)
+
+-- Skin Portal Overview frame on first show (frame is created lazily)
+hooksecurefunc(RA, "ShowPortalOverview", function()
+    if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
+        SkinPortalOverviewFrame()
     end
 end)
 
