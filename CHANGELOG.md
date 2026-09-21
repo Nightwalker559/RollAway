@@ -5,20 +5,17 @@
 ## 3.0.6
 
 ### New
-- RollAway Portal Overview: own 2-tab portal frame (current season / all learned dungeons, sorted by expansion) for premade groups, no BigWigs/Details needed. Manual toggle via `/rat`.
+- RollAway Portal Overview: own 2-tab portal frame for premade groups, no BigWigs/Details needed (`/rat`).
 
 ### Fixed
-- Teleport Reminder no longer reappears for a dungeon whose portal is on cooldown.
-- Keystone companion addon no longer opens when joining an in-progress key (mid-dungeon backfill).
-- Teleport Reminder no longer hides itself immediately after showing when joining a Group Finder M+ group (was reacting to its own GROUP_JOINED event).
-- Reworked Group Finder join detection in QoL.lua: dungeon is now resolved as soon as an application shows up (not just at invite-accept, when the browse cache may already be gone), and a periodic re-check now catches players added to an already-active LFG listing who never personally applied (previously only the applicant/host got a reminder).
+- Teleport Reminder no longer reappears on cooldown or hides itself right after showing.
+- Group Finder join detection resolves the dungeon earlier and catches backfilled group members; companion addon no longer opens for backfills.
+- Premade group reminder no longer opens for below-max-level characters.
 
 ### Changed
-- Removed unused abbreviation helper and other dead code in Portal Overview.
-- Removed unused `RA.LEGACY_RAID_TELEPORTS` table in LegacyRaids.lua (abandoned feature, never referenced).
-- Portal Overview and Dungeon Quick Select now list dungeons alphabetically instead of data-entry order.
-- Added Siege of Boralus / The MOTHERLODE!! to the "all learned dungeon teleports" overview (faction-specific spell ID resolved at load time).
-- Portal Overview's "Current Season" tab now shows a "Season N" header matching Tab 2's style, so content doesn't shift when switching tabs.
+- Removed dead code in Portal Overview and an unused legacy raid teleport table.
+- Portal Overview and Dungeon Quick Select now sort dungeons alphabetically.
+- Portal Overview's season tab header now matches the all-dungeons tab style.
 
 ## 3.0.5
 

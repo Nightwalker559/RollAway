@@ -733,6 +733,10 @@ local function InitJoinReminder()
         if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
         if not IsInGroup() or IsInRaid() then return end
         if keyAddonOpenedByCreation or premadeHandled or hadOwnListing then return end
+        -- Own char only - no reliable API to read other party members' level
+        -- (UnitLevel(partyN) isn't guaranteed synced; GetRaidRosterInfo only
+        -- works for raids, not parties).
+        if not (RA.IsMaxLevel and RA.IsMaxLevel()) then return end
         if GetNumGroupMembers() < 5 then return end
         -- Queue pops (e.g. Timewalking) form a full 5-man group instantly and
         -- have no keystone to speak of - IsPartyLFG() is true whenever the
