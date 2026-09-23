@@ -52,7 +52,16 @@ local function CreateQoLToastFrame(globalName, width, height, yOffset)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, yOffset)
     frame:SetFrameStrata("HIGH")
     frame:SetClampedToScreen(true)
-    RA.MakeDraggable(frame)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    -- Checked live on every drag attempt, so toggling the "lock position"
+    -- option in the UI takes effect immediately, no per-frame bookkeeping.
+    frame:SetScript("OnDragStart", function(self)
+        if RollAwayDB and RollAwayDB.qolReminderLockPosition then return end
+        self:StartMoving()
+    end)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     local timer = RA.CreateOneShotTimer(6, function() frame:Hide() end)
     frame:SetScript("OnHide", timer.Stop)
     frame:Hide()
@@ -71,7 +80,29 @@ local talentTimer  -- RA.CreateOneShotTimer handle, set in CreateTalentFrame
 local function CreateTalentFrame()
     if talentFrame then return end
     talentFrame, talentTimer = CreateQoLToastFrame("RollAwayTalentFrame", 280, 36, 180)
-    talentFrame.text:SetText("|cffFFFFFF" .. RA_L["qol_check_talents"] .. "|r")
+end
+
+-- "<Spec> – <loadout name>", or just "<Spec>" for the starter build / no
+-- saved loadout. GetActiveConfigID() is the wrong API here - it's the
+-- per-spec "active config" (always named after the spec itself), not the
+-- saved loadout. GetLastSelectedSavedConfigID() is the one that tracks the
+-- actual selected loadout (e.g. "Raid Pack Leader ST"), -2 = starter build.
+local function GetActiveTalentLabel()
+    local specIndex = C_SpecializationInfo.GetSpecialization()
+    local specID, specName = specIndex and C_SpecializationInfo.GetSpecializationInfo(specIndex)
+    if not specName then return nil end
+
+    local savedConfigID = C_ClassTalents and C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local loadoutName
+    if savedConfigID and savedConfigID > 0 then
+        local configInfo = C_Traits.GetConfigInfo(savedConfigID)
+        loadoutName = configInfo and configInfo.name
+    end
+
+    if loadoutName and loadoutName ~= "" and loadoutName ~= specName then
+        return specName .. " – " .. loadoutName
+    end
+    return specName
 end
 
 local function ShowTalentReminder()
@@ -81,6 +112,10 @@ local function ShowTalentReminder()
 
     DBG("[QoL] Ready check – showing talent reminder")
     CreateTalentFrame()
+
+    local label = RollAwayDB.readyCheckShowSpec and GetActiveTalentLabel()
+    local text = label and string.format(RA_L["qol_check_talents_fmt"], label) or RA_L["qol_check_talents"]
+    talentFrame.text:SetText("|cffFFFFFF" .. text .. "|r")
 
     local fontPath, fontSize = GetQoLFont()
     talentFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
@@ -524,7 +559,14 @@ local function CreateJoinFrame()
     joinFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 220)
     joinFrame:SetFrameStrata("HIGH")
     joinFrame:SetClampedToScreen(true)
-    RA.MakeDraggable(joinFrame)
+    joinFrame:SetMovable(true)
+    joinFrame:EnableMouse(true)
+    joinFrame:RegisterForDrag("LeftButton")
+    joinFrame:SetScript("OnDragStart", function(self)
+        if RollAwayDB and RollAwayDB.qolReminderLockPosition then return end
+        self:StartMoving()
+    end)
+    joinFrame:SetScript("OnDragStop", joinFrame.StopMovingOrSizing)
     joinFrame:SetScript("OnHide", StopJoinTimer)
     joinFrame:Hide()
 
@@ -669,6 +711,33 @@ local function GetNameFromActivityID(activityID)
     local name = act.fullName ~= "" and act.fullName or nil
     return name, false, nil
 end
+
+-- Default anchor offsets - kept here so the reset button (OptionsQoL.lua)
+-- can restore exactly these, matching the SetPoint calls used above/below.
+local TALENT_DEFAULT_Y     = 180
+local DURABILITY_DEFAULT_Y = 140
+local JOIN_DEFAULT_Y       = 220
+
+-- Resets all three QoL reminder toasts (Check Talents / Durability / Join)
+-- back to their default centered position. Only touches frames that have
+-- already been created (lazily, on first show) - uncreated ones are already
+-- at their default position and don't need anything.
+local function ResetQoLReminderPositions()
+    if talentFrame then
+        talentFrame:ClearAllPoints()
+        talentFrame:SetPoint("CENTER", UIParent, "CENTER", 0, TALENT_DEFAULT_Y)
+    end
+    if durabilityFrame then
+        durabilityFrame:ClearAllPoints()
+        durabilityFrame:SetPoint("CENTER", UIParent, "CENTER", 0, DURABILITY_DEFAULT_Y)
+    end
+    if joinFrame then
+        joinFrame:ClearAllPoints()
+        joinFrame:SetPoint("CENTER", UIParent, "CENTER", 0, JOIN_DEFAULT_Y)
+    end
+end
+RA.ResetQoLReminderPositions = ResetQoLReminderPositions
+
 
 -- Routes to the teleport reminder for Mythic+ when selected, otherwise the
 -- default instance-name join reminder. Raids always use the default one -

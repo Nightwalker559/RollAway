@@ -415,8 +415,10 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     qolPanel:HookScript("OnShow", RefreshPremadeKeyAddonCheckboxes)
 
     -- Ready Check talent reminder (last alphabetically: "Show talent reminder...")
+    local qolShowSpecCB  -- forward-declared, referenced in qolCB's callback below
     local qolCB = MakeCB(reminder, RA_L["qol_readycheck_label"], RollAwayDB.readyCheckReminder, function(checked)
         RollAwayDB.readyCheckReminder = checked
+        if qolShowSpecCB then qolShowSpecCB:SetDisabled(not checked) end
     end)
     qolCB.frame:SetPoint("TOPLEFT", qolPremadeInfo, "BOTTOMLEFT", -40, -12)
 
@@ -425,6 +427,37 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     qolInfo:SetWidth(400); qolInfo:SetJustifyH("LEFT")
     qolInfo:SetTextColor(0.6, 0.6, 0.6, 1)
     qolInfo:SetText(RA_L["qol_readycheck_info"])
+
+    qolShowSpecCB = MakeCB(reminder, RA_L["qol_readycheck_showspec_label"], RollAwayDB.readyCheckShowSpec, function(checked)
+        RollAwayDB.readyCheckShowSpec = checked
+    end)
+    qolShowSpecCB.frame:SetPoint("TOPLEFT", qolInfo, "BOTTOMLEFT", 20, -10)
+    qolShowSpecCB:SetDisabled(not RollAwayDB.readyCheckReminder)
+
+    -- Lock reminder position: applies to the Check Talents / Durability /
+    -- Join reminder toasts (QoL.lua).
+    local qolLockCB = MakeCB(reminder, RA_L["qol_lock_position_label"], RollAwayDB.qolReminderLockPosition, function(checked)
+        RollAwayDB.qolReminderLockPosition = checked
+    end)
+    qolLockCB.frame:SetPoint("TOPLEFT", qolShowSpecCB.frame, "BOTTOMLEFT", -20, -14)
+
+    local qolResetPosBtn = CreateFrame("Button", nil, reminder, "UIPanelButtonTemplate")
+    qolResetPosBtn:SetSize(160, 22)
+    qolResetPosBtn:SetText(RA_L["qol_reset_position_button"])
+    qolResetPosBtn:SetPoint("TOPLEFT", qolLockCB.frame, "BOTTOMLEFT", 4, -8)
+    qolResetPosBtn:SetScript("OnClick", function()
+        if RA.ResetQoLReminderPositions then RA.ResetQoLReminderPositions() end
+    end)
+    if S and S.HandleButton then
+        S:HandleButton(qolResetPosBtn)
+        -- HandleButton alone doesn't strip UIPanelButtonTemplate's native
+        -- textures, so the red/gray Blizzard look would still show
+        -- through underneath ElvUI's backdrop.
+        qolResetPosBtn:SetNormalTexture("")
+        qolResetPosBtn:SetPushedTexture("")
+        qolResetPosBtn:SetHighlightTexture("")
+        qolResetPosBtn:SetDisabledTexture("")
+    end
 
     -- ── Category: Filter (alphabetical by label) ─────────────────────────
 

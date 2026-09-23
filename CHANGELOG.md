@@ -6,11 +6,14 @@
 
 ### New
 - RollAway Portal Overview: own 2-tab portal frame for premade groups, no BigWigs/Details needed (`/rat`).
+- Optional: show active spec/talent build in the "Check Talents" Ready Check reminder.
+- Option to lock the position of the Check Talents / Durability / Join reminders, plus a button to reset all three.
 
 ### Fixed
 - Teleport Reminder no longer reappears on cooldown or hides itself right after showing.
 - Group Finder join detection resolves the dungeon earlier and catches backfilled group members; companion addon no longer opens for backfills.
 - Premade group reminder no longer opens for below-max-level characters.
+- Talent build name now shows the saved loadout (e.g. "Raid Pack Leader ST") instead of the spec name twice, or not at all.
 
 ### Changed
 - Removed dead code in Portal Overview and an unused legacy raid teleport table.
