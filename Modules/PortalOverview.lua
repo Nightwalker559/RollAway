@@ -1,11 +1,9 @@
 -- RollAway - Modules/PortalOverview.lua
 -- RollAway's own portal frame - an alternative to BigWigs/Details Keystones
--- for players who don't run either. Used for manually formed (premade)
--- Mythic+ groups via RollAwayDB.premadeKeyAddon == "own" (QoL.lua); LFG-
--- joined groups keep using the single-dungeon reminder in
--- Modules\TeleportReminder.lua instead, which can resolve the exact
--- dungeon via the LFG activity ID.
--- Also opens manually at any time via /rat.
+-- for players who don't run either. Purely manual, opened via /rat - no
+-- automatic trigger (the join reminder in Modules\TeleportReminder.lua
+-- handles Group Finder (LFG) joins instead, which can resolve the exact
+-- dungeon via the LFG activity ID).
 --
 -- Two tabs:
 --   1) Current season  - RA.DUNGEONS[RA.ACTIVE_SEASON], same layout/locked

@@ -2,8 +2,9 @@
 -- Alternative to the default instance-join reminder: shows the Mythic+
 -- Season 2 dungeon portal button for the dungeon you're actually queued
 -- for (or all of them, if the specific dungeon can't be determined - e.g.
--- a manually formed premade group). Selected via
--- RollAwayDB.joinReminderKeyAddon == "teleport" (QoL.lua).
+-- an M+ activity outside the tracked season pool). Selected via
+-- RollAwayDB.joinReminderKeyAddon == "teleport" (QoL.lua). Group Finder
+-- (LFG) join only - manually formed groups get no reminder at all.
 -- Stays open until a portal is clicked or the frame is manually closed -
 -- no auto-hide timer.
 
@@ -171,8 +172,8 @@ end
 -- instanceName: localized dungeon name (or nil for a generic message).
 -- dungeon: matched entry from RA.DUNGEONS[RA.ACTIVE_SEASON] - when given,
 -- only that dungeon's portal is shown; when nil (dungeon not resolved,
--- e.g. a manually formed premade group), all portals are shown so the
--- correct one can still be picked manually.
+-- e.g. an M+ activity outside the tracked season pool), all portals are
+-- shown so the correct one can still be picked manually.
 -- Ignore GetSpellCooldown durations at/below the GCD - those aren't a real
 -- "on cooldown" state, just the brief global cooldown after any cast.
 local COOLDOWN_THRESHOLD = 3

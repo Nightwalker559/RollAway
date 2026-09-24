@@ -99,9 +99,6 @@ L["qol_join_keyaddon_info"]      = "Opens the selected teleport helper for Mythi
 L["qol_join_keyaddon_bigwigs"]   = "BigWigs"
 L["qol_join_keyaddon_details"]   = "Details!"
 L["qol_join_keyaddon_teleport"]  = "RollAway Teleport Reminder"
-L["qol_premade_keyaddon_label"]  = "Open companion addon for manually formed (premade) groups:"
-L["qol_premade_keyaddon_info"]   = "Separate choice for manually formed Mythic+ groups (dungeon can't be detected). Closes on teleport, or after 20 seconds."
-L["qol_premade_keyaddon_own"]    = "RollAway Portals"
 L["portal_overview_title"]       = "RollAway Portals"
 L["portal_overview_tab_season"]  = "Current Season"
 L["portal_overview_tab_dungeons"] = "All Dungeons"
@@ -457,5 +454,5 @@ L["whatsnew_autorepair_location"]  = "QoL > Misc"
 -- What's New (3.0.6)
 ------------------------------------------------------------------------
 L["whatsnew_portaloverview_title"]    = "Portal Overview"
-L["whatsnew_portaloverview_desc"]     = "Own portal frame for premade M+ groups - current season or all learned dungeons by expansion. No BigWigs/Details needed."
+L["whatsnew_portaloverview_desc"]     = "Own portal frame - current season or all learned dungeons by expansion. No BigWigs/Details needed. Open anytime with /rat."
 L["whatsnew_portaloverview_location"] = "/rat"

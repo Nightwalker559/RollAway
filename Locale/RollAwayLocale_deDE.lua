@@ -100,9 +100,6 @@ L["qol_join_keyaddon_info"]      = "Öffnet die gewählte Teleport-Hilfe bei Myt
 L["qol_join_keyaddon_bigwigs"]   = "BigWigs"
 L["qol_join_keyaddon_details"]   = "Details!"
 L["qol_join_keyaddon_teleport"]  = "RollAway Teleport-Hinweis"
-L["qol_premade_keyaddon_label"]  = "Begleit-Addon für manuell gebildete (Premade-) Gruppen öffnen:"
-L["qol_premade_keyaddon_info"]   = "Eigene Auswahl für manuell gebildete Mythisch-Plus-Gruppen (kein Dungeon erkennbar). Schließt nach Teleport, spätestens nach 20 Sekunden."
-L["qol_premade_keyaddon_own"]    = "RollAway Portale"
 L["portal_overview_title"]       = "RollAway Portale"
 L["portal_overview_tab_season"]  = "Aktuelle Season"
 L["portal_overview_tab_dungeons"] = "Alle Dungeons"
@@ -457,5 +454,5 @@ L["whatsnew_autorepair_location"]  = "QoL > Sonstiges"
 -- What's New (3.0.6)
 ------------------------------------------------------------------------
 L["whatsnew_portaloverview_title"]    = "Portalübersicht"
-L["whatsnew_portaloverview_desc"]     = "Eigenes Portalfenster für vorgefertigte M+-Gruppen - aktuelle Season oder alle erlernten Dungeons nach Erweiterung. Kein BigWigs/Details nötig."
+L["whatsnew_portaloverview_desc"]     = "Eigenes Portalfenster - aktuelle Season oder alle erlernten Dungeons nach Erweiterung. Kein BigWigs/Details nötig. Jederzeit per /rat aufrufbar."
 L["whatsnew_portaloverview_location"] = "/rat"

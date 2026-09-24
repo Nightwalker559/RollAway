@@ -5,17 +5,16 @@
 ## 3.0.6
 
 ### New
-- RollAway Portal Overview: own 2-tab portal frame for premade groups, no BigWigs/Details needed (`/rat`).
+- RollAway Portal Overview: own 2-tab portal reference frame, no BigWigs/Details needed (`/rat`).
 - Optional: show active spec/talent build in the "Check Talents" Ready Check reminder.
 - Option to lock the position of the Check Talents / Durability / Join reminders, plus a button to reset all three.
 
 ### Fixed
 - Teleport Reminder no longer reappears on cooldown or hides itself right after showing.
 - Group Finder join detection resolves the dungeon earlier and catches backfilled group members; companion addon no longer opens for backfills.
-- Premade group reminder no longer opens for below-max-level characters.
-- Talent build name now shows the saved loadout (e.g. "Raid Pack Leader ST") instead of the spec name twice, or not at all.
+- Talent build name now shows the saved loadout (e.g. "Raid Pack Leader ST") instead of the spec name twice, or not showing at all.
 - Fixed `ADDON_ACTION_BLOCKED` on entering combat: hiding/showing a frame with portal buttons (secure) is a protected action in combat — Teleport Reminder and Portal Overview now defer it until combat ends.
-- Fixed: opening the companion addon (BigWigs/Details/own Portal Overview) used a blind toggle — if it was already open (e.g. manually via `/rat`), the trigger closed it instead of keeping it open. Now uses explicit open/close for Details and own; BigWigs still toggles (no reliable shown-state check available).
+- Fixed: opening BigWigs/Details Keystones used a blind toggle — if it was already open, the trigger closed it instead of keeping it open. Details now checks its shown state first; BigWigs still toggles (no reliable shown-state check available).
 
 ### Changed
 - Removed dead code in Portal Overview and an unused legacy raid teleport table.

@@ -155,7 +155,6 @@ RA.defaults = {
         autoAcceptInvite     = false,
         autoRepairMode       = "none",   -- "none" | "player" | "guild"
         joinReminderKeyAddon = "none",    -- "none" | "bigwigs" | "details" | "teleport" – mutually exclusive
-        premadeKeyAddon      = "none",    -- "none" | "bigwigs" | "details" – separate choice for manually formed (premade) groups; teleport reminder not offered here (no LFG activity to resolve the exact dungeon)
         lfgQuickCreate       = false,
         lfgAutoPlaystyle     = false,
         lfgDefaultPlaystyle  = 0,
@@ -620,16 +619,6 @@ f:SetScript("OnEvent", function(_, event, ...)
                 legacyFlatSV.joinReminderKeyAddon = legacyFlatSV.joinReminderBigWigs and "bigwigs" or "none"
             end
             legacyFlatSV.joinReminderBigWigs = nil
-
-            -- Migration (pre-3.0.0): premadeKeyAddon didn't exist yet - default it
-            -- from the old single joinReminderKeyAddon so users who already had
-            -- BigWigs/Details working for premade groups keep that behavior.
-            -- "teleport" isn't carried over: it can't resolve a specific dungeon
-            -- for a manually formed group, so it wasn't useful there anyway.
-            if legacyFlatSV.premadeKeyAddon == nil then
-                local old = legacyFlatSV.joinReminderKeyAddon
-                legacyFlatSV.premadeKeyAddon = (old == "bigwigs" or old == "details") and old or "none"
-            end
 
             -- Migration (pre-2.9.0): hideInRaid (single bool) -> hideInRaidBuckets (per-difficulty).
             if legacyFlatSV.hideInRaidBuckets == nil and legacyFlatSV.hideInRaid ~= nil then

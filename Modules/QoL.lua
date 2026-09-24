@@ -83,19 +83,30 @@ local function CreateTalentFrame()
 end
 
 -- "<Spec> – <loadout name>", or just "<Spec>" for the starter build / no
--- saved loadout. GetActiveConfigID() is the wrong API here - it's the
--- per-spec "active config" (always named after the spec itself), not the
--- saved loadout. GetLastSelectedSavedConfigID() is the one that tracks the
--- actual selected loadout (e.g. "Raid Pack Leader ST"), -2 = starter build.
+-- saved loadout. Three sources, in the same priority order Blizzard's own
+-- Talent UI uses (see PlayerSpellsFrame.TalentsFrame.LoadSystem):
+-- 1) the Talent frame's own dropdown selection - only populated once that
+--    frame has been created (i.e. Talents UI opened this session)
+-- 2) GetLastSelectedSavedConfigID - only set once a loadout has been
+--    (re)selected via that dropdown this session; nil otherwise, which is
+--    the common case and why relying on it alone showed no name at all
+-- 3) GetActiveConfigID - always available but named after the spec itself,
+--    not the loadout (filtered out below via the loadoutName ~= specName
+--    check, so it never produces the "Spec – Spec" duplicate)
 local function GetActiveTalentLabel()
     local specIndex = C_SpecializationInfo.GetSpecialization()
     local specID, specName = specIndex and C_SpecializationInfo.GetSpecializationInfo(specIndex)
     if not specName then return nil end
 
-    local savedConfigID = C_ClassTalents and C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local loadSystem = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
+        and PlayerSpellsFrame.TalentsFrame.LoadSystem
+    local configID = loadSystem and loadSystem.GetSelectionID and loadSystem:GetSelectionID()
+    configID = configID or (C_ClassTalents and C_ClassTalents.GetLastSelectedSavedConfigID(specID))
+    configID = configID or (C_ClassTalents and C_ClassTalents.GetActiveConfigID())
+
     local loadoutName
-    if savedConfigID and savedConfigID > 0 then
-        local configInfo = C_Traits.GetConfigInfo(savedConfigID)
+    if configID and configID > 0 then
+        local configInfo = C_Traits.GetConfigInfo(configID)
         loadoutName = configInfo and configInfo.name
     end
 
@@ -414,27 +425,22 @@ end
 RA.IsDetailsKeyAvailable = IsDetailsKeyAvailable
 
 -- Returns "bigwigs" / "details" if the selected companion addon is loaded
--- and its toggle command is available, otherwise nil. Checks
--- joinReminderKeyAddon by default; pass "premade" to check premadeKeyAddon
--- instead (separate choice for manually formed groups, see below).
-local function GetActiveKeyAddon(context)
-    local choice = RollAwayDB and (context == "premade" and RollAwayDB.premadeKeyAddon or RollAwayDB.joinReminderKeyAddon)
+-- and its toggle command is available, otherwise nil.
+local function GetActiveKeyAddon()
+    local choice = RollAwayDB and RollAwayDB.joinReminderKeyAddon
     if choice == "bigwigs" and IsBigWigsKeyAvailable() then return "bigwigs" end
     if choice == "details" and IsDetailsKeyAvailable() then return "details" end
-    if choice == "own" then return "own" end -- RollAway's own frame, no external addon needed
     return nil
 end
 
 -- Opens the selected companion addon's keystone frame. Idempotent (no-op if
--- already open) for "own"/"details" - important since the trigger can fire
--- while the frame is already open from something outside our own bookkeeping
--- (e.g. the player opened RollAway Portal Overview manually via /rat while
--- waiting for the group to fill). A blind toggle would close it instead of
--- keeping it open in that case. BigWigs only exposes a toggle command with
--- no reliable way to check its frame's shown state, so it's called
--- unconditionally there - same caveat applies to it, unavoidable for now.
-local function OpenKeyAddon(context)
-    local which = GetActiveKeyAddon(context)
+-- already open) for "details" - important since the trigger can fire while
+-- the frame is already open from something outside our own bookkeeping.
+-- BigWigs only exposes a toggle command with no reliable way to check its
+-- frame's shown state, so it's called unconditionally there - same caveat
+-- applies to it, unavoidable for now.
+local function OpenKeyAddon()
+    local which = GetActiveKeyAddon()
     if which == "bigwigs" then
         DBG("[QoL] Opening BigWigs Keystones via SlashCmdList[key]")
         SlashCmdList["key"]("")
@@ -446,17 +452,13 @@ local function OpenKeyAddon(context)
             SlashCmdList["KEYSTONE"]("")
         end
         return true
-    elseif which == "own" then
-        DBG("[QoL] Opening RollAway Portal Overview")
-        if RA.ShowPortalOverview then RA.ShowPortalOverview() end
-        return true
     end
     return false
 end
 
 -- Closes it - idempotent counterpart to OpenKeyAddon (same BigWigs caveat).
-local function CloseKeyAddon(context)
-    local which = GetActiveKeyAddon(context)
+local function CloseKeyAddon()
+    local which = GetActiveKeyAddon()
     if which == "bigwigs" then
         DBG("[QoL] Closing BigWigs Keystones via SlashCmdList[key]")
         SlashCmdList["key"]("")
@@ -467,10 +469,6 @@ local function CloseKeyAddon(context)
             DBG("[QoL] Closing Details! Keystones (direct Hide)")
             f:Hide()
         end
-        return true
-    elseif which == "own" then
-        DBG("[QoL] Closing RollAway Portal Overview")
-        if RA.HidePortalOverview then RA.HidePortalOverview() end
         return true
     end
     return false
@@ -485,7 +483,6 @@ end
 
 local keyAddonSafetyTimer    = nil   -- pending 20s safety-close timer handle
 local keyAddonReminderOpen   = false -- true while we're holding it open
-local keyAddonReminderContext = nil  -- "premade" or nil - remembers which choice opened it
 
 local function CancelKeyAddonSafetyTimer()
     if keyAddonSafetyTimer then
@@ -501,25 +498,21 @@ local function CloseKeyAddonReminder()
     if keyAddonReminderOpen then
         keyAddonReminderOpen = false
         DBG("[QoL] Closing keystone companion addon")
-        CloseKeyAddon(keyAddonReminderContext)
-        keyAddonReminderContext = nil
+        CloseKeyAddon()
     end
 end
 
--- Starts (or restarts) the 20s safety-close timer. context: "premade" or nil,
--- matching the RollAwayDB choice that determines which addon gets toggled.
-local function StartKeyAddonSafetyTimer(context)
+-- Starts (or restarts) the 20s safety-close timer.
+local function StartKeyAddonSafetyTimer()
     CancelKeyAddonSafetyTimer()
-    keyAddonReminderOpen    = true
-    keyAddonReminderContext = context
+    keyAddonReminderOpen = true
     if C_Timer_NewTimer then
         keyAddonSafetyTimer = C_Timer_NewTimer(20, function()
             keyAddonSafetyTimer = nil
             if keyAddonReminderOpen then
                 DBG("[QoL] Safety timer expired – closing keystone companion addon")
                 keyAddonReminderOpen = false
-                CloseKeyAddon(context)
-                keyAddonReminderContext = nil
+                CloseKeyAddon()
             end
         end)
     elseif C_Timer_After then
@@ -528,8 +521,7 @@ local function StartKeyAddonSafetyTimer(context)
             if keyAddonReminderOpen then
                 DBG("[QoL] Safety timer expired – closing keystone companion addon")
                 keyAddonReminderOpen = false
-                CloseKeyAddon(context)
-                keyAddonReminderContext = nil
+                CloseKeyAddon()
             end
         end)
         keyAddonSafetyTimer = true
@@ -789,8 +781,7 @@ end
 -- not just for whoever created it - so GROUP_ROSTER_UPDATE alone should
 -- resolve it. In practice that resolution can race with the roster/LFG
 -- state actually being ready, so a short poll (pollTicker below) re-checks
--- it every few seconds as a safety net until it succeeds or the group
--- turns out to have no LFG listing at all (→ TryOpenForPremadeGroup).
+-- it every few seconds as a safety net until it succeeds.
 ------------------------------------------------------------------------
 
 local POLL_INTERVAL = 3
@@ -804,76 +795,23 @@ local function InitJoinReminder()
     -- Per-group state, all reset together on ungroup (see ResetGroupState).
     local resolvedEntryID   = nil   -- activityID we've already shown/dispatched for
     local hadOwnListing     = false -- true once we've ever had our own LFG listing this group
-    local premadeHandled    = false -- true once the premade (no-LFG) fallback has fired this group
     -- searchResultID -> dungeon entry (or false for "resolved, not M+/raid"),
     -- filled as soon as an application's activityIDs can be read (as early
     -- as "applied"/"invited"), so "inviteaccepted" never has to re-resolve
     -- from a possibly-already-purged browse cache entry.
     local applicationDungeons = {}
 
-    -- The pollTicker calls into this every 3s, so a still-unchanged reason
-    -- (e.g. "group size 4 < 5") would otherwise spam the debug log once per
-    -- poll. Only logs when the message actually changes from last time.
-    local lastPremadeDBG = nil
-    local function PremadeDBG(...)
-        local line = table.concat({...}, " ")
-        if line == lastPremadeDBG then return end
-        lastPremadeDBG = line
-        DBG(...)
-    end
-
     local function ResetGroupState()
         resolvedEntryID = nil
         hadOwnListing   = false
-        premadeHandled  = false
-        lastPremadeDBG  = nil
         wipe(applicationDungeons)
-    end
-
-    -- Fallback: group has no LFG listing to read a dungeon from at all (true
-    -- manually-formed premade - direct invites, no Group Finder involved).
-    -- Just opens the configured companion addon once the party is full.
-    local function TryOpenForPremadeGroup()
-        if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
-        if not IsInGroup() or IsInRaid() then return end
-        if keyAddonOpenedByCreation or premadeHandled or hadOwnListing then
-            PremadeDBG("[QoL] Premade check skipped: keyAddonOpenedByCreation=", keyAddonOpenedByCreation,
-                "premadeHandled=", premadeHandled, "hadOwnListing=", hadOwnListing)
-            return
-        end
-        -- Own char only - no reliable API to read other party members' level
-        -- (UnitLevel(partyN) isn't guaranteed synced; GetRaidRosterInfo only
-        -- works for raids, not parties).
-        if not (RA.IsMaxLevel and RA.IsMaxLevel()) then
-            PremadeDBG("[QoL] Premade check: not max level, skipping")
-            return
-        end
-        if GetNumGroupMembers() < 5 then
-            PremadeDBG("[QoL] Premade check: group size", GetNumGroupMembers(), "< 5, waiting")
-            return
-        end
-        -- Queue pops (e.g. Timewalking) form a full 5-man group instantly and
-        -- have no keystone to speak of - IsPartyLFG() is true whenever the
-        -- group came from Dungeon/Raid Finder rather than manual invites.
-        if IsPartyLFG() then
-            PremadeDBG("[QoL] Premade check: IsPartyLFG() true, not a manual premade")
-            return
-        end
-        if not GetActiveKeyAddon("premade") then
-            PremadeDBG("[QoL] Premade check: no companion addon configured for premade (premadeKeyAddon)")
-            return
-        end
-
-        DBG("[QoL] Premade group full – opening keystone companion addon")
-        premadeHandled = true
-        OpenKeyAddon("premade")
-        StartKeyAddonSafetyTimer("premade")
     end
 
     -- Tries to resolve + show from the group's current LFG listing
     -- (GetActiveEntryInfo works for any member while a listing is active,
-    -- not just whoever created it). Falls back to the premade path once
-    -- nothing is found. Called from GROUP_ROSTER_UPDATE and pollTicker.
+    -- not just whoever created it). Manually-formed groups with no LFG
+    -- listing at all get no reminder - Group Finder M+ only, by design.
+    -- Called from GROUP_ROSTER_UPDATE and pollTicker.
     local function TryResolveAndShow()
         if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
         if not C_LFGList then return end
@@ -885,10 +823,7 @@ local function InitJoinReminder()
 
         local entryInfo = C_LFGList.GetActiveEntryInfo()
         local entryID = entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]
-        if not entryID then
-            TryOpenForPremadeGroup()
-            return
-        end
+        if not entryID then return end
         local name, isMythicPlus, dungeon = GetNameFromActivityID(entryID)
         DBG("[QoL] Join reminder (active entry): resolved name=", name or "nil")
         if name then

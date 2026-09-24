@@ -355,72 +355,13 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     -- Re-check on every panel open, since addon load order isn't guaranteed.
     qolPanel:HookScript("OnShow", RefreshKeyAddonCheckboxes)
 
-    -- Sub-option: separate companion addon choice for manually formed (premade)
-    -- groups. No teleport option here - the teleport reminder is a Group
-    -- Finder (LFG) feature only; a premade group has no listing to resolve
-    -- a dungeon from, so it just opens whichever companion addon is chosen.
-    -- Thin divider + extra gap so this reads as a clearly separate block from
-    -- the Group Finder keyaddon choice above it, not a continuation of it.
-    local qolPremadeDivider = reminder:CreateTexture(nil, "ARTWORK")
-    qolPremadeDivider:SetHeight(1)
-    qolPremadeDivider:SetWidth(400)
-    qolPremadeDivider:SetPoint("TOPLEFT", qolKeyAddonInfo, "BOTTOMLEFT", -20, -14)
-    qolPremadeDivider:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-
-    local qolPremadeLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    qolPremadeLabel:SetPoint("TOPLEFT", qolPremadeDivider, "BOTTOMLEFT", 0, -14)
-    qolPremadeLabel:SetText(RA_L["qol_premade_keyaddon_label"])
-
-    local cbPremadeBigWigs = MakeCB(reminder, RA_L["qol_join_keyaddon_bigwigs"], nil, nil)
-    cbPremadeBigWigs.frame:SetPoint("TOPLEFT", qolPremadeLabel, "BOTTOMLEFT", 0, -6)
-
-    local cbPremadeDetails = MakeCB(reminder, RA_L["qol_join_keyaddon_details"], nil, nil)
-    cbPremadeDetails.frame:SetPoint("LEFT", cbPremadeBigWigs.frame, "RIGHT", 10, 0)
-
-    local cbPremadeOwn = MakeCB(reminder, RA_L["qol_premade_keyaddon_own"], nil, nil)
-    cbPremadeOwn.frame:SetPoint("LEFT", cbPremadeDetails.frame, "RIGHT", 10, 0)
-
-    local qolPremadeInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolPremadeInfo:SetPoint("TOPLEFT", cbPremadeBigWigs.frame, "BOTTOMLEFT", 20, -6)
-    qolPremadeInfo:SetWidth(400); qolPremadeInfo:SetJustifyH("LEFT")
-    qolPremadeInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolPremadeInfo:SetText(RA_L["qol_premade_keyaddon_info"])
-
-    local function RefreshPremadeKeyAddonCheckboxes()
-        local bwOK = RA.IsBigWigsKeyAvailable and RA.IsBigWigsKeyAvailable()
-        local dtOK = RA.IsDetailsKeyAvailable and RA.IsDetailsKeyAvailable()
-
-        cbPremadeBigWigs:SetValue(RollAwayDB.premadeKeyAddon == "bigwigs")
-        cbPremadeDetails:SetValue(RollAwayDB.premadeKeyAddon == "details")
-        cbPremadeOwn:SetValue(RollAwayDB.premadeKeyAddon == "own")
-
-        cbPremadeBigWigs:SetDisabled(not bwOK)
-        cbPremadeDetails:SetDisabled(not dtOK)
-    end
-
-    cbPremadeBigWigs:SetCallback("OnValueChanged", function(widget, _, value)
-        RollAwayDB.premadeKeyAddon = value and "bigwigs" or "none"
-        RefreshPremadeKeyAddonCheckboxes()
-    end)
-    cbPremadeDetails:SetCallback("OnValueChanged", function(widget, _, value)
-        RollAwayDB.premadeKeyAddon = value and "details" or "none"
-        RefreshPremadeKeyAddonCheckboxes()
-    end)
-    cbPremadeOwn:SetCallback("OnValueChanged", function(widget, _, value)
-        RollAwayDB.premadeKeyAddon = value and "own" or "none"
-        RefreshPremadeKeyAddonCheckboxes()
-    end)
-
-    RefreshPremadeKeyAddonCheckboxes()
-    qolPanel:HookScript("OnShow", RefreshPremadeKeyAddonCheckboxes)
-
     -- Ready Check talent reminder (last alphabetically: "Show talent reminder...")
     local qolShowSpecCB  -- forward-declared, referenced in qolCB's callback below
     local qolCB = MakeCB(reminder, RA_L["qol_readycheck_label"], RollAwayDB.readyCheckReminder, function(checked)
         RollAwayDB.readyCheckReminder = checked
         if qolShowSpecCB then qolShowSpecCB:SetDisabled(not checked) end
     end)
-    qolCB.frame:SetPoint("TOPLEFT", qolPremadeInfo, "BOTTOMLEFT", -40, -12)
+    qolCB.frame:SetPoint("TOPLEFT", qolKeyAddonInfo, "BOTTOMLEFT", -20, -20)
 
     local qolInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     qolInfo:SetPoint("TOPLEFT", qolCB.frame, "BOTTOMLEFT", 20, -6)
