@@ -86,7 +86,10 @@ function RA.InitOptions()
         classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[className]
     end
 
-    local GetElvUIColors = function() return (RA.GetElvUIColors and RA.GetElvUIColors()) or ({0.1,0.1,0.1,0.8}), ({0.1,0.1,0.1}) end
+    local function GetElvUIColors()
+        if RA.GetElvUIColors then return RA.GetElvUIColors() end
+        return {0.1,0.1,0.1,0.8}, {0.1,0.1,0.1}
+    end
 
     local GOLD = { r = 0.85, g = 0.73, b = 0.25 }
     local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
@@ -426,8 +429,7 @@ function RA.InitOptions()
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
 
     -- Entwickler section: only visible to dev/tester characters
-    local playerName = UnitName("player")
-    local isDevChar  = RA.DEV_CHARS and RA.DEV_CHARS[playerName]
+    -- (isDevChar already computed above, for the Bonus Roll tab gating)
     local cmdInfo
 
     if isDevChar then

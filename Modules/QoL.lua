@@ -95,14 +95,20 @@ end
 --    check, so it never produces the "Spec – Spec" duplicate)
 local function GetActiveTalentLabel()
     local specIndex = C_SpecializationInfo.GetSpecialization()
-    local specID, specName = specIndex and C_SpecializationInfo.GetSpecializationInfo(specIndex)
+    if not specIndex then return nil end
+    -- NOTE: must NOT write "specIndex and C_SpecializationInfo.GetSpecializationInfo(...)"
+    -- here - Lua's `and`/`or` truncate a multi-return to a single value, so a
+    -- guard like that silently drops every return after the first (this is
+    -- exactly what caused specID to come through but specName to stay nil).
+    local specID, specName = C_SpecializationInfo.GetSpecializationInfo(specIndex)
     if not specName then return nil end
 
     local loadSystem = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
         and PlayerSpellsFrame.TalentsFrame.LoadSystem
-    local configID = loadSystem and loadSystem.GetSelectionID and loadSystem:GetSelectionID()
-    configID = configID or (C_ClassTalents and C_ClassTalents.GetLastSelectedSavedConfigID(specID))
-    configID = configID or (C_ClassTalents and C_ClassTalents.GetActiveConfigID())
+    local uiConfigID     = loadSystem and loadSystem.GetSelectionID and loadSystem:GetSelectionID()
+    local lastConfigID   = C_ClassTalents and C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local activeConfigID = C_ClassTalents and C_ClassTalents.GetActiveConfigID()
+    local configID = uiConfigID or lastConfigID or activeConfigID
 
     local loadoutName
     if configID and configID > 0 then
@@ -794,7 +800,6 @@ local function InitJoinReminder()
 
     -- Per-group state, all reset together on ungroup (see ResetGroupState).
     local resolvedEntryID   = nil   -- activityID we've already shown/dispatched for
-    local hadOwnListing     = false -- true once we've ever had our own LFG listing this group
     -- searchResultID -> dungeon entry (or false for "resolved, not M+/raid"),
     -- filled as soon as an application's activityIDs can be read (as early
     -- as "applied"/"invited"), so "inviteaccepted" never has to re-resolve
@@ -803,7 +808,6 @@ local function InitJoinReminder()
 
     local function ResetGroupState()
         resolvedEntryID = nil
-        hadOwnListing   = false
         wipe(applicationDungeons)
     end
 
@@ -877,7 +881,6 @@ local function InitJoinReminder()
                 local activityID = entryInfo.activityIDs[1]
                 local act = C_LFGList.GetActivityInfoTable(activityID)
                 if not (act and (act.isMythicPlusActivity or act.isCurrentRaidActivity)) then return end
-                hadOwnListing = true
                 if keyAddonOpenedByCreation then return end  -- already open
                 keyAddonOpenedByCreation = true
 

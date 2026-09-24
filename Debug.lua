@@ -274,9 +274,19 @@ local function RegisterSlashCommands()
         DevPrint("QoL test triggered.")
         local savedType = RA.cachedInstanceType
         RA.cachedInstanceType = "party"
-        if RA.ShowTalentReminder then RA.ShowTalentReminder() end
+        if RA.ShowTalentReminder then
+            local savedReadyCheck = RollAwayDB.readyCheckReminder
+            RollAwayDB.readyCheckReminder = true
+            RA.ShowTalentReminder()
+            RollAwayDB.readyCheckReminder = savedReadyCheck
+        end
         RA.cachedInstanceType = savedType
-        if RA.CheckDurability then RA.CheckDurability(true) end
+        if RA.CheckDurability then
+            local savedDura = RollAwayDB.durabilityWarning
+            RollAwayDB.durabilityWarning = true
+            RA.CheckDurability(true)
+            RollAwayDB.durabilityWarning = savedDura
+        end
         if RA.ShowJoinReminder then
             local savedJoin = RollAwayDB.instanceJoinReminder
             RollAwayDB.instanceJoinReminder = true

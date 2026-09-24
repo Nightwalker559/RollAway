@@ -12,14 +12,14 @@
 ### Fixed
 - Teleport Reminder no longer reappears on cooldown or hides itself right after showing.
 - Group Finder join detection resolves the dungeon earlier and catches backfilled group members; companion addon no longer opens for backfills.
-- Talent build name now shows the saved loadout (e.g. "Raid Pack Leader ST") instead of the spec name twice, or not showing at all.
-- Fixed `ADDON_ACTION_BLOCKED` on entering combat: hiding/showing a frame with portal buttons (secure) is a protected action in combat — Teleport Reminder and Portal Overview now defer it until combat ends.
-- Fixed: opening BigWigs/Details Keystones used a blind toggle — if it was already open, the trigger closed it instead of keeping it open. Details now checks its shown state first; BigWigs still toggles (no reliable shown-state check available).
+- Talent build name now shows the saved loadout instead of the spec name twice, or not at all (Lua `and`-truncation bug).
+- Fixed `ADDON_ACTION_BLOCKED` on entering combat: Teleport Reminder and Portal Overview now defer secure frame show/hide until combat ends.
+- BigWigs/Details Keystones no longer closes itself if already open when triggered again; Details checks its shown state, BigWigs still toggles (no reliable check available).
+- `/rawqol` now forces Check Talents and Durability Warning on for its test, matching the other reminders.
 
 ### Changed
-- Removed dead code in Portal Overview and an unused legacy raid teleport table.
-- Portal Overview and Dungeon Quick Select now sort dungeons alphabetically.
-- Portal Overview's season tab header now matches the all-dungeons tab style.
+- Removed dead code across Portal Overview, QoL, and Options (unused tables/variables, a duplicate dev-char check) and fixed a latent ElvUI tab-color fallback bug (no visible effect).
+- Portal Overview and Dungeon Quick Select now sort dungeons alphabetically; season tab header matches the all-dungeons tab style.
 
 ## 3.0.5
 
