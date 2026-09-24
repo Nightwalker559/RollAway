@@ -25,10 +25,12 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 
 ### Reminders
 - **Bonus Roll reminder** on entering a Mythic dungeon/raid — shows Voidcore currency and available rolls.
-- **Instance join reminder** with optional auto-open of your keystone companion addon (BigWigs Keystones or Details! Keystones).
-- **Ready Check talent reminder.**
+- **Instance join reminder** (Group Finder M+ only) with optional auto-open of your keystone companion addon (BigWigs Keystones, Details! Keystones, or RollAway's own Teleport Reminder showing the exact dungeon portal).
+- **RollAway Portal Overview** — own portal reference frame (current season or all learned dungeons by expansion), open anytime with `/rat`.
+- **Ready Check talent reminder**, optionally showing your active spec/talent build.
 - **Great Vault reminder** — popup on login if you have unclaimed rewards (once per weekly reset). Manual check: `/rawvault`
 - **Paragon Bag reminder** — popup when Paragon quests are available across all Midnight factions, with turn-in NPC & zone. Manual check: `/rawparagon`
+- Reminder positions can be locked and reset to default from the options.
 
 ### Quality of Life
 - **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
@@ -43,6 +45,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 | Command | Description |
 | --- | --- |
 | `/raw` or `/rollaway` | Open options |
+| `/rat` | Toggle RollAway Portal Overview |
 | `/rawvault` | Manually check Great Vault status |
 | `/rawparagon` | Manually check Paragon Bag availability |
 | `/rawwhats` | Show the "What's New" window |
