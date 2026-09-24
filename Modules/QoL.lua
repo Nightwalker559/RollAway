@@ -425,14 +425,40 @@ local function GetActiveKeyAddon(context)
     return nil
 end
 
--- Toggles the selected companion addon's keystone frame. Returns true if
--- toggled (caller schedules the matching close-toggle).
--- BigWigs' "key" toggles natively; Details!' "/keys" doesn't, so we
--- check its shown state and Hide() it directly when already open.
-local function ToggleKeyAddon(context)
+-- Opens the selected companion addon's keystone frame. Idempotent (no-op if
+-- already open) for "own"/"details" - important since the trigger can fire
+-- while the frame is already open from something outside our own bookkeeping
+-- (e.g. the player opened RollAway Portal Overview manually via /rat while
+-- waiting for the group to fill). A blind toggle would close it instead of
+-- keeping it open in that case. BigWigs only exposes a toggle command with
+-- no reliable way to check its frame's shown state, so it's called
+-- unconditionally there - same caveat applies to it, unavoidable for now.
+local function OpenKeyAddon(context)
     local which = GetActiveKeyAddon(context)
     if which == "bigwigs" then
-        DBG("[QoL] Toggling BigWigs Keystones via SlashCmdList[key]")
+        DBG("[QoL] Opening BigWigs Keystones via SlashCmdList[key]")
+        SlashCmdList["key"]("")
+        return true
+    elseif which == "details" then
+        local f = _G["DetailsKeystoneSmallFrame"]
+        if not (f and f:IsShown()) then
+            DBG("[QoL] Opening Details! Keystones via SlashCmdList[KEYSTONE]")
+            SlashCmdList["KEYSTONE"]("")
+        end
+        return true
+    elseif which == "own" then
+        DBG("[QoL] Opening RollAway Portal Overview")
+        if RA.ShowPortalOverview then RA.ShowPortalOverview() end
+        return true
+    end
+    return false
+end
+
+-- Closes it - idempotent counterpart to OpenKeyAddon (same BigWigs caveat).
+local function CloseKeyAddon(context)
+    local which = GetActiveKeyAddon(context)
+    if which == "bigwigs" then
+        DBG("[QoL] Closing BigWigs Keystones via SlashCmdList[key]")
         SlashCmdList["key"]("")
         return true
     elseif which == "details" then
@@ -440,14 +466,11 @@ local function ToggleKeyAddon(context)
         if f and f:IsShown() then
             DBG("[QoL] Closing Details! Keystones (direct Hide)")
             f:Hide()
-        else
-            DBG("[QoL] Opening Details! Keystones via SlashCmdList[KEYSTONE]")
-            SlashCmdList["KEYSTONE"]("")
         end
         return true
     elseif which == "own" then
-        DBG("[QoL] Toggling RollAway Portal Overview")
-        if RA.TogglePortalOverview then RA.TogglePortalOverview() end
+        DBG("[QoL] Closing RollAway Portal Overview")
+        if RA.HidePortalOverview then RA.HidePortalOverview() end
         return true
     end
     return false
@@ -478,7 +501,7 @@ local function CloseKeyAddonReminder()
     if keyAddonReminderOpen then
         keyAddonReminderOpen = false
         DBG("[QoL] Closing keystone companion addon")
-        ToggleKeyAddon(keyAddonReminderContext)
+        CloseKeyAddon(keyAddonReminderContext)
         keyAddonReminderContext = nil
     end
 end
@@ -495,7 +518,7 @@ local function StartKeyAddonSafetyTimer(context)
             if keyAddonReminderOpen then
                 DBG("[QoL] Safety timer expired – closing keystone companion addon")
                 keyAddonReminderOpen = false
-                ToggleKeyAddon(context)
+                CloseKeyAddon(context)
                 keyAddonReminderContext = nil
             end
         end)
@@ -505,7 +528,7 @@ local function StartKeyAddonSafetyTimer(context)
             if keyAddonReminderOpen then
                 DBG("[QoL] Safety timer expired – closing keystone companion addon")
                 keyAddonReminderOpen = false
-                ToggleKeyAddon(context)
+                CloseKeyAddon(context)
                 keyAddonReminderContext = nil
             end
         end)
@@ -599,7 +622,7 @@ local function ShowJoinReminder(instanceName, forceTimer)
     local keyAddonOpened = false
     if not IsInRaid() and not keyAddonOpenedByCreation and GetActiveKeyAddon() and C_Timer_After then
         keyAddonOpened = true
-        C_Timer_After(0.3, ToggleKeyAddon)
+        C_Timer_After(0.3, OpenKeyAddon)
     end
 
     -- Helper: hide the join text banner after 6s. The keystone companion
@@ -788,10 +811,22 @@ local function InitJoinReminder()
     -- from a possibly-already-purged browse cache entry.
     local applicationDungeons = {}
 
+    -- The pollTicker calls into this every 3s, so a still-unchanged reason
+    -- (e.g. "group size 4 < 5") would otherwise spam the debug log once per
+    -- poll. Only logs when the message actually changes from last time.
+    local lastPremadeDBG = nil
+    local function PremadeDBG(...)
+        local line = table.concat({...}, " ")
+        if line == lastPremadeDBG then return end
+        lastPremadeDBG = line
+        DBG(...)
+    end
+
     local function ResetGroupState()
         resolvedEntryID = nil
         hadOwnListing   = false
         premadeHandled  = false
+        lastPremadeDBG  = nil
         wipe(applicationDungeons)
     end
 
@@ -801,21 +836,37 @@ local function InitJoinReminder()
     local function TryOpenForPremadeGroup()
         if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
         if not IsInGroup() or IsInRaid() then return end
-        if keyAddonOpenedByCreation or premadeHandled or hadOwnListing then return end
+        if keyAddonOpenedByCreation or premadeHandled or hadOwnListing then
+            PremadeDBG("[QoL] Premade check skipped: keyAddonOpenedByCreation=", keyAddonOpenedByCreation,
+                "premadeHandled=", premadeHandled, "hadOwnListing=", hadOwnListing)
+            return
+        end
         -- Own char only - no reliable API to read other party members' level
         -- (UnitLevel(partyN) isn't guaranteed synced; GetRaidRosterInfo only
         -- works for raids, not parties).
-        if not (RA.IsMaxLevel and RA.IsMaxLevel()) then return end
-        if GetNumGroupMembers() < 5 then return end
+        if not (RA.IsMaxLevel and RA.IsMaxLevel()) then
+            PremadeDBG("[QoL] Premade check: not max level, skipping")
+            return
+        end
+        if GetNumGroupMembers() < 5 then
+            PremadeDBG("[QoL] Premade check: group size", GetNumGroupMembers(), "< 5, waiting")
+            return
+        end
         -- Queue pops (e.g. Timewalking) form a full 5-man group instantly and
         -- have no keystone to speak of - IsPartyLFG() is true whenever the
         -- group came from Dungeon/Raid Finder rather than manual invites.
-        if IsPartyLFG() then return end
-        if not GetActiveKeyAddon("premade") then return end
+        if IsPartyLFG() then
+            PremadeDBG("[QoL] Premade check: IsPartyLFG() true, not a manual premade")
+            return
+        end
+        if not GetActiveKeyAddon("premade") then
+            PremadeDBG("[QoL] Premade check: no companion addon configured for premade (premadeKeyAddon)")
+            return
+        end
 
         DBG("[QoL] Premade group full – opening keystone companion addon")
         premadeHandled = true
-        ToggleKeyAddon("premade")
+        OpenKeyAddon("premade")
         StartKeyAddonSafetyTimer("premade")
     end
 
@@ -910,7 +961,7 @@ local function InitJoinReminder()
                 if act.isMythicPlusActivity and GetActiveKeyAddon() then
                     DBG("[QoL] Own M+ listing created – opening keystone companion addon")
                     keyAddonOpenedByCreationMplus = true
-                    ToggleKeyAddon()
+                    OpenKeyAddon()
                 end
             else
                 -- Listing removed (cancelled or group full)
@@ -925,7 +976,7 @@ local function InitJoinReminder()
                         StartKeyAddonSafetyTimer()
                     else
                         DBG("[QoL] Listing cancelled – closing keystone companion addon immediately")
-                        ToggleKeyAddon()
+                        CloseKeyAddon()
                     end
                 end
             end

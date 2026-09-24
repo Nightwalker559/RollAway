@@ -15,6 +15,7 @@
 - Premade group reminder no longer opens for below-max-level characters.
 - Talent build name now shows the saved loadout (e.g. "Raid Pack Leader ST") instead of the spec name twice, or not at all.
 - Fixed `ADDON_ACTION_BLOCKED` on entering combat: hiding/showing a frame with portal buttons (secure) is a protected action in combat — Teleport Reminder and Portal Overview now defer it until combat ends.
+- Fixed: opening the companion addon (BigWigs/Details/own Portal Overview) used a blind toggle — if it was already open (e.g. manually via `/rat`), the trigger closed it instead of keeping it open. Now uses explicit open/close for Details and own; BigWigs still toggles (no reliable shown-state check available).
 
 ### Changed
 - Removed dead code in Portal Overview and an unused legacy raid teleport table.
