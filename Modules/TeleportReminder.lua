@@ -64,9 +64,9 @@ local function CreatePortalButtons(parent, dungeons)
 
         -- Manual close on use - the reminder's whole purpose is fulfilled
         -- once a portal has been taken.
-        btn:HookScript("OnClick", function() reminderFrame:Hide() end)
+        btn:HookScript("OnClick", function() RA.SafeSetShown(reminderFrame, false) end)
 
-        btn:Hide()
+        RA.SafeSetShown(btn, false)
         portalButtons[i]        = btn
         buttonByKey[dungeon.key] = btn
     end
@@ -83,7 +83,7 @@ local function CreateReminderFrame()
     reminderFrame:SetFrameStrata("HIGH")
     reminderFrame:SetClampedToScreen(true)
     RA.MakeDraggable(reminderFrame)
-    reminderFrame:Hide()
+    RA.SafeSetShown(reminderFrame, false)
 
     -- Deliberately NOT added to UISpecialFrames: Esc is used constantly
     -- while playing (canceling casts, closing other windows, etc.) and
@@ -120,7 +120,11 @@ local function CreateReminderFrame()
     -- displayed it.
     reminderFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     reminderFrame:RegisterEvent("GROUP_LEFT")
-    reminderFrame:SetScript("OnEvent", function(self) self:Hide() end)
+    reminderFrame:SetScript("OnEvent", function(self, event)
+        if event == "PLAYER_REGEN_DISABLED" or event == "GROUP_LEFT" then
+            RA.SafeSetShown(self, false)
+        end
+    end)
 end
 
 ------------------------------------------------------------------------
@@ -134,7 +138,7 @@ local function LayoutAndUpdate(visibleButtons)
     local startX     = -(totalWidth / 2) + (BUTTON_SIZE / 2)
 
     for _, btn in ipairs(portalButtons) do
-        btn:Hide()
+        RA.SafeSetShown(btn, false)
         btn:ClearAllPoints()
     end
 
@@ -156,7 +160,7 @@ local function LayoutAndUpdate(visibleButtons)
             btn.cooldown:Clear()
         end
 
-        btn:Show()
+        RA.SafeSetShown(btn, true)
     end
 end
 
@@ -204,7 +208,7 @@ function RA.ShowTeleportReminder(instanceName, dungeon)
         LayoutAndUpdate(portalButtons)
     end
 
-    reminderFrame:Show()
+    RA.SafeSetShown(reminderFrame, true)
 end
 
 ------------------------------------------------------------------------

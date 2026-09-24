@@ -53,6 +53,32 @@ end
 RA.CloseLootRollPopups = CloseLootRollPopups
 
 -- Standard left-click-drag behavior for RollAway popups.
+-- Hiding/showing a frame that has SecureActionButtonTemplate descendants
+-- (our portal buttons) is a protected action while in combat lockdown -
+-- regardless of what triggers the call (event handler, OnClick, slash
+-- command). Calling frame:Hide()/:Show() directly during combat throws
+-- ADDON_ACTION_BLOCKED. Use this everywhere instead for such frames; if
+-- called during combat it just defers the change until combat ends.
+function RA.SafeSetShown(frame, shouldShow)
+    if not frame then return end
+    if not InCombatLockdown() then
+        frame:SetShown(shouldShow)
+        return
+    end
+    frame.raPendingShown = shouldShow
+    if not frame.raSafeShowInit then
+        frame.raSafeShowInit = true
+        frame:HookScript("OnEvent", function(self, event)
+            if event == "PLAYER_REGEN_ENABLED" and self.raPendingShown ~= nil then
+                self:SetShown(self.raPendingShown)
+                self.raPendingShown = nil
+                self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+            end
+        end)
+    end
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+end
+
 function RA.MakeDraggable(frame)
     frame:SetMovable(true)
     frame:EnableMouse(true)

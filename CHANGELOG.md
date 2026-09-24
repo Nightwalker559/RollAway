@@ -14,6 +14,7 @@
 - Group Finder join detection resolves the dungeon earlier and catches backfilled group members; companion addon no longer opens for backfills.
 - Premade group reminder no longer opens for below-max-level characters.
 - Talent build name now shows the saved loadout (e.g. "Raid Pack Leader ST") instead of the spec name twice, or not at all.
+- Fixed `ADDON_ACTION_BLOCKED` on entering combat: hiding/showing a frame with portal buttons (secure) is a protected action in combat — Teleport Reminder and Portal Overview now defer it until combat ends.
 
 ### Changed
 - Removed dead code in Portal Overview and an unused legacy raid teleport table.

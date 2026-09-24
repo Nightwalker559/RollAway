@@ -192,7 +192,7 @@ local function CreateOverviewFrame()
             RollAwayDB.portalOverviewPos = { point = point, relPoint = relPoint, x = x, y = y }
         end
     end)
-    overviewFrame:Hide()
+    RA.SafeSetShown(overviewFrame, false)
 
     overviewFrame:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
@@ -276,7 +276,7 @@ local function CreateOverviewFrame()
     overviewFrame:RegisterEvent("BAG_UPDATE_DELAYED")
     overviewFrame:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_REGEN_DISABLED" then
-            self:Hide()
+            RA.SafeSetShown(self, false)
         elseif event == "BAG_UPDATE_DELAYED" then
             RA.RefreshPortalOverview()
         end
@@ -289,7 +289,7 @@ end
 
 local function HideAllButtons()
     for _, btn in pairs(portalPool) do
-        btn:Hide()
+        RA.SafeSetShown(btn, false)
         btn:ClearAllPoints()
     end
     for _, fs in pairs(headerPool) do
@@ -322,7 +322,7 @@ local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
 
     btn:ClearAllPoints()
     btn:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", x, y)
-    btn:Show()
+    RA.SafeSetShown(btn, true)
 end
 
 local function LayoutFlatButtons(entries)
@@ -441,12 +441,12 @@ function RA.ShowPortalOverview()
     CreateOverviewFrame()
     PanelTemplates_SetTab(overviewFrame, 1)
     SelectTab(1)
-    overviewFrame:Show()
+    RA.SafeSetShown(overviewFrame, true)
     RA.RefreshPortalOverview()
 end
 
 function RA.HidePortalOverview()
-    if overviewFrame then overviewFrame:Hide() end
+    if overviewFrame then RA.SafeSetShown(overviewFrame, false) end
 end
 
 function RA.TogglePortalOverview()
