@@ -356,7 +356,9 @@ local function RegisterSlashCommands()
         if msg == "break" then
             if RA.DebugBreakCharFrameWatchdog then
                 RA.DebugBreakCharFrameWatchdog()
-                DevPrint("Watchdog marked stale. Close and reopen the Character panel - buttons should still self-heal.")
+                local line = "Watchdog marked stale, buttons hidden. Fully close (press C) and reopen the Character panel - buttons should reappear on their own."
+                DevPrint(line)
+                DBG("[CharFrameButtons]", line)
             end
             return
         end

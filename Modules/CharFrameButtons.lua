@@ -434,7 +434,12 @@ end
 function RA.DebugBreakCharFrameWatchdog()
     charFrameWatchdogRunning  = true
     charFrameWatchdogLastTick = GetTime() - (WATCHDOG_STALE_SECONDS + 1)
-    DBG("[CharFrameButtons] Watchdog forcibly marked stale for testing (running=true, heartbeat backdated)")
+    -- Also hide the buttons themselves (not just desync the watchdog flag) so
+    -- the break has a visible effect, mirroring the real-world trigger: some
+    -- external UI code hides/detaches them while the panel stays open.
+    if omniCharButton then omniCharButton:Hide() end
+    if vaultCharButton then vaultCharButton:Hide() end
+    DBG("[CharFrameButtons] Watchdog forcibly marked stale for testing (running=true, heartbeat backdated); buttons hidden to simulate an external wipe")
 end
 
 function RA.DebugCharFrameWatchdogState()
