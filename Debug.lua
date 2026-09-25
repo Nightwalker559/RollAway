@@ -343,6 +343,29 @@ local function RegisterSlashCommands()
         end
     end
 
+    -- /rawcharwatchdog [break] → inspect or forcibly desync the Omnium/Vault
+    -- CharacterFrame button watchdog (Modules/CharFrameButtons.lua) to test
+    -- its heartbeat self-heal without waiting for a natural repro. No arg
+    -- prints current state; "break" marks it stale (running=true, heartbeat
+    -- backdated) - closing/reopening the Character panel should then still
+    -- bring the buttons back instead of leaving them gone until /reload.
+    SLASH_RAWCHARWATCHDOG1 = "/rawcharwatchdog"
+    SlashCmdList["RAWCHARWATCHDOG"] = function(msg)
+        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
+        msg = (msg or ""):match("^%s*(.-)%s*$")
+        if msg == "break" then
+            if RA.DebugBreakCharFrameWatchdog then
+                RA.DebugBreakCharFrameWatchdog()
+                DevPrint("Watchdog marked stale. Close and reopen the Character panel - buttons should still self-heal.")
+            end
+            return
+        end
+        if RA.DebugCharFrameWatchdogState then
+            local running, _, age = RA.DebugCharFrameWatchdogState()
+            DevPrint(("Watchdog running=%s | last tick %.1fs ago"):format(tostring(running), age))
+        end
+    end
+
 end
 
 ------------------------------------------------------------------------
