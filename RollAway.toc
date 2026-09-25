@@ -3,7 +3,7 @@
 ## Notes: Bonus Roll automation, loot history cleanup, and group quality-of-life tools for Midnight Season 2.
 ## Notes-deDE: Bonus-Roll-Automatisierung, Loot-Verlauf-Bereinigung und Gruppen-QoL-Tools für Midnight Season 2.
 ## Author: Nightwalker559
-## Version: 3.0.6
+## Version: 3.0.7
 # RollAwayDB kept only so the pre-3.0.1 flat data still loads for the
 # one-time migration in Core.lua - remove it once everyone has migrated.
 ## SavedVariables: RollAwayDB, RollAwayDBAccount

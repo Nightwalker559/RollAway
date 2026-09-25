@@ -2,7 +2,7 @@
 
 ---
 
-## Unreleased
+## 3.0.7
 
 ### New
 - Developer option: "Log self-heal errors only", a quiet debug channel separate from full debug output.
