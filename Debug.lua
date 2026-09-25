@@ -362,7 +362,9 @@ local function RegisterSlashCommands()
         end
         if RA.DebugCharFrameWatchdogState then
             local running, _, age = RA.DebugCharFrameWatchdogState()
-            DevPrint(("Watchdog running=%s | last tick %.1fs ago"):format(tostring(running), age))
+            local line = ("Watchdog running=%s | last tick %.1fs ago"):format(tostring(running), age)
+            DevPrint(line)
+            DBG("[CharFrameButtons]", line)
         end
     end
 
