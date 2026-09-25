@@ -4,6 +4,8 @@
 ## Notes-deDE: Bonus-Roll-Automatisierung, Loot-Verlauf-Bereinigung und Gruppen-QoL-Tools für Midnight Season 2.
 ## Author: Nightwalker559
 ## Version: 3.0.7
+## X-Curse-Project-ID: 1505657
+## X-Wago-ID: 96d2mOGO
 # RollAwayDB kept only so the pre-3.0.1 flat data still loads for the
 # one-time migration in Core.lua - remove it once everyone has migrated.
 ## SavedVariables: RollAwayDB, RollAwayDBAccount
