@@ -137,8 +137,10 @@ local function IsDevChar()
     return RA.DEV_CHARS and RA.DEV_CHARS[UnitName("player")]
 end
 
+-- Dev-command feedback: log-only, never chat - keeps /raw* test commands
+-- from spamming chat, all output lives in the debug log window instead.
 local function DevPrint(msg)
-    print("|cff33ff99RollAway:|r " .. msg)
+    DBG(msg)
 end
 
 ------------------------------------------------------------------------
@@ -356,17 +358,13 @@ local function RegisterSlashCommands()
         if msg == "break" then
             if RA.DebugBreakCharFrameWatchdog then
                 RA.DebugBreakCharFrameWatchdog()
-                local line = "Watchdog marked stale, buttons hidden. Fully close (press C) and reopen the Character panel - buttons should reappear on their own."
-                DevPrint(line)
-                DBG("[CharFrameButtons]", line)
+                DevPrint("Watchdog marked stale, buttons hidden. Fully close (press C) and reopen the Character panel - buttons should reappear on their own.")
             end
             return
         end
         if RA.DebugCharFrameWatchdogState then
             local running, _, age = RA.DebugCharFrameWatchdogState()
-            local line = ("Watchdog running=%s | last tick %.1fs ago"):format(tostring(running), age)
-            DevPrint(line)
-            DBG("[CharFrameButtons]", line)
+            DevPrint(("Watchdog running=%s | last tick %.1fs ago"):format(tostring(running), age))
         end
     end
 
