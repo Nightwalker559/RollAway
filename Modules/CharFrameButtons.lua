@@ -393,8 +393,20 @@ end
 -- sub-frames without a fresh Show(), or something external wiping the
 -- buttons while the panel is already open) - buttons self-heal instead of
 -- staying gone until the next open/close cycle.
-local charFrameWatchdogRunning = false
+local charFrameWatchdogRunning  = false
+local charFrameWatchdogLastTick = 0
+
+-- How long a heartbeat can go quiet before StartCharFrameWatchdog() treats
+-- the tick chain as dead and restarts it anyway. Covers a desync where
+-- charFrameWatchdogRunning never gets reset to false even though the
+-- C_Timer_After chain itself silently stopped (e.g. a callback dropped
+-- across a loading screen/zone change while the panel was open) - a plain
+-- boolean guard alone would then refuse to ever restart it, matching
+-- reports of buttons staying gone with no error logged at all.
+local WATCHDOG_STALE_SECONDS = 3
+
 local function CharFrameWatchdogTick()
+    charFrameWatchdogLastTick = GetTime()
     if not (CharacterFrame and CharacterFrame:IsShown()) then
         charFrameWatchdogRunning = false
         return
@@ -409,9 +421,24 @@ local function CharFrameWatchdogTick()
     end
 end
 local function StartCharFrameWatchdog()
-    if charFrameWatchdogRunning then return end
+    if charFrameWatchdogRunning and (GetTime() - charFrameWatchdogLastTick) < WATCHDOG_STALE_SECONDS then
+        return
+    end
     charFrameWatchdogRunning = true
     CharFrameWatchdogTick()
+end
+
+-- Debug/test helpers (see /rawcharwatchdog in Debug.lua): let a dev force
+-- the exact desync above - flag stuck "running" but heartbeat stale -
+-- without needing a real Lua error or a natural loading-screen repro.
+function RA.DebugBreakCharFrameWatchdog()
+    charFrameWatchdogRunning  = true
+    charFrameWatchdogLastTick = GetTime() - (WATCHDOG_STALE_SECONDS + 1)
+    DBG("[CharFrameButtons] Watchdog forcibly marked stale for testing (running=true, heartbeat backdated)")
+end
+
+function RA.DebugCharFrameWatchdogState()
+    return charFrameWatchdogRunning, charFrameWatchdogLastTick, GetTime() - charFrameWatchdogLastTick
 end
 
 local charFrameShowHooked = false
@@ -460,7 +487,7 @@ local function HookCharFrameReapply()
     if charFrameShowHooked or not PaperDollFrame then return end
     PaperDollFrame:HookScript("OnShow", function()
         SafeCall(ReapplyCharFrameButtons)
-        StartCharFrameWatchdog()
+        SafeCall(StartCharFrameWatchdog)
     end)
     -- Also hook CharacterFrame itself: PaperDollFrame's OnShow doesn't
     -- necessarily refire on every CharacterFrame open (e.g. reopening on a
@@ -469,7 +496,7 @@ local function HookCharFrameReapply()
     if CharacterFrame then
         CharacterFrame:HookScript("OnShow", function()
             SafeCall(ReapplyCharFrameButtons)
-            StartCharFrameWatchdog()
+            SafeCall(StartCharFrameWatchdog)
         end)
     end
     charFrameShowHooked = true
