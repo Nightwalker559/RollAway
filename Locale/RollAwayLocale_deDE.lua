@@ -60,6 +60,7 @@ L["legacy_enable_label"]      = "Auto-Roll für Legacy-Raids aktivieren (Dragonf
 -- Entwickler
 L["debug_section_title"]      = "Entwickler"
 L["debug_label"]              = "Debug-Ausgaben im Chat anzeigen"
+L["debug_errors_only_label"]  = "Nur Self-Heal-Fehler loggen (ohne volle Debug-Ausgabe)"
 L["cmd_rawtest_info"]         = "Manueller Auto-Pass Test"
 L["cmd_rawreminder_info"]     = "Reminder-Popup testen"
 L["cmd_rawreset_info"]        = "Reminder-Status zurücksetzen (erscheint beim nächsten Betreten wieder)"

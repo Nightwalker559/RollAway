@@ -2,6 +2,14 @@
 
 ---
 
+## Unreleased
+
+### New
+- Developer option: "Log self-heal errors only", a quiet debug channel separate from full debug output.
+
+### Fixed
+- Omniumfoliant/Great Vault buttons could vanish for the rest of the session (needing `/reload`) if a stray error broke the self-heal watchdog; errors no longer stop it.
+
 ## 3.0.6
 
 ### New

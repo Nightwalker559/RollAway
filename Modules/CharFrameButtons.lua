@@ -17,9 +17,10 @@
 --     Chonky is loaded, and Chonky's Titles/Equipment Manager panes don't
 --     overlap our corner, so the Stats-only tab restriction is skipped too.
 
-local RA   = _G["RollAway"]
-local RA_L = RA.RA_L
-local DBG  = RA.DBG
+local RA       = _G["RollAway"]
+local RA_L     = RA.RA_L
+local DBG      = RA.DBG
+local DBGError = RA.DBGError
 
 local C_Timer_After    = RA.C_Timer_After
 
@@ -55,6 +56,21 @@ end
 -- Default confirmed via live testing (/rawchonkyoffset). Adjust the same way
 -- if a future Chonky update shifts CharacterFrameBg differently.
 local chonkyXOffsetBonus = -260
+
+-- Guards every self-heal entry point below (watchdog tick, OnShow hooks,
+-- spec-change reapply) against a stray Lua error. Without this, a single
+-- error thrown inside ReapplyCharFrameButtons (e.g. a transient nil from
+-- ElvUI or another addon reacting to the same event) stops the watchdog's
+-- self-rescheduling C_Timer_After chain permanently for that session - the
+-- buttons then stay gone until /reload, matching reports of them vanishing
+-- "randomly" only with certain addon combos (e.g. ElvUI) active.
+local function SafeCall(fn, ...)
+    local ok, err = pcall(fn, ...)
+    if not ok then
+        DBGError("[CharFrameButtons] self-heal error (caught, continuing):", err)
+    end
+    return ok
+end
 
 -- Full self-heal for one button: some external UI code (combat-log driven
 -- PaperDollFrame redraws, other addons enumerating/hiding "unknown" children,
@@ -366,8 +382,9 @@ RA.ApplyVaultButtonFeature = ApplyVaultButtonFeature
 -- CreateVaultCharButton() fail silently and nothing retries until the next zone or
 -- level-up. Re-apply as soon as the Character panel addon actually loads.
 local function ReapplyCharFrameButtons()
-    RA.ApplyOmniumfoliantFeature()
-    RA.ApplyVaultButtonFeature()
+    -- Each wrapped separately so one feature erroring doesn't block the other.
+    SafeCall(RA.ApplyOmniumfoliantFeature)
+    SafeCall(RA.ApplyVaultButtonFeature)
 end
 
 -- Self-rescheduling watchdog: as long as CharacterFrame stays open, keep
@@ -382,7 +399,9 @@ local function CharFrameWatchdogTick()
         charFrameWatchdogRunning = false
         return
     end
-    ReapplyCharFrameButtons()
+    SafeCall(ReapplyCharFrameButtons)
+    -- Rescheduling always happens, even if the reapply above errored, so the
+    -- watchdog itself can never die mid-session.
     if C_Timer_After then
         C_Timer_After(1, CharFrameWatchdogTick)
     else
@@ -422,11 +441,11 @@ local function HookSpecChangeReapply()
         DebugLogCharFrameButtonState("before spec-change reapply")
         if C_Timer_After then
             C_Timer_After(0.2, function()
-                ReapplyCharFrameButtons()
+                SafeCall(ReapplyCharFrameButtons)
                 DebugLogCharFrameButtonState("after spec-change reapply")
             end)
         else
-            ReapplyCharFrameButtons()
+            SafeCall(ReapplyCharFrameButtons)
         end
     end)
     specChangeHooked = true
@@ -440,7 +459,7 @@ local function HookCharFrameReapply()
     -- Cheap and idempotent, so safe to run on every single OnShow.
     if charFrameShowHooked or not PaperDollFrame then return end
     PaperDollFrame:HookScript("OnShow", function()
-        ReapplyCharFrameButtons()
+        SafeCall(ReapplyCharFrameButtons)
         StartCharFrameWatchdog()
     end)
     -- Also hook CharacterFrame itself: PaperDollFrame's OnShow doesn't
@@ -449,7 +468,7 @@ local function HookCharFrameReapply()
     -- into the same reapply/watchdog logic.
     if CharacterFrame then
         CharacterFrame:HookScript("OnShow", function()
-            ReapplyCharFrameButtons()
+            SafeCall(ReapplyCharFrameButtons)
             StartCharFrameWatchdog()
         end)
     end
@@ -473,8 +492,7 @@ function RA.InitCharacterFrameButtons()
     -- where PaperDollFrame genuinely isn't loaded yet. HookCharFrameReapply()
     -- guards against being hooked twice, so calling it from both paths is safe.
     if PaperDollFrame then
-        RA.ApplyOmniumfoliantFeature()
-        RA.ApplyVaultButtonFeature()
+        SafeCall(ReapplyCharFrameButtons)
         HookCharFrameReapply()
         HookSpecChangeReapply()
     end
@@ -483,8 +501,7 @@ function RA.InitCharacterFrameButtons()
     f:RegisterEvent("ADDON_LOADED")
     f:SetScript("OnEvent", function(self, _, loadedAddon)
         if loadedAddon == "Blizzard_CharacterFrame" then
-            RA.ApplyOmniumfoliantFeature()
-            RA.ApplyVaultButtonFeature()
+            SafeCall(ReapplyCharFrameButtons)
             HookCharFrameReapply()
             HookSpecChangeReapply()
             self:UnregisterAllEvents()

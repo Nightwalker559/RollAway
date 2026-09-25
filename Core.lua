@@ -43,6 +43,17 @@ local function DBG(...)
 end
 RA.DBG = DBG
 
+-- Separate, quieter channel: gated on its own "errors only" checkbox instead
+-- of the full "debug" flag, so a dev char can catch rare self-heal errors
+-- (e.g. CharFrameButtons.lua's SafeCall) without wading through the full
+-- verbose debug log for everything else.
+local function DBGError(...)
+    if RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly) and DEV_CHARS[UnitName("player")] then
+        if RA.AppendDebugLog then RA.AppendDebugLog(...) end
+    end
+end
+RA.DBGError = DBGError
+
 ------------------------------------------------------------------------
 -- API upvalues (resolved once at load time)
 ------------------------------------------------------------------------
@@ -177,6 +188,7 @@ RA.defaults = {
         autoLogChatNotify    = false,
         advLogReminderEnabled = false,
         debug              = false,
+        debugErrorsOnly    = false,
         whatsNewSeen       = "",
         vendorFilterEnabled = false,
         vendorFilterAlpha   = 0.35,

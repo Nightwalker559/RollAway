@@ -459,8 +459,16 @@ function RA.InitOptions()
         end)
         cbDebug.frame:SetPoint("TOPLEFT", debugLabel, "BOTTOMLEFT", 0, -10)
 
+        -- Quiet channel: only self-heal/watchdog errors (RA.DBGError), not the
+        -- full verbose debug log above - for tracking down rare bugs without
+        -- the noise of every other module's debug output.
+        local cbDebugErrorsOnly = MakeCB(gen, RA_L["debug_errors_only_label"], RollAwayDB.debugErrorsOnly, function(checked)
+            RollAwayDB.debugErrorsOnly = checked
+        end)
+        cbDebugErrorsOnly.frame:SetPoint("TOPLEFT", cbDebug.frame, "BOTTOMLEFT", 0, -6)
+
         cmdInfo = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        cmdInfo:SetPoint("TOPLEFT", cbDebug.frame, "BOTTOMLEFT", 0, -14)
+        cmdInfo:SetPoint("TOPLEFT", cbDebugErrorsOnly.frame, "BOTTOMLEFT", 0, -14)
         cmdInfo:SetWidth(560)
         cmdInfo:SetJustifyH("LEFT")
         cmdInfo:SetTextColor(0.6, 0.6, 0.6, 1)

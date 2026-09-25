@@ -59,6 +59,7 @@ L["legacy_enable_label"]      = "Enable auto-roll for Legacy raids (Dragonflight
 -- Developer
 L["debug_section_title"]      = "Developer"
 L["debug_label"]              = "Show debug output in chat"
+L["debug_errors_only_label"]  = "Log self-heal errors only (no full debug output)"
 L["cmd_rawtest_info"]         = "Manual auto-pass test"
 L["cmd_rawreminder_info"]     = "Test the reminder popup"
 L["cmd_rawreset_info"]        = "Reset reminder state (shows again on next entry)"
