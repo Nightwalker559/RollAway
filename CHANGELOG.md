@@ -6,6 +6,7 @@
 
 ### New
 - Developer option: "Log self-heal errors only", a quiet debug channel separate from full debug output.
+- Portal Overview now closes itself after using a teleport (they share the same cooldown category, so nothing else is usable right after).
 
 ### Fixed
 - Omniumfoliant/Great Vault buttons could vanish for the rest of the session (needing `/reload`) if a stray error broke the self-heal watchdog; errors no longer stop it, and the watchdog now also recovers from a silently desynced timer chain (e.g. across a loading screen) with no error involved.
