@@ -9,6 +9,7 @@
 - Portal Overview now closes itself after using a teleport (they share the same cooldown category, so nothing else is usable right after).
 
 ### Fixed
+- Group Loot History frame no longer stayed open on pulling in a dungeon (or a non-configured raid difficulty) - it now hides immediately on entering combat everywhere, even with rolls still pending, unless auto-close is fully disabled.
 - Omniumfoliant/Great Vault buttons could vanish for the rest of the session (needing `/reload`) if a stray error broke the self-heal watchdog; errors no longer stop it, and the watchdog now also recovers from a silently desynced timer chain (e.g. across a loading screen) with no error involved.
 - Auto-accept invite never actually recognized guild members (wrong API usage) - only friends/Battle.net friends worked before.
 - Teleport Reminder portal icons briefly flashed a cooldown swirl after casting any spell (GCD), not just when the portal itself was on cooldown.

@@ -574,8 +574,15 @@ f:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "PLAYER_REGEN_DISABLED" then
         ResetState("PLAYER_REGEN_DISABLED")
-        if ShouldHideInInstance() then
-            DBG("Combat in raid (hidden difficulty) – hiding frame")
+        -- Nobody wants a loot popup blocking the screen mid-fight - hide it
+        -- the instant combat starts, even with rolls still pending (only
+        -- RollAway's own history window closes; Blizzard's roll popups are
+        -- unaffected and still usable). Independent of ShouldHideInInstance,
+        -- which is a separate, narrower "never show at all in this raid
+        -- difficulty" preference - this applies everywhere, unless the whole
+        -- auto-close/auto-hide feature is disabled via its master switch.
+        if not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
+            DBG("Entering combat – hiding loot history frame")
             HideHistoryFrame()
         end
 
