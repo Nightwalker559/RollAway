@@ -146,6 +146,14 @@ local function AcquireButton(i, parent)
     btn:RegisterForClicks("AnyUp", "AnyDown")
     btn:SetAttribute("type", "spell")
 
+    -- Close the whole overview after using a teleport - these all share the
+    -- same cooldown category, so nothing else here is usable right after.
+    -- PostClick runs after the secure spell-cast click, so plain Lua (and
+    -- RA.SafeSetShown's combat handling) is safe here.
+    btn:HookScript("PostClick", function()
+        RA.HidePortalOverview()
+    end)
+
     portalPool[i] = btn
     return btn
 end
