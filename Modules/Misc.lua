@@ -20,11 +20,24 @@ local RA_L = RA.RA_L
 
 if ElvUI then return end
 
+-- IsGuildMember(unit) takes a unit token ("target", "party1", ...), not a
+-- GUID - there is no direct GUID-based guild check, so match against the
+-- roster instead. C_GuildInfo.GuildRoster() requests a fresh roster (async,
+-- GUILD_ROSTER_UPDATE); harmless to call even if one is already in flight.
+local function IsGuildMemberGUID(guid)
+    if not IsInGuild() then return false end
+    if C_GuildInfo and C_GuildInfo.GuildRoster then C_GuildInfo.GuildRoster() end
+    for i = 1, GetNumGuildMembers() do
+        if select(17, GetGuildRosterInfo(i)) == guid then return true end
+    end
+    return false
+end
+
 local function IsKnownInviter(inviterGUID)
     if not inviterGUID then return false end
     return C_BattleNet.GetGameAccountInfoByGUID(inviterGUID) ~= nil
         or C_FriendList.IsFriend(inviterGUID)
-        or IsGuildMember(inviterGUID)
+        or IsGuildMemberGUID(inviterGUID)
 end
 
 -- STATICPOPUP_NUMDIALOGS was removed in patch 11.2 (no numbered-loop
@@ -73,7 +86,7 @@ local function TryAutoRepair()
         local available = (withdrawLimit == -1) and guildMoney or math.min(withdrawLimit, guildMoney)
         if available >= cost then
             RepairAllItems(1)
-            print("|cff33ff99RollAway:|r " .. string.format(RA_L["qol_autorepair_msg_guild"], GetCoinTextureString(cost)))
+            RA.Print(string.format(RA_L["qol_autorepair_msg_guild"], GetCoinTextureString(cost)))
             DBG("[Misc] Auto-repaired via guild funds:", cost)
             return
         end
@@ -82,7 +95,7 @@ local function TryAutoRepair()
 
     if GetMoney() >= cost then
         RepairAllItems()
-        print("|cff33ff99RollAway:|r " .. string.format(RA_L["qol_autorepair_msg_player"], GetCoinTextureString(cost)))
+        RA.Print(string.format(RA_L["qol_autorepair_msg_player"], GetCoinTextureString(cost)))
         DBG("[Misc] Auto-repaired via player funds:", cost)
     else
         DBG("[Misc] Auto-repair skipped - not enough gold:", cost)

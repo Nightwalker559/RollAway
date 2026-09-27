@@ -57,7 +57,6 @@ local function DetermineDesiredLogState()
         return false
     end
 end
-RA.DetermineDesiredLogState = DetermineDesiredLogState
 
 ------------------------------------------------------------------------
 -- Make sure "Advanced Combat Logging" is on before we start a log - without
@@ -93,7 +92,7 @@ local function TryApplyLogState(desired, retriesLeft)
     DBG("Auto-log:", desired and "started" or "stopped")
     if RollAwayDB and RollAwayDB.autoLogChatNotify then
         local RA_L = RA.RA_L
-        print("|cff33ff99RollAway:|r " .. (desired and RA_L["qol_log_chat_started"] or RA_L["qol_log_chat_stopped"]))
+        RA.Print(desired and RA_L["qol_log_chat_started"] or RA_L["qol_log_chat_stopped"])
     end
 end
 
@@ -103,7 +102,6 @@ local function ApplyDesiredLogState()
     if desired == lastAppliedState then return end -- already in the right state
     TryApplyLogState(desired, 5)
 end
-RA.ApplyDesiredLogState = ApplyDesiredLogState
 
 ------------------------------------------------------------------------
 -- Advanced Combat Logging reminder popup - shown once per M+/raid instance
