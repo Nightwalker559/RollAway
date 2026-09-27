@@ -85,6 +85,13 @@ local function IsRecipeKnownViaTooltip(index)
 end
 
 local function IsRecipeKnown(itemID, index)
+    -- Cheap item-class check first (no tooltip scan) - skips the scan below
+    -- entirely for items that obviously aren't recipes (arrows, reagents,
+    -- mounts, toys, etc.). MerchantFrame_UpdateMerchantInfo can fire many
+    -- times in quick succession per vendor page, once per item.
+    local classID = select(6, C_Item.GetItemInfoInstant(itemID))
+    if classID ~= Enum.ItemClass.Recipe then return false end
+
     -- Tooltip scan first (matches Blizzard's own "Already Known" indicator
     -- exactly); falls back to the spellID/TradeSkillUI check if the tooltip
     -- couldn't be scanned for some reason.

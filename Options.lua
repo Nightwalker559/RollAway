@@ -390,6 +390,13 @@ function RA.InitOptions()
 
     local cbReminder = MakeCB(gen, RA_L["reminder_label"], RollAwayDB.showReminder, function(checked)
         RollAwayDB.showReminder = checked
+        -- Otherwise an already-shown reminder stays stuck open until manually
+        -- closed - ShowReminder() only re-checks this flag on the next zone
+        -- change, which may not come for a while.
+        if not checked then
+            local frame = _G["RollAwayReminderFrame"]
+            if frame and frame:IsShown() then frame:Hide() end
+        end
     end)
     cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -10)
 
@@ -423,9 +430,10 @@ function RA.InitOptions()
     end
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
-    local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, function(checked)
-        RollAwayDB.legacy = checked
-    end)
+    -- onChange is wired further below (cbLegacy:SetCallback) instead of here,
+    -- once legacyTabBtn exists - AceGUI's OnValueChanged is a single slot, so
+    -- passing one here too would just be silently overwritten and never run.
+    local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
 
     -- Entwickler section: only visible to dev/tester characters

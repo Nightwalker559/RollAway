@@ -10,6 +10,12 @@
 
 ### Fixed
 - Omniumfoliant/Great Vault buttons could vanish for the rest of the session (needing `/reload`) if a stray error broke the self-heal watchdog; errors no longer stop it, and the watchdog now also recovers from a silently desynced timer chain (e.g. across a loading screen) with no error involved.
+- Auto-accept invite never actually recognized guild members (wrong API usage) - only friends/Battle.net friends worked before.
+- Teleport Reminder portal icons briefly flashed a cooldown swirl after casting any spell (GCD), not just when the portal itself was on cooldown.
+- Bonus Roll reminder popup could get stuck on-screen forever if its option was turned off while it was showing.
+
+### Changed
+- Vendor Filter: skips the expensive tooltip scan for items that obviously aren't recipes, reducing lag on vendors with many items.
 
 ## 3.0.6
 

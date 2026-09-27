@@ -6,7 +6,6 @@ local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
 local C_Timer_After    = RA.C_Timer_After
-local C_Timer_NewTimer = RA.C_Timer_NewTimer
 local C_Timer_NewTicker = RA.C_Timer_NewTicker
 
 local VOIDCORE_CURRENCY_ID = RA.VOIDCORE_CURRENCY_ID
@@ -52,16 +51,7 @@ local function CreateQoLToastFrame(globalName, width, height, yOffset)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, yOffset)
     frame:SetFrameStrata("HIGH")
     frame:SetClampedToScreen(true)
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    -- Checked live on every drag attempt, so toggling the "lock position"
-    -- option in the UI takes effect immediately, no per-frame bookkeeping.
-    frame:SetScript("OnDragStart", function(self)
-        if RollAwayDB and RollAwayDB.qolReminderLockPosition then return end
-        self:StartMoving()
-    end)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    RA.MakeLockableDraggable(frame)
     local timer = RA.CreateOneShotTimer(6, function() frame:Hide() end)
     frame:SetScript("OnHide", timer.Stop)
     frame:Hide()
@@ -292,14 +282,7 @@ local function InitAHFilter()
     end)
 
     if not HookCraftingFrame() then
-        local hookFrame = CreateFrame("Frame")
-        hookFrame:RegisterEvent("ADDON_LOADED")
-        hookFrame:SetScript("OnEvent", function(self, _, loadedAddon)
-            if loadedAddon == "Blizzard_ProfessionsUI" then
-                HookCraftingFrame()
-                self:UnregisterAllEvents()
-            end
-        end)
+        RA.WaitForAddon("Blizzard_ProfessionsUI", HookCraftingFrame)
     end
 
     DBG("[QoL] AH/Crafting Orders expansion filter hook ready")
@@ -401,14 +384,7 @@ local function InitVaultCurrency()
 
     if not HookVaultFrame() then
         -- Frame not loaded yet, wait for Blizzard_WeeklyRewards
-        local f = CreateFrame("Frame")
-        f:RegisterEvent("ADDON_LOADED")
-        f:SetScript("OnEvent", function(self, _, loadedAddon)
-            if loadedAddon == "Blizzard_WeeklyRewards" then
-                HookVaultFrame()
-                self:UnregisterAllEvents()
-            end
-        end)
+        RA.WaitForAddon("Blizzard_WeeklyRewards", HookVaultFrame)
     end
 end
 
@@ -487,14 +463,19 @@ end
 -- or a 20s safety timer runs out (closes automatically either way).
 ------------------------------------------------------------------------
 
-local keyAddonSafetyTimer    = nil   -- pending 20s safety-close timer handle
 local keyAddonReminderOpen   = false -- true while we're holding it open
 
-local function CancelKeyAddonSafetyTimer()
-    if keyAddonSafetyTimer then
-        RA.SafeCancelTimer(keyAddonSafetyTimer)
-        keyAddonSafetyTimer = nil
+-- Pending 20s safety-close timer (Start()/Stop() handle).
+local keyAddonSafetyTimer = RA.CreateOneShotTimer(20, function()
+    if keyAddonReminderOpen then
+        DBG("[QoL] Safety timer expired – closing keystone companion addon")
+        keyAddonReminderOpen = false
+        CloseKeyAddon()
     end
+end)
+
+local function CancelKeyAddonSafetyTimer()
+    keyAddonSafetyTimer.Stop()
 end
 
 -- Closes the keystone companion addon if we're the ones holding it open,
@@ -510,28 +491,8 @@ end
 
 -- Starts (or restarts) the 20s safety-close timer.
 local function StartKeyAddonSafetyTimer()
-    CancelKeyAddonSafetyTimer()
     keyAddonReminderOpen = true
-    if C_Timer_NewTimer then
-        keyAddonSafetyTimer = C_Timer_NewTimer(20, function()
-            keyAddonSafetyTimer = nil
-            if keyAddonReminderOpen then
-                DBG("[QoL] Safety timer expired – closing keystone companion addon")
-                keyAddonReminderOpen = false
-                CloseKeyAddon()
-            end
-        end)
-    elseif C_Timer_After then
-        C_Timer_After(20, function()
-            keyAddonSafetyTimer = nil
-            if keyAddonReminderOpen then
-                DBG("[QoL] Safety timer expired – closing keystone companion addon")
-                keyAddonReminderOpen = false
-                CloseKeyAddon()
-            end
-        end)
-        keyAddonSafetyTimer = true
-    end
+    keyAddonSafetyTimer.Start()
 end
 
 -- Checks if spellID is one of the current season's M+ portal spells.
@@ -561,15 +522,16 @@ end)
 ------------------------------------------------------------------------
 
 local joinFrame
-local joinTimer
 local keyAddonOpenedByCreation      = false -- shared: own listing active (M+ or raid)
 local keyAddonOpenedByCreationMplus = false -- true only when own M+ listing opened the companion addon
 
+-- Hides the join text banner after 6s.
+local joinHideTimer = RA.CreateOneShotTimer(6, function()
+    if joinFrame then joinFrame:Hide() end
+end)
+
 local function StopJoinTimer()
-    if joinTimer then
-        RA.SafeCancelTimer(joinTimer)
-        joinTimer = nil
-    end
+    joinHideTimer.Stop()
 end
 
 local function CreateJoinFrame()
@@ -580,14 +542,7 @@ local function CreateJoinFrame()
     joinFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 220)
     joinFrame:SetFrameStrata("HIGH")
     joinFrame:SetClampedToScreen(true)
-    joinFrame:SetMovable(true)
-    joinFrame:EnableMouse(true)
-    joinFrame:RegisterForDrag("LeftButton")
-    joinFrame:SetScript("OnDragStart", function(self)
-        if RollAwayDB and RollAwayDB.qolReminderLockPosition then return end
-        self:StartMoving()
-    end)
-    joinFrame:SetScript("OnDragStop", joinFrame.StopMovingOrSizing)
+    RA.MakeLockableDraggable(joinFrame)
     joinFrame:SetScript("OnHide", StopJoinTimer)
     joinFrame:Hide()
 
@@ -627,17 +582,7 @@ local function ShowJoinReminder(instanceName, forceTimer)
     -- addon (if opened) is handed off to the 20s safety timer instead, so
     -- it stays open independently until a portal is cast or it times out.
     local function StartHideTimer()
-        StopJoinTimer()
-        if C_Timer_NewTimer then
-            joinTimer = C_Timer_NewTimer(6, function()
-                joinTimer = nil
-                if joinFrame then joinFrame:Hide() end
-            end)
-        elseif C_Timer_After then
-            C_Timer_After(6, function()
-                if joinFrame and joinFrame:IsShown() then joinFrame:Hide() end
-            end)
-        end
+        joinHideTimer.Start()
         if keyAddonOpened then
             StartKeyAddonSafetyTimer()
             keyAddonOpened = false -- ownership passed to the safety timer
@@ -653,19 +598,23 @@ local function ShowJoinReminder(instanceName, forceTimer)
     else
         DBG("[QoL] Waiting for full group before starting hide timer")
         local waitFrame = CreateFrame("Frame", nil, UIParent)
-        local fallbackTimer = nil
         local done = false
 
+        -- Fallback: start hide timer after 30s if group never fills up.
+        -- Declared before Finish() so Finish can stop it; only assigned
+        -- below, but Finish itself only runs after that assignment.
+        local fallbackTimer
         local function Finish()
             if done then return end
             done = true
             waitFrame:UnregisterEvent("GROUP_ROSTER_UPDATE")
-            if fallbackTimer then
-                RA.SafeCancelTimer(fallbackTimer)
-                fallbackTimer = nil
-            end
+            fallbackTimer.Stop()
             StartHideTimer()
         end
+        fallbackTimer = RA.CreateOneShotTimer(30, function()
+            DBG("[QoL] Fallback – starting hide timer after 30s")
+            Finish()
+        end)
 
         waitFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
         waitFrame:SetScript("OnEvent", function()
@@ -679,18 +628,7 @@ local function ShowJoinReminder(instanceName, forceTimer)
             end
         end)
 
-        -- Fallback: start hide timer after 30s if group never fills up
-        if C_Timer_NewTimer then
-            fallbackTimer = C_Timer_NewTimer(30, function()
-                DBG("[QoL] Fallback – starting hide timer after 30s")
-                Finish()
-            end)
-        elseif C_Timer_After then
-            C_Timer_After(30, function()
-                DBG("[QoL] Fallback – starting hide timer after 30s")
-                Finish()
-            end)
-        end
+        fallbackTimer.Start()
     end
 end
 
@@ -1088,7 +1026,7 @@ function RA.ApplyCraftingOutputLogFeature()
 end
 
 local function InitCraftingOutputLogHide()
-    if ProfessionsFrame then
+    local function HookProfessionsFrame()
         RA.ApplyCraftingOutputLogFeature()
         -- CraftingOutputLog (either instance) is created lazily on first
         -- use, so retry on every relevant OnShow in case it didn't exist yet.
@@ -1099,24 +1037,14 @@ local function InitCraftingOutputLogHide()
                 ProfessionsFrame.OrdersPage.OrderView:HookScript("OnShow", RA.ApplyCraftingOutputLogFeature)
             end
         end
+    end
+
+    if ProfessionsFrame then
+        HookProfessionsFrame()
         return
     end
 
-    local hookFrame = CreateFrame("Frame")
-    hookFrame:RegisterEvent("ADDON_LOADED")
-    hookFrame:SetScript("OnEvent", function(self, _, loadedAddon)
-        if loadedAddon == "Blizzard_Professions" then
-            self:UnregisterAllEvents()
-            RA.ApplyCraftingOutputLogFeature()
-            ProfessionsFrame:HookScript("OnShow", RA.ApplyCraftingOutputLogFeature)
-            if ProfessionsFrame.OrdersPage then
-                ProfessionsFrame.OrdersPage:HookScript("OnShow", RA.ApplyCraftingOutputLogFeature)
-                if ProfessionsFrame.OrdersPage.OrderView then
-                    ProfessionsFrame.OrdersPage.OrderView:HookScript("OnShow", RA.ApplyCraftingOutputLogFeature)
-                end
-            end
-        end
-    end)
+    RA.WaitForAddon("Blizzard_Professions", HookProfessionsFrame)
 end
 
 ------------------------------------------------------------------------

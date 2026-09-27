@@ -102,7 +102,7 @@ local function ManualCheck()
     if HasUnclaimedRewards() then
         RA.ShowGreatVaultFrame()
     else
-        print("|cff33ff99RollAway:|r " .. RA_L["greatvault_none"])
+        RA.Print(RA_L["greatvault_none"])
     end
 end
 

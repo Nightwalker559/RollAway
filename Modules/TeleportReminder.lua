@@ -15,6 +15,12 @@ local DBG  = RA.DBG
 local BUTTON_SIZE = 32
 local BUTTON_GAP  = 6
 
+-- Ignore GetSpellCooldown durations at/below the GCD - those aren't a real
+-- "on cooldown" state, just the brief global cooldown after any cast.
+-- Shared by the button cooldown-swirl display and IsPortalOnCooldown below,
+-- so both agree on what counts as "on cooldown".
+local COOLDOWN_THRESHOLD = 3
+
 ------------------------------------------------------------------------
 -- State
 ------------------------------------------------------------------------
@@ -152,7 +158,7 @@ local function LayoutAndUpdate(visibleButtons)
 
         if isKnown then
             local cdInfo = C_Spell.GetSpellCooldown(btn.spellID)
-            if cdInfo and cdInfo.startTime > 0 and cdInfo.duration > 0 then
+            if cdInfo and cdInfo.startTime > 0 and cdInfo.duration > COOLDOWN_THRESHOLD then
                 btn.cooldown:SetCooldown(cdInfo.startTime, cdInfo.duration)
             else
                 btn.cooldown:Clear()
@@ -174,10 +180,6 @@ end
 -- only that dungeon's portal is shown; when nil (dungeon not resolved,
 -- e.g. an M+ activity outside the tracked season pool), all portals are
 -- shown so the correct one can still be picked manually.
--- Ignore GetSpellCooldown durations at/below the GCD - those aren't a real
--- "on cooldown" state, just the brief global cooldown after any cast.
-local COOLDOWN_THRESHOLD = 3
-
 local function IsPortalOnCooldown(spellID)
     local cdInfo = C_Spell.GetSpellCooldown(spellID)
     return cdInfo and cdInfo.startTime > 0 and cdInfo.duration > COOLDOWN_THRESHOLD

@@ -136,8 +136,7 @@ local function GetAvailableParagonQuests()
             found[#found + 1] = { name = RA_L[locKey], questID = questID }
         end
     end
-    table.sort(found, function(a, b) return a.name < b.name end)
-    return found
+    return RA.SortByLabel(found, function(e) return e.name end)
 end
 
 function RA.ShowParagonFrame(quests)
@@ -184,7 +183,7 @@ end
 local function ManualCheck()
     local quests = GetAvailableParagonQuests()
     if #quests == 0 then
-        print("|cff33ff99RollAway:|r " .. RA_L["paragon_none"])
+        RA.Print(RA_L["paragon_none"])
         return
     end
     RA.ShowParagonFrame(quests)

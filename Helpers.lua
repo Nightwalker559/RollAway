@@ -10,9 +10,32 @@ local DBG  = RA.DBG
 local C_Timer_After    = C_Timer and C_Timer.After
 local C_Timer_NewTimer = C_Timer and C_Timer.NewTimer
 
+-- Waits for an on-demand Blizzard addon to finish loading, then runs fn()
+-- once and stops listening. Use when a frame/API from that addon isn't
+-- available yet (e.g. a "HookXFrame()" attempt returned false) and there's
+-- no more specific event to hang the retry on.
+function RA.WaitForAddon(addonName, fn)
+    local f = CreateFrame("Frame")
+    f:RegisterEvent("ADDON_LOADED")
+    f:SetScript("OnEvent", function(self, _, loadedAddon)
+        if loadedAddon == addonName then
+            self:UnregisterAllEvents()
+            fn()
+        end
+    end)
+end
+
 ------------------------------------------------------------------------
 -- Generic table/timer utilities
 ------------------------------------------------------------------------
+
+-- Shared chat-print prefix for the small set of genuinely user-facing
+-- messages (auto-repair cost, manual-check "none found", etc.) - distinct
+-- from DBG()/DBGError(), which are dev-only and never print to chat.
+local function Print(msg)
+    print("|cff33ff99RollAway:|r " .. msg)
+end
+RA.Print = Print
 
 local function DeepCopy(t)
     if type(t) ~= "table" then return t end
@@ -87,6 +110,21 @@ function RA.MakeDraggable(frame)
     frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
 end
 
+-- Same as RA.MakeDraggable, but respects RollAwayDB.qolReminderLockPosition -
+-- checked live on every drag attempt, so toggling the "lock position" option
+-- takes effect immediately with no per-frame bookkeeping. Used by the QoL
+-- toast/join reminder popups, which the user can lock in place.
+function RA.MakeLockableDraggable(frame)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self)
+        if RollAwayDB and RollAwayDB.qolReminderLockPosition then return end
+        self:StartMoving()
+    end)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+end
+
 -- Runs fn() immediately, unless we're in combat (protected/secure API calls
 -- like Settings.OpenToCategory are blocked during combat lockdown). In that
 -- case fn is queued and runs automatically on the next PLAYER_REGEN_ENABLED.
@@ -94,7 +132,7 @@ end
 function RA.RunProtectedOrQueue(fn)
     if InCombatLockdown() then
         RA.pendingProtectedAction = fn
-        print("|cff33ff99RollAway:|r " .. RA_L["combat_action_queued"])
+        Print(RA_L["combat_action_queued"])
         return false
     end
     fn()
