@@ -9,6 +9,11 @@ local RA_L = RA.RA_L
 local UI      = RA.OptionsUI
 local AceGUI  = UI.AceGUI
 local MakeCB  = UI.MakeCB
+local MakeInfoText = UI.MakeInfoText
+local MakeDropdown = UI.MakeDropdown
+local MakeSkinnedButton = UI.MakeSkinnedButton
+local HideSliderEditbox = UI.HideSliderEditbox
+local MakeFallbackSlider = UI.MakeFallbackSlider
 
 ------------------------------------------------------------------------
 -- Subcategory: QoL  (Filter / LFG / Reminder via left nav)
@@ -27,12 +32,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     qolTitle:SetPoint("TOPLEFT", qolPanel, "TOPLEFT", 0, -10)
     qolTitle:SetText(RA_L["qol_panel_title"])
 
-    local qolPanelInfo = qolPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolPanelInfo:SetPoint("TOPLEFT", qolTitle, "BOTTOMLEFT", 0, -6)
-    qolPanelInfo:SetWidth(560)
-    qolPanelInfo:SetJustifyH("LEFT")
-    qolPanelInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolPanelInfo:SetText(RA_L["qol_panel_info"])
+    local qolPanelInfo = MakeInfoText(qolPanel, qolTitle, 0, -6, 560, RA_L["qol_panel_info"])
 
     local qolHeaderLine = qolPanel:CreateTexture(nil, "ARTWORK")
     qolHeaderLine:SetHeight(1); qolHeaderLine:SetWidth(560)
@@ -156,11 +156,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         qolAutoAcceptCB:SetDisabled(true)
     end
 
-    local qolAutoAcceptInfo = misc:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolAutoAcceptInfo:SetPoint("TOPLEFT", qolAutoAcceptCB.frame, "BOTTOMLEFT", 20, -6)
-    qolAutoAcceptInfo:SetWidth(400); qolAutoAcceptInfo:SetJustifyH("LEFT")
-    qolAutoAcceptInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolAutoAcceptInfo:SetText(RA_L["qol_autoaccept_info"])
+    local qolAutoAcceptInfo = MakeInfoText(misc, qolAutoAcceptCB.frame, 20, -6, 400, RA_L["qol_autoaccept_info"])
 
     -- Auto Repair (dropdown: None / Player / Guild) - same Default-UI-only
     -- reasoning as Auto-Accept above.
@@ -175,28 +171,17 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     }
     local AUTOREPAIR_ORDER = { "none", "player", "guild" }
 
-    local autoRepairDD
-    if AceGUI then
-        autoRepairDD = AceGUI:Create("Dropdown")
-        autoRepairDD:SetLabel("")
+    local autoRepairDD = MakeDropdown(misc, qolAutoRepairLabel, 0, -4, 160)
+    if autoRepairDD then
         autoRepairDD:SetList(AUTOREPAIR_LIST, AUTOREPAIR_ORDER)
         autoRepairDD:SetValue(RollAwayDB.autoRepairMode or "none")
-        autoRepairDD:SetWidth(160)
         autoRepairDD:SetCallback("OnValueChanged", function(_, _, value)
             RollAwayDB.autoRepairMode = value
         end)
-        autoRepairDD.frame:SetParent(misc)
-        autoRepairDD.frame:ClearAllPoints()
-        autoRepairDD.frame:SetPoint("TOPLEFT", qolAutoRepairLabel, "BOTTOMLEFT", 0, -4)
-        autoRepairDD.frame:Show()
         if ElvUI then autoRepairDD:SetDisabled(true) end
     end
 
-    local qolAutoRepairInfo = misc:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolAutoRepairInfo:SetPoint("TOPLEFT", autoRepairDD and autoRepairDD.frame or qolAutoRepairLabel, "BOTTOMLEFT", 20, -6)
-    qolAutoRepairInfo:SetWidth(400); qolAutoRepairInfo:SetJustifyH("LEFT")
-    qolAutoRepairInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolAutoRepairInfo:SetText(RA_L["qol_autorepair_info"])
+    local qolAutoRepairInfo = MakeInfoText(misc, autoRepairDD and autoRepairDD.frame or qolAutoRepairLabel, 20, -6, 400, RA_L["qol_autorepair_info"])
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
 
@@ -206,11 +191,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolVaultAlertCB.frame:SetPoint("TOPLEFT", reminder, "TOPLEFT", 0, -8)
 
-    local qolVaultAlertInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolVaultAlertInfo:SetPoint("TOPLEFT", qolVaultAlertCB.frame, "BOTTOMLEFT", 20, -6)
-    qolVaultAlertInfo:SetWidth(400); qolVaultAlertInfo:SetJustifyH("LEFT")
-    qolVaultAlertInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolVaultAlertInfo:SetText(RA_L["greatvault_alert_info"])
+    local qolVaultAlertInfo = MakeInfoText(reminder, qolVaultAlertCB.frame, 20, -6, 400, RA_L["greatvault_alert_info"])
 
     -- Paragon bag notification
     local qolParagonCB = MakeCB(reminder, RA_L["paragon_alert_label"], RollAwayDB.paragonAlert, function(checked)
@@ -218,11 +199,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolParagonCB.frame:SetPoint("TOPLEFT", qolVaultAlertInfo, "BOTTOMLEFT", -20, -12)
 
-    local qolParagonInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolParagonInfo:SetPoint("TOPLEFT", qolParagonCB.frame, "BOTTOMLEFT", 20, -6)
-    qolParagonInfo:SetWidth(400); qolParagonInfo:SetJustifyH("LEFT")
-    qolParagonInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolParagonInfo:SetText(RA_L["paragon_alert_info"])
+    local qolParagonInfo = MakeInfoText(reminder, qolParagonCB.frame, 20, -6, 400, RA_L["paragon_alert_info"])
 
     -- Reminder font size (moved up here since fontSlider.frame is referenced below)
     local fontSlider
@@ -241,11 +218,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         fontSlider.frame:ClearAllPoints()
         fontSlider.frame:SetPoint("TOPLEFT", qolParagonInfo, "BOTTOMLEFT", -20, -12)
         fontSlider.frame:Show()
-        -- AceGUI's layout pass calls Show() on the editbox; hook OnShow to keep it hidden.
-        if fontSlider.editbox then
-            fontSlider.editbox:SetScript("OnShow", function(self) self:Hide() end)
-            C_Timer.After(0, function() if fontSlider.editbox then fontSlider.editbox:Hide() end end)
-        end
+        HideSliderEditbox(fontSlider)
     else
         -- Fallback ohne AceGUI
         local qolSizeLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -255,20 +228,13 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         qolSizeVal:SetPoint("TOPLEFT", qolSizeLabel, "BOTTOMLEFT", 0, -4)
         qolSizeVal:SetJustifyH("LEFT")
         qolSizeVal:SetText(string.format(RA_L["qol_fontsize_value"], RollAwayDB.talentFontSize))
-        local sliderTalent = CreateFrame("Slider", "RollAwayTalentSizeSlider", reminder, "OptionsSliderTemplate")
-        sliderTalent:SetWidth(200)
-        sliderTalent:SetPoint("TOPLEFT", qolSizeVal, "BOTTOMLEFT", 0, -8)
-        sliderTalent:SetMinMaxValues(10, 40)
-        sliderTalent:SetValueStep(1)
-        sliderTalent:SetValue(RollAwayDB.talentFontSize)
-        _G["RollAwayTalentSizeSliderText"]:Hide()
-        _G["RollAwayTalentSizeSliderLow"]:SetText("")
-        _G["RollAwayTalentSizeSliderHigh"]:SetText("")
-        sliderTalent:SetScript("OnValueChanged", function(_, value)
-            RollAwayDB.talentFontSize = math.floor(value)
-            qolSizeVal:SetText(string.format(RA_L["qol_fontsize_value"], RollAwayDB.talentFontSize))
-        end)
-        if S and S.HandleSliderFrame then S:HandleSliderFrame(sliderTalent) end
+        local sliderTalent = MakeFallbackSlider(reminder, "RollAwayTalentSizeSlider", qolSizeVal, {
+            min = 10, max = 40, step = 1, value = RollAwayDB.talentFontSize, S = S,
+            onChange = function(value)
+                RollAwayDB.talentFontSize = math.floor(value)
+                qolSizeVal:SetText(string.format(RA_L["qol_fontsize_value"], RollAwayDB.talentFontSize))
+            end,
+        })
         fontSlider = { frame = sliderTalent }
     end
 
@@ -278,11 +244,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolDuraCB.frame:SetPoint("TOPLEFT", fontSlider.frame, "BOTTOMLEFT", 0, -14)
 
-    local qolDuraInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolDuraInfo:SetPoint("TOPLEFT", qolDuraCB.frame, "BOTTOMLEFT", 20, -6)
-    qolDuraInfo:SetWidth(400); qolDuraInfo:SetJustifyH("LEFT")
-    qolDuraInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolDuraInfo:SetText(RA_L["qol_durability_info"])
+    local qolDuraInfo = MakeInfoText(reminder, qolDuraCB.frame, 20, -6, 400, RA_L["qol_durability_info"])
 
     -- Instance join reminder
     local qolJoinCB = MakeCB(reminder, RA_L["qol_join_reminder_label"], RollAwayDB.instanceJoinReminder, function(checked)
@@ -290,11 +252,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolJoinCB.frame:SetPoint("TOPLEFT", qolDuraInfo, "BOTTOMLEFT", -20, -12)
 
-    local qolJoinInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolJoinInfo:SetPoint("TOPLEFT", qolJoinCB.frame, "BOTTOMLEFT", 20, -6)
-    qolJoinInfo:SetWidth(400); qolJoinInfo:SetJustifyH("LEFT")
-    qolJoinInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolJoinInfo:SetText(RA_L["qol_join_reminder_info"])
+    local qolJoinInfo = MakeInfoText(reminder, qolJoinCB.frame, 20, -6, 400, RA_L["qol_join_reminder_info"])
 
     -- Sub-option: keystone companion addon (BigWigs / Details! / RollAway
     -- Teleport reminder — mutually exclusive)
@@ -311,11 +269,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     local cbTeleport = MakeCB(reminder, RA_L["qol_join_keyaddon_teleport"], nil, nil)
     cbTeleport.frame:SetPoint("LEFT", cbDetails.frame, "RIGHT", 10, 0)
 
-    local qolKeyAddonInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolKeyAddonInfo:SetPoint("TOPLEFT", cbBigWigs.frame, "BOTTOMLEFT", 20, -6)
-    qolKeyAddonInfo:SetWidth(400); qolKeyAddonInfo:SetJustifyH("LEFT")
-    qolKeyAddonInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolKeyAddonInfo:SetText(RA_L["qol_join_keyaddon_info"])
+    local qolKeyAddonInfo = MakeInfoText(reminder, cbBigWigs.frame, 20, -6, 400, RA_L["qol_join_keyaddon_info"])
 
     -- Re-syncs checkbox state from saved DB + live addon detection. Does NOT
     -- clear the saved choice when the addon isn't detected right now - BigWigs'
@@ -363,11 +317,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolCB.frame:SetPoint("TOPLEFT", qolKeyAddonInfo, "BOTTOMLEFT", -20, -20)
 
-    local qolInfo = reminder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolInfo:SetPoint("TOPLEFT", qolCB.frame, "BOTTOMLEFT", 20, -6)
-    qolInfo:SetWidth(400); qolInfo:SetJustifyH("LEFT")
-    qolInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolInfo:SetText(RA_L["qol_readycheck_info"])
+    local qolInfo = MakeInfoText(reminder, qolCB.frame, 20, -6, 400, RA_L["qol_readycheck_info"])
 
     qolShowSpecCB = MakeCB(reminder, RA_L["qol_readycheck_showspec_label"], RollAwayDB.readyCheckShowSpec, function(checked)
         RollAwayDB.readyCheckShowSpec = checked
@@ -382,23 +332,11 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolLockCB.frame:SetPoint("TOPLEFT", qolShowSpecCB.frame, "BOTTOMLEFT", -20, -14)
 
-    local qolResetPosBtn = CreateFrame("Button", nil, reminder, "UIPanelButtonTemplate")
-    qolResetPosBtn:SetSize(160, 22)
-    qolResetPosBtn:SetText(RA_L["qol_reset_position_button"])
+    local qolResetPosBtn = MakeSkinnedButton(reminder, RA_L["qol_reset_position_button"], 160, S)
     qolResetPosBtn:SetPoint("TOPLEFT", qolLockCB.frame, "BOTTOMLEFT", 4, -8)
     qolResetPosBtn:SetScript("OnClick", function()
         if RA.ResetQoLReminderPositions then RA.ResetQoLReminderPositions() end
     end)
-    if S and S.HandleButton then
-        S:HandleButton(qolResetPosBtn)
-        -- HandleButton alone doesn't strip UIPanelButtonTemplate's native
-        -- textures, so the red/gray Blizzard look would still show
-        -- through underneath ElvUI's backdrop.
-        qolResetPosBtn:SetNormalTexture("")
-        qolResetPosBtn:SetPushedTexture("")
-        qolResetPosBtn:SetHighlightTexture("")
-        qolResetPosBtn:SetDisabledTexture("")
-    end
 
     -- ── Category: Filter (alphabetical by label) ─────────────────────────
 
@@ -407,11 +345,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolAHCB.frame:SetPoint("TOPLEFT", filter, "TOPLEFT", 0, -8)
 
-    local qolAHInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolAHInfo:SetPoint("TOPLEFT", qolAHCB.frame, "BOTTOMLEFT", 20, -6)
-    qolAHInfo:SetWidth(400); qolAHInfo:SetJustifyH("LEFT")
-    qolAHInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolAHInfo:SetText(RA_L["qol_expansion_filter_info"])
+    local qolAHInfo = MakeInfoText(filter, qolAHCB.frame, 20, -6, 400, RA_L["qol_expansion_filter_info"])
 
     -- Anchor advances past shown widgets so hidden ones leave no gap.
     local qolChainAnchor = qolAHInfo
@@ -427,11 +361,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     qolOmniCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
     qolOmniCB.frame:SetHeight(40) -- room for the wrapped 2-line label
 
-    local qolOmniInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolOmniInfo:SetPoint("TOPLEFT", qolOmniCB.frame, "BOTTOMLEFT", 20, -6)
-    qolOmniInfo:SetWidth(400); qolOmniInfo:SetJustifyH("LEFT")
-    qolOmniInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolOmniInfo:SetText(RA_L["qol_omniumfoliant_info"])
+    local qolOmniInfo = MakeInfoText(filter, qolOmniCB.frame, 20, -6, 400, RA_L["qol_omniumfoliant_info"])
 
     -- Hide these options pre-max-level, matching the QoL.lua feature gate.
     if not isMaxLevel then
@@ -448,11 +378,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolMapActCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
 
-    local qolMapActInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolMapActInfo:SetPoint("TOPLEFT", qolMapActCB.frame, "BOTTOMLEFT", 20, -6)
-    qolMapActInfo:SetWidth(400); qolMapActInfo:SetJustifyH("LEFT")
-    qolMapActInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolMapActInfo:SetText(RA_L["qol_map_activity_info"])
+    local qolMapActInfo = MakeInfoText(filter, qolMapActCB.frame, 20, -6, 400, RA_L["qol_map_activity_info"])
 
     qolChainAnchor = qolMapActInfo
 
@@ -463,11 +389,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolCraftLogCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
 
-    local qolCraftLogInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolCraftLogInfo:SetPoint("TOPLEFT", qolCraftLogCB.frame, "BOTTOMLEFT", 20, -6)
-    qolCraftLogInfo:SetWidth(400); qolCraftLogInfo:SetJustifyH("LEFT")
-    qolCraftLogInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolCraftLogInfo:SetText(RA_L["qol_crafting_output_log_info"])
+    local qolCraftLogInfo = MakeInfoText(filter, qolCraftLogCB.frame, 20, -6, 400, RA_L["qol_crafting_output_log_info"])
 
     qolChainAnchor = qolCraftLogInfo
 
@@ -478,11 +400,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolVaultBtnCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
 
-    local qolVaultBtnInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolVaultBtnInfo:SetPoint("TOPLEFT", qolVaultBtnCB.frame, "BOTTOMLEFT", 20, -6)
-    qolVaultBtnInfo:SetWidth(400); qolVaultBtnInfo:SetJustifyH("LEFT")
-    qolVaultBtnInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolVaultBtnInfo:SetText(RA_L["qol_vault_button_info"])
+    local qolVaultBtnInfo = MakeInfoText(filter, qolVaultBtnCB.frame, 20, -6, 400, RA_L["qol_vault_button_info"])
 
     if not isMaxLevel then
         qolVaultBtnCB.frame:Hide()
@@ -497,11 +415,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolVaultCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
 
-    local qolVaultInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolVaultInfo:SetPoint("TOPLEFT", qolVaultCB.frame, "BOTTOMLEFT", 20, -6)
-    qolVaultInfo:SetWidth(400); qolVaultInfo:SetJustifyH("LEFT")
-    qolVaultInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolVaultInfo:SetText(RA_L["qol_vault_currency_info"])
+    local qolVaultInfo = MakeInfoText(filter, qolVaultCB.frame, 20, -6, 400, RA_L["qol_vault_currency_info"])
 
     if not (RA.BONUS_ROLLS_ENABLED and isMaxLevel) then
         qolVaultCB.frame:Hide()
@@ -521,11 +435,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolVendorFilterCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
 
-    local qolVendorFilterInfo = filter:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolVendorFilterInfo:SetPoint("TOPLEFT", qolVendorFilterCB.frame, "BOTTOMLEFT", 20, -6)
-    qolVendorFilterInfo:SetWidth(400); qolVendorFilterInfo:SetJustifyH("LEFT")
-    qolVendorFilterInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolVendorFilterInfo:SetText(RA_L["qol_vendor_filter_info"])
+    local qolVendorFilterInfo = MakeInfoText(filter, qolVendorFilterCB.frame, 20, -6, 400, RA_L["qol_vendor_filter_info"])
 
     -- Alpha slider (only meaningful together with the toggle above)
     if AceGUI then
@@ -546,10 +456,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         vendorAlphaSlider.frame:ClearAllPoints()
         vendorAlphaSlider.frame:SetPoint("TOPLEFT", qolVendorFilterInfo, "BOTTOMLEFT", -20, -12)
         vendorAlphaSlider.frame:Show()
-        if vendorAlphaSlider.editbox then
-            vendorAlphaSlider.editbox:SetScript("OnShow", function(self) self:Hide() end)
-            C_Timer.After(0, function() if vendorAlphaSlider.editbox then vendorAlphaSlider.editbox:Hide() end end)
-        end
+        HideSliderEditbox(vendorAlphaSlider)
     else
         -- Fallback ohne AceGUI
         local vendorAlphaLabel = filter:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -559,24 +466,17 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
         vendorAlphaVal:SetPoint("TOPLEFT", vendorAlphaLabel, "BOTTOMLEFT", 0, -4)
         vendorAlphaVal:SetJustifyH("LEFT")
         vendorAlphaVal:SetText(string.format("%d%%", math.floor(RollAwayDB.vendorFilterAlpha * 100 + 0.5)))
-        local sliderVendorAlpha = CreateFrame("Slider", "RollAwayVendorAlphaSlider", filter, "OptionsSliderTemplate")
-        sliderVendorAlpha:SetWidth(200)
-        sliderVendorAlpha:SetPoint("TOPLEFT", vendorAlphaVal, "BOTTOMLEFT", 0, -8)
-        sliderVendorAlpha:SetMinMaxValues(10, 100)
-        sliderVendorAlpha:SetValueStep(5)
-        sliderVendorAlpha:SetValue(math.floor(RollAwayDB.vendorFilterAlpha * 100 + 0.5))
-        _G["RollAwayVendorAlphaSliderText"]:Hide()
-        _G["RollAwayVendorAlphaSliderLow"]:SetText("")
-        _G["RollAwayVendorAlphaSliderHigh"]:SetText("")
-        sliderVendorAlpha:SetScript("OnValueChanged", function(_, value)
-            local v = math.floor(value)
-            RollAwayDB.vendorFilterAlpha = v / 100
-            vendorAlphaVal:SetText(string.format("%d%%", v))
-            if RollAwayDB.vendorFilterEnabled and RA.ApplyVendorFilterFeature then
-                RA.ApplyVendorFilterFeature()
-            end
-        end)
-        if S and S.HandleSliderFrame then S:HandleSliderFrame(sliderVendorAlpha) end
+        MakeFallbackSlider(filter, "RollAwayVendorAlphaSlider", vendorAlphaVal, {
+            min = 10, max = 100, step = 5, value = math.floor(RollAwayDB.vendorFilterAlpha * 100 + 0.5), S = S,
+            onChange = function(value)
+                local v = math.floor(value)
+                RollAwayDB.vendorFilterAlpha = v / 100
+                vendorAlphaVal:SetText(string.format("%d%%", v))
+                if RollAwayDB.vendorFilterEnabled and RA.ApplyVendorFilterFeature then
+                    RA.ApplyVendorFilterFeature()
+                end
+            end,
+        })
     end
 
     -- ── Category: Logs ─────────────────────────────────────────────────
@@ -596,11 +496,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     qolLogMasterCB.frame:SetPoint("TOPLEFT", logs, "TOPLEFT", 0, -8)
 
-    local qolLogMasterInfo = logs:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    qolLogMasterInfo:SetPoint("TOPLEFT", qolLogMasterCB.frame, "BOTTOMLEFT", 20, -6)
-    qolLogMasterInfo:SetWidth(380); qolLogMasterInfo:SetJustifyH("LEFT")
-    qolLogMasterInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    qolLogMasterInfo:SetText(RA_L["qol_log_enable_info"])
+    local qolLogMasterInfo = MakeInfoText(logs, qolLogMasterCB.frame, 20, -6, 380, RA_L["qol_log_enable_info"])
 
     -- Compact zone checkbox list (no per-item info text, mirrors MRT's layout)
     local LOG_ZONE_DEFS = {
@@ -652,11 +548,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     local lfgqcAutoPSCB = MakeCB(lfg, RA_L["qol_lfgqc_autops_label"], RollAwayDB.lfgAutoPlaystyle, nil)
     lfgqcAutoPSCB.frame:SetPoint("TOPLEFT", lfg, "TOPLEFT", 0, -8)
 
-    local lfgqcAutoPSInfo = lfg:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    lfgqcAutoPSInfo:SetPoint("TOPLEFT", lfgqcAutoPSCB.frame, "BOTTOMLEFT", 20, -6)
-    lfgqcAutoPSInfo:SetWidth(400); lfgqcAutoPSInfo:SetJustifyH("LEFT")
-    lfgqcAutoPSInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    lfgqcAutoPSInfo:SetText(RA_L["qol_lfgqc_autops_info"])
+    local lfgqcAutoPSInfo = MakeInfoText(lfg, lfgqcAutoPSCB.frame, 20, -6, 400, RA_L["qol_lfgqc_autops_info"])
 
     -- Default playstyle label (indented, sub-option of autops checkbox)
     local lfgqcPSLabel = lfg:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -674,20 +566,13 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     local PLAYSTYLE_ORDER = { 0, 1, 2, 3, 4 }
 
     -- psDD only exists with AceGUI; guarded below so state still saves without it.
-    local psDD
-    if AceGUI then
-        psDD = AceGUI:Create("Dropdown")
-        psDD:SetLabel("")  -- label is above the widget
+    local psDD = MakeDropdown(lfg, lfgqcPSLabel, 0, -4, 160)
+    if psDD then
         psDD:SetList(PLAYSTYLE_LIST, PLAYSTYLE_ORDER)
         psDD:SetValue(RollAwayDB.lfgDefaultPlaystyle or 0)
-        psDD:SetWidth(160)
         psDD:SetCallback("OnValueChanged", function(_, _, value)
             RollAwayDB.lfgDefaultPlaystyle = value
         end)
-        psDD.frame:SetParent(lfg)
-        psDD.frame:ClearAllPoints()
-        psDD.frame:SetPoint("TOPLEFT", lfgqcPSLabel, "BOTTOMLEFT", 0, -4)
-        psDD.frame:Show()
     end
 
     -- Enable/disable label and dropdown based on checkbox state
@@ -714,11 +599,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     end)
     lfgqcCB.frame:SetPoint("TOPLEFT", psDD and psDD.frame or lfgqcPSLabel, "BOTTOMLEFT", -20, -14)
 
-    local lfgqcInfo = lfg:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    lfgqcInfo:SetPoint("TOPLEFT", lfgqcCB.frame, "BOTTOMLEFT", 20, -6)
-    lfgqcInfo:SetWidth(400); lfgqcInfo:SetJustifyH("LEFT")
-    lfgqcInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    lfgqcInfo:SetText(RA_L["qol_lfgqc_info"])
+    local lfgqcInfo = MakeInfoText(lfg, lfgqcCB.frame, 20, -6, 400, RA_L["qol_lfgqc_info"])
 
     -- Default category on open (alphabetically first)
     ShowQolCategory("filter")

@@ -16,6 +16,7 @@
 
 ### Changed
 - Vendor Filter: skips the expensive tooltip scan for items that obviously aren't recipes, reducing lag on vendors with many items.
+- Internal: Options UI widget builders (checkboxes, sliders, dropdowns, buttons) deduplicated into shared helpers - no visible/behavior change.
 
 ## 3.0.6
 
