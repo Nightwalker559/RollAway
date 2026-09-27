@@ -57,6 +57,99 @@ local function MakeCB(parent, label, checked, onChange, widthOverride)
     return cb
 end
 
+-- Gray descriptive text below a checkbox/dropdown/label - the addon's most
+-- common options-panel element (~20 uses). Anchor, offsets and width are
+-- passed through as-is (they vary per call site), so this only removes the
+-- 5 repeated font/color/justify lines, never changes actual layout.
+local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
+    local info = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    info:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
+    info:SetWidth(width)
+    info:SetJustifyH("LEFT")
+    info:SetTextColor(0.6, 0.6, 0.6, 1)
+    info:SetText(text)
+    return info
+end
+
+-- Shell for an AceGUI Dropdown widget: create, blank label (the real label
+-- is always a separate FontString placed above it), width, and position.
+-- SetList/SetValue/SetCallback are left to the caller - some dropdowns fill
+-- those in immediately, others (e.g. the profile switcher) refresh them
+-- later from a separate function, so there's no one shape to share there.
+local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
+    if not AceGUI then
+        DBG("WARNING: AceGUI-3.0 unavailable - dropdown skipped")
+        return nil
+    end
+    local dd = AceGUI:Create("Dropdown")
+    dd:SetLabel("")
+    dd:SetWidth(width)
+    dd.frame:SetParent(parent)
+    dd.frame:ClearAllPoints()
+    dd.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
+    dd.frame:Show()
+    return dd
+end
+
+-- Creates a UIPanelButtonTemplate button and, if ElvUI's Skins module is
+-- available, applies its HandleButton skin. HandleButton alone doesn't strip
+-- the template's native textures, so the red/gray Blizzard look would still
+-- show through underneath ElvUI's backdrop - clear those too.
+local function MakeSkinnedButton(parent, label, width, S)
+    local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    btn:SetSize(width or 110, 22)
+    btn:SetText(label)
+    if S and S.HandleButton then
+        S:HandleButton(btn)
+        btn:SetNormalTexture("")
+        btn:SetPushedTexture("")
+        btn:SetHighlightTexture("")
+        btn:SetDisabledTexture("")
+    end
+    return btn
+end
+
+-- AceGUI's layout pass calls Show() on a Slider's numeric editbox; hook
+-- OnShow to keep it hidden (RollAway shows only the slider + its own value
+-- label instead, not Ace's editbox).
+local function HideSliderEditbox(slider)
+    if not slider.editbox then return end
+    slider.editbox:SetScript("OnShow", function(self) self:Hide() end)
+    C_Timer.After(0, function() if slider.editbox then slider.editbox:Hide() end end)
+end
+
+-- Raw (non-AceGUI) OptionsSliderTemplate fallback: hides the template's own
+-- text/low/high labels and wires OnValueChanged. Min/max footer labels are
+-- optional - some callers show a live value label above the slider instead
+-- and skip these entirely. Returns slider, minLabel, maxLabel (the latter
+-- two nil if opts.minText wasn't given).
+local function MakeFallbackSlider(parent, globalName, anchor, opts)
+    local slider = CreateFrame("Slider", globalName, parent, "OptionsSliderTemplate")
+    slider:SetWidth(opts.width or 200)
+    slider:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -8)
+    slider:SetMinMaxValues(opts.min, opts.max)
+    slider:SetValueStep(opts.step)
+    slider:SetValue(opts.value)
+    _G[globalName.."Text"]:Hide()
+    _G[globalName.."Low"]:SetText("")
+    _G[globalName.."High"]:SetText("")
+
+    local minLabel, maxLabel
+    if opts.minText then
+        minLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        minLabel:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -2)
+        minLabel:SetText(opts.minText)
+        maxLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        maxLabel:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -2)
+        maxLabel:SetJustifyH("RIGHT")
+        maxLabel:SetText(opts.maxText)
+    end
+
+    slider:SetScript("OnValueChanged", function(_, value) opts.onChange(value) end)
+    if opts.S and opts.S.HandleSliderFrame then opts.S:HandleSliderFrame(slider) end
+    return slider, minLabel, maxLabel
+end
+
 local function MakeHintText(parent, anchorLine, text)
     local hint = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", anchorLine, "BOTTOMLEFT", 0, -8)
@@ -332,6 +425,11 @@ RA.OptionsUI = {
     ROW_GAP           = ROW_GAP,
     MakeSectionHeader = MakeSectionHeader,
     MakeCB            = MakeCB,
+    MakeInfoText      = MakeInfoText,
+    MakeDropdown      = MakeDropdown,
+    MakeSkinnedButton = MakeSkinnedButton,
+    HideSliderEditbox = HideSliderEditbox,
+    MakeFallbackSlider = MakeFallbackSlider,
     MakeHintText      = MakeHintText,
     MakeCheckboxRow   = MakeCheckboxRow,
     MakeSeasonTabs    = MakeSeasonTabs,

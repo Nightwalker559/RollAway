@@ -14,8 +14,9 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
 local UI                = RA.OptionsUI
-local AceGUI            = UI.AceGUI
 local MakeSectionHeader = UI.MakeSectionHeader
+local MakeDropdown      = UI.MakeDropdown
+local MakeSkinnedButton = UI.MakeSkinnedButton
 local MakeHintText      = UI.MakeHintText
 
 ------------------------------------------------------------------------
@@ -274,30 +275,11 @@ function RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabIna
     activeLabel:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -18)
     activeLabel:SetText(RA_L["profile_active_label"])
 
-    local activeDD = AceGUI:Create("Dropdown")
-    activeDD:SetLabel("")
-    activeDD:SetWidth(220)
-    activeDD.frame:SetParent(panel)
-    activeDD.frame:ClearAllPoints()
-    activeDD.frame:SetPoint("TOPLEFT", activeLabel, "BOTTOMLEFT", 0, -4)
-    activeDD.frame:Show()
+    local activeDD = MakeDropdown(panel, activeLabel, 0, -4, 220)
 
     -- ── New / Reset (act on the active profile) ─────────────────────
     local function MakeButton(label, width)
-        local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-        btn:SetSize(width or 110, 22)
-        btn:SetText(label)
-        if S and S.HandleButton then
-            S:HandleButton(btn)
-            -- HandleButton alone doesn't strip UIPanelButtonTemplate's native
-            -- textures, so the red/gray Blizzard look would still show
-            -- through underneath ElvUI's backdrop.
-            btn:SetNormalTexture("")
-            btn:SetPushedTexture("")
-            btn:SetHighlightTexture("")
-            btn:SetDisabledTexture("")
-        end
-        return btn
+        return MakeSkinnedButton(panel, label, width, S)
     end
 
     local newBtn = MakeButton(RA_L["profile_new_button"], 90)
@@ -311,13 +293,7 @@ function RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabIna
     otherLabel:SetPoint("TOPLEFT", activeDD.frame, "BOTTOMLEFT", 0, -24)
     otherLabel:SetText(RA_L["profile_other_label"])
 
-    local otherDD = AceGUI:Create("Dropdown")
-    otherDD:SetLabel("")
-    otherDD:SetWidth(220)
-    otherDD.frame:SetParent(panel)
-    otherDD.frame:ClearAllPoints()
-    otherDD.frame:SetPoint("TOPLEFT", otherLabel, "BOTTOMLEFT", 0, -4)
-    otherDD.frame:Show()
+    local otherDD = MakeDropdown(panel, otherLabel, 0, -4, 220)
 
     local copyBtn = MakeButton(RA_L["profile_copy_button"], 90)
     copyBtn:SetPoint("LEFT", otherDD.frame, "RIGHT", 16, 0)

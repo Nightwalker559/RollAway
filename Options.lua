@@ -24,6 +24,8 @@ local COL_GAP            = UI.COL_GAP
 local ROW_GAP            = UI.ROW_GAP
 local MakeSectionHeader  = UI.MakeSectionHeader
 local MakeCB             = UI.MakeCB
+local MakeInfoText       = UI.MakeInfoText
+local MakeFallbackSlider = UI.MakeFallbackSlider
 local MakeHintText       = UI.MakeHintText
 local MakeCheckboxRow    = UI.MakeCheckboxRow
 local MakeSeasonTabs     = UI.MakeSeasonTabs
@@ -259,12 +261,7 @@ function RA.InitOptions()
     visMainLabel:SetPoint("TOPLEFT", 0, -10)
     visMainLabel:SetText(RA_L["visibility_section_title"])
 
-    local visMainInfo = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    visMainInfo:SetPoint("TOPLEFT", visMainLabel, "BOTTOMLEFT", 0, -6)
-    visMainInfo:SetWidth(560)
-    visMainInfo:SetJustifyH("LEFT")
-    visMainInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    visMainInfo:SetText(RA_L["visibility_info"])
+    local visMainInfo = MakeInfoText(gen, visMainLabel, 0, -6, 560, RA_L["visibility_info"])
 
     -- Master switch: disables the entire auto-close/auto-hide feature for
     -- the Group Loot History frame (delay timer, safety-timeout watchdog,
@@ -290,27 +287,14 @@ function RA.InitOptions()
     sliderDelayVal:SetJustifyH("LEFT")
     sliderDelayVal:SetText(string.format(RA_L["slider_label"], RollAwayDB.delay))
 
-    local slider = CreateFrame("Slider", "RollAwayDelaySlider", gen, "OptionsSliderTemplate")
-    slider:SetWidth(200)
-    slider:SetPoint("TOPLEFT", sliderDelayVal, "BOTTOMLEFT", 0, -8)
-    slider:SetMinMaxValues(5, 20)
-    slider:SetValueStep(1)
-    slider:SetValue(RollAwayDB.delay)
-    _G["RollAwayDelaySliderText"]:Hide()
-    _G["RollAwayDelaySliderLow"]:SetText("")
-    _G["RollAwayDelaySliderHigh"]:SetText("")
-    local delayMin = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    delayMin:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -2)
-    delayMin:SetText(RA_L["slider_min"])
-    local delayMax = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    delayMax:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -2)
-    delayMax:SetJustifyH("RIGHT")
-    delayMax:SetText(RA_L["slider_max"])
-    slider:SetScript("OnValueChanged", function(_, value)
-        RollAwayDB.delay = math.floor(value)
-        sliderDelayVal:SetText(string.format(RA_L["slider_label"], RollAwayDB.delay))
-    end)
-    if S and S.HandleSliderFrame then S:HandleSliderFrame(slider) end
+    local slider, delayMin = MakeFallbackSlider(gen, "RollAwayDelaySlider", sliderDelayVal, {
+        min = 5, max = 20, step = 1, value = RollAwayDB.delay,
+        minText = RA_L["slider_min"], maxText = RA_L["slider_max"], S = S,
+        onChange = function(value)
+            RollAwayDB.delay = math.floor(value)
+            sliderDelayVal:SetText(string.format(RA_L["slider_label"], RollAwayDB.delay))
+        end,
+    })
 
     local timeoutLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     timeoutLabel:SetPoint("TOPLEFT", delayLabel, "TOPLEFT", 280, 0)
@@ -321,39 +305,21 @@ function RA.InitOptions()
     sliderTimeoutVal:SetJustifyH("LEFT")
     sliderTimeoutVal:SetText(string.format(RA_L["timeout_slider_label"], RollAwayDB.rollTimeout))
 
-    local sliderTimeout = CreateFrame("Slider", "RollAwayTimeoutSlider", gen, "OptionsSliderTemplate")
-    sliderTimeout:SetWidth(200)
-    sliderTimeout:SetPoint("TOPLEFT", sliderTimeoutVal, "BOTTOMLEFT", 0, -8)
-    sliderTimeout:SetMinMaxValues(30, 180)
-    sliderTimeout:SetValueStep(5)
-    sliderTimeout:SetValue(RollAwayDB.rollTimeout)
-    _G["RollAwayTimeoutSliderText"]:Hide()
-    _G["RollAwayTimeoutSliderLow"]:SetText("")
-    _G["RollAwayTimeoutSliderHigh"]:SetText("")
-    local timeoutMin = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    timeoutMin:SetPoint("TOPLEFT", sliderTimeout, "BOTTOMLEFT", 0, -2)
-    timeoutMin:SetText(RA_L["timeout_min"])
-    local timeoutMax = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    timeoutMax:SetPoint("TOPRIGHT", sliderTimeout, "BOTTOMRIGHT", 0, -2)
-    timeoutMax:SetJustifyH("RIGHT")
-    timeoutMax:SetText(RA_L["timeout_max"])
-    sliderTimeout:SetScript("OnValueChanged", function(_, value)
-        RollAwayDB.rollTimeout = math.floor(value)
-        sliderTimeoutVal:SetText(string.format(RA_L["timeout_slider_label"], RollAwayDB.rollTimeout))
-    end)
-    if S and S.HandleSliderFrame then S:HandleSliderFrame(sliderTimeout) end
+    local sliderTimeout = MakeFallbackSlider(gen, "RollAwayTimeoutSlider", sliderTimeoutVal, {
+        min = 30, max = 180, step = 5, value = RollAwayDB.rollTimeout,
+        minText = RA_L["timeout_min"], maxText = RA_L["timeout_max"], S = S,
+        onChange = function(value)
+            RollAwayDB.rollTimeout = math.floor(value)
+            sliderTimeoutVal:SetText(string.format(RA_L["timeout_slider_label"], RollAwayDB.rollTimeout))
+        end,
+    })
 
     -- Row 2: Sichtbarkeit - hide the Group Loot History frame, per raid difficulty.
     local hideLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", 0, -20)
     hideLabel:SetText(RA_L["hide_in_raid_label"])
 
-    local hideInfo = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    hideInfo:SetPoint("TOPLEFT", hideLabel, "BOTTOMLEFT", 0, -4)
-    hideInfo:SetWidth(480)
-    hideInfo:SetJustifyH("LEFT")
-    hideInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    hideInfo:SetText(RA_L["hide_in_raid_info"])
+    local hideInfo = MakeInfoText(gen, hideLabel, 0, -4, 480, RA_L["hide_in_raid_info"])
 
     local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideInfo, {
         { key = "lfr",    label = RA_L["raid_diff_lfr"]    },
@@ -400,12 +366,7 @@ function RA.InitOptions()
     end)
     cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -10)
 
-    local reminderInfo = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    reminderInfo:SetPoint("TOPLEFT", cbReminder.frame, "BOTTOMLEFT", 20, -6)
-    reminderInfo:SetWidth(480)
-    reminderInfo:SetJustifyH("LEFT")
-    reminderInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-    reminderInfo:SetText(RA_L["reminder_info"])
+    local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, 480, RA_L["reminder_info"])
 
     -- Hide reminder option when Bonus Rolls are disabled, or below max level
     -- (Bonus Roll reminder is meaningless before max level; same gating as
@@ -475,17 +436,13 @@ function RA.InitOptions()
         end)
         cbDebugErrorsOnly.frame:SetPoint("TOPLEFT", cbDebug.frame, "BOTTOMLEFT", 0, -6)
 
-        cmdInfo = gen:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        cmdInfo:SetPoint("TOPLEFT", cbDebugErrorsOnly.frame, "BOTTOMLEFT", 0, -14)
-        cmdInfo:SetWidth(560)
-        cmdInfo:SetJustifyH("LEFT")
-        cmdInfo:SetTextColor(0.6, 0.6, 0.6, 1)
-        cmdInfo:SetText("|cffFFFFFF/rawtest|r  " .. RA_L["cmd_rawtest_info"] .. "\n"
-                     .. "|cffFFFFFF/rawreminder|r  " .. RA_L["cmd_rawreminder_info"] .. "\n"
-                     .. "|cffFFFFFF/rawreset|r  " .. RA_L["cmd_rawreset_info"] .. "\n"
-                     .. "|cffFFFFFF/rawqol|r  " .. RA_L["cmd_rawqol_info"] .. "\n"
-                     .. "|cffFFFFFF/rawwhats|r  " .. RA_L["cmd_rawwhats_info"] .. "\n"
-                     .. "|cffFFFFFF/rawparagon|r  " .. RA_L["cmd_rawparagon_info"])
+        cmdInfo = MakeInfoText(gen, cbDebugErrorsOnly.frame, 0, -14, 560,
+            "|cffFFFFFF/rawtest|r  " .. RA_L["cmd_rawtest_info"] .. "\n"
+            .. "|cffFFFFFF/rawreminder|r  " .. RA_L["cmd_rawreminder_info"] .. "\n"
+            .. "|cffFFFFFF/rawreset|r  " .. RA_L["cmd_rawreset_info"] .. "\n"
+            .. "|cffFFFFFF/rawqol|r  " .. RA_L["cmd_rawqol_info"] .. "\n"
+            .. "|cffFFFFFF/rawwhats|r  " .. RA_L["cmd_rawwhats_info"] .. "\n"
+            .. "|cffFFFFFF/rawparagon|r  " .. RA_L["cmd_rawparagon_info"])
     end
 
     -- Dynamically size the scroll child to hug the last General-tab element,
