@@ -443,8 +443,8 @@ L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great V
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 
 ------------------------------------------------------------------------
--- What's New (3.0.6)
+-- What's New (3.0.8)
 ------------------------------------------------------------------------
-L["whatsnew_portaloverview_title"]    = "Portal Overview"
-L["whatsnew_portaloverview_desc"]     = "Own portal frame - current season or all learned dungeons by expansion. No BigWigs/Details needed. Open anytime with /rat."
-L["whatsnew_portaloverview_location"] = "/rat"
+L["whatsnew_automplus_title"]    = "Preselect Mythic+ difficulty"
+L["whatsnew_automplus_desc"]     = "The Group Finder create form uses Mythic+ instead of the default Mythic when opened and after picking a dungeon. Picking another difficulty by hand still works."
+L["whatsnew_automplus_location"] = "QoL > LFG"

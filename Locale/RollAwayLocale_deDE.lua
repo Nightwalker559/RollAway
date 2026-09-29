@@ -444,8 +444,8 @@ L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Gro
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 
 ------------------------------------------------------------------------
--- What's New (3.0.6)
+-- What's New (3.0.8)
 ------------------------------------------------------------------------
-L["whatsnew_portaloverview_title"]    = "Portalübersicht"
-L["whatsnew_portaloverview_desc"]     = "Eigenes Portalfenster - aktuelle Season oder alle erlernten Dungeons nach Erweiterung. Kein BigWigs/Details nötig. Jederzeit per /rat aufrufbar."
-L["whatsnew_portaloverview_location"] = "/rat"
+L["whatsnew_automplus_title"]    = "Schwierigkeit Mythisch+ vorwählen"
+L["whatsnew_automplus_desc"]     = "Das Erstellen-Formular der Gruppensuche nutzt beim Öffnen und nach der Dungeon-Auswahl Mythisch+ statt des Standard-Mythisch. Eine von Hand gewählte andere Schwierigkeit bleibt möglich."
+L["whatsnew_automplus_location"] = "QoL > LFG"

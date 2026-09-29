@@ -2,7 +2,7 @@ local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
 -- Bump this whenever a new feature entry is added below.
-local WHATS_NEW_VERSION = "3.0.6"
+local WHATS_NEW_VERSION = "3.0.8"
 
 -- Each entry: { title, description, location } - all three pulled from
 -- RA_L so this shows correctly in both enUS and deDE.
@@ -10,9 +10,9 @@ local WHATS_NEW_VERSION = "3.0.6"
 -- here - clear this list out and replace it whenever that version bumps.
 local FEATURES = {
     {
-        title       = RA_L["whatsnew_portaloverview_title"],
-        description = RA_L["whatsnew_portaloverview_desc"],
-        location    = RA_L["whatsnew_portaloverview_location"],
+        title       = RA_L["whatsnew_automplus_title"],
+        description = RA_L["whatsnew_automplus_desc"],
+        location    = RA_L["whatsnew_automplus_location"],
     },
 }
 
