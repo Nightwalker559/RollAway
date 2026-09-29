@@ -34,10 +34,21 @@ local function CreateDebugLogFrame()
 
     local f = CreateFrame("Frame", "RollAwayDebugLogFrame", UIParent, "BackdropTemplate")
     f:SetSize(560, 360)
-    f:SetPoint("CENTER")
+    -- Position is remembered across /reload and relog (like the Portal Overview).
+    local pos = RollAwayDB.debugLogPos
+    if pos then
+        f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
+    else
+        f:SetPoint("CENTER")
+    end
     f:SetFrameStrata("DIALOG")
     f:SetClampedToScreen(true)
     RA.MakeDraggable(f)
+    f:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local point, _, relPoint, x, y = self:GetPoint()
+        RollAwayDB.debugLogPos = { point = point, relPoint = relPoint, x = x, y = y }
+    end)
     f:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
