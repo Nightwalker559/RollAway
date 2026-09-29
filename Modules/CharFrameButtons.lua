@@ -83,14 +83,17 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnEnter", onEnter)
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Diagnostics: a hide we did not do ourselves (RA_ownHide unset) means
-    -- something else hid the button - log who, with a short stack.
+    -- Diagnostics: OnHide also fires for brief hide/show cycles while
+    -- Blizzard opens the panel, so only report a hide we did not do ourselves
+    -- (RA_ownHide unset) that is still in effect shortly after while the
+    -- button should be visible.
     btn:HookScript("OnHide", function(self)
         if self.RA_ownHide then return end
-        DBGError("[CharFrameButtons]", globalName, "hidden EXTERNALLY | parent shown:",
-            tostring(self:GetParent() and self:GetParent():IsShown()),
-            "| stats pane shown:", tostring(CharacterStatsPane and CharacterStatsPane:IsShown()),
-            "| stack:", (debugstack(2, 4, 0):gsub("\n", " <- ")))
+        local stack = (debugstack(2, 4, 0):gsub("\n", " <- "))
+        C_Timer_After(0.5, function()
+            if self:IsShown() or not IsStatsViewShown() or not (PaperDollFrame and PaperDollFrame:IsShown()) then return end
+            DBGError("[CharFrameButtons]", globalName, "still hidden 0.5s after external hide | stack:", stack)
+        end)
     end)
     btn.RA_ownHide = true
     btn:Hide()
