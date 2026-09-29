@@ -356,7 +356,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     -- instead of running off-panel on one line.
     local qolOmniCB = MakeCB(filter, RA_L["qol_omniumfoliant_label"], RollAwayDB.hideOmniumfoliantMinimap, function(checked)
         RollAwayDB.hideOmniumfoliantMinimap = checked
-        if RA.ApplyOmniumfoliantFeature then RA.ApplyOmniumfoliantFeature() end
+        if RA.RefreshCharFrameButtons then RA.RefreshCharFrameButtons("option toggled") end
     end, 400)
     qolOmniCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
     qolOmniCB.frame:SetHeight(40) -- room for the wrapped 2-line label
@@ -396,7 +396,7 @@ function RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactiv
     -- Great Vault button on Character Frame
     local qolVaultBtnCB = MakeCB(filter, RA_L["qol_vault_button_label"], RollAwayDB.vaultButtonCharFrame, function(checked)
         RollAwayDB.vaultButtonCharFrame = checked
-        if RA.ApplyVaultButtonFeature then RA.ApplyVaultButtonFeature() end
+        if RA.RefreshCharFrameButtons then RA.RefreshCharFrameButtons("option toggled") end
     end)
     qolVaultBtnCB.frame:SetPoint("TOPLEFT", qolChainAnchor, "BOTTOMLEFT", -20, -12)
 

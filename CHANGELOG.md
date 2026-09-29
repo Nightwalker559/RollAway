@@ -5,7 +5,12 @@
 ## 3.0.8
 
 ### Fixed
+- Omniumfoliant/Great Vault buttons could stay hidden on the Stats view (stale tab-state flag).
 - Group Loot History frame no longer stayed open on pulling in a dungeon (or a non-configured raid difficulty) - it now hides immediately on entering combat everywhere, even with rolls still pending, unless auto-close is fully disabled.
+
+### Changed
+- Omniumfoliant/Great Vault buttons rebuilt from scratch: one refresh function driven by events and the Stats pane's real visibility; watchdog, timers and self-heal workarounds removed (`/rawcharwatchdog` dropped).
+- Debug log: button visibility changes are logged with reason and trigger, and refresh errors are caught and logged ("Log self-heal errors only"), even while the log window is closed.
 
 ## 3.0.7
 
