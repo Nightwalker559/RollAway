@@ -18,11 +18,13 @@
 ### Changed
 - Omniumfoliant/Great Vault buttons rebuilt: one event-driven refresh function instead of watchdog and self-heal workarounds (`/rawcharwatchdog` dropped).
 - Debug log: remembers its window position across reload/relog; logs button visibility changes and refresh errors with reason and trigger ("Log self-heal errors only"), plus a stack trace for external hides; `/rawcharbtn` dumps button state.
+- Options: the "Visibility" section is now named after what it controls, the Group Loot History frame ("Beuteverteilung" in German), and the German texts use that name consistently.
 - Performance: fewer event registrations (portal-cast watcher, Portal Overview bag events, vault currency updates, dev-only event logger and slash commands).
 
 ### Internal
 - QoL.lua split: the join reminder and keystone companion handling moved to Modules\JoinReminder.lua.
 - Duplicate code replaced by shared helpers (popups, toasts, portal buttons, ElvUI roll buttons, Options builders, ElvUI skinning); dead code and unused locale keys removed.
+
 ## 3.0.7
 
 ### New

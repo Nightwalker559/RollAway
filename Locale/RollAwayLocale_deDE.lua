@@ -25,16 +25,16 @@ L["slider_max"]               = "20 Sek."
 
 -- Sicherheits-Timeout Slider
 L["timeout_section_title"]    = "Sicherheits-Timeout"
-L["timeout_slider_label"]     = "Frame zwangsweise schließen nach %d Sekunden"
+L["timeout_slider_label"]     = "Fenster zwangsweise schließen nach %d Sekunden"
 L["timeout_min"]              = "30 Sek."
 L["timeout_max"]              = "180 Sek."
 L["lootframe_feature_disable_label"] = "Automatisches Schließen/Ausblenden komplett deaktivieren (Fenster bleibt wie im Standard immer offen)"
 
--- Sichtbarkeit
-L["visibility_section_title"] = "Sichtbarkeit"
-L["visibility_info"]          = "Steuert das Gruppen-Loot-Fenster, das während der Beuteverteilung in Raids erscheint."
-L["hide_in_raid_label"]       = "Gruppen-Loot-Verlauf im Raid ausblenden"
-L["hide_in_raid_info"]        = "Blendet das Gruppen-Loot-Fenster für die ausgewählten Raid-Schwierigkeiten aus. Standardmäßig sichtbar."
+-- Beuteverteilung (Group Loot History)
+L["visibility_section_title"] = "Beuteverteilung"
+L["visibility_info"]          = "Steuert das Beuteverteilungs-Fenster, das bei der Beutevergabe in Raids erscheint."
+L["hide_in_raid_label"]       = "Beuteverteilung im Raid ausblenden"
+L["hide_in_raid_info"]        = "Blendet das Beuteverteilungs-Fenster für die ausgewählten Raid-Schwierigkeiten aus. Standardmäßig sichtbar."
 L["raid_diff_lfr"]            = "LFR / Welt"
 L["raid_diff_normal"]         = "Normal"
 L["raid_diff_heroic"]         = "Heroisch"

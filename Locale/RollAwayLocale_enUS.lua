@@ -18,19 +18,19 @@ L["tab_legacy"]               = "Legacy"
 
 -- Delay slider
 L["delay_section_title"]      = "Delay"
-L["slider_label"]             = "Close frame after %d seconds"
+L["slider_label"]             = "Close window after %d seconds"
 L["slider_min"]               = "5 sec."
 L["slider_max"]               = "20 sec."
 
 -- Safety Timeout slider
 L["timeout_section_title"]    = "Safety Timeout"
-L["timeout_slider_label"]     = "Force-close frame after %d seconds"
+L["timeout_slider_label"]     = "Force-close window after %d seconds"
 L["timeout_min"]              = "30 sec."
 L["timeout_max"]              = "180 sec."
 L["lootframe_feature_disable_label"] = "Disable auto-close/auto-hide entirely (frame always stays open, like default WoW)"
 
--- Visibility
-L["visibility_section_title"] = "Visibility"
+-- Group Loot History
+L["visibility_section_title"] = "Group Loot History"
 L["visibility_info"]          = "Controls the Group Loot History frame that appears during loot distribution in raids."
 L["hide_in_raid_label"]       = "Hide Group Loot History in raids"
 L["hide_in_raid_info"]        = "Hides the Group Loot History frame for the selected raid difficulties. Visible by default."
