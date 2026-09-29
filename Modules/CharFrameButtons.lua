@@ -83,7 +83,18 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnEnter", onEnter)
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Diagnostics: a hide we did not do ourselves (RA_ownHide unset) means
+    -- something else hid the button - log who, with a short stack.
+    btn:HookScript("OnHide", function(self)
+        if self.RA_ownHide then return end
+        DBGError("[CharFrameButtons]", globalName, "hidden EXTERNALLY | parent shown:",
+            tostring(self:GetParent() and self:GetParent():IsShown()),
+            "| stats pane shown:", tostring(CharacterStatsPane and CharacterStatsPane:IsShown()),
+            "| stack:", (debugstack(2, 4, 0):gsub("\n", " <- ")))
+    end)
+    btn.RA_ownHide = true
     btn:Hide()
+    btn.RA_ownHide = nil
     return btn
 end
 
@@ -229,7 +240,9 @@ local function Apply(source)
         end
         if btn then
             if wanted then PlaceButton(btn, def.x) end
+            btn.RA_ownHide = true
             btn:SetShown(wanted)
+            btn.RA_ownHide = nil
         end
         LogState(def.key, wanted, featureOn, statsView, source, btn)
     end
@@ -244,6 +257,29 @@ function RA.RefreshCharFrameButtons(source)
     if not ok then
         DBGError("[CharFrameButtons] ERROR in refresh (", tostring(source), "):", err)
     end
+end
+
+-- Dev helper for /rawcharbtn: one line per button with everything that can
+-- make a button invisible (shown/visible flags, alpha, parent, strata, size,
+-- anchor, on-screen rect).
+function RA.DescribeCharFrameButtons()
+    local out = {}
+    for _, def in ipairs(DEFS) do
+        local b = buttons[def.key]
+        if not b then
+            out[#out + 1] = def.key .. ": not created (active=" .. tostring(def.active() and true or false) .. ")"
+        else
+            local p = b:GetParent()
+            local pt, rel, relPt, x, y = b:GetPoint(1)
+            local l, bt, w, h = b:GetRect()
+            out[#out + 1] = ("%s: shown=%s visible=%s alpha=%.2f eff=%.2f parent=%s(%s) strata=%s lvl=%d size=%dx%d point=%s>%s:%s %s,%s rect=%s,%s,%s,%s"):format(
+                def.key, tostring(b:IsShown()), tostring(b:IsVisible()), b:GetAlpha(), b:GetEffectiveAlpha(),
+                tostring(p and p:GetName()), tostring(p and p:IsShown()), b:GetFrameStrata(), b:GetFrameLevel(),
+                b:GetWidth(), b:GetHeight(), tostring(pt), tostring(rel and rel:GetName()), tostring(relPt),
+                tostring(x), tostring(y), tostring(l), tostring(bt), tostring(w), tostring(h))
+        end
+    end
+    return out
 end
 
 -- Dev helper for /rawchonkyoffset.
