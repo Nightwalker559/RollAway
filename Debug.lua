@@ -345,6 +345,18 @@ local function RegisterSlashCommands()
         end
     end
 
+
+    -- /rawcharbtn → dump the visibility state of the Omnium/Vault Character
+    -- panel buttons to the log (run it while they are missing).
+    SLASH_RAWCHARBTN1 = "/rawcharbtn"
+    SlashCmdList["RAWCHARBTN"] = function()
+        if not IsDevChar() then return end
+        if not RA.DescribeCharFrameButtons then return end
+        for _, line in ipairs(RA.DescribeCharFrameButtons()) do
+            RA.AppendDebugLog("[CharFrameButtons] " .. line)
+        end
+    end
+
 end
 
 ------------------------------------------------------------------------
