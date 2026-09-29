@@ -118,40 +118,45 @@ end
 -- doesn't apply there - see the IsChonkyLoaded() bypass below.
 ------------------------------------------------------------------------
 
-local statsTabActive = true  -- Stats is the default sub-view on open
-
--- Query the sidebar tabs' live checked state instead of relying only on our
--- own click-tracked flag. Bug (Default UI): closing the panel while on
--- Titles/Equipment and reopening on Stats never fires a fresh OnClick on
--- tab1, so a click-tracked flag can go stale. Reading GetChecked() directly
--- is always correct, regardless of how the panel got back to the Stats view.
+-- Gate on the actual visibility of the Titles/Equipment Manager panes, never
+-- on tab state. PaperDollSidebarTab1-3 are plain Buttons on current retail
+-- (no :GetChecked), so the old click-tracked flag could go stale - e.g. after
+-- closing on Titles/Equipment and reopening on Stats - and then hid both
+-- buttons on the Stats view for good, with no error logged. The panes' own
+-- IsShown() is always correct, however the view was switched (click, other
+-- addon, PaperDollFrame_SetSidebar, reopen). Default is "allowed".
 local function CharFrameButtonsAllowed()
     if IsChonkyLoaded() then return true end
-    if PaperDollSidebarTab1 and PaperDollSidebarTab1.GetChecked then
-        return PaperDollSidebarTab1:GetChecked() and true or false
-    end
-    return statsTabActive
+    if PaperDollTitlesPane and PaperDollTitlesPane:IsShown() then return false end
+    if PaperDollEquipmentManagerPane and PaperDollEquipmentManagerPane:IsShown() then return false end
+    return true
 end
 
 local sidebarHooked = false
 local function HookPaperDollSidebarTabs()
     if sidebarHooked then return end
-    local tab1, tab2, tab3 = PaperDollSidebarTab1, PaperDollSidebarTab2, PaperDollSidebarTab3
-    if not (tab1 and tab2 and tab3) then return end
-
-    local function OnTabClicked(tabIndex)
-        return function()
-            statsTabActive = (tabIndex == 1)
-            RA.ApplyOmniumfoliantFeature()
-            RA.ApplyVaultButtonFeature()
+    local function Refresh()
+        RA.ApplyOmniumfoliantFeature()
+        RA.ApplyVaultButtonFeature()
+    end
+    -- Sidebar view switches go through PaperDollFrame_SetSidebar (tab clicks
+    -- and addons alike); refresh right after so buttons don't wait for the
+    -- watchdog's next tick.
+    if type(PaperDollFrame_SetSidebar) == "function" then
+        hooksecurefunc("PaperDollFrame_SetSidebar", Refresh)
+        sidebarHooked = true
+    else
+        for i = 1, 3 do
+            local tab = _G["PaperDollSidebarTab"..i]
+            if tab and tab.HookScript then
+                tab:HookScript("OnClick", Refresh)
+                sidebarHooked = true
+            end
         end
     end
-
-    tab1:HookScript("OnClick", OnTabClicked(1))
-    tab2:HookScript("OnClick", OnTabClicked(2))
-    tab3:HookScript("OnClick", OnTabClicked(3))
-    sidebarHooked = true
-    DBG("[CharFrameButtons] PaperDoll sidebar tabs hooked for Omnium/Vault button gating")
+    if sidebarHooked then
+        DBG("[CharFrameButtons] PaperDoll sidebar hooked for Omnium/Vault button gating")
+    end
 end
 
 ------------------------------------------------------------------------
