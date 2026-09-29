@@ -226,7 +226,6 @@ L["qol_lfgqc_ps_relaxed"]       = "Relaxed"
 L["qol_lfgqc_ps_competitive"]   = "Competitive"
 L["qol_lfgqc_ps_carry"]         = "Carry Offered"
 L["qol_fontsize_label"]       = "Reminder font size"
-L["qol_fontsize_value"]       = "Size: %d"
 L["qol_check_talents"]        = "Check Talents"
 L["qol_check_talents_fmt"]    = "Check Talents (%s)"
 L["combat_action_queued"]     = "Can't open the options while in combat — opening automatically once combat ends."
@@ -440,16 +439,6 @@ L["greatvault_alert_label"]        = "Notify when Great Vault rewards are unclai
 L["greatvault_alert_info"]         = "Shows a popup on login if you have unclaimed Great Vault rewards. Only shown once per weekly reset. Use /rawvault to check manually."
 L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great Vault!"
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
-
-------------------------------------------------------------------------
--- What's New (3.0.5)
-------------------------------------------------------------------------
-L["whatsnew_autoaccept_title"]     = "Auto-Accept Guild/Friend Invites"
-L["whatsnew_autoaccept_desc"]      = "Automatically accepts group invites from guild members, friends, and Battle.net friends. Default UI only."
-L["whatsnew_autoaccept_location"]  = "QoL > Misc"
-L["whatsnew_autorepair_title"]     = "Auto Repair"
-L["whatsnew_autorepair_desc"]      = "Automatically repairs at the merchant using player or guild bank funds. Default UI only."
-L["whatsnew_autorepair_location"]  = "QoL > Misc"
 
 ------------------------------------------------------------------------
 -- What's New (3.0.6)

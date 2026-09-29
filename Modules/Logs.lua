@@ -4,20 +4,17 @@
 -- feature so MRT is no longer required just for this.
 
 local RA   = _G["RollAway"]
+local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
--- Difficulty IDs for Mythic (non-keystone) and Mythic Keystone dungeons.
-local MYTHIC_DUNGEON_DIFFICULTY_IDS = {
-    [8]  = true,  -- Mythic (non-keystone)
-    [23] = true,  -- Mythic Keystone (M+)
-}
+local MYTHIC_DUNGEON_DIFFICULTY_IDS = RA.MYTHIC_DUNGEON_DIFFICULTY_IDS
 
--- Raid difficulty IDs.
-local RAID_DIFFICULTY_IDS = {
-    MYTHIC = 16,
-    HEROIC = 15,
-    NORMAL = 14,
-    LFR    = 17,
+-- Raid difficulty ID -> the option that enables logging for it.
+local RAID_LOG_OPTION = {
+    [16] = "autoLogRaidMythic",
+    [15] = "autoLogRaidHeroic",
+    [14] = "autoLogRaidNormal",
+    [17] = "autoLogRaidLFR",
 }
 
 ------------------------------------------------------------------------
@@ -28,26 +25,21 @@ local RAID_DIFFICULTY_IDS = {
 local function DetermineDesiredLogState()
     if not RollAwayDB or not RollAwayDB.autoLogEnabled then return nil end
 
-    local db     = RollAwayDB
-    local iType  = RA.cachedInstanceType
-    local diff   = RA.cachedDiffID
-    local instID = RA.cachedInstanceID
+    local db    = RollAwayDB
+    local iType = RA.cachedInstanceType
 
     if iType == "raid" then
-        if diff == RAID_DIFFICULTY_IDS.MYTHIC then return db.autoLogRaidMythic end
-        if diff == RAID_DIFFICULTY_IDS.HEROIC then return db.autoLogRaidHeroic end
-        if diff == RAID_DIFFICULTY_IDS.NORMAL then return db.autoLogRaidNormal end
-        if diff == RAID_DIFFICULTY_IDS.LFR    then return db.autoLogRaidLFR    end
-        return false
+        local option = RAID_LOG_OPTION[RA.cachedDiffID]
+        return option ~= nil and db[option] == true
 
     elseif iType == "party" then
-        return db.autoLogMythicDungeon and MYTHIC_DUNGEON_DIFFICULTY_IDS[diff] and true or false
+        return db.autoLogMythicDungeon and MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] and true or false
 
     elseif iType == "arena" then
         return db.autoLogArena and true or false
 
     elseif iType == "scenario" then
-        if RA.DELVE_MAP and RA.DELVE_MAP[instID] then
+        if RA.DELVE_MAP[RA.cachedInstanceID] then
             return db.autoLogDelve and true or false
         end
         return db.autoLogScenario and true or false
@@ -82,7 +74,12 @@ local function TryApplyLogState(desired, retriesLeft)
     if result == nil then
         -- Rate limited - try again shortly if we still have attempts left.
         if retriesLeft > 0 then
-            C_Timer.After(2, function() TryApplyLogState(desired, retriesLeft - 1) end)
+            C_Timer.After(2, function()
+                -- Zone changed in the meantime: this retry is stale, the
+                -- newer check has its own.
+                if DetermineDesiredLogState() ~= desired then return end
+                TryApplyLogState(desired, retriesLeft - 1)
+            end)
         else
             DBG("Auto-log: gave up applying state", tostring(desired), "(rate limited, will retry on next check)")
         end
@@ -91,7 +88,6 @@ local function TryApplyLogState(desired, retriesLeft)
     lastAppliedState = desired
     DBG("Auto-log:", desired and "started" or "stopped")
     if RollAwayDB and RollAwayDB.autoLogChatNotify then
-        local RA_L = RA.RA_L
         RA.Print(desired and RA_L["qol_log_chat_started"] or RA_L["qol_log_chat_stopped"])
     end
 end
@@ -120,27 +116,14 @@ local function CreateAdvLogFrame()
         width    = 300,
         height   = 110,
         yOffset  = -260,
+        duration = TIMER_DURATION,
+        fitHeight = function(self)
+            return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 8
+        end,
     })
 
-    advLogFrame.msg = advLogFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    advLogFrame.msg:SetPoint("TOPLEFT",  advLogFrame, "TOPLEFT",  10, -40)
-    advLogFrame.msg:SetPoint("TOPRIGHT", advLogFrame, "TOPRIGHT", -10, -40)
-    advLogFrame.msg:SetJustifyH("LEFT")
-    advLogFrame.msg:SetNonSpaceWrap(true)
-    advLogFrame.msg:SetText(RA.RA_L["advlog_reminder_msg"])
-
-    advLogFrame:SetScript("OnShow", function(self)
-        if RA.C_Timer_After then
-            RA.C_Timer_After(0, function()
-                if not self:IsShown() then return end
-                local msgH = self.msg:GetStringHeight()
-                -- top(10) + header(24) + gap(6) + msg + gap(8) + btn(22) + bar(8) + pad(18)
-                self:SetHeight(math.max(110, 10 + 24 + 6 + msgH + 8 + 22 + 8 + 18))
-            end)
-        end
-        self.timer.Start(TIMER_DURATION)
-    end)
-    advLogFrame:SetScript("OnHide", advLogFrame.timer.Stop)
+    advLogFrame.msg = RA.CreatePopupBodyText(advLogFrame)
+    advLogFrame.msg:SetText(RA_L["advlog_reminder_msg"])
 
     RA.SetupInstanceReminderLifecycle(advLogFrame, "lastAdvLogReminderInstID")
 end
@@ -172,15 +155,8 @@ function RA.ShowAdvLogReminder()
     RollAwayDB.lastAdvLogReminderInstID = instID
     DBG("Advanced Combat Logging reminder | instanceID:", instID)
 
-    RA.ShowAdvLogFrameNow()
+    ShowAdvLogFrameNow()
 end
-
--- Dev-only test (/rawreminder): shows the frame regardless of settings,
--- instance type, cvar state, or per-instance dedup.
-local function TestShow()
-    RA.ShowAdvLogFrameNow()
-end
-RA.AdvLogTestShow = TestShow
 
 -- Re-evaluate on zone change. Not using hooksecurefunc(RA, "UpdateInstanceCache", ...)
 -- here: Core.lua's own event handler calls the local UpdateInstanceCache()
@@ -195,7 +171,7 @@ RA.AdvLogTestShow = TestShow
 -- 1.5s later to catch that case.
 local function CheckLogState()
     if not RA.initialized then return end
-    if RA.UpdateInstanceCache then RA.UpdateInstanceCache() end
+    RA.UpdateInstanceCache()
     ApplyDesiredLogState()
     RA.ShowAdvLogReminder()
 end

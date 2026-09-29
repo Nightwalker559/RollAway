@@ -9,7 +9,6 @@ local DUNGEON_MAP        = RA.DUNGEON_MAP
 local DELVE_MAP          = RA.DELVE_MAP
 local RAID_ENCOUNTER_MAP = RA.RAID_ENCOUNTER_MAP
 local RAID_DIFFICULTY_BUCKET = RA.RAID_DIFFICULTY_BUCKET
-local C_Timer_After      = RA.C_Timer_After
 
 ------------------------------------------------------------------------
 -- Instance matching helpers
@@ -44,36 +43,27 @@ local function ComputeAutoPassState()
     -- 1. Dungeon (party, matched by mapID) - either the specific dungeon is
     -- checked, OR the "auto-pass all dungeons" master switch is on.
     local key = GetCurrentDungeonKey()
-    if key and (
-        (RollAwayDBChar.dungeons    and RollAwayDBChar.dungeons[key]) or
-        (RollAwayDBChar.dungeons_s2 and RollAwayDBChar.dungeons_s2[key]) or
-        RollAwayDBChar.dungeonAutoPassAll
-    ) then
-        local reason = RollAwayDBChar.dungeonAutoPassAll and "dungeon_all" or ("dungeon:" .. key)
-        return true, reason
+    if key and (RollAwayDBChar.dungeons[key] or RollAwayDBChar.dungeons_s2[key]
+                or RollAwayDBChar.dungeonAutoPassAll) then
+        return true, RollAwayDBChar.dungeonAutoPassAll and "dungeon_all" or ("dungeon:" .. key)
     end
 
     -- 2. Delve (scenario, matched by mapID) - either the specific delve is
     -- checked, OR the "auto-pass all delves" master switch is on.
     key = GetCurrentDelveKey()
-    if key and (
-        (RollAwayDBChar.delves    and RollAwayDBChar.delves[key]) or
-        (RollAwayDBChar.delves_s2 and RollAwayDBChar.delves_s2[key]) or
-        RollAwayDBChar.delveAutoPassAll
-    ) then
-        local reason = RollAwayDBChar.delveAutoPassAll and "delve_all" or ("delve:" .. key)
-        return true, reason
+    if key and (RollAwayDBChar.delves[key] or RollAwayDBChar.delves_s2[key]
+                or RollAwayDBChar.delveAutoPassAll) then
+        return true, RollAwayDBChar.delveAutoPassAll and "delve_all" or ("delve:" .. key)
     end
 
     -- 3. Raid boss (matched by lastEncounterID from ENCOUNTER_END) - either
     -- the specific boss is checked, OR the whole difficulty bucket is.
     key = GetCurrentRaidBossKey()
-    if key and RollAwayDBChar.raids and RollAwayDBChar.raids[key] then
+    if key and RollAwayDBChar.raids[key] then
         return true, "raid:" .. key
     elseif RA.cachedInstanceType == "raid" then
         local bucket = RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
-        if bucket and RollAwayDBChar.raidAutoPassDifficulty
-           and RollAwayDBChar.raidAutoPassDifficulty[bucket] then
+        if bucket and RollAwayDBChar.raidAutoPassDifficulty[bucket] then
             return true, "raid_difficulty:" .. bucket
         end
     end
@@ -133,13 +123,9 @@ RA.TryAutoPass = TryAutoPass
 function RA.InitAutoPass()
     local promptFrame = BonusRollFrame and BonusRollFrame.PromptFrame
     if promptFrame then
-        RA.hooksecurefunc(promptFrame, "Show", function()
+        hooksecurefunc(promptFrame, "Show", function()
             DBG("[AutoPass] BonusRollFrame.PromptFrame:Show() fired")
-            if C_Timer_After then
-                C_Timer_After(0.1, TryAutoPass)
-            else
-                TryAutoPass()
-            end
+            C_Timer.After(0.1, TryAutoPass)
         end)
         DBG("BonusRollFrame hook set")
     else

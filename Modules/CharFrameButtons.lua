@@ -16,7 +16,6 @@ local RA       = _G["RollAway"]
 local RA_L     = RA.RA_L
 local DBG      = RA.DBG
 local DBGError = RA.DBGError
-local C_Timer_After = RA.C_Timer_After
 
 local OMNI_ICON_FILEID       = 7554214  -- Omniumfoliant minimap icon
 local GREATVAULT_ICON_FILEID = 2744751  -- Great Vault chest icon
@@ -31,13 +30,10 @@ local buttons = {}  -- [key] = button, created lazily
 ------------------------------------------------------------------------
 
 local function IsChonkyLoaded()
-    return C_AddOns and C_AddOns.IsAddOnLoaded("ChonkyCharacterSheet")
+    return C_AddOns.IsAddOnLoaded("ChonkyCharacterSheet")
 end
-RA.IsChonkyLoaded = IsChonkyLoaded
 
-local function IsMaxLevel()
-    return RA.IsMaxLevel and RA.IsMaxLevel()
-end
+local IsMaxLevel = RA.IsMaxLevel
 
 -- Titles / Equipment Manager are sub-views of the Character tab and use the
 -- same corner, so the buttons only show while the Stats pane is visible
@@ -89,8 +85,9 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     -- button should be visible.
     btn:HookScript("OnHide", function(self)
         if self.RA_ownHide then return end
+        if not (RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly)) then return end
         local stack = (debugstack(2, 4, 0):gsub("\n", " <- "))
-        C_Timer_After(0.5, function()
+        C_Timer.After(0.5, function()
             if self:IsShown() or not IsStatsViewShown() or not (PaperDollFrame and PaperDollFrame:IsShown()) then return end
             DBGError("[CharFrameButtons]", globalName, "still hidden 0.5s after external hide | stack:", stack)
         end)
@@ -327,6 +324,6 @@ function RA.InitCharacterFrameButtons()
         -- UnitLevel can be stale in the same frame as PLAYER_LEVEL_UP, and
         -- Blizzard's own frame setup runs after ADDON_LOADED/loading screens,
         -- so let it settle first.
-        C_Timer_After(0.5, function() RA.RefreshCharFrameButtons(event) end)
+        C_Timer.After(0.5, function() RA.RefreshCharFrameButtons(event) end)
     end)
 end

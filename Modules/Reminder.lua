@@ -7,7 +7,6 @@ local DBG  = RA.DBG
 
 local DUNGEON_MAP = RA.DUNGEON_MAP
 
-local VOIDCORE_CURRENCY_ID = RA.VOIDCORE_CURRENCY_ID
 local VOIDCORE_COST = { dungeons = 1, raids = 2 }
 
 -- Raid instance mapIDs (= instanceID from GetInstanceInfo) that qualify for the reminder.
@@ -19,12 +18,6 @@ local REMINDER_RAID_MAP_IDS = {
     [3004] = true,  -- The Venomous Abyss (S2)
 }
 
--- Dungeon difficulty IDs that qualify for the reminder.
-local MYTHIC_DIFFICULTY_IDS = {
-    [8]  = true,  -- Mythic
-    [23] = true,  -- Mythic Keystone (M+)
-}
-
 local TIMER_DURATION = 20
 
 ------------------------------------------------------------------------
@@ -32,8 +25,7 @@ local TIMER_DURATION = 20
 ------------------------------------------------------------------------
 
 local reminderFrame
-local reminderTimer  -- RA.CreateTimerBar handle (Start/Stop), set in CreateReminderFrame
-local currentTabKey  = nil  -- stored so OnClick closure is created only once
+local currentTabKey  -- stored so OnClick closure is created only once
 
 ------------------------------------------------------------------------
 -- Frame creation (once, reused on every show)
@@ -48,15 +40,16 @@ local function CreateReminderFrame()
         width    = 300,
         height   = 130,
         yOffset  = -180,
+        duration = TIMER_DURATION,
+        fitHeight = function(self)
+            -- message + separator(1+20) + currency line + gap before the button
+            return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 21
+                + self.currency:GetStringHeight() + 8
+        end,
     })
-    reminderTimer = reminderFrame.timer
 
     -- Message text
-    reminderFrame.msg = reminderFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    reminderFrame.msg:SetPoint("TOPLEFT",  reminderFrame, "TOPLEFT",  10, -40)
-    reminderFrame.msg:SetPoint("TOPRIGHT", reminderFrame, "TOPRIGHT", -10, -40)
-    reminderFrame.msg:SetJustifyH("LEFT")
-    reminderFrame.msg:SetNonSpaceWrap(true)
+    reminderFrame.msg = RA.CreatePopupBodyText(reminderFrame)
 
     -- Separator between message and currency line
     reminderFrame.sep = reminderFrame:CreateTexture(nil, "ARTWORK")
@@ -82,22 +75,6 @@ local function CreateReminderFrame()
         end
     end)
     if RA.SkinPopupButton then RA.SkinPopupButton(reminderFrame.btn) end
-
-    -- OnShow: resize to fit text content, then start countdown timer
-    reminderFrame:SetScript("OnShow", function(self)
-        if RA.C_Timer_After then
-            RA.C_Timer_After(0, function()
-                if not self:IsShown() then return end
-                local msgH      = self.msg:GetStringHeight()
-                local currencyH = self.currency:GetStringHeight()
-                -- top(10) + header(24) + gap(6) + msg + sep(1+20) + currency + gap(8) + btn(22) + bar(8) + pad(18)
-                self:SetHeight(math.max(130, 10 + 24 + 6 + msgH + 21 + currencyH + 8 + 22 + 8 + 18))
-            end)
-        end
-        reminderTimer.Start(TIMER_DURATION)
-    end)
-
-    reminderFrame:SetScript("OnHide", reminderTimer.Stop)
 
     RA.SetupInstanceReminderLifecycle(reminderFrame, "lastReminderInstID")
 end
@@ -126,7 +103,7 @@ function RA.ShowReminder()
 
     if instanceType == "party" and DUNGEON_MAP[instanceID] then
         -- Dungeons: Mythic and Mythic+ only – use cached diffID
-        if not MYTHIC_DIFFICULTY_IDS[RA.cachedDiffID] then
+        if not RA.MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] then
             DBG("Reminder: dungeon not Mythic (diffID:", RA.cachedDiffID, ") – skipping")
             return
         end
@@ -141,7 +118,7 @@ function RA.ShowReminder()
     if not tabKey then return end
 
     -- Skip if player has no Voidcores
-    local voidcoreInfo = C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(VOIDCORE_CURRENCY_ID)
+    local voidcoreInfo = C_CurrencyInfo.GetCurrencyInfo(RA.VOIDCORE_CURRENCY_ID)
     local voidcoreQty  = voidcoreInfo and voidcoreInfo.quantity or 0
     if voidcoreQty == 0 then
         DBG("Reminder: no Voidcores – skipping")
@@ -172,12 +149,4 @@ function RA.ShowReminder()
         rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
 
     reminderFrame:Show()
-end
-
-------------------------------------------------------------------------
--- Initialization – called from Core.lua ADDON_LOADED
-------------------------------------------------------------------------
-
-function RA.InitReminder()
-    DBG("Reminder initialized")
 end

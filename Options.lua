@@ -1,9 +1,10 @@
 -- RollAway - Options.lua
 -- Settings UI. Builds the main "RollAway" Settings category: header, tabs
 -- (General / Dungeons / Raids / Delves / Prey / Legacy), and wires up the
--- QoL subcategory built in Options/OptionsQoL.lua.
+-- QoL and Profile subcategories built in Options/OptionsQoL.lua and
+-- Options/OptionsProfile.lua.
 -- Shared widget builders (MakeCB, MakeSeasonTabs, etc.) live in
--- Options/OptionsHelpers.lua, both loaded before this file per the .toc.
+-- Options/OptionsHelpers.lua, loaded before this file per the .toc.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -19,18 +20,57 @@ local SEASON2_RAIDS        = RA.RAIDS[2]
 -- Shared helpers/constants from Options/OptionsHelpers.lua
 local UI                = RA.OptionsUI
 local ENTRY_W            = UI.ENTRY_W
-local ENTRY_H            = UI.ENTRY_H
 local COL_GAP            = UI.COL_GAP
-local ROW_GAP            = UI.ROW_GAP
 local MakeSectionHeader  = UI.MakeSectionHeader
 local MakeCB             = UI.MakeCB
 local MakeInfoText       = UI.MakeInfoText
-local MakeFallbackSlider = UI.MakeFallbackSlider
+local MakeTemplateSlider = UI.MakeTemplateSlider
 local MakeHintText       = UI.MakeHintText
 local MakeCheckboxRow    = UI.MakeCheckboxRow
 local MakeSeasonTabs     = UI.MakeSeasonTabs
 local MakeCheckboxGrid   = UI.MakeCheckboxGrid
 local MakeBossSectionGrid = UI.MakeBossSectionGrid
+local CreateGridEntry    = UI.CreateGridEntry
+local MakeGridCheckbox   = UI.MakeGridCheckbox
+
+-- The four raid difficulty buckets, as checkbox-row items.
+local RAID_DIFF_ITEMS = {
+    { key = "lfr",    label = RA_L["raid_diff_lfr"]    },
+    { key = "normal", label = RA_L["raid_diff_normal"] },
+    { key = "heroic", label = RA_L["raid_diff_heroic"] },
+    { key = "mythic", label = RA_L["raid_diff_mythic"] },
+}
+
+-- Season sub-tabs shared by the Dungeons and Raids tabs. Seasons other than
+-- the active one are dev-only (visible with debug mode on).
+local function SeasonTabDefs()
+    return {
+        { key = "s1", label = RA_L["season1_title"], devOnly = (RA.ACTIVE_SEASON ~= 1), default = (RA.ACTIVE_SEASON == 1) },
+        { key = "s2", label = RA_L["season2_tab"],   devOnly = (RA.ACTIVE_SEASON ~= 2), default = (RA.ACTIVE_SEASON == 2) },
+        { key = "s3", label = RA_L["season3_tab"],   devOnly = true },
+    }
+end
+
+-- Invisible 1x1 frame at a season panel's top-left, to hang its content off.
+local function MakeSeasonAnchor(seasonPanel)
+    local anchor = CreateFrame("Frame", nil, seasonPanel)
+    anchor:SetSize(1, 1)
+    anchor:SetPoint("TOPLEFT", seasonPanel, "TOPLEFT", 0, 0)
+    return anchor
+end
+
+local function MakeComingSoonLabel(seasonPanel)
+    local label = seasonPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    label:SetPoint("TOPLEFT", seasonPanel, "TOPLEFT", 0, -8)
+    label:SetTextColor(0.5, 0.5, 0.5, 1)
+    label:SetText(RA_L["season_coming_soon"])
+end
+
+-- `list` sorted alphabetically by the localized name (current client
+-- locale) RA_L[keyPrefix..entry.key], not by insertion order in Data\.
+local function SortedByName(list, keyPrefix)
+    return RA.SortByLabel(list, function(e) return RA_L[keyPrefix..e.key] or e.key end)
+end
 
 ------------------------------------------------------------------------
 -- Main init function – called from Core.lua ADDON_LOADED
@@ -72,6 +112,7 @@ function RA.InitOptions()
 
     local tabPanels  = {}
     local tabButtons = {}
+    local ShowTab = UI.MakeTabSelector(tabPanels, tabButtons)
 
     for _, def in ipairs(tabDefs) do
         local p = CreateFrame("Frame", nil, panel)
@@ -88,40 +129,6 @@ function RA.InitOptions()
         classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[className]
     end
 
-    local function GetElvUIColors()
-        if RA.GetElvUIColors then return RA.GetElvUIColors() end
-        return {0.1,0.1,0.1,0.8}, {0.1,0.1,0.1}
-    end
-
-    local GOLD = { r = 0.85, g = 0.73, b = 0.25 }
-    local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
-
-    local function SetTabActive(btn)
-        local t = btn:GetFontString()
-        if t then t:SetTextColor(GOLD.r, GOLD.g, GOLD.b, 1) end
-    end
-
-    local function SetTabInactive(btn)
-        local t = btn:GetFontString()
-        if t then t:SetTextColor(GRAY.r, GRAY.g, GRAY.b, 1) end
-        if S and btn.SetBackdropColor then
-            local bg, bd = GetElvUIColors()
-            btn:SetBackdropColor(unpack(bg))
-            btn:SetBackdropBorderColor(unpack(bd))
-        end
-    end
-
-    local function ShowTab(key)
-        for k, p in pairs(tabPanels) do p:SetShown(k == key) end
-        for k, b in pairs(tabButtons) do
-            if k == key then
-                if b.RA_ApplyActive then b.RA_ApplyActive() else SetTabActive(b) end
-            else
-                if b.RA_ApplyInactive then b.RA_ApplyInactive() else SetTabInactive(b) end
-            end
-        end
-    end
-
     -- Bonus Roll tabs: hidden when Bonus Rolls are disabled for the current
     -- season, or when the current character is below max level (Bonus Rolls
     -- only exist at max level, so the auto-pass config is meaningless
@@ -132,36 +139,37 @@ function RA.InitOptions()
     -- sub-tabs (OptionsHelpers.lua MakeSeasonTabs) use for their own
     -- debug-gated tabs, so toggling debug updates them immediately too.
     local BONUS_ROLL_TABS = { dungeons = true, raids = true, delves = true, prey = true }
-    local isDevChar = RA.DEV_CHARS and RA.DEV_CHARS[UnitName("player")]
-    local devOverride = isDevChar and RollAwayDB and RollAwayDB.debug
-    local belowMaxLevel = not devOverride and not (RA.IsMaxLevel and RA.IsMaxLevel())
+    local isDevChar = RA.DEV_CHARS[UnitName("player")]
+    local devOverride = isDevChar and RollAwayDB.debug
+    local isMaxLevel = RA.IsMaxLevel()
+    local belowMaxLevel = not devOverride and not isMaxLevel
     -- Only a dev char who is currently below max level needs live debug
     -- toggling; a dev char at max level always sees the tabs regardless of
     -- debug, so it must never be forced hidden by SetShown(RollAwayDB.debug).
-    local devLiveGate = isDevChar and RA.BONUS_ROLLS_ENABLED and not (RA.IsMaxLevel and RA.IsMaxLevel())
+    local devLiveGate = isDevChar and RA.BONUS_ROLLS_ENABLED and not isMaxLevel
 
     -- Tab buttons
     local TAB_GAP = 4
     local tabButtonOrder = {}
     for _, def in ipairs(tabDefs) do
+        local key = def.key
         local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
         btn:SetSize(90, 26)
         btn:SetText(def.label)
         tabButtonOrder[#tabButtonOrder + 1] = btn
 
         -- Hide bonus roll tabs when disabled or below max level
-        local hidden = BONUS_ROLL_TABS[def.key] and (not RA.BONUS_ROLLS_ENABLED or belowMaxLevel)
+        local hidden = BONUS_ROLL_TABS[key] and (not RA.BONUS_ROLLS_ENABLED or belowMaxLevel)
         if hidden then btn:Hide() end
 
-        local capturedKey = def.key
-        btn:SetScript("OnClick", function() ShowTab(capturedKey) end)
+        btn:SetScript("OnClick", function() ShowTab(key) end)
 
         if S and RA.ElvSkinTab then
-            RA.ElvSkinTab(btn, tabPanels, capturedKey, classColor)
+            RA.ElvSkinTab(btn, tabPanels, key, classColor)
         end
-        tabButtons[def.key] = btn
+        tabButtons[key] = btn
 
-        if BONUS_ROLL_TABS[def.key] and devLiveGate then
+        if BONUS_ROLL_TABS[key] and devLiveGate then
             RA.DevOnlyTabButtons = RA.DevOnlyTabButtons or {}
             table.insert(RA.DevOnlyTabButtons, btn)
         end
@@ -192,10 +200,11 @@ function RA.InitOptions()
     table.insert(RA.SeasonTabReflows, ReflowTopTabButtons)
 
     -- Falls back to the General tab if debug turns off while a now-hidden
-    -- bonus-roll tab is active (mirrors EnsureValidSeasonSelected below).
+    -- bonus-roll tab is active (mirrors EnsureValidSeasonSelected in
+    -- OptionsHelpers.lua).
     local function EnsureValidTopTabSelected()
         if not devLiveGate then return end
-        if RollAwayDB and RollAwayDB.debug then return end
+        if RollAwayDB.debug then return end
         for key in pairs(BONUS_ROLL_TABS) do
             if tabPanels[key]:IsShown() then
                 ShowTab("general")
@@ -219,42 +228,7 @@ function RA.InitOptions()
     genScroll:SetScrollChild(gen)
 
     local scrollBar = _G["RollAwayGenScrollScrollBar"]
-
-    genScroll:SetScript("OnScrollRangeChanged", function(self, xRange, yRange)
-        local max = math.max(0, yRange or 0)
-        if scrollBar then
-            scrollBar:SetMinMaxValues(0, max)
-            scrollBar:SetValue(math.min(scrollBar:GetValue(), max))
-            scrollBar:SetShown(max > 1)
-        end
-    end)
-
-    genScroll:SetScript("OnVerticalScroll", function(self, offset)
-        if scrollBar then scrollBar:SetValue(offset) end
-    end)
-
-    if scrollBar then
-        scrollBar:SetScript("OnValueChanged", function(self, value)
-            genScroll:SetVerticalScroll(value)
-        end)
-        local upBtn   = _G["RollAwayGenScrollScrollBarScrollUpButton"]
-        local downBtn = _G["RollAwayGenScrollScrollBarScrollDownButton"]
-        if upBtn then
-            upBtn:SetScript("OnClick", function()
-                genScroll:SetVerticalScroll(math.max(0, genScroll:GetVerticalScroll() - 20))
-            end)
-        end
-        if downBtn then
-            downBtn:SetScript("OnClick", function()
-                local _, max = scrollBar:GetMinMaxValues()
-                genScroll:SetVerticalScroll(math.min(max, genScroll:GetVerticalScroll() + 20))
-            end)
-        end
-    end
-
-    if S and S.HandleScrollBar and scrollBar then
-        S:HandleScrollBar(scrollBar)
-    end
+    UI.SetupScrollBar(genScroll, scrollBar, S, false)
 
     -- Visibility section header
     local visMainLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -287,7 +261,7 @@ function RA.InitOptions()
     sliderDelayVal:SetJustifyH("LEFT")
     sliderDelayVal:SetText(string.format(RA_L["slider_label"], RollAwayDB.delay))
 
-    local slider, delayMin = MakeFallbackSlider(gen, "RollAwayDelaySlider", sliderDelayVal, {
+    local slider, delayMin = MakeTemplateSlider(gen, "RollAwayDelaySlider", sliderDelayVal, {
         min = 5, max = 20, step = 1, value = RollAwayDB.delay,
         minText = RA_L["slider_min"], maxText = RA_L["slider_max"], S = S,
         onChange = function(value)
@@ -305,7 +279,7 @@ function RA.InitOptions()
     sliderTimeoutVal:SetJustifyH("LEFT")
     sliderTimeoutVal:SetText(string.format(RA_L["timeout_slider_label"], RollAwayDB.rollTimeout))
 
-    local sliderTimeout = MakeFallbackSlider(gen, "RollAwayTimeoutSlider", sliderTimeoutVal, {
+    local sliderTimeout = MakeTemplateSlider(gen, "RollAwayTimeoutSlider", sliderTimeoutVal, {
         min = 30, max = 180, step = 5, value = RollAwayDB.rollTimeout,
         minText = RA_L["timeout_min"], maxText = RA_L["timeout_max"], S = S,
         onChange = function(value)
@@ -321,15 +295,11 @@ function RA.InitOptions()
 
     local hideInfo = MakeInfoText(gen, hideLabel, 0, -4, 480, RA_L["hide_in_raid_info"])
 
-    local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideInfo, {
-        { key = "lfr",    label = RA_L["raid_diff_lfr"]    },
-        { key = "normal", label = RA_L["raid_diff_normal"] },
-        { key = "heroic", label = RA_L["raid_diff_heroic"] },
-        { key = "mythic", label = RA_L["raid_diff_mythic"] },
-    }, RollAwayDB.hideInRaidBuckets, function(k, checked)
-        if type(RollAwayDB.hideInRaidBuckets) ~= "table" then RollAwayDB.hideInRaidBuckets = {} end
-        RollAwayDB.hideInRaidBuckets[k] = checked
-    end)
+    local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideInfo, RAID_DIFF_ITEMS,
+        RollAwayDB.hideInRaidBuckets, function(k, checked)
+            if type(RollAwayDB.hideInRaidBuckets) ~= "table" then RollAwayDB.hideInRaidBuckets = {} end
+            RollAwayDB.hideInRaidBuckets[k] = checked
+        end)
 
     -- Now that the sliders and hideRow checkboxes exist, wire up the actual
     -- enable/disable logic for the master switch above and apply its
@@ -341,7 +311,7 @@ function RA.InitOptions()
         if enabled then sliderTimeout:Enable() else sliderTimeout:Disable() end
         sliderTimeout:SetAlpha(alpha)
         for _, cb in ipairs(hideRowCheckboxes) do
-            if cb.SetDisabled then cb:SetDisabled(not enabled) end
+            cb:SetDisabled(not enabled)
         end
         hideInfo:SetAlpha(alpha)
         hideLabel:SetAlpha(alpha)
@@ -408,23 +378,15 @@ function RA.InitOptions()
 
         local cbDebug = MakeCB(gen, RA_L["debug_label"], RollAwayDB.debug, function(checked)
             RollAwayDB.debug = checked
-            if RA.DevOnlyTabButtons then
-                for _, b in ipairs(RA.DevOnlyTabButtons) do
-                    b:SetShown(RollAwayDB.debug)
-                end
+            for _, b in ipairs(RA.DevOnlyTabButtons or {}) do
+                b:SetShown(checked)
             end
-            if RA.SeasonTabButtons then
-                for _, b in ipairs(RA.SeasonTabButtons) do
-                    if RollAwayDB.debug then b:Enable() else b:Disable() end
-                    if b.RA_Refresh then b.RA_Refresh() end
-                end
+            for _, b in ipairs(RA.SeasonTabButtons or {}) do
+                if checked then b:Enable() else b:Disable() end
+                if b.RA_Refresh then b.RA_Refresh() end
             end
-            if RA.SeasonTabReflows then
-                for _, reflow in ipairs(RA.SeasonTabReflows) do reflow() end
-            end
-            if RA.SeasonTabDebugChecks then
-                for _, check in ipairs(RA.SeasonTabDebugChecks) do check() end
-            end
+            for _, reflow in ipairs(RA.SeasonTabReflows or {}) do reflow() end
+            for _, check in ipairs(RA.SeasonTabDebugChecks or {}) do check() end
         end)
         cbDebug.frame:SetPoint("TOPLEFT", debugLabel, "BOTTOMLEFT", 0, -10)
 
@@ -447,9 +409,8 @@ function RA.InitOptions()
 
     -- Dynamically size the scroll child to hug the last General-tab element,
     -- instead of a fixed oversized height. Deferred one frame so GetTop/GetBottom
-    -- reflect actual layout (incl. wrapped multi-line text). Re-run whenever the
-    -- dev/tester block visibility (and thus the last element) changes.
-    local lastGenElement = isDevChar and cmdInfo or cbLegacy.frame
+    -- reflect actual layout (incl. wrapped multi-line text).
+    local lastGenElement = cmdInfo or cbLegacy.frame
     local function UpdateGenScrollHeight()
         local top, bottom = gen:GetTop(), lastGenElement:GetBottom()
         if top and bottom then
@@ -459,13 +420,10 @@ function RA.InitOptions()
         -- Explicitly re-check scrollbar visibility instead of relying solely
         -- on the engine's OnScrollRangeChanged timing.
         if scrollBar then
-            local yRange = genScroll:GetVerticalScrollRange()
-            scrollBar:SetShown((yRange or 0) > 1)
+            scrollBar:SetShown((genScroll:GetVerticalScrollRange() or 0) > 1)
         end
     end
-    if RA.C_Timer_After then
-        RA.C_Timer_After(0, UpdateGenScrollHeight)
-    end
+    C_Timer.After(0, UpdateGenScrollHeight)
 
     ------------------------------------------------------------
     -- Tab: Dungeons
@@ -498,42 +456,20 @@ function RA.InitOptions()
     dngSeasonAnchor:SetPoint("TOPLEFT", dngAllCB.frame, "BOTTOMLEFT", 0, 0)
     dngSeasonAnchor:SetSize(560, 1)
 
-    local dngSeasons = MakeSeasonTabs(S, dng, dngSeasonAnchor, {
-        { key = "s1", label = RA_L["season1_title"], devOnly = (RA.ACTIVE_SEASON ~= 1), default = (RA.ACTIVE_SEASON == 1) },
-        { key = "s2", label = RA_L["season2_tab"], devOnly = (RA.ACTIVE_SEASON ~= 2), default = (RA.ACTIVE_SEASON == 2) },
-        { key = "s3", label = RA_L["season3_tab"], devOnly = true },
-    })
+    local dngSeasons = MakeSeasonTabs(S, dng, dngSeasonAnchor, SeasonTabDefs())
 
-    -- Season 1 content
-    local dngS1Anchor = CreateFrame("Frame", nil, dngSeasons["s1"])
-    dngS1Anchor:SetSize(1, 1)
-    dngS1Anchor:SetPoint("TOPLEFT", dngSeasons["s1"], "TOPLEFT", 0, 0)
-    local _, dngS1CB = MakeCheckboxGrid(dngSeasons["s1"], dngS1Anchor, -8, SEASON1_DUNGEONS, RollAwayDBChar.dungeons, "dungeon_")
+    -- Season 1 / Season 2 content
+    local _, dngS1CB = MakeCheckboxGrid(dngSeasons["s1"], MakeSeasonAnchor(dngSeasons["s1"]), -8,
+        SortedByName(SEASON1_DUNGEONS, "dungeon_"), RollAwayDBChar.dungeons, "dungeon_")
     dngS1Checkboxes = dngS1CB
 
-    -- Season 2 content
-    local dngS2Anchor = CreateFrame("Frame", nil, dngSeasons["s2"])
-    dngS2Anchor:SetSize(1, 1)
-    dngS2Anchor:SetPoint("TOPLEFT", dngSeasons["s2"], "TOPLEFT", 0, 0)
-
-    -- Sort alphabetically by the localized dungeon name (current client
-    -- locale), not insertion order in Core.lua.
-    local sortedS2Dungeons = {}
-    for i, d in ipairs(SEASON2_DUNGEONS) do sortedS2Dungeons[i] = d end
-    table.sort(sortedS2Dungeons, function(a, b)
-        return (RA_L["dungeon_"..a.key] or a.key) < (RA_L["dungeon_"..b.key] or b.key)
-    end)
-
-    local _, dngS2CB = MakeCheckboxGrid(dngSeasons["s2"], dngS2Anchor, -8, sortedS2Dungeons, RollAwayDBChar.dungeons_s2, "dungeon_")
+    local _, dngS2CB = MakeCheckboxGrid(dngSeasons["s2"], MakeSeasonAnchor(dngSeasons["s2"]), -8,
+        SortedByName(SEASON2_DUNGEONS, "dungeon_"), RollAwayDBChar.dungeons_s2, "dungeon_")
     dngS2Checkboxes = dngS2CB
 
     ApplyDungeonAllLock()
 
-    -- Season 3 placeholder
-    local dngS3Label = dngSeasons["s3"]:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    dngS3Label:SetPoint("TOPLEFT", dngSeasons["s3"], "TOPLEFT", 0, -8)
-    dngS3Label:SetTextColor(0.5, 0.5, 0.5, 1)
-    dngS3Label:SetText(RA_L["season_coming_soon"])
+    MakeComingSoonLabel(dngSeasons["s3"])
 
     ------------------------------------------------------------
     -- Tab: Delves
@@ -556,21 +492,13 @@ function RA.InitOptions()
     end)
     dlvAllCB.frame:SetPoint("TOPLEFT", dlvHint, "BOTTOMLEFT", 0, -10)
 
-    -- Sort Season 2 delves alphabetically by localized name (current
-    -- client locale), not insertion order in Core.lua.
-    local sortedS2Delves = {}
-    for i, d in ipairs(SEASON2_DELVES) do sortedS2Delves[i] = d end
-    table.sort(sortedS2Delves, function(a, b)
-        return (RA_L["delve_"..a.key] or a.key) < (RA_L["delve_"..b.key] or b.key)
-    end)
-
     -- Single page, grouped by patch version instead of separate tabs.
     -- 12.1 (Season 2) delves stay hidden until RA.ACTIVE_SEASON reaches 2.
     local dlvSections = {
-        { titleKey = "patch_12_0", items = SEASON1_DELVES, dbTable = RollAwayDBChar.delves    },
+        { titleKey = "patch_12_0", items = SortedByName(SEASON1_DELVES, "delve_"), dbTable = RollAwayDBChar.delves },
     }
     if RA.ACTIVE_SEASON >= 2 then
-        table.insert(dlvSections, { titleKey = "patch_12_1", items = sortedS2Delves, dbTable = RollAwayDBChar.delves_s2 })
+        table.insert(dlvSections, { titleKey = "patch_12_1", items = SortedByName(SEASON2_DELVES, "delve_"), dbTable = RollAwayDBChar.delves_s2 })
     end
 
     local dlvPrevAnchor   = dlvAllCB.frame
@@ -579,20 +507,10 @@ function RA.InitOptions()
         local secLabel = dlv:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         secLabel:SetPoint("TOPLEFT", dlvPrevAnchor, "BOTTOMLEFT", 0, dlvPrevOffsetY)
         secLabel:SetText(RA_L[section.titleKey])
+
         local leftEntries = {}
         for i, item in ipairs(section.items) do
-            local col = (i - 1) % 2
-            local row = math.floor((i - 1) / 2)
-            local entry = CreateFrame("Frame", nil, dlv)
-            entry:SetSize(ENTRY_W, ENTRY_H)
-            if col == 0 then
-                local yOff   = (row == 0) and -8 or -ROW_GAP
-                local anchor = (row == 0) and secLabel or leftEntries[row - 1]
-                entry:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, yOff)
-                leftEntries[row] = entry
-            else
-                entry:SetPoint("LEFT", leftEntries[row], "RIGHT", COL_GAP, 0)
-            end
+            local entry = CreateGridEntry(dlv, i, leftEntries, secLabel, -8)
             local labelText = RA_L["delve_"..item.key]
             if item.key == "venomfall_deeps" or item.key == "torments_rise" then
                 labelText = labelText .. " |cff888888" .. RA_L["nemesis_delve_label"] .. "|r"
@@ -603,34 +521,27 @@ function RA.InitOptions()
             local isRemoved = item.removedAfterS1 and RA.ACTIVE_SEASON >= 2
             if isRemoved then
                 labelText = labelText .. " |cff888888(removed)|r"
-                section.dbTable[item.key] = false
             end
             local isPending = item.pendingTest
             if isPending then
                 labelText = labelText .. " |cff888888(coming soon)|r"
+            end
+            if isRemoved or isPending then
                 section.dbTable[item.key] = false
             end
-            local capturedKey = item.key
-            local capturedDB  = section.dbTable
-            local dlvCB = MakeCB(entry, labelText, capturedDB[item.key], function(checked)
-                capturedDB[capturedKey] = checked
-            end)
-            if dlvCB then
-                dlvCB.frame:SetPoint("LEFT", entry, "LEFT", 0, 0)
-                if isRemoved or isPending then
-                    dlvCB:SetDisabled(true) -- permanently/temporarily disabled, not affected by the master lock
-                else
-                    table.insert(dlvAllCheckboxes, dlvCB)
-                end
-            end
-            if i == #section.items then
-                dlvPrevAnchor  = (col == 0) and entry or leftEntries[row]
-                dlvPrevOffsetY = -16
+
+            local dlvCB = MakeGridCheckbox(entry, labelText, section.dbTable, item.key)
+            if isRemoved or isPending then
+                dlvCB:SetDisabled(true) -- permanently/temporarily disabled, not affected by the master lock
+            else
+                table.insert(dlvAllCheckboxes, dlvCB)
             end
         end
+
         if #section.items == 0 then
-            dlvPrevAnchor  = secLabel
-            dlvPrevOffsetY = -8
+            dlvPrevAnchor, dlvPrevOffsetY = secLabel, -8
+        else
+            dlvPrevAnchor, dlvPrevOffsetY = leftEntries[math.floor((#section.items - 1) / 2)], -16
         end
     end
     ApplyDelveAllLock()
@@ -658,7 +569,7 @@ function RA.InitOptions()
     }, RollAwayDB.confirmRoll, function(k, checked)
         if type(RollAwayDB.confirmRoll) ~= "table" then RollAwayDB.confirmRoll = {} end
         RollAwayDB.confirmRoll[k] = checked
-        if RA.SetRollConfirmEnabled then RA.SetRollConfirmEnabled(k, checked) end
+        RA.SetRollConfirmEnabled(k, checked)
     end)
 
     -- Auto-pass by whole raid difficulty (applies across all seasons/bosses,
@@ -669,15 +580,11 @@ function RA.InitOptions()
 
     local raidDiffHint = MakeHintText(raidPanel, raidDiffLabel, RA_L["raid_diff_autopass_hint"])
 
-    local raidDiffRow = MakeCheckboxRow(raidPanel, raidDiffHint, {
-        { key = "lfr",    label = RA_L["raid_diff_lfr"]    },
-        { key = "normal", label = RA_L["raid_diff_normal"] },
-        { key = "heroic", label = RA_L["raid_diff_heroic"] },
-        { key = "mythic", label = RA_L["raid_diff_mythic"] },
-    }, RollAwayDBChar.raidAutoPassDifficulty, function(k, checked)
-        if type(RollAwayDBChar.raidAutoPassDifficulty) ~= "table" then RollAwayDBChar.raidAutoPassDifficulty = {} end
-        RollAwayDBChar.raidAutoPassDifficulty[k] = checked
-    end)
+    local raidDiffRow = MakeCheckboxRow(raidPanel, raidDiffHint, RAID_DIFF_ITEMS,
+        RollAwayDBChar.raidAutoPassDifficulty, function(k, checked)
+            if type(RollAwayDBChar.raidAutoPassDifficulty) ~= "table" then RollAwayDBChar.raidAutoPassDifficulty = {} end
+            RollAwayDBChar.raidAutoPassDifficulty[k] = checked
+        end)
 
     -- Full-width anchor for the season tab row - MUST be wide (560), since
     -- MakeSeasonTabs derives the content panels' width from this frame.
@@ -685,58 +592,44 @@ function RA.InitOptions()
     raidSeasonAnchor:SetPoint("TOPLEFT", raidDiffRow, "BOTTOMLEFT", 0, 0)
     raidSeasonAnchor:SetSize(560, 1)
 
-    local raidSeasons = MakeSeasonTabs(S, raidPanel, raidSeasonAnchor, {
-        { key = "s1", label = RA_L["season1_title"], devOnly = (RA.ACTIVE_SEASON ~= 1), default = (RA.ACTIVE_SEASON == 1) },
-        { key = "s2", label = RA_L["season2_tab"], devOnly = (RA.ACTIVE_SEASON ~= 2), default = (RA.ACTIVE_SEASON == 2) },
-        { key = "s3", label = RA_L["season3_tab"], devOnly = true },
-    })
+    local raidSeasons = MakeSeasonTabs(S, raidPanel, raidSeasonAnchor, SeasonTabDefs())
+
+    -- Groups raid bosses into the raid sections of `sections` (matched by
+    -- boss.raid == section.key), preserving the section order.
+    local function FillRaidSections(sections, bosses)
+        for _, b in ipairs(bosses) do
+            for _, s in ipairs(sections) do
+                if b.raid == s.key then table.insert(s.bosses, b); break end
+            end
+        end
+        return sections
+    end
 
     -- Season 1 content
-    local raidS1Anchor = CreateFrame("Frame", nil, raidSeasons["s1"])
-    raidS1Anchor:SetSize(1, 1)
-    raidS1Anchor:SetPoint("TOPLEFT", raidSeasons["s1"], "TOPLEFT", 0, 0)
-
-    local raidSections = {
+    local raidSections = FillRaidSections({
         { key = "voidspire",       bosses = {} },
         { key = "dreamrift",       bosses = {} },
         { key = "march_queldanas", bosses = {} },
         { key = "sporefall",       bosses = {} },
-    }
-    for _, b in ipairs(SEASON1_RAIDS) do
-        for _, s in ipairs(raidSections) do
-            if b.raid == s.key then table.insert(s.bosses, b); break end
-        end
-    end
+    }, SEASON1_RAIDS)
 
-    MakeBossSectionGrid(raidSeasons["s1"], raidS1Anchor, raidSections, RollAwayDBChar.raids,
+    MakeBossSectionGrid(raidSeasons["s1"], MakeSeasonAnchor(raidSeasons["s1"]), raidSections, RollAwayDBChar.raids,
         { sporefall = "|cff888888(12.0.7)|r" })
 
     -- Season 2 content (The Venomous Abyss + Tidebound Grotto Lair, grouped
     -- by raid like Season 1, since S2 now spans more than one raid).
-    local raidS2Anchor = CreateFrame("Frame", nil, raidSeasons["s2"])
-    raidS2Anchor:SetSize(1, 1)
-    raidS2Anchor:SetPoint("TOPLEFT", raidSeasons["s2"], "TOPLEFT", 0, 0)
-
-    local raidS2MainSections = {
+    local raidS2MainSections = FillRaidSections({
         { key = "venomous_abyss", bosses = {} },
-    }
+    }, SEASON2_RAIDS)
     -- Tidebound Grotto and Kith'ix are both single-boss side content; render
     -- them side by side (left/right column) instead of stacked full-width.
-    local raidS2PairSections = {
+    local raidS2PairSections = FillRaidSections({
         { key = "tidebound_grotto",    bosses = {} },
         { key = "unbinding_of_kithix", bosses = {} },
-    }
-    for _, b in ipairs(SEASON2_RAIDS) do
-        for _, s in ipairs(raidS2MainSections) do
-            if b.raid == s.key then table.insert(s.bosses, b); break end
-        end
-        for _, s in ipairs(raidS2PairSections) do
-            if b.raid == s.key then table.insert(s.bosses, b); break end
-        end
-    end
+    }, SEASON2_RAIDS)
 
     local raidS2MainAnchor, raidS2MainOffsetY =
-        MakeBossSectionGrid(raidSeasons["s2"], raidS2Anchor, raidS2MainSections, RollAwayDBChar.raids)
+        MakeBossSectionGrid(raidSeasons["s2"], MakeSeasonAnchor(raidSeasons["s2"]), raidS2MainSections, RollAwayDBChar.raids)
 
     local raidS2PairAnchor = CreateFrame("Frame", nil, raidSeasons["s2"])
     raidS2PairAnchor:SetSize(1, 1)
@@ -752,11 +645,7 @@ function RA.InitOptions()
         { raidS2PairSections[2] }, RollAwayDBChar.raids,
         { unbinding_of_kithix = "|cff888888[12.1.5]|r" })
 
-    -- Season 3 placeholder
-    local raidS3Label = raidSeasons["s3"]:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    raidS3Label:SetPoint("TOPLEFT", raidSeasons["s3"], "TOPLEFT", 0, -8)
-    raidS3Label:SetTextColor(0.5, 0.5, 0.5, 1)
-    raidS3Label:SetText(RA_L["season_coming_soon"])
+    MakeComingSoonLabel(raidSeasons["s3"])
 
     ------------------------------------------------------------
     -- Tab: Prey
@@ -810,10 +699,10 @@ function RA.InitOptions()
     }
     local prevRollCB = nil
     for _, rd in ipairs(rollDefs) do
-        local capturedKey = rd.dbKey
-        local rollCB = MakeCB(legacyPanel, RA_L[rd.labelKey], RollAwayDB[rd.dbKey], function(checked)
-            RollAwayDB[capturedKey] = checked
-            DBG("[Legacy UI]", capturedKey, "=", tostring(RollAwayDB[capturedKey]))
+        local dbKey = rd.dbKey
+        local rollCB = MakeCB(legacyPanel, RA_L[rd.labelKey], RollAwayDB[dbKey], function(checked)
+            RollAwayDB[dbKey] = checked
+            DBG("[Legacy UI]", dbKey, "=", tostring(checked))
         end)
         if not prevRollCB then
             rollCB.frame:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -10)
@@ -829,55 +718,45 @@ function RA.InitOptions()
     legacyRaidLine:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -44)
     legacyRaidLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    local dfRaids = {
+    -- One expansion column: header at (xOffset) below the line, its raids'
+    -- checkboxes stacked underneath. Each is bound to the (character- or
+    -- account-wide) legacy raid table active at click time.
+    local function MakeLegacyRaidColumn(xOffset, headerKey, raids)
+        local header = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        header:SetPoint("TOPLEFT", legacyRaidLine, "BOTTOMLEFT", xOffset, -14)
+        header:SetText(RA_L[headerKey])
+
+        local prev = header
+        for _, r in ipairs(raids) do
+            local key = r.key
+            local legCB = MakeCB(legacyPanel, RA_L[r.label], RA.GetLegacyRaidsDB()[key], function(checked)
+                RA.GetLegacyRaidsDB()[key] = checked
+            end)
+            legCB.frame:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -6)
+            table.insert(legacyRaidCBs, { cb = legCB, key = key })
+            prev = legCB.frame
+        end
+    end
+
+    MakeLegacyRaidColumn(0, "legacy_col_dragonflight", {
         { key = "vault_of_incarnates", label = "legacy_raid_vault_of_incarnates" },
         { key = "aberrus",             label = "legacy_raid_aberrus"              },
         { key = "amirdrassil",         label = "legacy_raid_amirdrassil"          },
-    }
-    local twwRaids = {
+    })
+    MakeLegacyRaidColumn(ENTRY_W + COL_GAP, "legacy_col_tww", {
         { key = "nerubar_palace",       label = "legacy_raid_nerubar_palace"       },
         { key = "liberation_undermine", label = "legacy_raid_liberation_undermine" },
         { key = "manaforge_omega",      label = "legacy_raid_manaforge_omega"      },
-    }
-
-    local dfHeader = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    dfHeader:SetPoint("TOPLEFT", legacyRaidLine, "BOTTOMLEFT", 0, -14)
-    dfHeader:SetText(RA_L["legacy_col_dragonflight"])
-
-    local twwHeader = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    twwHeader:SetPoint("TOPLEFT", legacyRaidLine, "BOTTOMLEFT", ENTRY_W + COL_GAP, -14)
-    twwHeader:SetText(RA_L["legacy_col_tww"])
-
-    local prevDF = dfHeader
-    for _, r in ipairs(dfRaids) do
-        local k = r.key
-        local legCB = MakeCB(legacyPanel, RA_L[r.label], RA.GetLegacyRaidsDB()[k], function(checked)
-            RA.GetLegacyRaidsDB()[k] = checked
-        end)
-        legCB.frame:SetPoint("TOPLEFT", prevDF, "BOTTOMLEFT", 0, -6)
-        table.insert(legacyRaidCBs, { cb = legCB, key = k })
-        prevDF = legCB.frame
-    end
-
-    local prevTWW = twwHeader
-    for _, r in ipairs(twwRaids) do
-        local k = r.key
-        local legCB = MakeCB(legacyPanel, RA_L[r.label], RA.GetLegacyRaidsDB()[k], function(checked)
-            RA.GetLegacyRaidsDB()[k] = checked
-        end)
-        legCB.frame:SetPoint("TOPLEFT", prevTWW, "BOTTOMLEFT", 0, -6)
-        table.insert(legacyRaidCBs, { cb = legCB, key = k })
-        prevTWW = legCB.frame
-    end
+    })
 
     -- Legacy tab button: only visible when Legacy is enabled
     local legacyTabBtn = tabButtons["legacy"]
     legacyTabBtn:SetShown(RollAwayDB.legacy == true)
 
-    cbLegacy:SetCallback("OnValueChanged", function(widget, _, checked)
+    cbLegacy:SetCallback("OnValueChanged", function(_, _, checked)
         RollAwayDB.legacy = checked
-        legacyTabBtn:SetShown(RollAwayDB.legacy == true)
-        if not RollAwayDB.legacy and tabPanels["legacy"]:IsShown() then
+        legacyTabBtn:SetShown(checked)
+        if not checked and tabPanels["legacy"]:IsShown() then
             ShowTab("general")
         end
     end)
@@ -890,13 +769,12 @@ function RA.InitOptions()
         end)
     end
 
-
     ------------------------------------------------------------
-    -- Subcategory: QoL  (Filter / LFG / Logs / Reminder via left nav)
-    -- Built in Options/OptionsQoL.lua.
+    -- Subcategories: QoL (Filter / LFG / Logs / Misc / Reminder via left
+    -- nav, Options/OptionsQoL.lua) and Profile (Options/OptionsProfile.lua).
     ------------------------------------------------------------
-    RA.BuildQoLOptions(category, S, classColor, SetTabActive, SetTabInactive)
-    RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabInactive)
+    RA.BuildQoLOptions(category, S, classColor)
+    RA.BuildProfileOptions(category, S)
 
     ShowTab("general")
     Settings.RegisterAddOnCategory(category)

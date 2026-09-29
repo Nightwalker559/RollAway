@@ -15,8 +15,8 @@ local container    = nil
 local updateTicker = nil
 
 ------------------------------------------------------------------------
--- Label used for sorting - same source/fallback as MakeButton's tooltip
--- text, so display order always matches what's actually shown.
+-- Display name of a dungeon: the button's tooltip text, and the sort key so
+-- display order always matches what's actually shown.
 ------------------------------------------------------------------------
 local function DungeonSortLabel(d)
     local actInfo = C_LFGList and C_LFGList.GetActivityInfoTable(d.lfgID)
@@ -65,8 +65,7 @@ end
 -- matching the player's currently owned keystone.
 ------------------------------------------------------------------------
 local function RefreshGlow()
-    if not C_LFGList then return end
-    local ownLfgID, _, ownLevel = C_LFGList.GetOwnedKeystoneActivityAndGroupAndLevel()
+    local ownLfgID, ownLevel = RA.GetOwnedKeystone()
     for i = 1, #buttons do
         local btn = buttons[i]
         local match = ownLfgID and (btn._lfgID == ownLfgID)
@@ -171,8 +170,7 @@ end
 ------------------------------------------------------------------------
 local function MakeButton(parent, dungeon, index)
     local _, _, _, iconTex = C_ChallengeMode.GetMapUIInfo(dungeon.cmID)
-    local actInfo = C_LFGList.GetActivityInfoTable(dungeon.lfgID)
-    local label   = actInfo and actInfo.fullName ~= "" and actInfo.fullName or dungeon.key
+    local label = DungeonSortLabel(dungeon)
 
     local btn = CreateFrame("Button", "RollAwayQC_" .. dungeon.key, parent)
     btn:SetSize(ICON_SIZE, ICON_SIZE)
@@ -289,7 +287,9 @@ local function Init()
         HookDD(ec.CategoryDropdown)
     end
 
-    ec:HookScript("OnShow", function()
+    -- Applies the current options to the entry-creation frame - on every open,
+    -- and once right away if it is already open.
+    local function OnEntryCreationShown()
         if RollAwayDB and RollAwayDB.lfgQuickCreate then
             PushLayout(ec)
             SyncVisibility()
@@ -307,24 +307,14 @@ local function Init()
                 if ec:IsShown() then ApplyDefaultPlaystyle(ec) end
             end)
         end
-    end)
+    end
 
+    ec:HookScript("OnShow", OnEntryCreationShown)
     ec:HookScript("OnHide", function()
         if updateTicker then updateTicker:Cancel(); updateTicker = nil end
     end)
 
-    if ec:IsShown() then
-        if RollAwayDB and RollAwayDB.lfgQuickCreate then
-            PushLayout(ec)
-            SyncVisibility()
-            RefreshGlow()
-        end
-        if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then
-            C_Timer.After(0.05, function()
-                if ec:IsShown() then ApplyDefaultPlaystyle(ec) end
-            end)
-        end
-    end
+    if ec:IsShown() then OnEntryCreationShown() end
 end
 
 ------------------------------------------------------------------------

@@ -5,8 +5,6 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
-local C_Timer_After    = RA.C_Timer_After
-
 local TIMER_DURATION = 60
 
 ------------------------------------------------------------------------
@@ -52,7 +50,6 @@ end
 ------------------------------------------------------------------------
 
 local paragonFrame
-local paragonTimer  -- RA.CreateTimerBar handle (Start/Stop), set in CreateParagonFrame
 
 local function CreateParagonFrame()
     if paragonFrame then return end
@@ -63,35 +60,23 @@ local function CreateParagonFrame()
         width    = 300,
         height   = 130,
         yOffset  = -220,
+        duration = TIMER_DURATION,
+        fitHeight = function(self)
+            local lastRow = self.rows[self.numActiveRows]
+            local bottomY = lastRow and lastRow.content:GetBottom() or self.header:GetBottom()
+            local topY = self:GetTop()
+            local contentHeight = (topY and bottomY) and (topY - bottomY) or 80
+            -- contentHeight (top edge -> last row bottom) + gap + btn(22) + bar(8) + pad(18)
+            return contentHeight + 10 + 22 + 8 + 18
+        end,
     })
-    paragonTimer = paragonFrame.timer
 
     -- Header (count line)
-    paragonFrame.header = paragonFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    paragonFrame.header:SetPoint("TOPLEFT",  paragonFrame, "TOPLEFT",  10, -40)
-    paragonFrame.header:SetPoint("TOPRIGHT", paragonFrame, "TOPRIGHT", -10, -40)
-    paragonFrame.header:SetJustifyH("LEFT")
+    paragonFrame.header = RA.CreatePopupBodyText(paragonFrame)
 
     -- Row pool: bullet + content FontString, content anchored right after
     -- the bullet so wrapped lines stay aligned under the entry text.
     paragonFrame.rows = {}
-
-    paragonFrame:SetScript("OnShow", function(self)
-        if RA.C_Timer_After then
-            RA.C_Timer_After(0, function()
-                if not self:IsShown() then return end
-                local lastRow = self.rows[self.numActiveRows]
-                local bottomY = lastRow and lastRow.content:GetBottom() or self.header:GetBottom()
-                local topY = self:GetTop()
-                local contentHeight = (topY and bottomY) and (topY - bottomY) or 80
-                -- contentHeight (top edge -> last row bottom) + gap + btn(22) + bar(8) + pad(18)
-                self:SetHeight(math.max(130, contentHeight + 10 + 22 + 8 + 18))
-            end)
-        end
-        paragonTimer.Start(TIMER_DURATION)
-    end)
-
-    paragonFrame:SetScript("OnHide", paragonTimer.Stop)
 end
 
 -- Returns the row for index, creating and anchoring it below the previous row on first use.
@@ -208,18 +193,14 @@ function RA.InitParagon()
     f:RegisterEvent("PLAYER_ENTERING_WORLD")
     f:RegisterEvent("QUEST_ACCEPTED")
 
-    f:SetScript("OnEvent", function(_, event, arg1, arg2)
+    f:SetScript("OnEvent", function(_, event, arg1)
         if event == "PLAYER_ENTERING_WORLD" then
-            -- arg1 = isInitialLogin, arg2 = isReloadingUi.
-            -- Only fire on actual login, never on /reload or zoning.
+            -- arg1 = isInitialLogin. Only fire on actual login, never on
+            -- /reload or zoning.
             if not arg1 then return end
 
             -- Delay so the quest log is fully populated before scanning.
-            if C_Timer_After then
-                C_Timer_After(3, CheckAndShow)
-            else
-                CheckAndShow()
-            end
+            C_Timer.After(3, CheckAndShow)
 
         elseif event == "QUEST_ACCEPTED" then
             -- arg1 is the questID in modern WoW (Shadowlands+).
@@ -227,12 +208,7 @@ function RA.InitParagon()
             DBG("[Paragon] Paragon quest accepted:", arg1)
             if not (RollAwayDB and RollAwayDB.paragonAlert) then return end
             -- Short delay so IsOnQuest() returns true reliably.
-            if C_Timer_After then
-                C_Timer_After(0.5, function()
-                    local quests = GetAvailableParagonQuests()
-                    if #quests > 0 then RA.ShowParagonFrame(quests) end
-                end)
-            end
+            C_Timer.After(0.5, CheckAndShow)
         end
     end)
 

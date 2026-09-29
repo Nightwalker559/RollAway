@@ -7,42 +7,23 @@
 local RA  = _G["RollAway"]
 local DBG = RA.DBG
 
-local C_Item                = C_Item
-local C_ToyBox               = C_ToyBox
-local C_MountJournal         = C_MountJournal
-local C_PetJournal           = C_PetJournal
-local C_TransmogCollection   = C_TransmogCollection
-local C_HousingCatalog       = C_HousingCatalog
-local C_SpellBook            = C_SpellBook
-local C_TradeSkillUI         = C_TradeSkillUI
-
-local DEFAULT_ALPHA = 0.35
+local DEFAULT_ALPHA = RA.defaults.profile.vendorFilterAlpha
 
 ------------------------------------------------------------------------
 -- Per-category "already known/maxed" checks
 ------------------------------------------------------------------------
 
 local function IsRecipeKnownViaSpellCheck(itemID)
-    if not itemID then return false end
-    local spellID
-    if C_Item and C_Item.GetItemSpell then
-        local ok, _, sID = pcall(C_Item.GetItemSpell, itemID)
-        if ok then spellID = sID end
-    end
-    if not spellID then return false end
+    local ok, _, spellID = pcall(C_Item.GetItemSpell, itemID)
+    if not (ok and spellID) then return false end
 
-    if C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo then
-        local ok, recipeInfo = pcall(C_TradeSkillUI.GetRecipeInfo, spellID)
-        if ok and recipeInfo and recipeInfo.learned ~= nil then
-            return recipeInfo.learned and true or false
-        end
+    local okRecipe, recipeInfo = pcall(C_TradeSkillUI.GetRecipeInfo, spellID)
+    if okRecipe and recipeInfo and recipeInfo.learned ~= nil then
+        return recipeInfo.learned and true or false
     end
 
-    if C_SpellBook and C_SpellBook.IsSpellKnown then
-        local ok, known = pcall(C_SpellBook.IsSpellKnown, spellID)
-        return ok and known or false
-    end
-    return false
+    local okKnown, known = pcall(C_SpellBook.IsSpellKnown, spellID)
+    return okKnown and known or false
 end
 
 -- Hidden scanning tooltip, created lazily. Reading the merchant tooltip is
@@ -235,13 +216,11 @@ function RA.ApplyVendorFilterFeature()
     -- Blizzard assigns some slots' IDs (observed: 11/12) one frame later
     -- than the rest during MerchantFrame_UpdateMerchantInfo, so a second
     -- deferred pass catches any button that still read index 0 just now.
-    if RA.C_Timer_After then
-        RA.C_Timer_After(0, function()
-            if MerchantFrame and MerchantFrame:IsShown() and RollAwayDB and RollAwayDB.vendorFilterEnabled then
-                ForEachMerchantButton(ApplyVendorFilterButton)
-            end
-        end)
-    end
+    C_Timer.After(0, function()
+        if MerchantFrame and MerchantFrame:IsShown() and RollAwayDB and RollAwayDB.vendorFilterEnabled then
+            ForEachMerchantButton(ApplyVendorFilterButton)
+        end
+    end)
 end
 
 ------------------------------------------------------------------------

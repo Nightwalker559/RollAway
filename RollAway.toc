@@ -25,7 +25,6 @@ Data\Delves.lua
 Data\Raids.lua
 Data\LegacyRaids.lua
 Data\LegacyDungeonTeleports.lua
-Data\WorldBosses.lua
 Core.lua
 Helpers.lua
 Modules\WhatsNew.lua
@@ -36,6 +35,7 @@ Modules\RollConfirm.lua
 Modules\Reminder.lua
 Modules\TeleportReminder.lua
 Modules\PortalOverview.lua
+Modules\JoinReminder.lua
 Modules\QoL.lua
 Modules\CharFrameButtons.lua
 Modules\VendorFilter.lua

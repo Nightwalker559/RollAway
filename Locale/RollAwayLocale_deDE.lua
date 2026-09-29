@@ -227,7 +227,6 @@ L["qol_lfgqc_ps_relaxed"]       = "Entspannt"
 L["qol_lfgqc_ps_competitive"]   = "Kompetitiv"
 L["qol_lfgqc_ps_carry"]         = "Beförderung angeboten"
 L["qol_fontsize_label"]       = "Schriftgröße"
-L["qol_fontsize_value"]       = "Größe: %d"
 L["qol_check_talents"]        = "Talente prüfen"
 L["qol_check_talents_fmt"]    = "Talente prüfen (%s)"
 L["combat_action_queued"]     = "Optionen können im Kampf nicht geöffnet werden – öffnet automatisch, sobald der Kampf vorbei ist."
@@ -441,15 +440,6 @@ L["greatvault_alert_label"]        = "Benachrichtigen wenn Belohnungen in der Gr
 L["greatvault_alert_info"]         = "Zeigt beim Login ein Popup, wenn unabgeholte Belohnungen in der Großen Schatzkammer vorhanden sind. Wird nur einmal pro wöchentlichem Reset angezeigt. Mit /rawvault manuell prüfen."
 L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Großen Schatzkammer!"
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
-------------------------------------------------------------------------
--- Was ist neu (3.0.5)
-------------------------------------------------------------------------
-L["whatsnew_autoaccept_title"]     = "Einladungen von Gilde/Freunden automatisch annehmen"
-L["whatsnew_autoaccept_desc"]      = "Nimmt Gruppeneinladungen von Gildenmitgliedern, Freunden und Battle.net-Freunden automatisch an. Nur Standard-UI."
-L["whatsnew_autoaccept_location"]  = "QoL > Sonstiges"
-L["whatsnew_autorepair_title"]     = "Automatische Reparatur"
-L["whatsnew_autorepair_desc"]      = "Repariert automatisch beim Händler mit Spieler- oder Gildenbank-Gold. Nur Standard-UI."
-L["whatsnew_autorepair_location"]  = "QoL > Sonstiges"
 
 ------------------------------------------------------------------------
 -- What's New (3.0.6)

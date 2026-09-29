@@ -12,7 +12,6 @@ local RA = _G["RollAway"] or {}
 _G["RollAway"] = RA
 
 RA.RA_L               = RA_L
-RA.addonName          = addonName
 RA.VOIDCORE_CURRENCY_ID = 3418  -- Nebulous Voidcore currency
 
 ------------------------------------------------------------------------
@@ -45,7 +44,7 @@ RA.DBG = DBG
 
 -- Separate, quieter channel: gated on its own "errors only" checkbox instead
 -- of the full "debug" flag, so a dev char can catch rare self-heal errors
--- (e.g. CharFrameButtons.lua's SafeCall) without wading through the full
+-- (e.g. CharFrameButtons.lua's refresh errors) without wading through the full
 -- verbose debug log for everything else.
 local function DBGError(...)
     if RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly) and DEV_CHARS[UnitName("player")] then
@@ -53,23 +52,6 @@ local function DBGError(...)
     end
 end
 RA.DBGError = DBGError
-
-------------------------------------------------------------------------
--- API upvalues (resolved once at load time)
-------------------------------------------------------------------------
-local GetLootRollItemLink = GetLootRollItemLink
-local GetInstanceInfo     = GetInstanceInfo
-local hooksecurefunc      = hooksecurefunc
-local GetTime             = GetTime
-local C_Timer_After       = C_Timer and C_Timer.After
-local C_Timer_NewTimer    = C_Timer and C_Timer.NewTimer
-local C_Timer_NewTicker   = C_Timer and C_Timer.NewTicker
-
-RA.GetLootRollItemLink = GetLootRollItemLink
-RA.hooksecurefunc      = hooksecurefunc
-RA.C_Timer_After       = C_Timer_After
-RA.C_Timer_NewTimer    = C_Timer_NewTimer
-RA.C_Timer_NewTicker   = C_Timer_NewTicker
 
 ------------------------------------------------------------------------
 -- Content data now lives in Data/*.lua (see .toc). Add seasons there.
@@ -102,7 +84,6 @@ for _, b in ipairs(SEASON1_LEGACY_RAIDS) do LEGACY_ENCOUNTER_MAP[b.encounterID] 
 RA.DUNGEON_MAP          = DUNGEON_MAP
 RA.DELVE_MAP            = DELVE_MAP
 RA.RAID_ENCOUNTER_MAP   = RAID_ENCOUNTER_MAP
-RA.LEGACY_ENCOUNTER_MAP = LEGACY_ENCOUNTER_MAP
 
 ------------------------------------------------------------------------
 -- Raid difficulty bucket map – groups the various difficultyIDs seen
@@ -119,6 +100,12 @@ RA.RAID_DIFFICULTY_BUCKET = {
     [250] = "lfr",    -- World (Lairs)
 }
 
+-- Dungeon difficulty IDs that count as "Mythic" content (Reminder, Logs).
+RA.MYTHIC_DUNGEON_DIFFICULTY_IDS = {
+    [8]  = true,  -- Mythic (non-keystone)
+    [23] = true,  -- Mythic Keystone (M+)
+}
+
 ------------------------------------------------------------------------
 -- State variables – shared across all modules
 ------------------------------------------------------------------------
@@ -128,7 +115,6 @@ RA.cachedDiffID       = 0
 RA.lastEncounterID    = 0
 RA.lastLegacyEncounterID = 0
 RA.closeTimer            = nil
-RA.isHooked              = false
 RA.ElvLootModule         = nil
 RA.activeRolls           = {}
 RA.rollTimers            = {}
@@ -260,7 +246,7 @@ function RA.RunProfileMigration(legacyFlatSV)
     local snapshot = RA.db.global.legacyMigrationSnapshot
     if type(snapshot) ~= "table" or not next(snapshot) then return end -- nothing to offer (fresh install)
 
-    StaticPopupDialogs["ROLLAWAY_PROFILE_MIGRATION"] = {
+    RA.RegisterPopup("ROLLAWAY_PROFILE_MIGRATION", {
         text          = RA_L["profile_migration_popup_text"],
         button1       = RA_L["profile_migration_keep"],
         button2       = RA_L["profile_migration_default"],
@@ -271,11 +257,8 @@ function RA.RunProfileMigration(legacyFlatSV)
                 end
             end
         end,
-        timeout       = 0,
-        whileDead     = true,
         hideOnEscape  = false,
-        preferredIndex = 3,
-    }
+    })
     -- Shown a few seconds after ADDON_LOADED instead of immediately: a
     -- StaticPopup this early in the login sequence, before Blizzard's own
     -- UI (guild frame included) has finished initializing, is a plausible
@@ -364,9 +347,8 @@ local function HasActiveRolls()
     for _ in pairs(RA.activeRolls) do return true end
     return false
 end
-RA.HasActiveRolls = HasActiveRolls
 
--- Deferred by one tick (C_Timer_After 0) so our Hide() call runs on a fresh,
+-- Deferred by one tick (C_Timer.After 0) so our Hide() call runs on a fresh,
 -- untainted execution stack instead of directly inside whatever event handler
 -- (START_LOOT_ROLL, ENCOUNTER_END, etc.) triggered it. Calling Hide() on
 -- GroupLootHistoryFrame synchronously from insecure code taints that frame's
@@ -385,13 +367,8 @@ local function DoHideHistoryFrame()
 end
 
 local function HideHistoryFrame()
-    if C_Timer_After then
-        C_Timer_After(0, DoHideHistoryFrame)
-    else
-        DoHideHistoryFrame()
-    end
+    C_Timer.After(0, DoHideHistoryFrame)
 end
-RA.HideHistoryFrame = HideHistoryFrame
 
 local function CancelAllRollTimers()
     for rollID, t in pairs(RA.rollTimers) do
@@ -400,7 +377,6 @@ local function CancelAllRollTimers()
     end
     wipe(RA.rollTimers)
 end
-RA.CancelAllRollTimers = CancelAllRollTimers
 
 -- Resets roll state and timers – does not touch the loot history frame.
 local function ResetState(reason)
@@ -410,7 +386,6 @@ local function ResetState(reason)
     wipe(RA.activeRolls)
     RA.lastEncounterID = 0
 end
-RA.ResetState = ResetState
 
 -- Debug-log section divider: a call more than 3s after the previous one
 -- starts a new section. Time-gap based rather than tied to a fixed event
@@ -439,7 +414,6 @@ local function FullReset(reason)
     end
     HideHistoryFrame()
 end
-RA.FullReset = FullReset
 
 local function ShouldHideInInstance()
     if not RollAwayDB or RollAwayDB.lootFrameAutoCloseDisabled then return false end
@@ -448,44 +422,75 @@ local function ShouldHideInInstance()
     if not bucket or not RollAwayDB.hideInRaidBuckets then return false end
     return RollAwayDB.hideInRaidBuckets[bucket] == true
 end
-RA.ShouldHideInInstance = ShouldHideInInstance
 
 local function TryStartCloseTimer()
     if RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled then return end
     if HasActiveRolls() or RA.closeTimer then return end
     DBG("Starting close timer:", RollAwayDB.delay, "sec")
-    if C_Timer_NewTimer then
-        RA.closeTimer = C_Timer_NewTimer(RollAwayDB.delay, function()
-            DBG("Close timer expired")
-            HideHistoryFrame()
-            RA.closeTimer = nil
-        end)
-    elseif C_Timer_After then
-        C_Timer_After(RollAwayDB.delay, function()
-            if not HasActiveRolls() then
-                DBG("Close timer expired (After fallback)")
-                HideHistoryFrame()
-            end
-            RA.closeTimer = nil
-        end)
-        RA.closeTimer = true
-    else
-        DBG("WARNING: No timer API available")
-    end
+    RA.closeTimer = C_Timer.NewTimer(RollAwayDB.delay, function()
+        DBG("Close timer expired")
+        HideHistoryFrame()
+        RA.closeTimer = nil
+    end)
 end
-RA.TryStartCloseTimer = TryStartCloseTimer
 
 -- Called once after all rolls complete to decide whether to start close timer.
 local function CheckAndClose()
-    if not HasActiveRolls() then
-        wipe(RA.activeRolls)
-        if not ShouldHideInInstance() then TryStartCloseTimer() end
+    if not HasActiveRolls() and not ShouldHideInInstance() then
+        TryStartCloseTimer()
     end
 end
 
 ------------------------------------------------------------------------
 -- Event handler
 ------------------------------------------------------------------------
+
+-- Module Init functions, run in this order once the saved variables are ready.
+local INIT_ORDER = {
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitVendorFilter",
+    "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
+}
+
+-- Adds `false` for every entry's key (entry[keyField]) missing from tbl.
+local function FillMissing(tbl, entries, keyField)
+    for _, entry in ipairs(entries) do
+        local key = entry[keyField]
+        if tbl[key] == nil then tbl[key] = false end
+    end
+end
+
+-- Per-character selections (SavedVariablesPerCharacter): fills in defaults,
+-- replaces any key that has the wrong type, and adds an entry (default off)
+-- for every dungeon/delve/boss. Also re-run after a profile reset wipes the
+-- table (Options\OptionsProfile.lua), so nothing sees it half-empty.
+function RA.InitCharDB()
+    RollAwayDBChar = RollAwayDBChar or {}
+    for k, v in pairs(RA.defaultsChar) do
+        if type(v) == "table" then
+            if type(RollAwayDBChar[k]) ~= "table" then RollAwayDBChar[k] = RA.DeepCopy(v) end
+        elseif RollAwayDBChar[k] == nil then
+            RollAwayDBChar[k] = v
+        end
+    end
+
+    FillMissing(RollAwayDBChar.dungeons,     SEASON1_DUNGEONS, "key")
+    FillMissing(RollAwayDBChar.dungeons_s2,  SEASON2_DUNGEONS, "key")
+    FillMissing(RollAwayDBChar.delves,       SEASON1_DELVES,   "key")
+    FillMissing(RollAwayDBChar.delves_s2,    SEASON2_DELVES,   "key")
+    FillMissing(RollAwayDBChar.raids,        SEASON1_RAIDS,    "key")
+    FillMissing(RollAwayDBChar.raids,        SEASON2_RAIDS,    "key")
+    FillMissing(RollAwayDBChar.legacy_raids, SEASON1_LEGACY_RAIDS, "raid")
+    -- Account-wide (true global) mirror of legacy_raids, used when
+    -- RA.db.global.legacyAccountWide is enabled.
+    FillMissing(RA.db.global.legacy_raids,   SEASON1_LEGACY_RAIDS, "raid")
+
+    -- Delves removed from the game pool stay disabled.
+    if RA.ACTIVE_SEASON >= 2 then
+        for _, d in ipairs(SEASON1_DELVES) do
+            if d.removedAfterS1 then RollAwayDBChar.delves[d.key] = false end
+        end
+    end
+end
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("START_LOOT_ROLL")
@@ -510,14 +515,13 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         -- Watchdog: force-closes frame if LOOT_ROLLS_COMPLETE never fires cleanly.
         -- Skipped entirely if the whole auto-close feature is disabled in Options.
-        if C_Timer_NewTimer and not RA.rollTimers[arg1] and not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
+        if not RA.rollTimers[arg1] and not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
             local wdID = arg1
-            RA.rollTimers[wdID] = C_Timer_NewTimer(RollAwayDB.rollTimeout, function()
+            RA.rollTimers[wdID] = C_Timer.NewTimer(RollAwayDB.rollTimeout, function()
                 DBG("Watchdog expired for rollID", wdID)
                 RA.rollTimers[wdID] = nil
                 RA.activeRolls[wdID] = nil
                 if not HasActiveRolls() then
-                    wipe(RA.activeRolls)
                     CancelAllRollTimers()
                     HideHistoryFrame()
                 end
@@ -555,7 +559,7 @@ f:SetScript("OnEvent", function(_, event, ...)
             end
         end
 
-        if C_Timer_After then C_Timer_After(0.1, CheckAndClose) else CheckAndClose() end
+        C_Timer.After(0.1, CheckAndClose)
 
     elseif event == "ENCOUNTER_END" then
         local encounterID, encounterName, _, _, endStatus = ...
@@ -616,11 +620,7 @@ f:SetScript("OnEvent", function(_, event, ...)
             if RA.reminderShowToken ~= myReminderToken then return end  -- superseded
             if RA.ShowReminder then RA.ShowReminder() end
         end
-        if C_Timer_NewTimer then
-            RA.reminderShowTimer = C_Timer_NewTimer(2, FireReminder)
-        elseif C_Timer_After then
-            C_Timer_After(2, FireReminder)
-        end
+        RA.reminderShowTimer = C_Timer.NewTimer(2, FireReminder)
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then
 
@@ -660,101 +660,26 @@ f:SetScript("OnEvent", function(_, event, ...)
         -- and keep it in sync whenever the profile is switched/copied/reset.
         local function SyncCompatAlias()
             RollAwayDB = RA.db.profile
-            _G.RollAwayDB = RA.db.profile
         end
         SyncCompatAlias()
         RA.db.RegisterCallback(RA, "OnProfileChanged", SyncCompatAlias)
         RA.db.RegisterCallback(RA, "OnProfileCopied",  SyncCompatAlias)
         RA.db.RegisterCallback(RA, "OnProfileReset",   SyncCompatAlias)
 
-        _G.RollAwayDBChar = _G.RollAwayDBChar or {}
-        RollAwayDBChar = _G.RollAwayDBChar
-        for k, v in pairs(RA.defaultsChar) do
-            if RollAwayDBChar[k] == nil then RollAwayDBChar[k] = v end
-        end
-
-        if type(RollAwayDBChar.dungeons) ~= "table" then RollAwayDBChar.dungeons = {} end
-        if type(RollAwayDBChar.dungeons_s2) ~= "table" then RollAwayDBChar.dungeons_s2 = {} end
-        for _, d in ipairs(SEASON2_DUNGEONS) do
-            if RollAwayDBChar.dungeons_s2[d.key] == nil then RollAwayDBChar.dungeons_s2[d.key] = false end
-        end
-        for _, d in ipairs(SEASON1_DUNGEONS) do
-            if RollAwayDBChar.dungeons[d.key] == nil then RollAwayDBChar.dungeons[d.key] = false end
-        end
-
-        if type(RollAwayDBChar.delves) ~= "table" then RollAwayDBChar.delves = {} end
-        for _, d in ipairs(SEASON1_DELVES) do
-            if d.removedAfterS1 and RA.ACTIVE_SEASON >= 2 then
-                RollAwayDBChar.delves[d.key] = false -- no longer obtainable in-game, keep disabled
-            elseif RollAwayDBChar.delves[d.key] == nil then
-                RollAwayDBChar.delves[d.key] = false
-            end
-        end
-
-        if type(RollAwayDBChar.delves_s2) ~= "table" then RollAwayDBChar.delves_s2 = {} end
-        for _, d in ipairs(SEASON2_DELVES) do
-            if RollAwayDBChar.delves_s2[d.key] == nil then RollAwayDBChar.delves_s2[d.key] = false end
-        end
-
-        if type(RollAwayDBChar.raids) ~= "table" then RollAwayDBChar.raids = {} end
-        for _, b in ipairs(SEASON1_RAIDS) do
-            if RollAwayDBChar.raids[b.key] == nil then RollAwayDBChar.raids[b.key] = false end
-        end
-        for _, b in ipairs(SEASON2_RAIDS) do
-            if RollAwayDBChar.raids[b.key] == nil then RollAwayDBChar.raids[b.key] = false end
-        end
-
-        if type(RollAwayDBChar.legacy_raids) ~= "table" then RollAwayDBChar.legacy_raids = {} end
-        for _, b in ipairs(SEASON1_LEGACY_RAIDS) do
-            if RollAwayDBChar.legacy_raids[b.raid] == nil then
-                RollAwayDBChar.legacy_raids[b.raid] = false
-            end
-        end
-
-        -- Account-wide (true global) mirror of legacy_raids, used when
-        -- RA.db.global.legacyAccountWide is enabled.
-        for _, b in ipairs(SEASON1_LEGACY_RAIDS) do
-            if RA.db.global.legacy_raids[b.raid] == nil then
-                RA.db.global.legacy_raids[b.raid] = false
-            end
-        end
-
-        if RollAwayDBChar.prey == nil then RollAwayDBChar.prey = false end
-
-        if type(RollAwayDBChar.raidAutoPassDifficulty) ~= "table" then
-            RollAwayDBChar.raidAutoPassDifficulty = { lfr = false, normal = false, heroic = false, mythic = false }
-        end
+        RA.InitCharDB()
 
         -- One-time-per-character migration popup from the pre-3.0.1 flat DB.
         RA.RunProfileMigration(legacyFlatSV)
-
-        -- Sort dungeons and delves alphabetically by localized name.
-        table.sort(SEASON1_DUNGEONS, function(a, b)
-            return RA_L["dungeon_"..a.key] < RA_L["dungeon_"..b.key]
-        end)
-        table.sort(SEASON1_DELVES, function(a, b)
-            return RA_L["delve_"..a.key] < RA_L["delve_"..b.key]
-        end)
 
         if ElvUI then
             local E = unpack(ElvUI)
             if E and E.GetModule then RA.ElvLootModule = E:GetModule("Loot", true) end
         end
 
-        if RA.InitWhatsNew         then RA.InitWhatsNew()         end
-        if RA.InitAutoPass        then RA.InitAutoPass()        end
-        if RA.InitAutoRoll        then RA.InitAutoRoll()        end
-        if RA.InitRollConfirm     then RA.InitRollConfirm()     end
-        if RA.InitReminder        then RA.InitReminder()        end
-        if RA.InitTeleportReminder then RA.InitTeleportReminder() end
-        if RA.InitPortalOverview  then RA.InitPortalOverview()  end
-        if RA.InitQoL             then RA.InitQoL()             end
-        if RA.InitVendorFilter    then RA.InitVendorFilter()    end
-        if RA.InitParagon         then RA.InitParagon()         end
-        if RA.InitGreatVault      then RA.InitGreatVault()      end
-        if RA.InitLFGQuickCreate  then RA.InitLFGQuickCreate()  end
-        if RA.InitOptions         then RA.InitOptions()         end
-        if RA.InitDebug           then RA.InitDebug()           end
+        for _, initName in ipairs(INIT_ORDER) do
+            local init = RA[initName]
+            if init then init() end
+        end
 
         -- Hook Show at startup so auto-hide works on the first roll too.
         if GroupLootHistoryFrame then
@@ -763,7 +688,6 @@ f:SetScript("OnEvent", function(_, event, ...)
                     HideHistoryFrame()
                 end
             end)
-            RA.isHooked = true
         end
 
         RA.initialized = true

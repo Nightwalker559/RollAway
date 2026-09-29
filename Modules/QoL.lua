@@ -1,76 +1,23 @@
 -- RollAway - QoL.lua
--- Quality of Life features.
+-- Quality of Life features: Ready Check / durability reminders, Auction House
+-- and Crafting Orders expansion filter, Great Vault currency display, and
+-- Blizzard UI clean-ups (world map activity tracker, crafting output log).
+-- The instance join reminder lives in Modules\JoinReminder.lua, the Character
+-- panel buttons in Modules\CharFrameButtons.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
-
-local C_Timer_After    = RA.C_Timer_After
-local C_Timer_NewTicker = RA.C_Timer_NewTicker
-
-local VOIDCORE_CURRENCY_ID = RA.VOIDCORE_CURRENCY_ID
-
--- Shared "is the player max level" check, used by several QoL features
--- (vault currency display here, Omnium/Vault CharacterFrame buttons in
--- Modules/CharFrameButtons.lua) via RA.IsMaxLevel.
-local function IsMaxLevel()
-    return UnitLevel("player") >= GetMaxPlayerLevel()
-end
-RA.IsMaxLevel = IsMaxLevel
 
 -- Equipment slots that can have durability
 local DURA_SLOTS    = { 1, 3, 5, 6, 7, 8, 9, 10, 15, 16, 17 }
 local DURA_THRESHOLD = 0.30  -- 30%
 
 ------------------------------------------------------------------------
--- Shared font helper
-------------------------------------------------------------------------
-
-local function GetQoLFont()
-    local fontSize = (RollAwayDB and RollAwayDB.talentFontSize) or 20
-    local fontPath = "Fonts\\FRIZQT__.TTF"
-    if ElvUI then
-        local E = unpack(ElvUI)
-        fontPath = (E and E.media and E.media.normFont) or fontPath
-    end
-    return fontPath, fontSize
-end
-
-------------------------------------------------------------------------
 -- Ready Check – "Check Talents" reminder
 ------------------------------------------------------------------------
 
--- Shared factory for QoL "toast" reminder frames (Ready Check, Durability):
--- centered, draggable, auto-hides after 6s via RA.CreateOneShotTimer. The
--- Join reminder frame is NOT built on this - its timer logic is more
--- involved (waits for full group / raid-vs-party), so keeping it separate
--- avoids coupling two very different lifecycles to one shared helper.
-local function CreateQoLToastFrame(globalName, width, height, yOffset)
-    local frame = CreateFrame("Frame", globalName, UIParent)
-    frame:SetSize(width, height)
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, yOffset)
-    frame:SetFrameStrata("HIGH")
-    frame:SetClampedToScreen(true)
-    RA.MakeLockableDraggable(frame)
-    local timer = RA.CreateOneShotTimer(6, function() frame:Hide() end)
-    frame:SetScript("OnHide", timer.Stop)
-    frame:Hide()
-
-    local text = frame:CreateFontString(nil, "OVERLAY")
-    text:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE")
-    text:SetPoint("CENTER", frame, "CENTER", 0, 0)
-    frame.text = text
-
-    return frame, timer
-end
-
-local talentFrame
-local talentTimer  -- RA.CreateOneShotTimer handle, set in CreateTalentFrame
-
-local function CreateTalentFrame()
-    if talentFrame then return end
-    talentFrame, talentTimer = CreateQoLToastFrame("RollAwayTalentFrame", 280, 36, 180)
-end
+local talentFrame, talentTimer  -- QoL toast (RA.CreateToastFrame), created on first show
 
 -- "<Spec> – <loadout name>", or just "<Spec>" for the starter build / no
 -- saved loadout. Three sources, in the same priority order Blizzard's own
@@ -96,8 +43,8 @@ local function GetActiveTalentLabel()
     local loadSystem = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
         and PlayerSpellsFrame.TalentsFrame.LoadSystem
     local uiConfigID     = loadSystem and loadSystem.GetSelectionID and loadSystem:GetSelectionID()
-    local lastConfigID   = C_ClassTalents and C_ClassTalents.GetLastSelectedSavedConfigID(specID)
-    local activeConfigID = C_ClassTalents and C_ClassTalents.GetActiveConfigID()
+    local lastConfigID   = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local activeConfigID = C_ClassTalents.GetActiveConfigID()
     local configID = uiConfigID or lastConfigID or activeConfigID
 
     local loadoutName
@@ -118,13 +65,15 @@ local function ShowTalentReminder()
     if itype ~= "party" and itype ~= "raid" then return end
 
     DBG("[QoL] Ready check – showing talent reminder")
-    CreateTalentFrame()
+    if not talentFrame then
+        talentFrame, talentTimer = RA.CreateToastFrame("RollAwayTalentFrame", 280, 36, 180)
+    end
 
     local label = RollAwayDB.readyCheckShowSpec and GetActiveTalentLabel()
     local text = label and string.format(RA_L["qol_check_talents_fmt"], label) or RA_L["qol_check_talents"]
     talentFrame.text:SetText("|cffFFFFFF" .. text .. "|r")
 
-    local fontPath, fontSize = GetQoLFont()
+    local fontPath, fontSize = RA.GetQoLFont()
     talentFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
     talentFrame:Show()
 
@@ -135,13 +84,7 @@ end
 -- Durability warning
 ------------------------------------------------------------------------
 
-local durabilityFrame
-local durabilityTimer  -- RA.CreateOneShotTimer handle, set in CreateDurabilityFrame
-
-local function CreateDurabilityFrame()
-    if durabilityFrame then return end
-    durabilityFrame, durabilityTimer = CreateQoLToastFrame("RollAwayDurabilityFrame", 320, 36, 140)
-end
+local durabilityFrame, durabilityTimer  -- QoL toast, created on first show
 
 local function GetLowestDurability()
     local lowest = 1.0
@@ -159,9 +102,11 @@ local function ShowDurabilityWarning(pct)
     if not RollAwayDB or not RollAwayDB.durabilityWarning then return end
 
     DBG("[QoL] Durability warning:", math.floor(pct * 100) .. "%")
-    CreateDurabilityFrame()
+    if not durabilityFrame then
+        durabilityFrame, durabilityTimer = RA.CreateToastFrame("RollAwayDurabilityFrame", 320, 36, 140)
+    end
 
-    local fontPath, fontSize = GetQoLFont()
+    local fontPath, fontSize = RA.GetQoLFont()
     durabilityFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
 
     local pctStr = "|cffFF4444" .. math.floor(pct * 100) .. "%|r"
@@ -243,15 +188,11 @@ local function InitAHFilter()
     local f = CreateFrame("Frame")
     f:RegisterEvent("AUCTION_HOUSE_SHOW")
     f:SetScript("OnEvent", function()
-        if C_Timer_After then
-            C_Timer_After(0.2, SetAHExpansionFilter)
-        end
+        C_Timer.After(0.2, SetAHExpansionFilter)
         -- Hook SetDisplayMode once when AH opens (catches tab switches e.g. Auctionator → Blizzard)
         if AuctionHouseFrame and not AuctionHouseFrame.RA_displayModeHooked then
             hooksecurefunc(AuctionHouseFrame, "SetDisplayMode", function()
-                if C_Timer_After then
-                    C_Timer_After(0.1, SetAHExpansionFilter)
-                end
+                C_Timer.After(0.1, SetAHExpansionFilter)
             end)
             AuctionHouseFrame.RA_displayModeHooked = true
             DBG("[QoL] AH SetDisplayMode hook set")
@@ -260,13 +201,10 @@ local function InitAHFilter()
 
     local function HookCraftingFrame()
         local co = ProfessionsCustomerOrdersFrame
-        if not co then return false end
-        local bo = co.BrowseOrders
+        local bo = co and co.BrowseOrders
         if not bo then return false end
         hooksecurefunc(bo, "Show", function()
-            if C_Timer_After then
-                C_Timer_After(0.2, SetCraftingOrderExpansionFilter)
-            end
+            C_Timer.After(0.2, SetCraftingOrderExpansionFilter)
         end)
         DBG("[QoL] BrowseOrders:Show hook set")
         return true
@@ -276,9 +214,7 @@ local function InitAHFilter()
     local coEventFrame = CreateFrame("Frame")
     coEventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
     coEventFrame:SetScript("OnEvent", function()
-        if C_Timer_After then
-            C_Timer_After(0.5, SetCraftingOrderExpansionFilter)
-        end
+        C_Timer.After(0.5, SetCraftingOrderExpansionFilter)
     end)
 
     if not HookCraftingFrame() then
@@ -295,20 +231,14 @@ end
 local vaultCurrencyFrame
 
 local function UpdateVaultCurrency()
-    if not RollAwayDB or not RollAwayDB.vaultCurrencyDisplay then
-        if vaultCurrencyFrame then vaultCurrencyFrame:Hide() end
-        return
-    end
-    if not RA.BONUS_ROLLS_ENABLED then
-        if vaultCurrencyFrame then vaultCurrencyFrame:Hide() end
-        return
-    end
-    if not (RA.IsMaxLevel and RA.IsMaxLevel()) then
+    local enabled = RollAwayDB and RollAwayDB.vaultCurrencyDisplay
+        and RA.BONUS_ROLLS_ENABLED and RA.IsMaxLevel()
+    if not enabled then
         if vaultCurrencyFrame then vaultCurrencyFrame:Hide() end
         return
     end
 
-    local info = C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(VOIDCORE_CURRENCY_ID)
+    local info = C_CurrencyInfo.GetCurrencyInfo(RA.VOIDCORE_CURRENCY_ID)
     if not info then return end
 
     if not vaultCurrencyFrame then
@@ -330,7 +260,7 @@ local function UpdateVaultCurrency()
         text:SetPoint("LEFT", icon, "RIGHT", 4, 0)
         text:SetJustifyH("LEFT")
         -- Use ElvUI general font if available
-        local fontPath, _ = GetQoLFont()
+        local fontPath = RA.GetQoLFont()
         text:SetFont(fontPath, 12, "OUTLINE")
         vaultCurrencyFrame.text = text
     end
@@ -362,17 +292,22 @@ local function UpdateVaultCurrency()
 end
 
 local function InitVaultCurrency()
+    -- Show and SetShown can both fire for one open; coalesce into one update.
+    local updateQueued = false
+    local function QueueVaultCurrencyUpdate()
+        if updateQueued then return end
+        updateQueued = true
+        C_Timer.After(0.1, function()
+            updateQueued = false
+            UpdateVaultCurrency()
+        end)
+    end
+
     local function HookVaultFrame()
         if not WeeklyRewardsFrame then return false end
-        hooksecurefunc(WeeklyRewardsFrame, "Show", function()
-            if C_Timer_After then
-                C_Timer_After(0.1, UpdateVaultCurrency)
-            end
-        end)
+        hooksecurefunc(WeeklyRewardsFrame, "Show", QueueVaultCurrencyUpdate)
         hooksecurefunc(WeeklyRewardsFrame, "SetShown", function(_, shown)
-            if shown and C_Timer_After then
-                C_Timer_After(0.1, UpdateVaultCurrency)
-            end
+            if shown then QueueVaultCurrencyUpdate() end
         end)
         -- Apply immediately if frame is already shown
         if WeeklyRewardsFrame:IsShown() then
@@ -386,481 +321,6 @@ local function InitVaultCurrency()
         -- Frame not loaded yet, wait for Blizzard_WeeklyRewards
         RA.WaitForAddon("Blizzard_WeeklyRewards", HookVaultFrame)
     end
-end
-
-------------------------------------------------------------------------
--- Keystone companion addon – BigWigs Keystones or Details! Keystones.
--- Mutually exclusive via RollAwayDB.joinReminderKeyAddon.
--- Calls SlashCmdList directly (not typed text) to avoid triggering other addons.
-------------------------------------------------------------------------
-
--- Availability checks, exposed via RA so Options.lua can grey out the
--- corresponding checkbox when the addon isn't installed/loaded.
-local function IsBigWigsKeyAvailable()
-    return _G["BigWigsLoader"] ~= nil and SlashCmdList["key"] ~= nil
-end
-RA.IsBigWigsKeyAvailable = IsBigWigsKeyAvailable
-
-local function IsDetailsKeyAvailable()
-    return _G["Details"] ~= nil and SlashCmdList["KEYSTONE"] ~= nil
-end
-RA.IsDetailsKeyAvailable = IsDetailsKeyAvailable
-
--- Returns "bigwigs" / "details" if the selected companion addon is loaded
--- and its toggle command is available, otherwise nil.
-local function GetActiveKeyAddon()
-    local choice = RollAwayDB and RollAwayDB.joinReminderKeyAddon
-    if choice == "bigwigs" and IsBigWigsKeyAvailable() then return "bigwigs" end
-    if choice == "details" and IsDetailsKeyAvailable() then return "details" end
-    return nil
-end
-
--- Opens the selected companion addon's keystone frame. Idempotent (no-op if
--- already open) for "details" - important since the trigger can fire while
--- the frame is already open from something outside our own bookkeeping.
--- BigWigs only exposes a toggle command with no reliable way to check its
--- frame's shown state, so it's called unconditionally there - same caveat
--- applies to it, unavoidable for now.
-local function OpenKeyAddon()
-    local which = GetActiveKeyAddon()
-    if which == "bigwigs" then
-        DBG("[QoL] Opening BigWigs Keystones via SlashCmdList[key]")
-        SlashCmdList["key"]("")
-        return true
-    elseif which == "details" then
-        local f = _G["DetailsKeystoneSmallFrame"]
-        if not (f and f:IsShown()) then
-            DBG("[QoL] Opening Details! Keystones via SlashCmdList[KEYSTONE]")
-            SlashCmdList["KEYSTONE"]("")
-        end
-        return true
-    end
-    return false
-end
-
--- Closes it - idempotent counterpart to OpenKeyAddon (same BigWigs caveat).
-local function CloseKeyAddon()
-    local which = GetActiveKeyAddon()
-    if which == "bigwigs" then
-        DBG("[QoL] Closing BigWigs Keystones via SlashCmdList[key]")
-        SlashCmdList["key"]("")
-        return true
-    elseif which == "details" then
-        local f = _G["DetailsKeystoneSmallFrame"]
-        if f and f:IsShown() then
-            DBG("[QoL] Closing Details! Keystones (direct Hide)")
-            f:Hide()
-        end
-        return true
-    end
-    return false
-end
-
-------------------------------------------------------------------------
--- Keystone companion addon – safety-close timer.
--- Whenever we auto-open BigWigs/Details Keystones for the player, it stays
--- open until either they cast a known M+ portal spell (closes immediately)
--- or a 20s safety timer runs out (closes automatically either way).
-------------------------------------------------------------------------
-
-local keyAddonReminderOpen   = false -- true while we're holding it open
-
--- Pending 20s safety-close timer (Start()/Stop() handle).
-local keyAddonSafetyTimer = RA.CreateOneShotTimer(20, function()
-    if keyAddonReminderOpen then
-        DBG("[QoL] Safety timer expired – closing keystone companion addon")
-        keyAddonReminderOpen = false
-        CloseKeyAddon()
-    end
-end)
-
-local function CancelKeyAddonSafetyTimer()
-    keyAddonSafetyTimer.Stop()
-end
-
--- Closes the keystone companion addon if we're the ones holding it open,
--- and cancels any pending safety timer. Called on timeout or portal cast.
-local function CloseKeyAddonReminder()
-    CancelKeyAddonSafetyTimer()
-    if keyAddonReminderOpen then
-        keyAddonReminderOpen = false
-        DBG("[QoL] Closing keystone companion addon")
-        CloseKeyAddon()
-    end
-end
-
--- Starts (or restarts) the 20s safety-close timer.
-local function StartKeyAddonSafetyTimer()
-    keyAddonReminderOpen = true
-    keyAddonSafetyTimer.Start()
-end
-
--- Checks if spellID is one of the current season's M+ portal spells.
-local function IsKnownPortalSpell(spellID)
-    local dungeons = RA.DUNGEONS[RA.ACTIVE_SEASON] or {}
-    for _, d in ipairs(dungeons) do
-        if d.portalSpellID == spellID then return true end
-    end
-    return false
-end
-
--- Closes early the moment the player actually casts a portal, regardless of
--- whether it was clicked in BigWigs/Details, RollAway's own teleport
--- reminder, the spellbook, or a macro.
-local portalWatcher = CreateFrame("Frame")
-portalWatcher:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-portalWatcher:SetScript("OnEvent", function(_, _, unit, _, spellID)
-    if unit ~= "player" or not keyAddonReminderOpen then return end
-    if IsKnownPortalSpell(spellID) then
-        DBG("[QoL] Portal cast detected – closing keystone companion addon early")
-        CloseKeyAddonReminder()
-    end
-end)
-
-------------------------------------------------------------------------
--- Instance Join reminder – shows instance name when joining a group
-------------------------------------------------------------------------
-
-local joinFrame
-local keyAddonOpenedByCreation      = false -- shared: own listing active (M+ or raid)
-local keyAddonOpenedByCreationMplus = false -- true only when own M+ listing opened the companion addon
-
--- Hides the join text banner after 6s.
-local joinHideTimer = RA.CreateOneShotTimer(6, function()
-    if joinFrame then joinFrame:Hide() end
-end)
-
-local function StopJoinTimer()
-    joinHideTimer.Stop()
-end
-
-local function CreateJoinFrame()
-    if joinFrame then return end
-
-    joinFrame = CreateFrame("Frame", "RollAwayJoinFrame", UIParent)
-    joinFrame:SetSize(400, 36)
-    joinFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 220)
-    joinFrame:SetFrameStrata("HIGH")
-    joinFrame:SetClampedToScreen(true)
-    RA.MakeLockableDraggable(joinFrame)
-    joinFrame:SetScript("OnHide", StopJoinTimer)
-    joinFrame:Hide()
-
-    local text = joinFrame:CreateFontString(nil, "OVERLAY")
-    text:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE")
-    text:SetPoint("CENTER", joinFrame, "CENTER", 0, 0)
-    joinFrame.text = text
-end
-
-local function ShowJoinReminder(instanceName, forceTimer)
-    if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
-    if not instanceName or instanceName == "" then return end
-    -- Don't show reminder if we are the group leader (own listing creation)
-    if keyAddonOpenedByCreation then
-        DBG("[QoL] Join reminder skipped – own listing active")
-        return
-    end
-
-    DBG("[QoL] Join reminder:", instanceName)
-    CreateJoinFrame()
-    StopJoinTimer()
-
-    local fontPath, fontSize = GetQoLFont()
-    joinFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
-    joinFrame.text:SetText("|cffFFFFFF" .. instanceName .. "|r")
-    joinFrame:Show()
-
-    -- Auto-open companion addon for party only (no keystone teleports in raid);
-    -- skip if already opened by listing creation.
-    local keyAddonOpened = false
-    if not IsInRaid() and not keyAddonOpenedByCreation and GetActiveKeyAddon() and C_Timer_After then
-        keyAddonOpened = true
-        C_Timer_After(0.3, OpenKeyAddon)
-    end
-
-    -- Helper: hide the join text banner after 6s. The keystone companion
-    -- addon (if opened) is handed off to the 20s safety timer instead, so
-    -- it stays open independently until a portal is cast or it times out.
-    local function StartHideTimer()
-        joinHideTimer.Start()
-        if keyAddonOpened then
-            StartKeyAddonSafetyTimer()
-            keyAddonOpened = false -- ownership passed to the safety timer
-        end
-    end
-
-    -- Raids: start immediately. Party: wait for full group (5). forceTimer
-    -- (test mode) skips the group check. Fallback: start after 30s anyway.
-    if forceTimer or IsInRaid() or GetNumGroupMembers() >= 5 then
-        DBG("[QoL] Timer starting immediately (force: "..tostring(forceTimer)..
-            " / raid: "..tostring(IsInRaid()).." / full: "..tostring(GetNumGroupMembers() >= 5)..")")
-        StartHideTimer()
-    else
-        DBG("[QoL] Waiting for full group before starting hide timer")
-        local waitFrame = CreateFrame("Frame", nil, UIParent)
-        local done = false
-
-        -- Fallback: start hide timer after 30s if group never fills up.
-        -- Declared before Finish() so Finish can stop it; only assigned
-        -- below, but Finish itself only runs after that assignment.
-        local fallbackTimer
-        local function Finish()
-            if done then return end
-            done = true
-            waitFrame:UnregisterEvent("GROUP_ROSTER_UPDATE")
-            fallbackTimer.Stop()
-            StartHideTimer()
-        end
-        fallbackTimer = RA.CreateOneShotTimer(30, function()
-            DBG("[QoL] Fallback – starting hide timer after 30s")
-            Finish()
-        end)
-
-        waitFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-        waitFrame:SetScript("OnEvent", function()
-            -- Small delay so WoW has time to update the roster count
-            if C_Timer_After then
-                C_Timer_After(0.3, function()
-                    if GetNumGroupMembers() >= 5 then Finish() end
-                end)
-            else
-                if GetNumGroupMembers() >= 5 then Finish() end
-            end
-        end)
-
-        fallbackTimer.Start()
-    end
-end
-
--- Finds the current-season dungeon entry (Data\Dungeons.lua) matching an
--- LFG activity ID. activityID == dungeon.lfgID (see LFGQuickCreate.lua).
-local function GetDungeonEntryByLfgID(activityID)
-    local dungeons = RA.DUNGEONS[RA.ACTIVE_SEASON] or {}
-    for _, d in ipairs(dungeons) do
-        if d.lfgID == activityID then return d end
-    end
-    return nil
-end
-
--- Resolve name/isMythicPlus/dungeon from an LFG activity ID. Returns nil if
--- the activity is not a Mythic+ dungeon or current raid. For M+ dungeons the
--- name comes from our own locale table (RA_L), not the Blizzard client
--- string, so it always matches the addon's own language setting instead of
--- the game client's.
-local function GetNameFromActivityID(activityID)
-    if not (activityID and C_LFGList) then return nil end
-    local act = C_LFGList.GetActivityInfoTable(activityID)
-    if not act then return nil end
-    if not (act.isMythicPlusActivity or act.isCurrentRaidActivity) then
-        DBG("[QoL] Join reminder filtered out – not M+ or current raid (activityID: "..tostring(activityID)..")")
-        return nil
-    end
-
-    if act.isMythicPlusActivity then
-        local dungeon = GetDungeonEntryByLfgID(activityID)
-        if dungeon then
-            return RA_L["dungeon_"..dungeon.key], true, dungeon
-        end
-        -- Fallback for a M+ activity outside the tracked season pool
-        -- (shouldn't normally happen) - use the Blizzard string as-is.
-        local name = act.fullName ~= "" and act.fullName or nil
-        return name, true, nil
-    end
-
-    local name = act.fullName ~= "" and act.fullName or nil
-    return name, false, nil
-end
-
--- Default anchor offsets - kept here so the reset button (OptionsQoL.lua)
--- can restore exactly these, matching the SetPoint calls used above/below.
-local TALENT_DEFAULT_Y     = 180
-local DURABILITY_DEFAULT_Y = 140
-local JOIN_DEFAULT_Y       = 220
-
--- Resets all three QoL reminder toasts (Check Talents / Durability / Join)
--- back to their default centered position. Only touches frames that have
--- already been created (lazily, on first show) - uncreated ones are already
--- at their default position and don't need anything.
-local function ResetQoLReminderPositions()
-    if talentFrame then
-        talentFrame:ClearAllPoints()
-        talentFrame:SetPoint("CENTER", UIParent, "CENTER", 0, TALENT_DEFAULT_Y)
-    end
-    if durabilityFrame then
-        durabilityFrame:ClearAllPoints()
-        durabilityFrame:SetPoint("CENTER", UIParent, "CENTER", 0, DURABILITY_DEFAULT_Y)
-    end
-    if joinFrame then
-        joinFrame:ClearAllPoints()
-        joinFrame:SetPoint("CENTER", UIParent, "CENTER", 0, JOIN_DEFAULT_Y)
-    end
-end
-RA.ResetQoLReminderPositions = ResetQoLReminderPositions
-
-
--- Routes to the teleport reminder for Mythic+ when selected, otherwise the
--- default instance-name join reminder. Raids always use the default one -
--- BigWigs/Details/teleport portals don't apply to raid teleports.
-local function DispatchJoinReminder(name, isMythicPlus, dungeon, forceTimer)
-    if isMythicPlus and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
-        RA.ShowTeleportReminder(name, dungeon)
-    else
-        ShowJoinReminder(name, forceTimer)
-    end
-end
-
-------------------------------------------------------------------------
--- Group Finder (LFG) join detection.
---
--- Two ways to end up in an LFG-sourced M+/raid group, both handled below:
---  1. You post your own listing (LFG_LIST_ACTIVE_ENTRY_UPDATE) - see
---     TryHandleOwnListing().
---  2. You apply to someone else's listing, or you're simply a party member
---     of whoever applied (their application is a party-wide event - every
---     member's client receives LFG_LIST_APPLICATION_STATUS_UPDATED for it,
---     not just the one who clicked "Apply"). See applicationDungeons below.
---
--- Once in the group, C_LFGList.GetActiveEntryInfo() also reflects the
--- group's listing for every member while it's still active/recruiting -
--- not just for whoever created it - so GROUP_ROSTER_UPDATE alone should
--- resolve it. In practice that resolution can race with the roster/LFG
--- state actually being ready, so a short poll (pollTicker below) re-checks
--- it every few seconds as a safety net until it succeeds.
-------------------------------------------------------------------------
-
-local POLL_INTERVAL = 3
-
-local function InitJoinReminder()
-    local f = CreateFrame("Frame")
-    f:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
-    f:RegisterEvent("GROUP_ROSTER_UPDATE")
-    f:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
-
-    -- Per-group state, all reset together on ungroup (see ResetGroupState).
-    local resolvedEntryID   = nil   -- activityID we've already shown/dispatched for
-    -- searchResultID -> dungeon entry (or false for "resolved, not M+/raid"),
-    -- filled as soon as an application's activityIDs can be read (as early
-    -- as "applied"/"invited"), so "inviteaccepted" never has to re-resolve
-    -- from a possibly-already-purged browse cache entry.
-    local applicationDungeons = {}
-
-    local function ResetGroupState()
-        resolvedEntryID = nil
-        wipe(applicationDungeons)
-    end
-
-    -- Tries to resolve + show from the group's current LFG listing
-    -- (GetActiveEntryInfo works for any member while a listing is active,
-    -- not just whoever created it). Manually-formed groups with no LFG
-    -- listing at all get no reminder - Group Finder M+ only, by design.
-    -- Called from GROUP_ROSTER_UPDATE and pollTicker.
-    local function TryResolveAndShow()
-        if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
-        if not C_LFGList then return end
-        if not IsInGroup() then
-            ResetGroupState()
-            return
-        end
-        if resolvedEntryID then return end -- already shown for this group
-
-        local entryInfo = C_LFGList.GetActiveEntryInfo()
-        local entryID = entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]
-        if not entryID then return end
-        local name, isMythicPlus, dungeon = GetNameFromActivityID(entryID)
-        DBG("[QoL] Join reminder (active entry): resolved name=", name or "nil")
-        if name then
-            resolvedEntryID = entryID
-            DispatchJoinReminder(name, isMythicPlus, dungeon)
-        end
-    end
-
-    -- Safety-net poll: GROUP_ROSTER_UPDATE can fire before the LFG listing
-    -- state is actually queryable yet (a member added to an already-active
-    -- listing doesn't get a creation event of its own to react to). Cheap
-    -- early-exits inside TryResolveAndShow() make this a no-op once resolved
-    -- or ungrouped, so it's safe to just leave running for the session.
-    C_Timer_NewTicker(POLL_INTERVAL, TryResolveAndShow)
-
-    f:SetScript("OnEvent", function(_, event, searchResultID, newStatus)
-        if event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
-            DBG("[QoL] LFG_LIST_APPLICATION_STATUS_UPDATED: searchResultID=", searchResultID, "status=", newStatus)
-            -- Resolve as early as possible (applied/invited), not just at
-            -- inviteaccepted - the search-result cache backing
-            -- GetSearchResultInfo can already be gone by then, especially
-            -- for a party member who never personally browsed/applied.
-            if applicationDungeons[searchResultID] == nil then
-                local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
-                local activityID = resultInfo and resultInfo.activityIDs and resultInfo.activityIDs[1]
-                if activityID then
-                    local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
-                    applicationDungeons[searchResultID] = name and { name = name, isMythicPlus = isMythicPlus, dungeon = dungeon } or false
-                end
-            end
-
-            if newStatus ~= "inviteaccepted" then return end
-            local resolved = applicationDungeons[searchResultID]
-            applicationDungeons[searchResultID] = nil
-            if not resolved then
-                DBG("[QoL] Join reminder: application never resolved to a name")
-                return
-            end
-            resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
-            DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon)
-
-        elseif event == "GROUP_ROSTER_UPDATE" then
-            TryResolveAndShow()
-
-        elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
-            if not C_LFGList then return end
-            local entryInfo = C_LFGList.GetActiveEntryInfo()
-
-            if entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1] then
-                -- Own listing created or updated (M+ or raid)
-                local activityID = entryInfo.activityIDs[1]
-                local act = C_LFGList.GetActivityInfoTable(activityID)
-                if not (act and (act.isMythicPlusActivity or act.isCurrentRaidActivity)) then return end
-                if keyAddonOpenedByCreation then return end  -- already open
-                keyAddonOpenedByCreation = true
-
-                -- Teleport reminder takes priority for M+ when selected -
-                -- doesn't use the companion-addon open/close bookkeeping
-                -- below since it has no auto-close timer.
-                if act.isMythicPlusActivity and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
-                    local dungeon = GetDungeonEntryByLfgID(activityID)
-                    local name = dungeon and RA_L["dungeon_"..dungeon.key] or (act.fullName ~= "" and act.fullName or nil)
-                    DBG("[QoL] Own M+ listing created – showing teleport reminder:", name or "nil")
-                    RA.ShowTeleportReminder(name, dungeon)
-                    return
-                end
-
-                -- Only open the companion addon for M+ (raids have no keystone teleports)
-                if act.isMythicPlusActivity and GetActiveKeyAddon() then
-                    DBG("[QoL] Own M+ listing created – opening keystone companion addon")
-                    keyAddonOpenedByCreationMplus = true
-                    OpenKeyAddon()
-                end
-            else
-                -- Listing removed (cancelled or group full)
-                if not keyAddonOpenedByCreation then return end
-                keyAddonOpenedByCreation = false
-                CancelKeyAddonSafetyTimer()
-                -- Only toggle the companion addon if it was opened by M+ creation
-                if keyAddonOpenedByCreationMplus then
-                    keyAddonOpenedByCreationMplus = false
-                    if GetNumGroupMembers() >= 5 then
-                        DBG("[QoL] Group full – starting keystone companion addon safety timer")
-                        StartKeyAddonSafetyTimer()
-                    else
-                        DBG("[QoL] Listing cancelled – closing keystone companion addon immediately")
-                        CloseKeyAddon()
-                    end
-                end
-            end
-        end
-    end)
-
-    RA.ShowJoinReminder = ShowJoinReminder
-    DBG("[QoL] Instance join reminder initialized")
 end
 
 ------------------------------------------------------------------------
@@ -890,14 +350,9 @@ end
 
 -- NOTE (12.1): a cursor-coordinates widget anchors to this button's IsShown()
 -- state. Hide() breaks its anchor, so fade instead (alpha 0, mouse disabled).
-local function FadeOutButton(child)
-    child:SetAlpha(0)
-    if child.EnableMouse then child:EnableMouse(false) end
-end
-
-local function FadeInButton(child)
-    child:SetAlpha(1)
-    if child.EnableMouse then child:EnableMouse(true) end
+local function SetButtonFaded(child, faded)
+    child:SetAlpha(faded and 0 or 1)
+    if child.EnableMouse then child:EnableMouse(not faded) end
 end
 
 local function ScanAndHide(parent)
@@ -909,12 +364,12 @@ local function ScanAndHide(parent)
                 -- Re-fade instantly on Show to avoid a one-frame flash.
                 hooksecurefunc(child, "Show", function(self)
                     if RollAwayDB and RollAwayDB.hideMapActivityTracker then
-                        FadeOutButton(self)
+                        SetButtonFaded(self, true)
                     end
                 end)
             end
             if child:IsShown() and child:GetAlpha() > 0 then
-                FadeOutButton(child)
+                SetButtonFaded(child, true)
                 hiddenMapActivityButtons[child] = true
                 DBG("[QoL] Hid map activity tracker button")
             end
@@ -935,14 +390,14 @@ end
 -- Re-shows any buttons we previously hid, e.g. when the option is turned off
 local function RestoreMapActivityTracker()
     for btn in pairs(hiddenMapActivityButtons) do
-        FadeInButton(btn)
+        SetButtonFaded(btn, false)
     end
     wipe(hiddenMapActivityButtons)
 end
 
 function RA.ApplyMapActivityTrackerFeature()
-    if InCombatLockdown and InCombatLockdown() then
-        if C_Timer_After then C_Timer_After(1, RA.ApplyMapActivityTrackerFeature) end
+    if InCombatLockdown() then
+        C_Timer.After(1, RA.ApplyMapActivityTrackerFeature)
         return
     end
     if not WorldMapFrame then return end
@@ -954,10 +409,7 @@ function RA.ApplyMapActivityTrackerFeature()
 
     if not mapActivityHooked then
         mapActivityHooked = true
-        local function DeferredHide()
-            if C_Timer_After then C_Timer_After(0, HideMapActivityTracker)
-            else HideMapActivityTracker() end
-        end
+        local function DeferredHide() C_Timer.After(0, HideMapActivityTracker) end
         WorldMapFrame:HookScript("OnShow", DeferredHide)
         if WorldMapFrame.OnMapChanged then
             hooksecurefunc(WorldMapFrame, "OnMapChanged", DeferredHide)
@@ -985,44 +437,30 @@ end
 -- need their own hook even though they share the same mixin function.
 ------------------------------------------------------------------------
 
-local craftingOutputLogHooked       = false
-local craftingOutputLogHookedOrders = false
+local hookedOutputLogs = {}
 
-local function HookCraftingOutputLog(log)
-    hooksecurefunc(log, "FinalizeResultData", function(self)
-        if RollAwayDB and RollAwayDB.hideCraftingOutputLog then
-            self:Hide()
-        end
-    end)
+local function ApplyToOutputLog(log)
+    if not log then return end
+    if not hookedOutputLogs[log] then
+        hookedOutputLogs[log] = true
+        hooksecurefunc(log, "FinalizeResultData", function(self)
+            if RollAwayDB and RollAwayDB.hideCraftingOutputLog then
+                self:Hide()
+            end
+        end)
+        DBG("[QoL] CraftingOutputLog hide hook set")
+    end
+    if RollAwayDB and RollAwayDB.hideCraftingOutputLog and log:IsShown() then
+        log:Hide()
+    end
 end
 
 function RA.ApplyCraftingOutputLogFeature()
-    local log = ProfessionsFrame and ProfessionsFrame.CraftingPage and ProfessionsFrame.CraftingPage.CraftingOutputLog
-    if log then
-        if not craftingOutputLogHooked then
-            craftingOutputLogHooked = true
-            HookCraftingOutputLog(log)
-            DBG("[QoL] CraftingOutputLog hide hook set (CraftingPage)")
-        end
-        if RollAwayDB and RollAwayDB.hideCraftingOutputLog and log:IsShown() then
-            log:Hide()
-        end
-    end
-
+    local pf = ProfessionsFrame
+    if not pf then return end
+    ApplyToOutputLog(pf.CraftingPage and pf.CraftingPage.CraftingOutputLog)
     -- Crafting orders (Handwerksaufträge) use a separate frame instance.
-    local orderLog = ProfessionsFrame and ProfessionsFrame.OrdersPage
-        and ProfessionsFrame.OrdersPage.OrderView
-        and ProfessionsFrame.OrdersPage.OrderView.CraftingOutputLog
-    if orderLog then
-        if not craftingOutputLogHookedOrders then
-            craftingOutputLogHookedOrders = true
-            HookCraftingOutputLog(orderLog)
-            DBG("[QoL] CraftingOutputLog hide hook set (OrdersPage)")
-        end
-        if RollAwayDB and RollAwayDB.hideCraftingOutputLog and orderLog:IsShown() then
-            orderLog:Hide()
-        end
-    end
+    ApplyToOutputLog(pf.OrdersPage and pf.OrdersPage.OrderView and pf.OrdersPage.OrderView.CraftingOutputLog)
 end
 
 local function InitCraftingOutputLogHide()
@@ -1055,7 +493,7 @@ function RA.InitQoL()
     -- Ready Check
     local f = CreateFrame("Frame")
     f:RegisterEvent("READY_CHECK")
-    f:SetScript("OnEvent", function() ShowTalentReminder() end)
+    f:SetScript("OnEvent", ShowTalentReminder)
 
     -- Durability
     local d = CreateFrame("Frame")
@@ -1069,8 +507,8 @@ function RA.InitQoL()
     -- Great Vault currency display
     InitVaultCurrency()
 
-    -- Instance join reminder
-    InitJoinReminder()
+    -- Instance join reminder / keystone companion addon
+    RA.InitJoinReminder()
 
     -- Omniumfoliant / Great Vault Character panel buttons
     RA.InitCharacterFrameButtons()

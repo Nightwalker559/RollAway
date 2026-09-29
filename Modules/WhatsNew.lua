@@ -100,7 +100,7 @@ local function CreateWhatsNewFrame()
     local okBtn = CreateFrame("Button", "RollAwayWhatsNewOkay", f, "UIPanelButtonTemplate")
     okBtn:SetSize(90, 24)
     okBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 12)
-    okBtn:SetText(RA.RA_L["reminder_okay"])
+    okBtn:SetText(RA_L["reminder_okay"])
     okBtn:SetScript("OnClick", function()
         RollAwayDB.whatsNewSeen = WHATS_NEW_VERSION
         f:Hide()

@@ -15,10 +15,10 @@
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
-local DBG  = RA.DBG
 
 local BUTTON_SIZE  = 48
 local BUTTON_GAP   = 8
+local ROW_STEP     = BUTTON_SIZE + BUTTON_GAP
 local BUTTONS_PER_ROW = 4
 local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
@@ -40,33 +40,42 @@ local CATEGORY_ORDER = {
 local overviewFrame
 local activeTab   = 1
 local portalPool  = {}   -- reusable icon-button pool
-local headerPool  = {}   -- reusable category-header pool (tab 2 only)
+local headerPool  = {}   -- reusable category-header pool
+local usedButtons = 0    -- pool slots handed out during the current layout pass
 
 ------------------------------------------------------------------------
--- Data sources for tab 2 - built once per refresh, cheap to rebuild.
+-- Data sources
 ------------------------------------------------------------------------
 
--- All dungeon teleports ever handed out, tagged with an `expansion` key
--- for category grouping. Both RA.DUNGEONS and Data\LegacyDungeonTeleports.lua
--- carry their own `expansion` field per dungeon - several current-season
--- dungeons are revived older-expansion instances (e.g. Pit of Saron =
--- Wrath, Algeth'ar Academy = Dragonflight) and are tagged accordingly,
--- not lumped into "midnight" just because they're in this season's pool.
--- Skips entries with no portalSpellID (faction-specific ones resolved to
--- 0, or season entries not yet filled in).
-local function GetAllDungeonTeleports()
-    local list = {}
-    for _, d in ipairs(RA.LEGACY_DUNGEON_TELEPORTS or {}) do
+-- Appends one entry per dungeon that has a teleport spell to `list`, tagged
+-- with an `expansion` key for category grouping. Both RA.DUNGEONS and
+-- Data\LegacyDungeonTeleports.lua carry their own `expansion` field per
+-- dungeon - several current-season dungeons are revived older-expansion
+-- instances (e.g. Pit of Saron = Wrath, Algeth'ar Academy = Dragonflight)
+-- and are tagged accordingly, not lumped into "midnight" just because
+-- they're in this season's pool. Skips entries with no portalSpellID
+-- (faction-specific ones resolved to 0, or season entries not yet filled in).
+local function CollectEntries(list, dungeons, defaultExpansion)
+    for _, d in ipairs(dungeons) do
         if d.portalSpellID and d.portalSpellID ~= 0 then
-            list[#list + 1] = { key = d.key, spellID = d.portalSpellID, nameKey = "dungeon_"..d.key, expansion = d.expansion, lfgID = d.lfgID }
+            list[#list + 1] = {
+                key = d.key, spellID = d.portalSpellID, nameKey = "dungeon_"..d.key,
+                expansion = d.expansion or defaultExpansion, lfgID = d.lfgID,
+            }
         end
     end
+    return list
+end
+
+local function EntryLabel(e)
+    return RA_L[e.nameKey] or e.key
+end
+
+-- All dungeon teleports ever handed out.
+local function GetAllDungeonTeleports()
+    local list = CollectEntries({}, RA.LEGACY_DUNGEON_TELEPORTS or {})
     for s = 1, RA.ACTIVE_SEASON do
-        for _, d in ipairs(RA.DUNGEONS[s] or {}) do
-            if d.portalSpellID and d.portalSpellID ~= 0 then
-                list[#list + 1] = { key = d.key, spellID = d.portalSpellID, nameKey = "dungeon_"..d.key, expansion = d.expansion or "midnight", lfgID = d.lfgID }
-            end
-        end
+        CollectEntries(list, RA.DUNGEONS[s] or {}, "midnight")
     end
     return list
 end
@@ -85,46 +94,21 @@ local function GroupByExpansion(entries)
     local groups = {}
     for _, exp in ipairs(CATEGORY_ORDER) do
         if buckets[exp] then
-            local sorted = RA.SortByLabel(buckets[exp], function(e) return RA_L[e.nameKey] or e.key end)
-            groups[#groups + 1] = { expansion = exp, entries = sorted }
+            groups[#groups + 1] = { expansion = exp, entries = RA.SortByLabel(buckets[exp], EntryLabel) }
         end
     end
     return groups
 end
 
--- The Mythic+ keystone currently in the player's bags, if any - matched
--- via lfgID like the proven helper in Modules\LFGQuickCreate.lua
--- (RefreshGlow), since that's the API/field combo confirmed to work here
--- rather than C_MythicPlus.GetOwnedKeystoneChallengeMapID()/mapID.
-local function GetOwnedKeystone()
-    if not C_LFGList then return nil, nil end
-    local ownLfgID, _, ownLevel = C_LFGList.GetOwnedKeystoneActivityAndGroupAndLevel()
-    return ownLfgID, ownLevel
-end
-
 ------------------------------------------------------------------------
--- Button pool
+-- Pools
 ------------------------------------------------------------------------
 
 local function AcquireButton(i, parent)
     local btn = portalPool[i]
     if btn then return btn end
 
-    btn = CreateFrame("Button", "RollAwayPortalOverviewButton"..i, parent, "SecureActionButtonTemplate")
-    btn:SetSize(BUTTON_SIZE, BUTTON_SIZE)
-
-    local tex = btn:CreateTexture(nil, "BACKGROUND")
-    tex:SetAllPoints()
-    tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    btn.iconTexture = tex
-
-    local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetAllPoints()
-    highlight:SetColorTexture(1, 1, 1, 0.25)
-
-    btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
-    btn.cooldown:SetAllPoints()
-    btn.cooldown:SetDrawEdge(false)
+    btn = RA.CreatePortalButton("RollAwayPortalOverviewButton"..i, parent, BUTTON_SIZE)
 
     -- Gold overlay shown when this dungeon's keystone is currently in the
     -- player's bags - same look as the Quick Select glow in
@@ -141,10 +125,6 @@ local function AcquireButton(i, parent)
         GameTooltip:SetText(RA_L[self.nameKey] or self.nameKey, 1, 0.82, 0)
         GameTooltip:Show()
     end)
-    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-    btn:RegisterForClicks("AnyUp", "AnyDown")
-    btn:SetAttribute("type", "spell")
 
     -- Close the whole overview after using a teleport - these all share the
     -- same cooldown category, so nothing else here is usable right after.
@@ -173,6 +153,7 @@ end
 
 local function SelectTab(index)
     activeTab = index
+    PanelTemplates_SetTab(overviewFrame, index)
     RA.RefreshPortalOverview()
 end
 
@@ -189,7 +170,6 @@ local function CreateOverviewFrame()
     end
     overviewFrame:SetFrameStrata("HIGH")
     overviewFrame:SetClampedToScreen(true)
-    overviewFrame:SetMovable(true)
     RA.MakeDraggable(overviewFrame)
     overviewFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
@@ -199,15 +179,7 @@ local function CreateOverviewFrame()
         end
     end)
     RA.SafeSetShown(overviewFrame, false)
-
-    overviewFrame:SetBackdrop({
-        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 },
-    })
-    overviewFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.95)
-    overviewFrame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    RA.ApplyPopupBackdrop(overviewFrame)
 
     local closeBtn = CreateFrame("Button", "RollAwayPortalOverviewClose", overviewFrame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", overviewFrame, "TOPRIGHT", 2, 2)
@@ -236,10 +208,7 @@ local function CreateOverviewFrame()
         else
             tab:SetPoint("TOPLEFT", overviewFrame, "BOTTOMLEFT", 10, 2)
         end
-        tab:SetScript("OnClick", function(self)
-            PanelTemplates_SetTab(overviewFrame, self:GetID())
-            SelectTab(self:GetID())
-        end)
+        tab:SetScript("OnClick", function(self) SelectTab(self:GetID()) end)
         prevTab = tab
     end
     PanelTemplates_SetTab(overviewFrame, 1)
@@ -278,8 +247,16 @@ local function CreateOverviewFrame()
     overviewFrame.emptyText:SetText(RA_L["portal_overview_empty"])
     overviewFrame.emptyText:Hide()
 
+    -- Bag changes (keystone highlight) only matter while the frame is open.
+    -- OnShow also covers a Show deferred until after combat.
     overviewFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-    overviewFrame:RegisterEvent("BAG_UPDATE_DELAYED")
+    overviewFrame:SetScript("OnShow", function(self)
+        self:RegisterEvent("BAG_UPDATE_DELAYED")
+        RA.RefreshPortalOverview()
+    end)
+    overviewFrame:SetScript("OnHide", function(self)
+        self:UnregisterEvent("BAG_UPDATE_DELAYED")
+    end)
     overviewFrame:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_REGEN_DISABLED" then
             RA.SafeSetShown(self, false)
@@ -290,10 +267,11 @@ local function CreateOverviewFrame()
 end
 
 ------------------------------------------------------------------------
--- Layout - flat mode (tab 1): wraps buttons into rows of BUTTONS_PER_ROW.
+-- Layout
 ------------------------------------------------------------------------
 
 local function HideAllButtons()
+    usedButtons = 0
     for _, btn in pairs(portalPool) do
         RA.SafeSetShown(btn, false)
         btn:ClearAllPoints()
@@ -304,44 +282,54 @@ local function HideAllButtons()
     end
 end
 
+local function PlaceHeader(index, y, text)
+    local header = AcquireHeader(index, overviewFrame.content)
+    header:ClearAllPoints()
+    header:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", 0, y)
+    header:SetText(text)
+    header:Show()
+end
+
 local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
-    btn.spellID = entry.spellID
     btn.nameKey = entry.nameKey
-    btn:SetAttribute("spell", entry.spellID)
-    btn.iconTexture:SetTexture(C_Spell.GetSpellTexture(entry.spellID))
-    btn.iconTexture:SetDesaturated(not isKnown)
-    btn:SetAlpha(isKnown and 1.0 or 0.4)
-
-    local ownsThisKey = entry.lfgID ~= nil and entry.lfgID == ownedLfgID
-    btn.keyBorder:SetShown(ownsThisKey)
-
-    if isKnown then
-        local cdInfo = C_Spell.GetSpellCooldown(entry.spellID)
-        if cdInfo and cdInfo.startTime > 0 and cdInfo.duration > 3 then
-            btn.cooldown:SetCooldown(cdInfo.startTime, cdInfo.duration)
-        else
-            btn.cooldown:Clear()
-        end
-    else
-        btn.cooldown:Clear()
-    end
+    RA.SetPortalSpell(btn, entry.spellID)
+    RA.UpdatePortalButtonState(btn, isKnown, 0.4)
+    btn.keyBorder:SetShown(entry.lfgID ~= nil and entry.lfgID == ownedLfgID)
 
     btn:ClearAllPoints()
     btn:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", x, y)
     RA.SafeSetShown(btn, true)
 end
 
+-- Places `entries` as icon rows of BUTTONS_PER_ROW (the last row centered
+-- too), the first row's top edge at y (offset from the content top).
+-- allKnown: every entry is a learned spell (tab 2 pre-filters), otherwise
+-- each one is checked against the spellbook. Returns the height used.
+local function PlaceRows(entries, y, ownedLfgID, allKnown)
+    for i, entry in ipairs(entries) do
+        usedButtons = usedButtons + 1
+        local btn = AcquireButton(usedButtons, overviewFrame.content)
+
+        local row = math.floor((i - 1) / BUTTONS_PER_ROW)
+        local col = (i - 1) % BUTTONS_PER_ROW
+        local rowCount = math.min(BUTTONS_PER_ROW, #entries - row * BUTTONS_PER_ROW)
+        local rowWidth = (rowCount * BUTTON_SIZE) + ((rowCount - 1) * BUTTON_GAP)
+        local startX = (CONTENT_WIDTH - rowWidth) / 2
+
+        PlaceButton(btn, entry, allKnown or C_SpellBook.IsSpellInSpellBook(entry.spellID),
+            startX + col * ROW_STEP, y - row * ROW_STEP, ownedLfgID)
+    end
+    return math.ceil(#entries / BUTTONS_PER_ROW) * ROW_STEP
+end
+
+-- Flat mode (tab 1): one season header, then all entries.
 local function LayoutFlatButtons(entries)
     HideAllButtons()
 
     -- Season header, same style/height as tab 2's expansion headers (reuses
     -- the same header pool slot 1) so button rows start at the identical Y
     -- offset in both tabs - no visual jump when switching tabs.
-    local header = AcquireHeader(1, overviewFrame.content)
-    header:ClearAllPoints()
-    header:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", 0, 0)
-    header:SetText(string.format(RA_L["portal_overview_current_season"] or "Season %d", RA.ACTIVE_SEASON))
-    header:Show()
+    PlaceHeader(1, 0, string.format(RA_L["portal_overview_current_season"] or "Season %d", RA.ACTIVE_SEASON))
 
     if #entries == 0 then
         overviewFrame.emptyText:Show()
@@ -350,32 +338,13 @@ local function LayoutFlatButtons(entries)
     end
     overviewFrame.emptyText:Hide()
 
-    local ownedLfgID = GetOwnedKeystone()
-    local rows = math.ceil(#entries / BUTTONS_PER_ROW)
-    overviewFrame.content:SetHeight(HEADER_HEIGHT + rows * (BUTTON_SIZE + BUTTON_GAP))
-
-    local btnIndex = 0
-    for i, entry in ipairs(entries) do
-        btnIndex = btnIndex + 1
-        local btn = AcquireButton(btnIndex, overviewFrame.content)
-        local isKnown = C_SpellBook.IsSpellInSpellBook(entry.spellID)
-
-        local row = math.floor((i - 1) / BUTTONS_PER_ROW)
-        local col = (i - 1) % BUTTONS_PER_ROW
-        local rowCount = math.min(BUTTONS_PER_ROW, #entries - row * BUTTONS_PER_ROW)
-        local rowWidth = (rowCount * BUTTON_SIZE) + ((rowCount - 1) * BUTTON_GAP)
-        local startX = (CONTENT_WIDTH - rowWidth) / 2
-        PlaceButton(btn, entry, isKnown,
-            startX + col * (BUTTON_SIZE + BUTTON_GAP), -HEADER_HEIGHT - row * (BUTTON_SIZE + BUTTON_GAP), ownedLfgID)
-    end
+    local usedHeight = PlaceRows(entries, -HEADER_HEIGHT, RA.GetOwnedKeystone(), false)
+    overviewFrame.content:SetHeight(HEADER_HEIGHT + usedHeight)
 end
 
-------------------------------------------------------------------------
--- Layout - grouped mode (tab 2): one left-aligned header per expansion,
--- its portals wrapped into rows underneath. Entries here are already
--- filtered to known spells only, so every button shown is fully lit.
-------------------------------------------------------------------------
-
+-- Grouped mode (tab 2): one left-aligned header per expansion, its portals
+-- wrapped into rows underneath. Entries here are already filtered to known
+-- spells only, so every button shown is fully lit.
 local function LayoutGroupedButtons(groups)
     HideAllButtons()
 
@@ -386,33 +355,13 @@ local function LayoutGroupedButtons(groups)
     end
     overviewFrame.emptyText:Hide()
 
-    local ownedLfgID = GetOwnedKeystone()
+    local ownedLfgID = RA.GetOwnedKeystone()
     local y = 0
-    local btnIndex, hdrIndex = 0, 0
 
-    for _, group in ipairs(groups) do
-        hdrIndex = hdrIndex + 1
-        local header = AcquireHeader(hdrIndex, overviewFrame.content)
-        header:ClearAllPoints()
-        header:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", 0, y)
-        header:SetText(RA_L["expansion_"..group.expansion] or group.expansion)
-        header:Show()
+    for i, group in ipairs(groups) do
+        PlaceHeader(i, y, RA_L["expansion_"..group.expansion] or group.expansion)
         y = y - HEADER_HEIGHT
-
-        local rowsInGroup = math.ceil(#group.entries / BUTTONS_PER_ROW)
-        for i, entry in ipairs(group.entries) do
-            btnIndex = btnIndex + 1
-            local btn = AcquireButton(btnIndex, overviewFrame.content)
-            local row = math.floor((i - 1) / BUTTONS_PER_ROW)
-            local col = (i - 1) % BUTTONS_PER_ROW
-            local rowCount = math.min(BUTTONS_PER_ROW, #group.entries - row * BUTTONS_PER_ROW)
-            local rowWidth = (rowCount * BUTTON_SIZE) + ((rowCount - 1) * BUTTON_GAP)
-            local startX = (CONTENT_WIDTH - rowWidth) / 2
-            PlaceButton(btn, entry, true,
-                startX + col * (BUTTON_SIZE + BUTTON_GAP),
-                y - row * (BUTTON_SIZE + BUTTON_GAP), ownedLfgID)
-        end
-        y = y - rowsInGroup * (BUTTON_SIZE + BUTTON_GAP) - HEADER_GAP
+        y = y - PlaceRows(group.entries, y, ownedLfgID, true) - HEADER_GAP
     end
 
     overviewFrame.content:SetHeight(-y)
@@ -424,16 +373,13 @@ end
 
 function RA.RefreshPortalOverview()
     if not overviewFrame or not overviewFrame:IsShown() then return end
+    -- The portal buttons are secure frames: no re-layout in combat. A Show
+    -- deferred until combat ends refreshes itself via OnShow.
+    if InCombatLockdown() then return end
+
     if activeTab == 1 then
-        local dungeons = RA.DUNGEONS[RA.ACTIVE_SEASON] or {}
-        local entries = {}
-        for _, d in ipairs(dungeons) do
-            if d.portalSpellID then
-                entries[#entries + 1] = { key = d.key, spellID = d.portalSpellID, nameKey = "dungeon_"..d.key, lfgID = d.lfgID }
-            end
-        end
-        entries = RA.SortByLabel(entries, function(e) return RA_L[e.nameKey] or e.key end)
-        LayoutFlatButtons(entries)
+        local entries = CollectEntries({}, RA.DUNGEONS[RA.ACTIVE_SEASON] or {}, "midnight")
+        LayoutFlatButtons(RA.SortByLabel(entries, EntryLabel))
     else
         local known = {}
         for _, e in ipairs(GetAllDungeonTeleports()) do
@@ -445,10 +391,9 @@ end
 
 function RA.ShowPortalOverview()
     CreateOverviewFrame()
+    activeTab = 1
     PanelTemplates_SetTab(overviewFrame, 1)
-    SelectTab(1)
-    RA.SafeSetShown(overviewFrame, true)
-    RA.RefreshPortalOverview()
+    RA.SafeSetShown(overviewFrame, true)  -- OnShow lays it out
 end
 
 function RA.HidePortalOverview()
@@ -470,12 +415,4 @@ end
 SLASH_ROLLAWAYPORTALS1 = "/rat"
 SlashCmdList["ROLLAWAYPORTALS"] = function()
     RA.TogglePortalOverview()
-end
-
-------------------------------------------------------------------------
--- Initialization - called from Core.lua ADDON_LOADED
-------------------------------------------------------------------------
-
-function RA.InitPortalOverview()
-    DBG("Portal overview initialized")
 end

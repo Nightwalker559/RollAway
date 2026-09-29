@@ -4,51 +4,8 @@
 local RA  = _G["RollAway"]
 local DBG = RA.DBG
 
-local GetLootRollItemInfo = GetLootRollItemInfo
-local RollOnLoot          = RollOnLoot
-local ConfirmLootRoll     = ConfirmLootRoll
-local C_Timer_After       = RA.C_Timer_After
-
-------------------------------------------------------------------------
--- ElvUI button cache
--- Built once at InitAutoRoll time; ElvUI_LootRollFrame children never change.
-------------------------------------------------------------------------
-local elvButtonCache = {}  -- [frameIndex] = { needBtn, greedBtn, transmogBtn }
-
-local function BuildElvButtonCache()
-    local cachedCount = 0
-    local incomplete = {}
-    for i = 1, 5 do
-        local elvFrame = _G["ElvUI_LootRollFrame"..i]
-        if elvFrame then
-            local needBtn, greedBtn, transmogBtn
-            local children = { elvFrame:GetChildren() }
-            for _, child in ipairs(children) do
-                if child:GetObjectType() == "Button" then
-                    local cname = child:GetName() or ""
-                    if cname:find("Bedarf") or cname:find("Need") then
-                        needBtn = child
-                    elseif cname:find("Gier") or cname:find("Greed") then
-                        greedBtn = child
-                    elseif cname:find("Transmog") then
-                        transmogBtn = child
-                    end
-                end
-            end
-            elvButtonCache[i] = { need = needBtn, greed = greedBtn, transmog = transmogBtn }
-            cachedCount = cachedCount + 1
-            if not (needBtn and greedBtn and transmogBtn) then
-                incomplete[#incomplete + 1] = i
-            end
-        end
-    end
-    if cachedCount > 0 then
-        DBG("[AutoRoll] Cached", cachedCount, "ElvUI_LootRollFrame button set(s)")
-    end
-    if #incomplete > 0 then
-        DBG("[AutoRoll] WARNING: incomplete button set for frame(s):", table.concat(incomplete, ", "))
-    end
-end
+-- RollOnLoot roll type -> RA.ROLL_BUTTONS dbKey (0 = pass has no button click)
+local ROLL_KEY = { [1] = "need", [2] = "greed", [3] = "transmog" }
 
 ------------------------------------------------------------------------
 -- Execute legacy roll on a given rollID
@@ -87,51 +44,20 @@ local function ExecuteLegacyRoll(rollID)
 
     DBG("[Legacy] RollOnLoot rollID:", rollID, "| roll:", actualRoll)
 
+    -- Click the real button (native or ElvUI roll frame) when there is one.
     local clicked = false
     if actualRoll ~= 0 then
-        for i = 1, 5 do
-            -- Try native Blizzard frame first
-            local nativeFrame = _G["GroupLootFrame"..i]
-            if nativeFrame and nativeFrame:IsShown() and nativeFrame.rollID == rollID then
-                local btn
-                if actualRoll == 1 then btn = nativeFrame.NeedButton
-                elseif actualRoll == 2 then btn = nativeFrame.GreedButton
-                elseif actualRoll == 3 then btn = nativeFrame.TransmogButton
-                end
-                if btn then
-                    DBG("[Legacy] Clicking native:", btn:GetName() or "unnamed")
-                    btn:Click()
-                    clicked = true
-                else
-                    DBG("[Legacy] Native frame matched but button nil for roll:", actualRoll)
-                end
-                break  -- rollID matched this frame, no need to check further
-            end
-
-            -- Try ElvUI frame using cached button references
-            local elvFrame = _G["ElvUI_LootRollFrame"..i]
-            if elvFrame and elvFrame:IsShown() and elvFrame.rollID == rollID then
-                local cache = elvButtonCache[i]
-                local btn
-                if cache then
-                    if actualRoll == 1 then btn = cache.need
-                    elseif actualRoll == 2 then btn = cache.greed
-                    elseif actualRoll == 3 then btn = cache.transmog
-                    end
-                end
-                if btn then
-                    DBG("[Legacy] Clicking ElvUI:", btn:GetName() or "unnamed")
-                    btn:Click()
-                    clicked = true
-                else
-                    DBG("[Legacy] ElvUI frame matched but button nil for roll:", actualRoll)
-                end
-                break  -- rollID matched this frame, no need to check further
-            end
+        local btn = RA.FindRollButton(rollID, ROLL_KEY[actualRoll])
+        if btn then
+            DBG("[Legacy] Clicking:", btn:GetName() or "unnamed")
+            btn:Click()
+            clicked = true
+        else
+            DBG("[Legacy] No roll button found for roll:", actualRoll)
         end
     end
 
-    -- Fallback: RollOnLoot API if no ElvUI frame found or roll is Pass.
+    -- Fallback: RollOnLoot API if no roll frame/button found or roll is Pass.
     if not clicked then
         DBG("[Legacy] Fallback RollOnLoot roll:", actualRoll)
         local ok, err = pcall(RollOnLoot, rollID, actualRoll)
@@ -139,29 +65,10 @@ local function ExecuteLegacyRoll(rollID)
     end
 
     -- BoP confirmation: popup needs ~0.15s to appear after the roll.
-    if C_Timer_After then
-        C_Timer_After(0.15, function()
-            if ConfirmLootRoll then pcall(ConfirmLootRoll, rollID, actualRoll) end
-            RA.CloseLootRollPopups("[Legacy]")
-        end)
-    else
-        if ConfirmLootRoll then pcall(ConfirmLootRoll, rollID, actualRoll) end
-    end
+    C_Timer.After(0.15, function()
+        pcall(ConfirmLootRoll, rollID, actualRoll)
+        RA.CloseLootRollPopups("[Legacy]")
+    end)
 end
 
 RA.ExecuteLegacyRoll = ExecuteLegacyRoll
-
-------------------------------------------------------------------------
--- Initialization – called from Core.lua ADDON_LOADED
-------------------------------------------------------------------------
-
-function RA.InitAutoRoll()
-    -- Cache ElvUI button references once. Delay slightly so ElvUI has
-    -- finished building its frames before we inspect them.
-    if C_Timer_After then
-        C_Timer_After(0.5, BuildElvButtonCache)
-    else
-        BuildElvButtonCache()
-    end
-    DBG("AutoRoll initialized")
-end

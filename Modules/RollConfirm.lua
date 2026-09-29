@@ -15,30 +15,10 @@ local RA   = _G["RollAway"]
 local DBG  = RA.DBG
 local RA_L = RA.RA_L
 
-local GetLootRollItemInfo = GetLootRollItemInfo
-local ConfirmLootRoll     = ConfirmLootRoll
-local C_Timer_After       = RA.C_Timer_After
-
-------------------------------------------------------------------------
--- Roll type definitions: DB key, RollOnLoot rollType id (used only for
--- the follow-up ConfirmLootRoll call), native button field, ElvUI button
--- name fragments (localized), type label locale key.
---
--- Note: Transmog uses rollType 2, the same id as Greed, for the
--- ConfirmLootRoll fallback. rollType 3 is Disenchant and must never be
--- used here.
-------------------------------------------------------------------------
-local ROLL_TYPES = {
-    { dbKey = "need",     rollType = 1, nativeField = "NeedButton",     elvNames = { "Bedarf", "Need" },  labelKey = "confirm_type_need" },
-    { dbKey = "greed",    rollType = 2, nativeField = "GreedButton",    elvNames = { "Gier", "Greed" },   labelKey = "confirm_type_greed" },
-    { dbKey = "transmog", rollType = 2, nativeField = "TransmogButton", elvNames = { "Transmog" },        labelKey = "confirm_type_transmog" },
-    { dbKey = "pass",     rollType = 0, nativeField = "PassButton",     elvNames = { "Passen", "Pass" },  labelKey = "confirm_type_pass" },
-}
-
 ------------------------------------------------------------------------
 -- Confirmation popup (shared by all roll types)
 ------------------------------------------------------------------------
-StaticPopupDialogs["ROLLAWAY_CONFIRM_ROLL"] = {
+RA.RegisterPopup("ROLLAWAY_CONFIRM_ROLL", {
     text         = RA_L["confirm_roll_popup"],
     button1      = YES,
     button2      = NO,
@@ -54,23 +34,20 @@ StaticPopupDialogs["ROLLAWAY_CONFIRM_ROLL"] = {
         -- the roll and need an explicit ConfirmLootRoll to actually
         -- complete it. The popup needs ~0.15s to appear.
         local rollID, rollType = data.rollID, data.rollType
-        local function DoConfirm()
-            if ConfirmLootRoll then pcall(ConfirmLootRoll, rollID, rollType) end
+        C_Timer.After(0.15, function()
+            pcall(ConfirmLootRoll, rollID, rollType)
             RA.CloseLootRollPopups("[RollConfirm]")
-        end
-        if C_Timer_After then C_Timer_After(0.15, DoConfirm) else DoConfirm() end
+        end)
     end,
-    timeout      = 0,
-    whileDead    = true,
-    hideOnEscape = true,
     showAlert    = true,
-}
+})
 
 ------------------------------------------------------------------------
 -- Click-catcher overlays, tracked per roll type so Options can toggle
 -- each type independently.
 ------------------------------------------------------------------------
-local overlaysByType = { need = {}, greed = {}, transmog = {}, pass = {} }
+local overlaysByType = {}
+for _, rollDef in ipairs(RA.ROLL_BUTTONS) do overlaysByType[rollDef.dbKey] = {} end
 
 local function AttachOverlay(btn, getRollID, rollDef)
     if not btn or btn.raRollOverlay then return end
@@ -84,42 +61,22 @@ local function AttachOverlay(btn, getRollID, rollDef)
         local rollID = getRollID()
         if not rollID then return end
         local _, name = GetLootRollItemInfo(rollID)
-        StaticPopup_Show("ROLLAWAY_CONFIRM_ROLL", RA_L[rollDef.labelKey], name or "?", { rollID = rollID, rollType = rollDef.rollType, btn = btn })
+        StaticPopup_Show("ROLLAWAY_CONFIRM_ROLL", RA_L["confirm_type_"..rollDef.dbKey], name or "?",
+            { rollID = rollID, rollType = rollDef.rollType, btn = btn })
     end)
 
     btn.raRollOverlay = overlay
-    overlaysByType[rollDef.dbKey][#overlaysByType[rollDef.dbKey] + 1] = overlay
-end
-
--- Single pass over an ElvUI roll frame's children, matching all 4 button
--- types at once (cheaper than scanning the children list per type).
-local function FindElvButtons(elvFrame)
-    local found = {}
-    for _, child in ipairs({ elvFrame:GetChildren() }) do
-        if child:GetObjectType() == "Button" then
-            local cname = child:GetName() or ""
-            for _, rollDef in ipairs(ROLL_TYPES) do
-                if not found[rollDef.dbKey] then
-                    for _, frag in ipairs(rollDef.elvNames) do
-                        if cname:find(frag) then
-                            found[rollDef.dbKey] = child
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return found
+    local overlays = overlaysByType[rollDef.dbKey]
+    overlays[#overlays + 1] = overlay
 end
 
 local function BuildOverlays()
     for i = 1, 5 do
         local nativeFrame = _G["GroupLootFrame"..i]
-        local elvFrame     = _G["ElvUI_LootRollFrame"..i]
-        local elvButtons   = elvFrame and FindElvButtons(elvFrame)
+        local elvFrame    = _G["ElvUI_LootRollFrame"..i]
+        local elvButtons  = RA.GetElvRollButtons(i)
 
-        for _, rollDef in ipairs(ROLL_TYPES) do
+        for _, rollDef in ipairs(RA.ROLL_BUTTONS) do
             if nativeFrame and nativeFrame[rollDef.nativeField] then
                 AttachOverlay(nativeFrame[rollDef.nativeField], function() return nativeFrame.rollID end, rollDef)
             end
@@ -132,23 +89,17 @@ local function BuildOverlays()
 end
 
 -- Toggled live from Options when a setting changes.
-local function SetEnabled(dbKey, enabled)
+function RA.SetRollConfirmEnabled(dbKey, enabled)
     for _, overlay in ipairs(overlaysByType[dbKey] or {}) do
         overlay:EnableMouse(enabled)
     end
 end
-RA.SetRollConfirmEnabled = SetEnabled
 
 ------------------------------------------------------------------------
 -- Init - called from Core.lua on ADDON_LOADED
 ------------------------------------------------------------------------
 function RA.InitRollConfirm()
-    -- Delay slightly so ElvUI has finished building its frames (same
-    -- reasoning as AutoRoll's BuildElvButtonCache).
-    if RA.C_Timer_After then
-        RA.C_Timer_After(0.5, BuildOverlays)
-    else
-        BuildOverlays()
-    end
+    -- Delay slightly so ElvUI has finished building its frames.
+    C_Timer.After(0.5, BuildOverlays)
     DBG("RollConfirm initialized")
 end

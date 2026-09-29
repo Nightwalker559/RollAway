@@ -48,13 +48,12 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 | `/rat` | Toggle RollAway Portal Overview |
 | `/rawvault` | Manually check Great Vault status |
 | `/rawparagon` | Manually check Paragon Bag availability |
-| `/rawwhats` | Show the "What's New" window |
 
 ---
 
 ## Options
 
-Access via `/raw` or **Interface > AddOns > RollAway**. Settings are organized by tab: General, Dungeons, Raids, Delves, Open World, Legacy, and QoL (Filter, LFG, Logs, Reminder).
+Access via `/raw` or **Interface > AddOns > RollAway**. Settings are organized by tab: General, Dungeons, Raids, Delves, Open World, Legacy, plus the QoL (Filter, LFG, Logs, Misc, Reminder) and Profile subcategories.
 
 ---
 

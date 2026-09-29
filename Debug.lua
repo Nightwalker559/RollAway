@@ -37,11 +37,7 @@ local function CreateDebugLogFrame()
     f:SetPoint("CENTER")
     f:SetFrameStrata("DIALOG")
     f:SetClampedToScreen(true)
-    f:SetMovable(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    RA.MakeDraggable(f)
     f:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -91,9 +87,16 @@ local function CreateDebugLogFrame()
     f:Show()  -- auto-open on first log line
 end
 
--- Appends one formatted line. Forces the cursor to the end first, since
+-- Appends `text` as one line. Forces the cursor to the end first, since
 -- the player may have clicked into the box (e.g. to select text) and
 -- moved it, which would otherwise corrupt the log order.
+local function AppendLine(text)
+    debugLogEditBox:SetCursorPosition(#debugLogEditBox:GetText())
+    debugLogEditBox:Insert(text .. "\n")
+    ScrollDebugLogToBottom()
+end
+
+-- Appends one formatted line.
 function RA.AppendDebugLog(...)
     CreateDebugLogFrame()
 
@@ -101,11 +104,7 @@ function RA.AppendDebugLog(...)
     for i = 1, select("#", ...) do
         parts[i] = tostring((select(i, ...)))
     end
-    local line = date("%H:%M:%S") .. "  " .. table.concat(parts, " ")
-
-    debugLogEditBox:SetCursorPosition(#debugLogEditBox:GetText())
-    debugLogEditBox:Insert(line .. "\n")
-    ScrollDebugLogToBottom()
+    AppendLine(date("%H:%M:%S") .. "  " .. table.concat(parts, " "))
 end
 
 -- Inserts a colored divider line to visually separate log sections (e.g.
@@ -116,9 +115,7 @@ local SEPARATOR_LINE = "|cff666666----------------------------------------------
 function RA.AppendDebugLogSeparator()
     if not debugLogEditBox then return end
     if debugLogEditBox:GetText() == "" then return end
-    debugLogEditBox:SetCursorPosition(#debugLogEditBox:GetText())
-    debugLogEditBox:Insert(SEPARATOR_LINE .. "\n")
-    ScrollDebugLogToBottom()
+    AppendLine(SEPARATOR_LINE)
 end
 
 function RA.ClearDebugLog()
@@ -127,20 +124,6 @@ function RA.ClearDebugLog()
         debugLogEditBox:SetHeight(debugLogScrollFrame:GetHeight())
         debugLogScrollFrame:SetVerticalScroll(0)
     end
-end
-
-------------------------------------------------------------------------
--- Guard: only active for dev characters
-------------------------------------------------------------------------
-
-local function IsDevChar()
-    return RA.DEV_CHARS and RA.DEV_CHARS[UnitName("player")]
-end
-
--- Dev-command feedback: log-only, never chat - keeps /raw* test commands
--- from spamming chat, all output lives in the debug log window instead.
-local function DevPrint(msg)
-    DBG(msg)
 end
 
 ------------------------------------------------------------------------
@@ -170,16 +153,14 @@ local SECTION_START_EVENTS = {
     GROUP_JOINED = true,
 }
 
-local eventLogFrame = CreateFrame("Frame")
-
 local function RegisterEventLogger()
+    local eventLogFrame = CreateFrame("Frame")
     for _, event in ipairs(LOGGED_EVENTS) do
         eventLogFrame:RegisterEvent(event)
     end
     eventLogFrame:SetScript("OnEvent", function(_, event, a1, a2)
-        if not IsDevChar() then return end
-        if not (RollAwayDB and RollAwayDB.debug) then return end
-        if SECTION_START_EVENTS[event] and RA.NoteDebugLogSectionEvent then
+        if not RollAwayDB.debug then return end
+        if SECTION_START_EVENTS[event] then
             RA.NoteDebugLogSectionEvent()
         end
         if a1 ~= nil and a2 ~= nil then
@@ -196,9 +177,85 @@ end
 -- Slash commands
 ------------------------------------------------------------------------
 
+-- Registers a dev-only slash command. Most also need debug mode on;
+-- `alwaysOn` commands (log window, diagnostics) only need a dev character.
+local function RegisterDevCommand(name, handler, alwaysOn)
+    _G["SLASH_"..name.."1"] = "/"..name:lower()
+    SlashCmdList[name] = function(msg)
+        if alwaysOn or RollAwayDB.debug then handler(msg) end
+    end
+end
+
+-- /rawreminder → test all the popup reminders at once
+local function TestReminders()
+    local savedType   = RA.cachedInstanceType
+    local savedID     = RA.cachedInstanceID
+    local savedDiff   = RA.cachedDiffID
+    local savedInstID = RollAwayDB.lastReminderInstID
+    RA.cachedInstanceType         = "party"
+    RA.cachedInstanceID           = 2805
+    RA.cachedDiffID               = 8
+    RollAwayDB.lastReminderInstID = nil
+
+    -- Pretend to own 3 Voidcores while the reminder decides what to show;
+    -- restored even if ShowReminder errors.
+    local origGetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
+    C_CurrencyInfo.GetCurrencyInfo = function(id)
+        if id == RA.VOIDCORE_CURRENCY_ID then return { quantity = 3 } end
+        return origGetCurrencyInfo(id)
+    end
+    local ok, err = pcall(RA.ShowReminder)
+    C_CurrencyInfo.GetCurrencyInfo = origGetCurrencyInfo
+
+    RA.cachedInstanceType         = savedType
+    RA.cachedInstanceID           = savedID
+    RA.cachedDiffID               = savedDiff
+    RollAwayDB.lastReminderInstID = savedInstID
+    DBG(ok and "Reminder test triggered." or ("Reminder test failed: " .. tostring(err)))
+
+    RA.ParagonTestShow()
+    RA.ShowGreatVaultFrame()
+    RA.ShowAdvLogFrameNow()
+end
+
+-- Runs fn() with RollAwayDB[key] = value for each pair in `overrides`, then
+-- restores the saved settings (even if fn errors).
+local function WithSettings(overrides, fn)
+    local keys, saved = {}, {}
+    for key, value in pairs(overrides) do
+        keys[#keys + 1] = key
+        saved[key] = RollAwayDB[key]
+        RollAwayDB[key] = value
+    end
+    local ok, err = pcall(fn)
+    for _, key in ipairs(keys) do RollAwayDB[key] = saved[key] end
+    if not ok then error(err, 0) end
+end
+
+-- /rawqol → test all QoL reminders
+local function TestQoLReminders()
+    DBG("QoL test triggered.")
+
+    local savedType = RA.cachedInstanceType
+    RA.cachedInstanceType = "party"
+    WithSettings({ readyCheckReminder = true }, RA.ShowTalentReminder)
+    RA.cachedInstanceType = savedType
+
+    WithSettings({ durabilityWarning = true }, function() RA.CheckDurability(true) end)
+
+    WithSettings({ instanceJoinReminder = true }, function()
+        RA.ShowJoinReminder("Windrunner Spire", true)  -- true = force immediate timer (test mode)
+    end)
+
+    WithSettings({ instanceJoinReminder = true, joinReminderKeyAddon = "teleport" }, function()
+        local dungeon = RA.DUNGEONS[RA.ACTIVE_SEASON][1]
+        RA.ShowTeleportReminder(RA.RA_L["dungeon_"..dungeon.key], dungeon)
+    end)
+end
+
 local function RegisterSlashCommands()
 
-    -- /raw / /rollaway → open options
+    -- /raw / /rollaway → open options (all users)
     SLASH_ROLLAWAY1 = "/raw"
     SLASH_ROLLAWAY2 = "/rollaway"
     SlashCmdList["ROLLAWAY"] = function()
@@ -207,156 +264,66 @@ local function RegisterSlashCommands()
         end)
     end
 
+    -- Everything below is for dev/tester characters only.
+    if not RA.DEV_CHARS[UnitName("player")] then return end
+
     -- /rawtest → manual auto-pass test
-    SLASH_RAWAUTOPASSTEST1 = "/rawtest"
-    SlashCmdList["RAWAUTOPASSTEST"] = function()
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
-        DevPrint("Manual auto-pass test...")
+    RegisterDevCommand("RAWTEST", function()
+        DBG("Manual auto-pass test...")
         RA.UpdateInstanceCache()
-        if RA.LogInstanceSummary then RA.LogInstanceSummary() end
-        if RA.TryAutoPass then RA.TryAutoPass() end
-    end
+        RA.LogInstanceSummary()
+        RA.TryAutoPass()
+    end)
 
     -- /rawdump → raw GetInstanceInfo field dump (manual, verbose - use when
     -- the compact zone-change summary line isn't enough detail)
-    SLASH_RAWDUMP1 = "/rawdump"
-    SlashCmdList["RAWDUMP"] = function()
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
+    RegisterDevCommand("RAWDUMP", function()
         RA.UpdateInstanceCache()
-        if RA.DebugInstanceDump then RA.DebugInstanceDump() end
-    end
+        RA.DebugInstanceDump()
+    end)
 
-    -- /rawreminder → test reminder popup
-    SLASH_RAWREMINDER1 = "/rawreminder"
-    SlashCmdList["RAWREMINDER"] = function()
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
-        if not RA.ShowReminder then return end
-        local savedType   = RA.cachedInstanceType
-        local savedID     = RA.cachedInstanceID
-        local savedDiff   = RA.cachedDiffID
-        local savedInstID = RollAwayDB.lastReminderInstID
-        RA.cachedInstanceType         = "party"
-        RA.cachedInstanceID           = 2805
-        RA.cachedDiffID               = 8
-        RollAwayDB.lastReminderInstID = nil
-        local origGetCurrencyInfo = C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo
-        if C_CurrencyInfo then
-            C_CurrencyInfo.GetCurrencyInfo = function(id)
-                if id == 3418 then return { quantity = 3 } end
-                return origGetCurrencyInfo and origGetCurrencyInfo(id)
-            end
-        end
-        RA.ShowReminder()
-        RA.cachedInstanceType         = savedType
-        RA.cachedInstanceID           = savedID
-        RA.cachedDiffID               = savedDiff
-        RollAwayDB.lastReminderInstID = savedInstID
-        if C_CurrencyInfo and origGetCurrencyInfo then
-            C_CurrencyInfo.GetCurrencyInfo = origGetCurrencyInfo
-        end
-        DevPrint("Reminder test triggered.")
-
-        if RA.ParagonTestShow then RA.ParagonTestShow() end
-        if RA.ShowGreatVaultFrame then RA.ShowGreatVaultFrame() end
-        if RA.AdvLogTestShow then RA.AdvLogTestShow() end
-    end
+    RegisterDevCommand("RAWREMINDER", TestReminders)
 
     -- /rawreset → reset reminder state
-    SLASH_RAWRESET1 = "/rawreset"
-    SlashCmdList["RAWRESET"] = function()
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
+    RegisterDevCommand("RAWRESET", function()
         RollAwayDB.lastReminderInstID = nil
-        DevPrint("Reminder reset – will show again on next instance entry.")
-    end
+        DBG("Reminder reset – will show again on next instance entry.")
+    end)
 
-    -- /rawqol → test all QoL reminders
-    SLASH_RAWQOL1 = "/rawqol"
-    SlashCmdList["RAWQOL"] = function()
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
-        DevPrint("QoL test triggered.")
-        local savedType = RA.cachedInstanceType
-        RA.cachedInstanceType = "party"
-        if RA.ShowTalentReminder then
-            local savedReadyCheck = RollAwayDB.readyCheckReminder
-            RollAwayDB.readyCheckReminder = true
-            RA.ShowTalentReminder()
-            RollAwayDB.readyCheckReminder = savedReadyCheck
-        end
-        RA.cachedInstanceType = savedType
-        if RA.CheckDurability then
-            local savedDura = RollAwayDB.durabilityWarning
-            RollAwayDB.durabilityWarning = true
-            RA.CheckDurability(true)
-            RollAwayDB.durabilityWarning = savedDura
-        end
-        if RA.ShowJoinReminder then
-            local savedJoin = RollAwayDB.instanceJoinReminder
-            RollAwayDB.instanceJoinReminder = true
-            RA.ShowJoinReminder("Windrunner Spire", true)  -- true = force immediate timer (test mode)
-            RollAwayDB.instanceJoinReminder = savedJoin
-        end
-        if RA.ShowTeleportReminder then
-            local savedJoin = RollAwayDB.instanceJoinReminder
-            local savedAddon = RollAwayDB.joinReminderKeyAddon
-            RollAwayDB.instanceJoinReminder = true
-            RollAwayDB.joinReminderKeyAddon = "teleport"
-            local dungeon = RA.DUNGEONS[RA.ACTIVE_SEASON][1]
-            RA.ShowTeleportReminder(RA.RA_L["dungeon_"..dungeon.key], dungeon)
-            RollAwayDB.instanceJoinReminder = savedJoin
-            RollAwayDB.joinReminderKeyAddon = savedAddon
-        end
-    end
-
-    SLASH_RAWWHATS1 = "/rawwhats"
-    SlashCmdList["RAWWHATS"] = function()
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
-        if RA.ShowWhatsNew then RA.ShowWhatsNew() end
-    end
+    RegisterDevCommand("RAWQOL", TestQoLReminders)
+    RegisterDevCommand("RAWWHATS", function() RA.ShowWhatsNew() end)
 
     -- /rawlog → open/toggle the debug log window (in case it was closed
-    -- manually). Dev-char gated only, independent of RollAwayDB.debug so
-    -- it works even while debug logging itself is off. Still routes
+    -- manually). Works even while debug logging itself is off. Still routes
     -- through AppendDebugLog so ElvUI_Skin.lua's skin hook still fires.
-    SLASH_RAWLOG1 = "/rawlog"
-    SlashCmdList["RAWLOG"] = function()
-        if not IsDevChar() then return end
-        local existed = _G["RollAwayDebugLogFrame"] ~= nil
+    RegisterDevCommand("RAWLOG", function()
+        local existed = debugLogFrame ~= nil
         RA.AppendDebugLog("Log window toggled via /rawlog")
-        local f = _G["RollAwayDebugLogFrame"]
         -- Only flip visibility if the window already existed - a fresh
         -- window was just auto-shown by AppendDebugLog, don't hide it again.
-        if existed and f then f:SetShown(not f:IsShown()) end
-    end
+        if existed then debugLogFrame:SetShown(not debugLogFrame:IsShown()) end
+    end, true)
 
     -- /rawchonkyoffset <n> → live-tune the extra rightward nudge applied to
     -- the Omnium/Vault CharacterFrame buttons when Chonky Character Sheet is
-    -- loaded. Dev-only, for finding the right value before hardcoding it.
-    SLASH_RAWCHONKYOFFSET1 = "/rawchonkyoffset"
-    SlashCmdList["RAWCHONKYOFFSET"] = function(msg)
-        if not IsDevChar() or not (RollAwayDB and RollAwayDB.debug) then return end
+    -- loaded. For finding the right value before hardcoding it.
+    RegisterDevCommand("RAWCHONKYOFFSET", function(msg)
         local n = tonumber(msg)
         if not n then
-            DevPrint("Usage: /rawchonkyoffset <pixels>")
+            DBG("Usage: /rawchonkyoffset <pixels>")
             return
         end
-        if RA.SetChonkyOffset then
-            local applied = RA.SetChonkyOffset(n)
-            DevPrint("Chonky button offset bonus set to "..tostring(applied)..". Reopen the Character panel if it doesn't move immediately.")
-        end
-    end
-
+        local applied = RA.SetChonkyOffset(n)
+        DBG("Chonky button offset bonus set to "..tostring(applied)..". Reopen the Character panel if it doesn't move immediately.")
+    end)
 
     -- /rawcharbtn → dump the visibility state of the Omnium/Vault Character
     -- panel buttons to the log (run it while they are missing).
-    SLASH_RAWCHARBTN1 = "/rawcharbtn"
-    SlashCmdList["RAWCHARBTN"] = function()
-        if not IsDevChar() then return end
-        if not RA.DescribeCharFrameButtons then return end
+    RegisterDevCommand("RAWCHARBTN", function()
         for _, line in ipairs(RA.DescribeCharFrameButtons()) do
             RA.AppendDebugLog("[CharFrameButtons] " .. line)
         end
-    end
-
+    end, true)
 end
 
 ------------------------------------------------------------------------
@@ -364,7 +331,7 @@ end
 ------------------------------------------------------------------------
 
 function RA.InitDebug()
-    RegisterEventLogger()
+    if RA.DEV_CHARS[UnitName("player")] then RegisterEventLogger() end
     RegisterSlashCommands()
     DBG("Debug initialized")
 end

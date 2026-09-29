@@ -1,7 +1,7 @@
 -- RollAway - Options/OptionsProfile.lua
 -- Builds the "Profile" settings subcategory: switch, create, copy-from,
--- delete and reset AceDB-3.0 profiles (RA.db). Extracted the same way as
--- Options/OptionsQoL.lua - called once from RA.InitOptions() in Options.lua.
+-- delete and reset AceDB-3.0 profiles (RA.db). Called once from
+-- RA.InitOptions() in Options.lua.
 --
 -- Note: the rest of the Options UI (General/Dungeons/Raids/... tabs, QoL
 -- subcategory) is built once at ADDON_LOADED with each widget's initial
@@ -76,55 +76,59 @@ end
 -- and the popup's data argument comes in directly as the callback's 2nd
 -- parameter instead of self.data.
 ------------------------------------------------------------------------
-StaticPopupDialogs["ROLLAWAY_PROFILE_NEW"] = {
+
+-- Edit box helpers shared by the popups below.
+local function ClearAndFocusEditBox(dialog)
+    local editBox = dialog:GetEditBox()
+    editBox:SetText("")
+    editBox:SetFocus()
+end
+
+-- Enter presses the popup's first button (if enabled).
+local function AcceptOnEnter(editBox)
+    local dialog = editBox:GetParent()
+    if dialog:GetButton1():IsEnabled() then
+        StaticPopup_OnClick(dialog, 1)
+    end
+end
+
+local function CloseDialog(editBox)
+    editBox:GetParent():Hide()
+end
+
+local function IsValidProfileName(name)
+    return name and name ~= "" and not name:find("^%s+$")
+end
+
+RA.RegisterPopup("ROLLAWAY_PROFILE_NEW", {
     text         = RA_L["profile_new_prompt"],
     button1      = ACCEPT,
     button2      = CANCEL,
     hasEditBox   = true,
     maxLetters   = 50,
-    OnShow = function(dialog)
-        local editBox = dialog:GetEditBox()
-        editBox:SetText("")
-        editBox:SetFocus()
-    end,
+    OnShow       = ClearAndFocusEditBox,
     OnAccept = function(dialog)
         local name = dialog:GetEditBox():GetText()
-        if name and name ~= "" and not name:find("^%s+$") then
+        if IsValidProfileName(name) then
             RA.db:SetProfile(name)
-            if RA.RefreshProfileOptions then RA.RefreshProfileOptions() end
             RA.PromptProfileReload()
         end
     end,
-    EditBoxOnEnterPressed = function(editBox)
-        local dialog = editBox:GetParent()
-        if dialog:GetButton1():IsEnabled() then
-            StaticPopup_OnClick(dialog, 1)
-        end
-    end,
-    EditBoxOnEscapePressed = function(editBox)
-        editBox:GetParent():Hide()
-    end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+    EditBoxOnEnterPressed  = AcceptOnEnter,
+    EditBoxOnEscapePressed = CloseDialog,
+})
 
-StaticPopupDialogs["ROLLAWAY_PROFILE_DELETE"] = {
+RA.RegisterPopup("ROLLAWAY_PROFILE_DELETE", {
     text = RA_L["profile_delete_confirm"],
     button1      = ACCEPT,
     button2      = CANCEL,
-    OnAccept = function(dialog, data)
+    OnAccept = function(_, data)
         RA.db:DeleteProfile(data, true)
-        if RA.RefreshProfileOptions then RA.RefreshProfileOptions() end
+        RA.RefreshProfileOptions()
     end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+})
 
-StaticPopupDialogs["ROLLAWAY_PROFILE_RESET"] = {
+RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
     text         = RA_L["profile_reset_confirm"],
     button1      = ACCEPT,
     button2      = CANCEL,
@@ -132,18 +136,15 @@ StaticPopupDialogs["ROLLAWAY_PROFILE_RESET"] = {
         RA.db:ResetProfile()
         -- Dungeons/Raids/Delves/Prey selections live in RollAwayDBChar
         -- (SavedVariablesPerCharacter), outside AceDB, so ResetProfile()
-        -- above never touches them. Wipe it too; the reload right after
-        -- re-fills it from RA.defaultsChar via the normal ADDON_LOADED path.
+        -- above never touches them. Reset it too (back to defaults right
+        -- away, so nothing reads it half-empty until the reload).
         wipe(RollAwayDBChar)
+        RA.InitCharDB()
         RA.PromptProfileReload()
     end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+})
 
-StaticPopupDialogs["ROLLAWAY_PROFILE_EXPORT"] = {
+RA.RegisterPopup("ROLLAWAY_PROFILE_EXPORT", {
     text         = RA_L["profile_export_prompt"],
     button1      = OKAY,
     hasEditBox   = true,
@@ -156,7 +157,7 @@ StaticPopupDialogs["ROLLAWAY_PROFILE_EXPORT"] = {
         editBox:SetFocus()
         if not editBox.raCopyCloseHooked then
             editBox.raCopyCloseHooked = true
-            editBox:HookScript("OnKeyDown", function(self, key)
+            editBox:HookScript("OnKeyDown", function(_, key)
                 if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) then
                     -- Deferred: closing immediately on keydown pre-empted the
                     -- native clipboard copy, so the string never got copied.
@@ -165,26 +166,18 @@ StaticPopupDialogs["ROLLAWAY_PROFILE_EXPORT"] = {
             end)
         end
     end,
-    EditBoxOnEnterPressed = function(editBox) editBox:GetParent():Hide() end,
-    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+    EditBoxOnEnterPressed  = CloseDialog,
+    EditBoxOnEscapePressed = CloseDialog,
+})
 
-StaticPopupDialogs["ROLLAWAY_PROFILE_IMPORT"] = {
+RA.RegisterPopup("ROLLAWAY_PROFILE_IMPORT", {
     text         = RA_L["profile_import_prompt"],
     button1      = ACCEPT,
     button2      = CANCEL,
     hasEditBox   = true,
     editBoxWidth = 350,
     maxLetters   = 0,
-    OnShow = function(dialog)
-        local editBox = dialog:GetEditBox()
-        editBox:SetText("")
-        editBox:SetFocus()
-    end,
+    OnShow       = ClearAndFocusEditBox,
     OnAccept = function(dialog)
         local imported = DecodeProfile(dialog:GetEditBox():GetText())
         if not imported then
@@ -194,76 +187,50 @@ StaticPopupDialogs["ROLLAWAY_PROFILE_IMPORT"] = {
         RA.pendingProfileImport = imported
         StaticPopup_Show("ROLLAWAY_PROFILE_IMPORT_NAME")
     end,
-    EditBoxOnEnterPressed = function(editBox)
-        local dialog = editBox:GetParent()
-        if dialog:GetButton1():IsEnabled() then
-            StaticPopup_OnClick(dialog, 1)
-        end
-    end,
-    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+    EditBoxOnEnterPressed  = AcceptOnEnter,
+    EditBoxOnEscapePressed = CloseDialog,
+})
 
-StaticPopupDialogs["ROLLAWAY_PROFILE_IMPORT_NAME"] = {
+RA.RegisterPopup("ROLLAWAY_PROFILE_IMPORT_NAME", {
     text         = RA_L["profile_import_name_prompt"],
     button1      = ACCEPT,
     button2      = CANCEL,
     hasEditBox   = true,
     maxLetters   = 50,
-    OnShow = function(dialog)
-        local editBox = dialog:GetEditBox()
-        editBox:SetText("")
-        editBox:SetFocus()
-    end,
+    OnShow       = ClearAndFocusEditBox,
     OnAccept = function(dialog)
         local name = dialog:GetEditBox():GetText()
         local imported = RA.pendingProfileImport
         RA.pendingProfileImport = nil
-        if imported and name and name ~= "" and not name:find("^%s+$") then
+        if imported and IsValidProfileName(name) then
             RA.db:SetProfile(name)
             ApplyImportedProfile(RA.db.profile, RA.defaults.profile, imported)
-            if RA.RefreshProfileOptions then RA.RefreshProfileOptions() end
             RA.PromptProfileReload()
         end
     end,
     OnCancel = function() RA.pendingProfileImport = nil end,
-    EditBoxOnEnterPressed = function(editBox)
-        local dialog = editBox:GetParent()
-        if dialog:GetButton1():IsEnabled() then
-            StaticPopup_OnClick(dialog, 1)
-        end
-    end,
-    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+    EditBoxOnEnterPressed  = AcceptOnEnter,
+    EditBoxOnEscapePressed = CloseDialog,
+})
 
-StaticPopupDialogs["ROLLAWAY_PROFILE_RELOAD"] = {
+RA.RegisterPopup("ROLLAWAY_PROFILE_RELOAD", {
     text         = RA_L["profile_reload_prompt"],
     button1      = RA_L["profile_reload_now"],
     button2      = CANCEL,
     OnAccept = function() ReloadUI() end,
-    timeout        = 0,
-    whileDead      = true,
-    hideOnEscape   = true,
-    preferredIndex = 3,
-}
+})
 
+-- Flags the settings UI as out of date (needs a /reload) and offers one.
 function RA.PromptProfileReload()
     RA.profileReloadPending = true
-    if RA.RefreshProfileOptions then RA.RefreshProfileOptions() end
+    RA.RefreshProfileOptions()
     StaticPopup_Show("ROLLAWAY_PROFILE_RELOAD")
 end
 
 ------------------------------------------------------------------------
 -- Subcategory: Profile
 ------------------------------------------------------------------------
-function RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabInactive)
+function RA.BuildProfileOptions(category, S)
     local panel = CreateFrame("Frame")
     Settings.RegisterCanvasLayoutSubcategory(category, panel, RA_L["profile_section_title"])
 
@@ -354,7 +321,6 @@ function RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabIna
             if selectedOther and not otherList[selectedOther] then selectedOther = nil end
             if not selectedOther then selectedOther = otherOrder[1] end
             otherDD:SetValue(selectedOther)
-            otherDD:SetDisabled(false)
         else
             -- A genuinely empty list leaves the dropdown's pullout menu
             -- permanently expanded (library/Blizzard menu-template quirk)
@@ -363,18 +329,21 @@ function RA.BuildProfileOptions(category, S, classColor, SetTabActive, SetTabIna
             selectedOther = nil
             otherDD:SetList({ [""] = RA_L["profile_none_available"] }, { "" })
             otherDD:SetValue("")
-            otherDD:SetDisabled(true)
         end
-
-        if hasOther then copyBtn:Enable() else copyBtn:Disable() end
-        if hasOther then deleteBtn:Enable() else deleteBtn:Disable() end
+        otherDD:SetDisabled(not hasOther)
+        if hasOther then
+            copyBtn:Enable()
+            deleteBtn:Enable()
+        else
+            copyBtn:Disable()
+            deleteBtn:Disable()
+        end
     end
     RA.RefreshProfileOptions = Refresh
 
     activeDD:SetCallback("OnValueChanged", function(_, _, value)
         if value and value ~= RA.db:GetCurrentProfile() then
             RA.db:SetProfile(value)
-            Refresh()
             RA.PromptProfileReload()
         end
     end)
