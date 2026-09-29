@@ -5,30 +5,24 @@
 ## 3.0.8
 
 ### Fixed
-- Omniumfoliant/Great Vault buttons could stay hidden on the Stats view (stale tab-state flag).
-- Group Loot History frame no longer stayed open on pulling in a dungeon (or a non-configured raid difficulty) - it now hides immediately on entering combat everywhere, even with rolls still pending, unless auto-close is fully disabled.
-- Auto-log: a retry queued while rate-limited could re-apply an outdated state after changing zones (e.g. logging switched back on after leaving the raid). An unset raid difficulty option is no longer treated as "don't manage".
-- Portal Overview: no longer re-lays out its secure buttons during combat (`ADDON_ACTION_BLOCKED` on a bag change), and a show deferred until combat ends now lays itself out instead of opening stale. The current-season tab no longer lists a dungeon without a teleport spell.
-- Teleport Reminder: skipped instead of laying out its secure buttons when a group is joined mid-combat.
-- Secure frames with a show/hide deferred by combat could apply that stale state after combat, overriding a newer change made in between.
-- Instance join reminder: waiting for a full group no longer leaks a frame per join, and a newer reminder now cancels an older pending wait.
-- LFG Quick Create: the keystone highlight now also refreshes if the Group Finder was already open when the addon loaded.
-- Profile reset: per-character Dungeon/Raid/Delve selections are restored to defaults immediately, not left empty until `/reload`; per-character defaults are no longer shared with the defaults table.
-- `/rawreminder` always restores the faked Voidcore count, even if the reminder errors.
+- Omniumfoliant/Great Vault buttons could stay hidden on the Stats view.
+- Group Loot History frame now hides immediately on entering combat everywhere, even with rolls pending (unless auto-close is disabled).
+- Auto-log: a rate-limit retry could re-apply an outdated state after a zone change.
+- Portal Overview / Teleport Reminder: no more secure-frame re-layout in combat (`ADDON_ACTION_BLOCKED`); a show deferred until after combat now lays itself out; dungeons without a teleport spell are no longer listed.
+- Deferred show/hide of secure frames could override a newer change made after combat.
+- Instance join reminder: no leaked frame per join, a newer reminder cancels an older pending wait.
+- LFG Quick Create: keystone highlight refreshes if the Group Finder was already open at load.
+- Profile reset: per-character Dungeon/Raid/Delve selections are reset to defaults immediately instead of staying empty until `/reload`.
+- `/rawreminder` always restores the faked Voidcore count.
 
 ### Changed
-- Omniumfoliant/Great Vault buttons rebuilt from scratch: one refresh function driven by events and the Stats pane's real visibility; watchdog, timers and self-heal workarounds removed (`/rawcharwatchdog` dropped).
-- Debug log: button visibility changes are logged with reason and trigger, and refresh errors are caught and logged ("Log self-heal errors only"), even while the log window is closed.
-- Debug: buttons left hidden by something other than RollAway are logged with a stack trace (only while debug logging is on); `/rawcharbtn` dumps their visibility state.
-- Performance: the portal-cast watcher only listens to the player's own casts; the Portal Overview only listens for bag changes while it is open; the Great Vault currency display coalesces its hook updates; the debug event logger and dev slash commands are only registered on dev characters.
+- Omniumfoliant/Great Vault buttons rebuilt: one event-driven refresh function instead of watchdog and self-heal workarounds (`/rawcharwatchdog` dropped).
+- Debug log: remembers its window position across reload/relog; logs button visibility changes and refresh errors with reason and trigger ("Log self-heal errors only"), plus a stack trace for external hides; `/rawcharbtn` dumps button state.
+- Performance: fewer event registrations (portal-cast watcher, Portal Overview bag events, vault currency updates, dev-only event logger and slash commands).
 
 ### Internal
-- QoL.lua split: the instance join reminder and keystone companion addon handling now live in Modules\JoinReminder.lua.
-- Shared helpers instead of copies: popup height/countdown lifecycle (Reminder, Paragon, Great Vault, Advanced Combat Logging), toast frames (Check Talents, Durability, Join), portal buttons (Teleport Reminder, Portal Overview), ElvUI loot-roll button lookup (Auto-Roll, Roll Confirm), popup backdrop, `StaticPopup` defaults, keystone lookup, difficulty ID sets, per-character DB defaults.
-- Options: shared tab selector, scroll bar wiring, two-column grid, checkbox + description and slider builders; Dungeons/Raids/Legacy/Delves tabs, the QoL panel and the profile popups reuse them; dungeon/delve lists are sorted where they are shown.
-- ElvUI skin: one skin-once path for all lazily created frames, shared backdrop/tab color helpers.
-- Removed dead code: timer API fallbacks, AceGUI-missing fallbacks, unused exports and empty init functions, Data\WorldBosses.lua, unused locale keys.
-
+- QoL.lua split: the join reminder and keystone companion handling moved to Modules\JoinReminder.lua.
+- Duplicate code replaced by shared helpers (popups, toasts, portal buttons, ElvUI roll buttons, Options builders, ElvUI skinning); dead code and unused locale keys removed.
 ## 3.0.7
 
 ### New
