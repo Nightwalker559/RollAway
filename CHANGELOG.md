@@ -2,14 +2,10 @@
 
 ---
 
-## 3.0.9
-
-### Fixed
-- Omniumfoliant/Great Vault buttons stayed hidden on the Stats view: visibility relied on a sidebar-tab check that doesn't exist on current retail and went stale. Now based on the Titles/Equipment panes' real visibility.
-
 ## 3.0.8
 
 ### Fixed
+- Omniumfoliant/Great Vault buttons stayed hidden on the Stats view: visibility relied on a sidebar-tab check that doesn't exist on current retail and went stale. Now based on the Titles/Equipment panes' real visibility.
 - Group Loot History frame no longer stayed open on pulling in a dungeon (or a non-configured raid difficulty) - it now hides immediately on entering combat everywhere, even with rolls still pending, unless auto-close is fully disabled.
 
 ## 3.0.7
