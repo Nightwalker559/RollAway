@@ -10,6 +10,7 @@
 
 ### Changed
 - Omniumfoliant/Great Vault buttons rebuilt from scratch: one refresh function driven by events and the Stats pane's real visibility; watchdog, timers and self-heal workarounds removed (`/rawcharwatchdog` dropped).
+- Debug log: button visibility changes are logged with reason and trigger, and refresh errors are caught and logged ("Log self-heal errors only"), even while the log window is closed.
 
 ## 3.0.7
 

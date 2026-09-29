@@ -15,6 +15,7 @@
 local RA       = _G["RollAway"]
 local RA_L     = RA.RA_L
 local DBG      = RA.DBG
+local DBGError = RA.DBGError
 local C_Timer_After = RA.C_Timer_After
 
 local OMNI_ICON_FILEID       = 7554214  -- Omniumfoliant minimap icon
@@ -178,9 +179,29 @@ local DEFS = {
     { key = "vault", x = -36, create = CreateVaultButton, active = VaultActive },
 }
 
--- Single source of truth: sets every button (and the minimap icon) to match
--- current options/level/view. Safe to call any time, any number of times.
-function RA.RefreshCharFrameButtons()
+local lastState = {}  -- [key] = last logged "shown" / "hidden (reason)"
+
+-- Logs only when a button's state actually changes, with the reason and the
+-- trigger, so a vanishing button leaves a trace in the debug log (even with
+-- the log window closed - it keeps collecting).
+local function LogState(key, wanted, featureOn, statsView, source, btn)
+    local state
+    if wanted then
+        state = "shown"
+    else
+        state = "hidden (" .. (not featureOn and "option off/below max level"
+            or not statsView and "not on Stats view" or "?") .. ")"
+    end
+    if btn and btn:IsShown() ~= (wanted and true or false) then
+        state = state .. " [SetShown mismatch]"
+    end
+    if lastState[key] ~= state then
+        lastState[key] = state
+        DBGError("[CharFrameButtons]", key, state, "| trigger:", source or "?")
+    end
+end
+
+local function Apply(source)
     -- Minimap icon: only hidden by us while the option is active; never
     -- force-shown otherwise (Blizzard controls default visibility).
     local mm = SetupOmniMinimapButton()
@@ -199,7 +220,8 @@ function RA.RefreshCharFrameButtons()
     local statsView = IsStatsViewShown()
     for _, def in ipairs(DEFS) do
         local btn = buttons[def.key]
-        local wanted = def.active() and statsView
+        local featureOn = def.active() and true or false
+        local wanted = featureOn and statsView
         if wanted and not btn then
             btn = def.create()
             buttons[def.key] = btn
@@ -207,15 +229,27 @@ function RA.RefreshCharFrameButtons()
         end
         if btn then
             if wanted then PlaceButton(btn, def.x) end
-            btn:SetShown(wanted and true or false)
+            btn:SetShown(wanted)
         end
+        LogState(def.key, wanted, featureOn, statsView, source, btn)
+    end
+end
+
+-- Single source of truth: sets every button (and the minimap icon) to match
+-- current options/level/view. Safe to call any time, any number of times.
+-- `source` is only for the log. Errors are caught and logged (never lost,
+-- never propagated into Blizzard's OnShow chain).
+function RA.RefreshCharFrameButtons(source)
+    local ok, err = pcall(Apply, source)
+    if not ok then
+        DBGError("[CharFrameButtons] ERROR in refresh (", tostring(source), "):", err)
     end
 end
 
 -- Dev helper for /rawchonkyoffset.
 function RA.SetChonkyOffset(n)
     chonkyXOffsetBonus = tonumber(n) or chonkyXOffsetBonus
-    RA.RefreshCharFrameButtons()
+    RA.RefreshCharFrameButtons("chonky offset")
     return chonkyXOffsetBonus
 end
 
@@ -229,18 +263,17 @@ local paperDollHooked = false
 local function HookPaperDoll()
     if paperDollHooked or not (PaperDollFrame and CharacterStatsPane) then return end
     paperDollHooked = true
-    local function refresh() RA.RefreshCharFrameButtons() end
     -- Panel opened, and Stats pane shown/hidden (view switch by click, addon
     -- or reopen) - the pane's own visibility is what the gate reads.
-    PaperDollFrame:HookScript("OnShow", refresh)
-    CharacterStatsPane:HookScript("OnShow", refresh)
-    CharacterStatsPane:HookScript("OnHide", refresh)
+    PaperDollFrame:HookScript("OnShow", function() RA.RefreshCharFrameButtons("PaperDollFrame OnShow") end)
+    CharacterStatsPane:HookScript("OnShow", function() RA.RefreshCharFrameButtons("StatsPane OnShow") end)
+    CharacterStatsPane:HookScript("OnHide", function() RA.RefreshCharFrameButtons("StatsPane OnHide") end)
     DBG("[CharFrameButtons] PaperDoll hooked")
 end
 
 function RA.InitCharacterFrameButtons()
     HookPaperDoll()
-    RA.RefreshCharFrameButtons()
+    RA.RefreshCharFrameButtons("init")
 
     local f = CreateFrame("Frame")
     f:RegisterEvent("ADDON_LOADED")
@@ -255,6 +288,6 @@ function RA.InitCharacterFrameButtons()
         -- UnitLevel can be stale in the same frame as PLAYER_LEVEL_UP, and
         -- Blizzard's own frame setup runs after ADDON_LOADED/loading screens,
         -- so let it settle first.
-        C_Timer_After(0.5, function() RA.RefreshCharFrameButtons() end)
+        C_Timer_After(0.5, function() RA.RefreshCharFrameButtons(event) end)
     end)
 end
