@@ -1,42 +1,32 @@
 -- RollAway - Modules/CharFrameButtons.lua
--- Omniumfoliant and Great Vault buttons anchored to CharacterFrame's
--- bottom-right corner. Extracted from QoL.lua into its own file so the
--- three UI compatibility layers (Default UI, ElvUI, Chonky Character Sheet)
--- are easy to find and reason about separately.
+-- Omniumfoliant and Great Vault buttons in the bottom-right corner of the
+-- Character panel (Stats view only).
 --
--- Layer overview:
---   - Default UI: buttons anchor to the real CharacterFrame corner (see
---     GetCharFrameButtonAnchor below).
---   - ElvUI: no special anchoring needed here - ElvUI_Skin.lua re-skins the
---     buttons (backdrop/border/textures) via hooksecurefunc on
---     RA.ApplyOmniumfoliantFeature / RA.ApplyVaultButtonFeature, once they're
---     created below. Nothing in this file needs to know ElvUI is present.
---   - Chonky Character Sheet: see the "Chonky compat" section - it doesn't
---     resize the real CharacterFrame, only pushes CharacterFrameBg out via
---     its own "hpad" option, so we anchor to CharacterFrameBg instead when
---     Chonky is loaded, and Chonky's Titles/Equipment Manager panes don't
---     overlap our corner, so the Stats-only tab restriction is skipped too.
+-- Design: one idempotent RA.RefreshCharFrameButtons() decides, from current
+-- state only, whether each button should be shown, and applies it. It is
+-- called from a few event triggers (see InitCharacterFrameButtons) - no
+-- timers, no watchdog, no cached "which tab is active" flags.
+--
+-- Compat:
+--   - ElvUI: ElvUI_Skin.lua skins the buttons after each refresh.
+--   - Chonky Character Sheet: only CharacterFrameBg is pushed out, so the
+--     buttons anchor to it and the Stats-only restriction is skipped.
 
 local RA       = _G["RollAway"]
 local RA_L     = RA.RA_L
 local DBG      = RA.DBG
-local DBGError = RA.DBGError
+local C_Timer_After = RA.C_Timer_After
 
-local C_Timer_After    = RA.C_Timer_After
+local OMNI_ICON_FILEID       = 7554214  -- Omniumfoliant minimap icon
+local GREATVAULT_ICON_FILEID = 2744751  -- Great Vault chest icon
 
-local omniCharButton
-local vaultCharButton
+-- Extra X nudge while Chonky is loaded (tune live with /rawchonkyoffset).
+local chonkyXOffsetBonus = -260
+
+local buttons = {}  -- [key] = button, created lazily
 
 ------------------------------------------------------------------------
--- Chonky Character Sheet compat
-------------------------------------------------------------------------
--- Chonky doesn't actually resize the real CharacterFrame - only
--- CharacterFrameBg (a reference/background frame) gets pushed right via its
--- own "hpad" option (CharacterFrameBg:SetPoint("BOTTOMRIGHT", CharacterFrame,
--- "BOTTOMRIGHT", hpad+65, 0) in Chonky's characterSheet.lua). Chonky itself
--- re-anchors its own close button to CharacterFrameBg for the same reason.
--- Anchoring our buttons there too means they track any future hpad change
--- automatically - no guessed pixel offset needed for the base position.
+-- State helpers
 ------------------------------------------------------------------------
 
 local function IsChonkyLoaded()
@@ -44,146 +34,37 @@ local function IsChonkyLoaded()
 end
 RA.IsChonkyLoaded = IsChonkyLoaded
 
-local function GetCharFrameButtonAnchor()
-    if IsChonkyLoaded() and _G["CharacterFrameBg"] then
-        return _G["CharacterFrameBg"]
-    end
-    return CharacterFrame -- Default UI (and anything else): real CharacterFrame corner
+local function IsMaxLevel()
+    return RA.IsMaxLevel and RA.IsMaxLevel()
 end
 
--- Extra rightward nudge on top of the anchor-frame fix above, only applied
--- when Chonky is loaded (never touches Default UI/other-skin positioning).
--- Default confirmed via live testing (/rawchonkyoffset). Adjust the same way
--- if a future Chonky update shifts CharacterFrameBg differently.
-local chonkyXOffsetBonus = -260
-
--- Guards every self-heal entry point below (watchdog tick, OnShow hooks,
--- spec-change reapply) against a stray Lua error. Without this, a single
--- error thrown inside ReapplyCharFrameButtons (e.g. a transient nil from
--- ElvUI or another addon reacting to the same event) stops the watchdog's
--- self-rescheduling C_Timer_After chain permanently for that session - the
--- buttons then stay gone until /reload, matching reports of them vanishing
--- "randomly" only with certain addon combos (e.g. ElvUI) active.
-local function SafeCall(fn, ...)
-    local ok, err = pcall(fn, ...)
-    if not ok then
-        DBGError("[CharFrameButtons] self-heal error (caught, continuing):", err)
-    end
-    return ok
+-- Titles / Equipment Manager are sub-views of the Character tab and use the
+-- same corner, so the buttons only show while the Stats pane is visible
+-- (Blizzard: GetPaperDollSideBarFrame(1) == CharacterStatsPane). Chonky moves
+-- those panes elsewhere, so it is exempt.
+local function IsStatsViewShown()
+    if IsChonkyLoaded() then return true end
+    return CharacterStatsPane ~= nil and CharacterStatsPane:IsShown()
 end
 
--- Full self-heal for one button: some external UI code (combat-log driven
--- PaperDollFrame redraws, other addons enumerating/hiding "unknown" children,
--- etc.) has been observed to leave the button's frame object intact but with
--- its parent, strata, or anchor points reset/invalidated. A plain :Show()
--- on such a button does nothing visible, which is why toggling the option
--- off/on in Settings previously failed to bring it back (only /reload, which
--- recreates everything from scratch, fixed it). Re-asserting parent/strata/
--- level/points every time - not just Show() - makes this self-correcting.
-local function HealCharFrameButton(btn, xOffset)
-    if not btn or not PaperDollFrame then return end
-    local anchor = GetCharFrameButtonAnchor()
-    local bonus = IsChonkyLoaded() and chonkyXOffsetBonus or 0
-    if btn:GetParent() ~= PaperDollFrame then
-        btn:SetParent(PaperDollFrame)
-        DBG("[CharFrameButtons]", btn:GetName(), "reparented back to PaperDollFrame (was detached)")
+------------------------------------------------------------------------
+-- Button factory
+------------------------------------------------------------------------
+
+local function PlaceButton(btn, xOffset)
+    local anchor = CharacterFrame
+    local bonus  = 0
+    if IsChonkyLoaded() then
+        anchor = _G["CharacterFrameBg"] or CharacterFrame
+        bonus  = chonkyXOffsetBonus
     end
-    btn:SetFrameStrata("DIALOG")
-    btn:SetFrameLevel(PaperDollFrame:GetFrameLevel() + 10)
     btn:ClearAllPoints()
     btn:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", xOffset + bonus, 8)
 end
 
-local function RepositionCharFrameButtons()
-    if omniCharButton then HealCharFrameButton(omniCharButton, -8) end
-    if vaultCharButton then HealCharFrameButton(vaultCharButton, -36) end
-end
-RA.RepositionCharFrameButtons = RepositionCharFrameButtons
-
-function RA.SetChonkyOffset(n)
-    chonkyXOffsetBonus = tonumber(n) or chonkyXOffsetBonus
-    RepositionCharFrameButtons()
-    DBG("[CharFrameButtons] Chonky button offset bonus set to", chonkyXOffsetBonus)
-    return chonkyXOffsetBonus
-end
-
-------------------------------------------------------------------------
--- Sidebar tab gating (Default UI)
-------------------------------------------------------------------------
--- Titles/Equipment Manager are sub-views of the Character tab (PaperDollFrame
--- stays shown for all three), so on Default UI we only show the buttons on
--- Stats to avoid overlapping those panes' own bottom-right content.
--- Chonky Character Sheet repositions Titles/Equipment Manager into its own
--- panes elsewhere in the frame (not near our corner), so this restriction
--- doesn't apply there - see the IsChonkyLoaded() bypass below.
-------------------------------------------------------------------------
-
--- Gate on the actual visibility of the Titles/Equipment Manager panes, never
--- on tab state. PaperDollSidebarTab1-3 are plain Buttons on current retail
--- (no :GetChecked), so the old click-tracked flag could go stale - e.g. after
--- closing on Titles/Equipment and reopening on Stats - and then hid both
--- buttons on the Stats view for good, with no error logged. The panes' own
--- IsShown() is always correct, however the view was switched (click, other
--- addon, PaperDollFrame_SetSidebar, reopen). Default is "allowed".
-local function CharFrameButtonsAllowed()
-    if IsChonkyLoaded() then return true end
-    if PaperDollTitlesPane and PaperDollTitlesPane:IsShown() then return false end
-    if PaperDollEquipmentManagerPane and PaperDollEquipmentManagerPane:IsShown() then return false end
-    return true
-end
-
-local sidebarHooked = false
-local function HookPaperDollSidebarTabs()
-    if sidebarHooked then return end
-    local function Refresh()
-        RA.ApplyOmniumfoliantFeature()
-        RA.ApplyVaultButtonFeature()
-    end
-    -- Sidebar view switches go through PaperDollFrame_SetSidebar (tab clicks
-    -- and addons alike); refresh right after so buttons don't wait for the
-    -- watchdog's next tick.
-    if type(PaperDollFrame_SetSidebar) == "function" then
-        hooksecurefunc("PaperDollFrame_SetSidebar", Refresh)
-        sidebarHooked = true
-    else
-        for i = 1, 3 do
-            local tab = _G["PaperDollSidebarTab"..i]
-            if tab and tab.HookScript then
-                tab:HookScript("OnClick", Refresh)
-                sidebarHooked = true
-            end
-        end
-    end
-    if sidebarHooked then
-        DBG("[CharFrameButtons] PaperDoll sidebar hooked for Omnium/Vault button gating")
-    end
-end
-
-------------------------------------------------------------------------
--- Shared button factory
-------------------------------------------------------------------------
-
--- Shared factory for the icon buttons anchored to CharacterFrame's bottom-right
--- corner (Omniumfoliant, Great Vault). Both buttons are visually and
--- structurally identical, only differing in icon/position/click/tooltip.
--- ElvUI skinning is applied afterward by ElvUI_Skin.lua, not here.
-local function CreateCharFrameIconButton(globalName, xOffset, iconFileID, debugLabel, onClick, onEnter)
-    -- Parented to PaperDollFrame, not CharacterFrame (shown on every tab),
-    -- so the button only leaks onto Character, not Reputation/Currencies/etc.
-    if not PaperDollFrame then return nil end
-    HookPaperDollSidebarTabs()
-
+local function CreateButton(globalName, icon, onClick, onEnter)
     local btn = CreateFrame("Button", globalName, PaperDollFrame)
     btn:SetSize(24, 24)
-    -- Anchored to CharacterFrame (or CharacterFrameBg under Chonky, see
-    -- above) rather than PaperDollFrame: CharacterFrame_Expand() widens
-    -- CharacterFrame itself when the stats pane is shown (default state),
-    -- while PaperDollFrame stays at its narrower width. Anchoring here keeps
-    -- the button at the frame's actual visible corner instead of getting
-    -- buried under the stats/item-slot column.
-    local anchor = GetCharFrameButtonAnchor()
-    local bonus = IsChonkyLoaded() and chonkyXOffsetBonus or 0
-    btn:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", xOffset + bonus, 8)
     btn:SetFrameStrata("DIALOG")
     btn:SetFrameLevel(PaperDollFrame:GetFrameLevel() + 10)
 
@@ -192,52 +73,64 @@ local function CreateCharFrameIconButton(globalName, xOffset, iconFileID, debugL
     btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     btn:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
 
-    local icon = btn:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("TOPLEFT", 3, -3)
-    icon:SetPoint("BOTTOMRIGHT", -3, 3)
-    icon:SetTexture(iconFileID)
-    btn.icon = icon
+    local tex = btn:CreateTexture(nil, "ARTWORK")
+    tex:SetPoint("TOPLEFT", 3, -3)
+    tex:SetPoint("BOTTOMRIGHT", -3, 3)
+    tex:SetTexture(icon)
+    btn.icon = tex
 
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnEnter", onEnter)
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-    -- Child of PaperDollFrame: follows Character-tab Show/Hide automatically.
-    btn:Show()
-    DBG("[CharFrameButtons]", debugLabel, "CharacterFrame button created")
+    btn:Hide()
     return btn
 end
 
 ------------------------------------------------------------------------
--- Omniumfoliant button
--- Works with Default UI and ElvUI alike (ElvUI not required since 2.6.0).
+-- Omniumfoliant: hide the minimap icon, offer a Character panel button
 ------------------------------------------------------------------------
 
 local function GetOmniMinimapButton()
     return _G["ExpansionLandingPageMinimapButton"]
 end
 
-local function OmniumfoliantAllowed()
-    -- Blizzard's tooltip errors pre-max-level (no landing page data yet).
-    return RA.IsMaxLevel and RA.IsMaxLevel()
+local function OmniActive()
+    return RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap and IsMaxLevel()
 end
 
-local OMNI_ICON_FILEID = 7554214  -- current Omniumfoliant minimap icon
+-- Hooks the Blizzard minimap button once: keeps it hidden while the option
+-- is active and guards its tooltip (errors below max level).
+local function SetupOmniMinimapButton()
+    local mm = GetOmniMinimapButton()
+    if not mm then return nil end
+    if mm.RA_hooked then return mm end
+    mm.RA_hooked = true
 
-local function CreateOmniCharButton()
-    if omniCharButton then return omniCharButton end
-    omniCharButton = CreateCharFrameIconButton(
-        "RollAwayOmniumfoliantButton", -8, OMNI_ICON_FILEID, "Omniumfoliant",
+    hooksecurefunc(mm, "Show", function(self)
+        if OmniActive() then self:Hide() end
+    end)
+
+    local origOnEnter = mm:GetScript("OnEnter")
+    if origOnEnter then
+        mm:SetScript("OnEnter", function(self)
+            if IsMaxLevel() then origOnEnter(self) end
+        end)
+    end
+    return mm
+end
+
+local function CreateOmniButton()
+    return CreateButton("RollAwayOmniumfoliantButton", OMNI_ICON_FILEID,
         function()
-            local btn = GetOmniMinimapButton()
-            if btn then btn:Click() end
+            local mm = GetOmniMinimapButton()
+            if mm then mm:Click() end
         end,
-        -- Reuse Blizzard's own tooltip text (correctly localized), just re-anchor it.
+        -- Reuse Blizzard's own (localized) tooltip, just re-anchor it.
         function(self)
-            local btn = GetOmniMinimapButton()
-            local onEnter = btn and btn:GetScript("OnEnter")
+            local mm = GetOmniMinimapButton()
+            local onEnter = mm and mm:GetScript("OnEnter")
             if onEnter then
-                onEnter(btn)
+                onEnter(mm)
                 GameTooltip:ClearAllPoints()
                 GameTooltip:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", 0, 4)
             else
@@ -245,303 +138,123 @@ local function CreateOmniCharButton()
                 GameTooltip:SetText("Omniumfoliant")
                 GameTooltip:Show()
             end
-        end
-    )
-    return omniCharButton
-end
-
-local function ApplyOmniumfoliantFeature()
-    local btn = GetOmniMinimapButton()
-    if not btn then return false end
-
-    if not btn.RA_hooked then
-        hooksecurefunc(btn, "Show", function(self)
-            if RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap and OmniumfoliantAllowed() then
-                self:Hide()
-            end
         end)
-        btn.RA_hooked = true
-    end
-
-    if not btn.RA_tooltipGuarded then
-        -- Blizzard's SetTooltip errors pre-max-level; wrap OnEnter to skip it.
-        local origOnEnter = btn:GetScript("OnEnter")
-        if origOnEnter then
-            btn:SetScript("OnEnter", function(self)
-                if OmniumfoliantAllowed() then
-                    origOnEnter(self)
-                end
-            end)
-        end
-        btn.RA_tooltipGuarded = true
-    end
-
-    local active = RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap and OmniumfoliantAllowed()
-    if active then
-        btn:Hide()
-        btn.RA_forceHidden = true
-        CreateOmniCharButton()
-        if omniCharButton then
-            HealCharFrameButton(omniCharButton, -8)
-            if CharFrameButtonsAllowed() then
-                omniCharButton:Show()
-            else
-                omniCharButton:Hide()
-            end
-        end
-    else
-        -- Only undo our own Hide(); never force-show, Blizzard controls default visibility.
-        if btn.RA_forceHidden then
-            btn:Show()
-            btn.RA_forceHidden = false
-        end
-        if omniCharButton then omniCharButton:Hide() end
-    end
-    return true
-end
-RA.ApplyOmniumfoliantFeature = ApplyOmniumfoliantFeature
-
-function RA.InitOmniumfoliant()
-    local function TryInit(attempt)
-        attempt = attempt or 1
-        if ApplyOmniumfoliantFeature() then
-            DBG("[CharFrameButtons] Omniumfoliant button hooked (attempt "..attempt..")")
-            return
-        end
-        if attempt >= 10 then
-            DBG("[CharFrameButtons] Omniumfoliant minimap button not found after", attempt, "attempts")
-            return
-        end
-        if C_Timer_After then
-            C_Timer_After(1, function() TryInit(attempt + 1) end)
-        end
-    end
-    TryInit()
 end
 
 ------------------------------------------------------------------------
--- Great Vault button - opens WeeklyRewardsFrame directly.
--- Works with Default UI and ElvUI alike (ElvUI not required since 2.6.0).
+-- Great Vault: opens WeeklyRewardsFrame directly
 ------------------------------------------------------------------------
 
-local GREATVAULT_ICON_FILEID = 2744751  -- current Great Vault chest icon
-
-local function GreatVaultButtonAllowed()
-    -- Vault is irrelevant pre-max-level; keep consistent with Omniumfoliant gating.
-    return RA.IsMaxLevel and RA.IsMaxLevel()
+local function VaultActive()
+    return RollAwayDB and RollAwayDB.vaultButtonCharFrame and IsMaxLevel()
 end
 
-local function OpenGreatVault()
+local function ToggleGreatVault()
     if C_AddOns and C_AddOns.LoadAddOn then
         C_AddOns.LoadAddOn("Blizzard_WeeklyRewards")
     end
     if not WeeklyRewardsFrame then return end
-    if WeeklyRewardsFrame:IsShown() then
-        WeeklyRewardsFrame:Hide()
-    else
-        WeeklyRewardsFrame:Show()
-    end
+    WeeklyRewardsFrame:SetShown(not WeeklyRewardsFrame:IsShown())
 end
 
-local function CreateVaultCharButton()
-    if vaultCharButton then return vaultCharButton end
-    -- Fixed slot to the left of the Omniumfoliant button's slot (-8) –
-    -- independent of whether that button actually exists.
-    vaultCharButton = CreateCharFrameIconButton(
-        "RollAwayVaultButton", -36, GREATVAULT_ICON_FILEID, "Great Vault",
-        OpenGreatVault,
+local function CreateVaultButton()
+    return CreateButton("RollAwayVaultButton", GREATVAULT_ICON_FILEID,
+        ToggleGreatVault,
         function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:SetText(RA_L["qol_vault_button_tooltip"])
             GameTooltip:Show()
-        end
-    )
-    return vaultCharButton
-end
-
-local function ApplyVaultButtonFeature()
-    local active = RollAwayDB and RollAwayDB.vaultButtonCharFrame and GreatVaultButtonAllowed()
-    if active then
-        CreateVaultCharButton()
-        if vaultCharButton then
-            HealCharFrameButton(vaultCharButton, -36)
-            if CharFrameButtonsAllowed() then
-                vaultCharButton:Show()
-            else
-                vaultCharButton:Hide()
-            end
-        end
-    else
-        if vaultCharButton then vaultCharButton:Hide() end
-    end
-end
-RA.ApplyVaultButtonFeature = ApplyVaultButtonFeature
-
-------------------------------------------------------------------------
--- Reapply / watchdog / spec-change orchestration (shared by both buttons)
-------------------------------------------------------------------------
-
--- Blizzard_CharacterFrame (PaperDollFrame) is load-on-demand and typically isn't
--- loaded yet at InitQoL() (login). ApplyOmniumfoliantFeature() still reports success
--- at that point because it only checks the minimap button, so CreateOmniCharButton()/
--- CreateVaultCharButton() fail silently and nothing retries until the next zone or
--- level-up. Re-apply as soon as the Character panel addon actually loads.
-local function ReapplyCharFrameButtons()
-    -- Each wrapped separately so one feature erroring doesn't block the other.
-    SafeCall(RA.ApplyOmniumfoliantFeature)
-    SafeCall(RA.ApplyVaultButtonFeature)
-end
-
--- Self-rescheduling watchdog: as long as CharacterFrame stays open, keep
--- forcing the buttons back every second. This is a safety net for cases
--- where neither OnShow hook below fires (e.g. Blizzard toggling internal
--- sub-frames without a fresh Show(), or something external wiping the
--- buttons while the panel is already open) - buttons self-heal instead of
--- staying gone until the next open/close cycle.
-local charFrameWatchdogRunning  = false
-local charFrameWatchdogLastTick = 0
-
--- How long a heartbeat can go quiet before StartCharFrameWatchdog() treats
--- the tick chain as dead and restarts it anyway. Covers a desync where
--- charFrameWatchdogRunning never gets reset to false even though the
--- C_Timer_After chain itself silently stopped (e.g. a callback dropped
--- across a loading screen/zone change while the panel was open) - a plain
--- boolean guard alone would then refuse to ever restart it, matching
--- reports of buttons staying gone with no error logged at all.
-local WATCHDOG_STALE_SECONDS = 3
-
-local function CharFrameWatchdogTick()
-    charFrameWatchdogLastTick = GetTime()
-    if not (CharacterFrame and CharacterFrame:IsShown()) then
-        charFrameWatchdogRunning = false
-        return
-    end
-    SafeCall(ReapplyCharFrameButtons)
-    -- Rescheduling always happens, even if the reapply above errored, so the
-    -- watchdog itself can never die mid-session.
-    if C_Timer_After then
-        C_Timer_After(1, CharFrameWatchdogTick)
-    else
-        charFrameWatchdogRunning = false
-    end
-end
-local function StartCharFrameWatchdog()
-    if charFrameWatchdogRunning and (GetTime() - charFrameWatchdogLastTick) < WATCHDOG_STALE_SECONDS then
-        return
-    end
-    charFrameWatchdogRunning = true
-    CharFrameWatchdogTick()
-end
-
--- Debug/test helpers (see /rawcharwatchdog in Debug.lua): let a dev force
--- the exact desync above - flag stuck "running" but heartbeat stale -
--- without needing a real Lua error or a natural loading-screen repro.
-function RA.DebugBreakCharFrameWatchdog()
-    charFrameWatchdogRunning  = true
-    charFrameWatchdogLastTick = GetTime() - (WATCHDOG_STALE_SECONDS + 1)
-    -- Also hide the buttons themselves (not just desync the watchdog flag) so
-    -- the break has a visible effect, mirroring the real-world trigger: some
-    -- external UI code hides/detaches them while the panel stays open.
-    if omniCharButton then omniCharButton:Hide() end
-    if vaultCharButton then vaultCharButton:Hide() end
-    DBG("[CharFrameButtons] Watchdog forcibly marked stale for testing (running=true, heartbeat backdated); buttons hidden to simulate an external wipe")
-end
-
-function RA.DebugCharFrameWatchdogState()
-    return charFrameWatchdogRunning, charFrameWatchdogLastTick, GetTime() - charFrameWatchdogLastTick
-end
-
-local charFrameShowHooked = false
-local specChangeHooked = false
-
-local function DebugLogCharFrameButtonState(context)
-    DBG("[CharFrameButtons] CharFrame button check:", context,
-        "| CharacterFrame shown:", CharacterFrame and CharacterFrame:IsShown(),
-        "| omni shown:", omniCharButton and omniCharButton:IsShown(),
-        "| omni parent:", omniCharButton and omniCharButton:GetParent() and omniCharButton:GetParent():GetName(),
-        "| vault shown:", vaultCharButton and vaultCharButton:IsShown(),
-        "| vault parent:", vaultCharButton and vaultCharButton:GetParent() and vaultCharButton:GetParent():GetName())
-end
-
-local function HookSpecChangeReapply()
-    -- Some third-party CharacterFrame skins (e.g. Chonky Character Sheet) redraw
-    -- their overlay on spec change and, in doing so, appear to wipe unknown
-    -- child buttons of PaperDollFrame - our Omnium/Vault buttons vanish even
-    -- though CharacterFrame itself stays open (watchdog alone doesn't catch
-    -- this if it only re-parents/hides without ever hiding CharacterFrame).
-    -- Small delay lets the third-party redraw finish first, so our reapply
-    -- isn't immediately undone by it.
-    if specChangeHooked then return end
-    local f = CreateFrame("Frame")
-    f:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    f:SetScript("OnEvent", function()
-        DebugLogCharFrameButtonState("before spec-change reapply")
-        if C_Timer_After then
-            C_Timer_After(0.2, function()
-                SafeCall(ReapplyCharFrameButtons)
-                DebugLogCharFrameButtonState("after spec-change reapply")
-            end)
-        else
-            SafeCall(ReapplyCharFrameButtons)
-        end
-    end)
-    specChangeHooked = true
-    DBG("[CharFrameButtons] PLAYER_SPECIALIZATION_CHANGED hooked for Omnium/Vault button gating")
-end
-
-local function HookCharFrameReapply()
-    -- Belt-and-suspenders: re-apply every time the Character panel is opened,
-    -- not just on login/zone/level-up. Covers any case where Blizzard resets
-    -- button state between those events (e.g. portal use) without us knowing.
-    -- Cheap and idempotent, so safe to run on every single OnShow.
-    if charFrameShowHooked or not PaperDollFrame then return end
-    PaperDollFrame:HookScript("OnShow", function()
-        SafeCall(ReapplyCharFrameButtons)
-        SafeCall(StartCharFrameWatchdog)
-    end)
-    -- Also hook CharacterFrame itself: PaperDollFrame's OnShow doesn't
-    -- necessarily refire on every CharacterFrame open (e.g. reopening on a
-    -- tab that was already the active one), so this is a second entry point
-    -- into the same reapply/watchdog logic.
-    if CharacterFrame then
-        CharacterFrame:HookScript("OnShow", function()
-            SafeCall(ReapplyCharFrameButtons)
-            SafeCall(StartCharFrameWatchdog)
         end)
+end
+
+------------------------------------------------------------------------
+-- Refresh
+------------------------------------------------------------------------
+
+-- key, X offset from the corner (vault sits left of the Omnium slot),
+-- creator, and whether the feature is enabled.
+local DEFS = {
+    { key = "omni",  x = -8,  create = CreateOmniButton,  active = OmniActive  },
+    { key = "vault", x = -36, create = CreateVaultButton, active = VaultActive },
+}
+
+-- Single source of truth: sets every button (and the minimap icon) to match
+-- current options/level/view. Safe to call any time, any number of times.
+function RA.RefreshCharFrameButtons()
+    -- Minimap icon: only hidden by us while the option is active; never
+    -- force-shown otherwise (Blizzard controls default visibility).
+    local mm = SetupOmniMinimapButton()
+    if mm then
+        if OmniActive() then
+            mm:Hide()
+            mm.RA_forceHidden = true
+        elseif mm.RA_forceHidden then
+            mm.RA_forceHidden = false
+            mm:Show()
+        end
     end
-    charFrameShowHooked = true
+
+    if not (PaperDollFrame and CharacterFrame) then return end
+
+    local statsView = IsStatsViewShown()
+    for _, def in ipairs(DEFS) do
+        local btn = buttons[def.key]
+        local wanted = def.active() and statsView
+        if wanted and not btn then
+            btn = def.create()
+            buttons[def.key] = btn
+            DBG("[CharFrameButtons] created", def.key)
+        end
+        if btn then
+            if wanted then PlaceButton(btn, def.x) end
+            btn:SetShown(wanted and true or false)
+        end
+    end
+end
+
+-- Dev helper for /rawchonkyoffset.
+function RA.SetChonkyOffset(n)
+    chonkyXOffsetBonus = tonumber(n) or chonkyXOffsetBonus
+    RA.RefreshCharFrameButtons()
+    return chonkyXOffsetBonus
+end
+
+------------------------------------------------------------------------
+-- Init: wire the refresh to every event that can change its inputs
+------------------------------------------------------------------------
+
+local paperDollHooked = false
+
+-- Blizzard_CharacterFrame is load-on-demand; hook its frames once they exist.
+local function HookPaperDoll()
+    if paperDollHooked or not (PaperDollFrame and CharacterStatsPane) then return end
+    paperDollHooked = true
+    local function refresh() RA.RefreshCharFrameButtons() end
+    -- Panel opened, and Stats pane shown/hidden (view switch by click, addon
+    -- or reopen) - the pane's own visibility is what the gate reads.
+    PaperDollFrame:HookScript("OnShow", refresh)
+    CharacterStatsPane:HookScript("OnShow", refresh)
+    CharacterStatsPane:HookScript("OnHide", refresh)
+    DBG("[CharFrameButtons] PaperDoll hooked")
 end
 
 function RA.InitCharacterFrameButtons()
-    -- RA.ApplyOmniumfoliantFeature / RA.ApplyVaultButtonFeature (not the local
-    -- upvalues) since ApplyVaultButtonFeature is only declared later in this file;
-    -- both RA fields are populated by the time this ever runs.
-    --
-    -- NOTE: C_AddOns.IsAddOnLoaded("Blizzard_CharacterFrame") is unreliable here -
-    -- it can still report false for a brief window even after PaperDollFrame
-    -- already exists (confirmed via live testing), which caused this function to
-    -- take the "not loaded yet" branch and register an ADDON_LOADED listener that
-    -- then never fires (the event already fired before we listened). Result:
-    -- HookCharFrameReapply() never runs, so OnShow hooks/watchdog never attach,
-    -- and buttons silently stop self-healing - intermittently, based on addon
-    -- load-order timing. Check PaperDollFrame's existence directly instead, and
-    -- ALWAYS also register the ADDON_LOADED listener as a fallback for the case
-    -- where PaperDollFrame genuinely isn't loaded yet. HookCharFrameReapply()
-    -- guards against being hooked twice, so calling it from both paths is safe.
-    if PaperDollFrame then
-        SafeCall(ReapplyCharFrameButtons)
-        HookCharFrameReapply()
-        HookSpecChangeReapply()
-    end
+    HookPaperDoll()
+    RA.RefreshCharFrameButtons()
 
     local f = CreateFrame("Frame")
     f:RegisterEvent("ADDON_LOADED")
-    f:SetScript("OnEvent", function(self, _, loadedAddon)
-        if loadedAddon == "Blizzard_CharacterFrame" then
-            SafeCall(ReapplyCharFrameButtons)
-            HookCharFrameReapply()
-            HookSpecChangeReapply()
-            self:UnregisterAllEvents()
+    f:RegisterEvent("PLAYER_ENTERING_WORLD")
+    f:RegisterEvent("PLAYER_LEVEL_UP")
+    f:SetScript("OnEvent", function(_, event, arg1)
+        if event == "ADDON_LOADED" and arg1 ~= "Blizzard_CharacterFrame"
+            and arg1 ~= "Blizzard_ExpansionLandingPage" then
+            return
         end
+        HookPaperDoll()
+        -- UnitLevel can be stale in the same frame as PLAYER_LEVEL_UP, and
+        -- Blizzard's own frame setup runs after ADDON_LOADED/loading screens,
+        -- so let it settle first.
+        C_Timer_After(0.5, function() RA.RefreshCharFrameButtons() end)
     end)
 end

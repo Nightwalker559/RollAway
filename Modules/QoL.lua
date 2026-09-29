@@ -1072,14 +1072,7 @@ function RA.InitQoL()
     -- Instance join reminder
     InitJoinReminder()
 
-    -- Omniumfoliant minimap → CharacterFrame button
-    RA.InitOmniumfoliant()
-
-    -- Great Vault → CharacterFrame button
-    RA.ApplyVaultButtonFeature()
-
-    -- Re-apply both CharacterFrame buttons once Blizzard_CharacterFrame (PaperDollFrame)
-    -- actually loads, since it's load-on-demand and usually isn't ready yet here.
+    -- Omniumfoliant / Great Vault Character panel buttons
     RA.InitCharacterFrameButtons()
 
     -- World Map: hide tracked-faction activity button
@@ -1087,28 +1080,6 @@ function RA.InitQoL()
 
     -- Professions: hide "Crafting Output Log" popup
     InitCraftingOutputLogHide()
-
-    -- Re-check max-level gating once the player dings (UnitLevel can be
-    -- stale in the same frame as PLAYER_LEVEL_UP, so defer one tick).
-    local levelGateFrame = CreateFrame("Frame")
-    levelGateFrame:RegisterEvent("PLAYER_LEVEL_UP")
-    levelGateFrame:SetScript("OnEvent", function()
-        C_Timer_After(0, function()
-            RA.ApplyOmniumfoliantFeature()
-            RA.ApplyVaultButtonFeature()
-        end)
-    end)
-
-    -- Re-apply buttons after every loading screen: Blizzard's frame reset
-    -- can hide them without our hooks firing. Cheap/idempotent to re-run.
-    local reapplyFrame = CreateFrame("Frame")
-    reapplyFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    reapplyFrame:SetScript("OnEvent", function()
-        C_Timer_After(0.5, function()
-            RA.ApplyOmniumfoliantFeature()
-            RA.ApplyVaultButtonFeature()
-        end)
-    end)
 
     DBG("QoL initialized")
 end

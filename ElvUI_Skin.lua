@@ -281,14 +281,6 @@ local function SkinCharFrameButton(globalName)
     btn.RA_ElvSkinned = true
 end
 
-local function SkinOmniumfoliantButton()
-    SkinCharFrameButton("RollAwayOmniumfoliantButton")
-end
-
-local function SkinVaultButton()
-    SkinCharFrameButton("RollAwayVaultButton")
-end
-
 ------------------------------------------------------------------------
 -- No checkbox/slider color forcing anymore. Both attempts (fixed accent,
 -- then real class color) fought ElvUI's own AceGUI skin hook unreliably.
@@ -325,16 +317,11 @@ hooksecurefunc(RA, "ShowPortalOverview", function()
     end
 end)
 
--- Buttons are lazy-created by QoL.lua; skinned-once guard avoids re-skinning
--- on every toggle.
-hooksecurefunc(RA, "ApplyOmniumfoliantFeature", function()
+-- Buttons are lazy-created by CharFrameButtons.lua; skinned-once guard avoids
+-- re-skinning on every refresh.
+hooksecurefunc(RA, "RefreshCharFrameButtons", function()
     if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
-        SkinOmniumfoliantButton()
-    end
-end)
-
-hooksecurefunc(RA, "ApplyVaultButtonFeature", function()
-    if E.private.skins and E.private.skins.blizzard and E.private.skins.blizzard.enable then
-        SkinVaultButton()
+        SkinCharFrameButton("RollAwayOmniumfoliantButton")
+        SkinCharFrameButton("RollAwayVaultButton")
     end
 end)
