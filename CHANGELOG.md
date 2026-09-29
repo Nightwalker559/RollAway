@@ -4,6 +4,9 @@
 
 ## 3.0.8
 
+### New
+- QoL > LFG: option "Preselect Mythic+ difficulty" - the Group Finder create form uses Mythic+ instead of the default Mythic when opened and after picking a dungeon (data field only, no dropdown API calls, to avoid taint; the dropdown label may still show Mythic).
+
 ### Fixed
 - Omniumfoliant/Great Vault buttons could stay hidden on the Stats view.
 - Group Loot History frame now hides immediately on entering combat everywhere, even with rolls pending (unless auto-close is disabled).

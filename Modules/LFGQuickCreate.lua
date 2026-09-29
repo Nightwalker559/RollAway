@@ -166,6 +166,36 @@ local function ApplyDefaultPlaystyle(ec)
 end
 
 ------------------------------------------------------------------------
+-- Switches the EC frame's selected difficulty to Mythic+ (Blizzard defaults
+-- to plain Mythic), for the currently selected dungeon. Runs when the form
+-- opens and after another dungeon was picked - never after a manual
+-- difficulty pick, so choosing Normal/Heroic/Mythic still works.
+------------------------------------------------------------------------
+local function ApplyMythicPlus(ec)
+    if not (RollAwayDB and RollAwayDB.lfgAutoMythicPlus) then return end
+    if ec.selectedCategory ~= 2 or not ec.selectedActivity then return end
+
+    local current = C_LFGList.GetActivityInfoTable(ec.selectedActivity)
+    if not current or current.isMythicPlusActivity then return end
+
+    for _, activityID in ipairs(C_LFGList.GetAvailableActivities(ec.selectedCategory, ec.selectedGroup, ec.selectedFilters) or {}) do
+        local info = C_LFGList.GetActivityInfoTable(activityID)
+        if info and info.isMythicPlusActivity then
+            -- Plain data field only, for the same taint reason as the
+            -- default playstyle above (no dropdown API calls). The dropdown
+            -- label may keep showing "Mythic", but Blizzard's List Group
+            -- button reads ec.selectedActivity.
+            ec.selectedActivity = activityID
+            DBG("[LFGQuickCreate] Difficulty set to Mythic+, activityID:", activityID)
+            if LFGListEntryCreation_UpdateValidState then
+                pcall(LFGListEntryCreation_UpdateValidState, ec)
+            end
+            return
+        end
+    end
+end
+
+------------------------------------------------------------------------
 -- Creates a single dungeon icon button.
 ------------------------------------------------------------------------
 local function MakeButton(parent, dungeon, index)
@@ -275,14 +305,19 @@ local function Init()
         buttons[#buttons + 1] = MakeButton(container, d, i)
     end
 
-    local function HookDD(dd)
+    -- After a dropdown closes: re-sync the button row; when it was a
+    -- dungeon/category pick (not the difficulty dropdown), Mythic+ again.
+    local function HookDD(dd, isDifficultyDropdown)
         if not dd then return end
         dd:HookScript("OnHide", function()
-            C_Timer.After(0.05, SyncVisibility)
+            C_Timer.After(0.05, function()
+                SyncVisibility()
+                if not isDifficultyDropdown and ec:IsShown() then ApplyMythicPlus(ec) end
+            end)
         end)
     end
     HookDD(ec.GroupDropdown)
-    HookDD(ec.ActivityDropdown)
+    HookDD(ec.ActivityDropdown, true)
     if ec.CategoryDropdown and ec.CategoryDropdown ~= ec.GroupDropdown then
         HookDD(ec.CategoryDropdown)
     end
@@ -301,12 +336,12 @@ local function Init()
             PopLayout(ec)
             container:Hide()
         end
-        -- Apply default playstyle independently of the dungeon buttons.
-        if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then
-            C_Timer.After(0.05, function()
-                if ec:IsShown() then ApplyDefaultPlaystyle(ec) end
-            end)
-        end
+        -- Apply default playstyle / Mythic+ independently of the dungeon buttons.
+        C_Timer.After(0.05, function()
+            if not ec:IsShown() then return end
+            if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then ApplyDefaultPlaystyle(ec) end
+            ApplyMythicPlus(ec)
+        end)
     end
 
     ec:HookScript("OnShow", OnEntryCreationShown)

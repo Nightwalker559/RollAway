@@ -93,7 +93,7 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     -- LFG/Logs/Misc/Reminder: scrollbar force-hidden for now, flip to false once needed.
     local filter   = CreateQolCategoryPanel("filter",   "Filter",   430, false)
-    local lfg      = CreateQolCategoryPanel("lfg",      "Lfg",      260, true)
+    local lfg      = CreateQolCategoryPanel("lfg",      "Lfg",      380, true)
     local logs     = CreateQolCategoryPanel("logs",     "Logs",     380, true)
     local misc      = CreateQolCategoryPanel("misc",     "Misc",     200, true)
     local reminder = CreateQolCategoryPanel("reminder", "Reminder", 660, true)
@@ -403,8 +403,13 @@ function RA.BuildQoLOptions(category, S, classColor)
     end
     UpdatePSState(RollAwayDB.lfgAutoPlaystyle)
 
+    -- Preselect the Mythic+ difficulty in the Group Finder's create form
+    local _, lfgqcMPlusInfo = MakeToggle(lfg, psDD.frame, -20, -14, {
+        label = RA_L["qol_lfgqc_automplus_label"], info = RA_L["qol_lfgqc_automplus_info"], dbKey = "lfgAutoMythicPlus",
+    })
+
     -- Enable checkbox (last alphabetically: "Show dungeon quick-create...")
-    MakeToggle(lfg, psDD.frame, -20, -14, {
+    MakeToggle(lfg, lfgqcMPlusInfo, -20, -12, {
         label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
     })
 

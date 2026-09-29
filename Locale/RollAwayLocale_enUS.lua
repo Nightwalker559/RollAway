@@ -216,6 +216,8 @@ L["qol_log_chat_stopped"]       = "Combat log stopped."
 -- LFG Quick Create
 L["qol_lfgqc_label"]            = "Show dungeon quick-create buttons in the Group Finder"
 L["qol_lfgqc_info"]             = "Adds dungeon icon buttons below the group name field when creating a Mythic+ group. Click an icon to instantly select that dungeon and create the listing."
+L["qol_lfgqc_automplus_label"]   = "Preselect Mythic+ difficulty"
+L["qol_lfgqc_automplus_info"]    = "Sets the difficulty of the group you create to Mythic+ instead of the default Mythic, when opening the form and after picking a dungeon. Picking another difficulty by hand still works. The dropdown label may keep showing Mythic."
 L["qol_lfgqc_namefirst"]        = "Please enter a group name first."
 L["qol_lfgqc_autops_label"]     = "Auto-apply default playstyle when opening the Group Finder"
 L["qol_lfgqc_autops_info"]      = "Sets the selected playstyle automatically. Works independently of the dungeon buttons."

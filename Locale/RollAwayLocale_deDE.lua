@@ -217,6 +217,8 @@ L["qol_log_chat_stopped"]       = "Kampflog gestoppt."
 -- LFG Quick Create
 L["qol_lfgqc_label"]            = "Dungeon-Schnellauswahl-Buttons im Gruppensuche-Fenster anzeigen"
 L["qol_lfgqc_info"]             = "Fügt Dungeon-Icon-Buttons unterhalb des Gruppennamens ein, wenn du eine Mythisch+-Gruppe erstellst. Klick auf ein Icon wählt den Dungeon direkt aus und erstellt die Gruppe."
+L["qol_lfgqc_automplus_label"]   = "Schwierigkeit Mythisch+ vorwählen"
+L["qol_lfgqc_automplus_info"]    = "Stellt die Schwierigkeit der erstellten Gruppe auf Mythisch+ statt auf das Standard-Mythisch, beim Öffnen des Formulars und nach der Dungeon-Auswahl. Eine von Hand gewählte andere Schwierigkeit bleibt möglich. Das Dropdown zeigt evtl. weiter Mythisch an."
 L["qol_lfgqc_namefirst"]        = "Bitte zuerst einen Gruppennamen eingeben."
 L["qol_lfgqc_autops_label"]     = "Standard-Spielstil beim Öffnen der Gruppensuche automatisch anwenden"
 L["qol_lfgqc_autops_info"]      = "Setzt den ausgewählten Spielstil automatisch. Funktioniert unabhängig von den Dungeon-Buttons."

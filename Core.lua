@@ -155,6 +155,7 @@ RA.defaults = {
         lfgQuickCreate       = false,
         lfgAutoPlaystyle     = false,
         lfgDefaultPlaystyle  = 0,
+        lfgAutoMythicPlus    = false,
         hideOmniumfoliantMinimap = false,
         vaultButtonCharFrame     = false,
         hideMapActivityTracker   = false,
