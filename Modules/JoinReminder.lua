@@ -303,9 +303,13 @@ function RA.InitJoinReminder()
     -- "inviteaccepted" never has to re-resolve from a possibly-already-purged
     -- browse cache entry.
     local applicationDungeons = {}
+    -- true once an application-accepted join was handled: the listing update
+    -- that follows (also fired for members) isn't one of our own creations.
+    local joinedViaApplication = false
 
     local function ResetGroupState()
         resolvedEntryID = nil
+        joinedViaApplication = false
         wipe(applicationDungeons)
     end
 
@@ -367,6 +371,7 @@ function RA.InitJoinReminder()
                 return
             end
             resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
+            joinedViaApplication = true
             DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon)
 
         elseif event == "GROUP_ROSTER_UPDATE" then
@@ -377,6 +382,10 @@ function RA.InitJoinReminder()
             local activityID = entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]
 
             if activityID then
+                if joinedViaApplication then
+                    DBG("[QoL] Listing update ignored – joined via application, not own listing")
+                    return
+                end
                 -- Own listing created or updated (M+ or raid)
                 local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
                 if isMythicPlus == nil then return end  -- neither M+ nor current raid
@@ -400,6 +409,7 @@ function RA.InitJoinReminder()
                 end
             else
                 -- Listing removed (cancelled or group full)
+                joinedViaApplication = false
                 if not keyAddonOpenedByCreation then return end
                 keyAddonOpenedByCreation = false
                 keyAddonSafetyTimer.Stop()
