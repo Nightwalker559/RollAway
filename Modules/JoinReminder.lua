@@ -353,6 +353,9 @@ function RA.InitJoinReminder()
                 if activityID then
                     local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
                     applicationDungeons[searchResultID] = name and { name = name, isMythicPlus = isMythicPlus, dungeon = dungeon } or false
+                    DBG("[QoL] Application resolved: searchResultID=", searchResultID, "activityID=", activityID, "name=", name or "nil")
+                else
+                    DBG("[QoL] Application: no search result info yet for searchResultID=", searchResultID, "status=", newStatus)
                 end
             end
 
@@ -360,7 +363,7 @@ function RA.InitJoinReminder()
             local resolved = applicationDungeons[searchResultID]
             applicationDungeons[searchResultID] = nil
             if not resolved then
-                DBG("[QoL] Join reminder: application never resolved to a name")
+                DBG("[QoL] Join reminder: application never resolved to a name (searchResultID=", searchResultID, "- not applicant / not M+ / cache purged)")
                 return
             end
             resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
