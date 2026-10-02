@@ -14,6 +14,9 @@
 - Portal Overview / Teleport Reminder: no more secure-frame re-layout in combat (`ADDON_ACTION_BLOCKED`); a show deferred until after combat now lays itself out; dungeons without a teleport spell are no longer listed.
 - Deferred show/hide of secure frames could override a newer change made after combat.
 - Instance join reminder: no leaked frame per join, a newer reminder cancels an older pending wait.
+- Instance join reminder: joining someone else's listing no longer triggers the reminder a second time (the follow-up listing update was mistaken for your own listing; with BigWigs this could toggle its window shut again).
+- Teleport Reminder no longer vanishes right after showing when you accept an LFG invite while already in a party (e.g. a group applying together): the `GROUP_LEFT` of the old party is only treated as leaving when you end up ungrouped.
+- Debug log: unresolved LFG applications are now logged with their search result ID and status.
 - LFG Quick Create: keystone highlight refreshes if the Group Finder was already open at load.
 - Profile reset: per-character Dungeon/Raid/Delve selections are reset to defaults immediately instead of staying empty until `/reload`.
 - `/rawreminder` always restores the faked Voidcore count.
