@@ -8,32 +8,38 @@
 - QoL > LFG: option "Preselect Mythic+ difficulty" - the Group Finder create form uses Mythic+ instead of the default Mythic when opened and after picking a dungeon (data field only, no dropdown API calls, to avoid taint; the dropdown label may still show Mythic).
 
 ### Fixed
+**Group Finder reminders**
+- Instance join reminder: no leaked frame per join; a newer reminder cancels an older pending wait.
+- Instance join reminder: joining someone else's listing no longer triggers it a second time (the follow-up listing update was mistaken for your own listing; with BigWigs this could toggle its window shut again).
+- Teleport Reminder no longer vanishes right after showing when you accept an LFG invite while already in a party (e.g. a group applying together): the `GROUP_LEFT` of the old party only counts as leaving if you end up ungrouped.
+- Portal Overview / Teleport Reminder: no more secure-frame re-layout in combat (`ADDON_ACTION_BLOCKED`); a show deferred until after combat lays itself out; dungeons without a teleport spell are no longer listed.
+- Deferred show/hide of secure frames could override a newer change made after combat.
+- LFG Quick Create: keystone highlight refreshes if the Group Finder was already open at load.
+
+**Character panel, loot and logging**
 - Omniumfoliant/Great Vault buttons could stay hidden on the Stats view.
 - Group Loot History frame now hides immediately on entering combat everywhere, even with rolls pending (unless auto-close is disabled).
 - Auto-log: a rate-limit retry could re-apply an outdated state after a zone change.
-- Portal Overview / Teleport Reminder: no more secure-frame re-layout in combat (`ADDON_ACTION_BLOCKED`); a show deferred until after combat now lays itself out; dungeons without a teleport spell are no longer listed.
-- Deferred show/hide of secure frames could override a newer change made after combat.
-- Instance join reminder: no leaked frame per join, a newer reminder cancels an older pending wait.
-- Instance join reminder: joining someone else's listing no longer triggers the reminder a second time (the follow-up listing update was mistaken for your own listing; with BigWigs this could toggle its window shut again).
-- Teleport Reminder no longer vanishes right after showing when you accept an LFG invite while already in a party (e.g. a group applying together): the `GROUP_LEFT` of the old party is only treated as leaving when you end up ungrouped.
-- Auto-log: turning the master toggle off now clears the remembered state, so logging re-syncs correctly once it is switched back on.
-- Vendor Filter: the option text now says what is actually dimmed (any item whose appearance you already have, including regular armor).
-- Debug log: unresolved LFG applications are now logged with their search result ID and status.
-- German client: the "Options:" line in What's New, "(coming soon)" / "(removed)" next to delves and bosses, and the Season tab's "Coming soon" text were English; they are now translated.
-- LFG Quick Create: keystone highlight refreshes if the Group Finder was already open at load.
+- Auto-log: turning the master toggle off clears the remembered state, so logging re-syncs once it is switched back on.
+
+**Settings**
 - Profile reset: per-character Dungeon/Raid/Delve selections are reset to defaults immediately instead of staying empty until `/reload`.
-- `/rawreminder` always restores the faked Voidcore count.
+- German client: the "Options:" line in What's New, "(coming soon)" / "(removed)" next to delves and bosses, and the Season tab's "Coming soon" were English; they are now translated.
 
 ### Changed
 - Omniumfoliant/Great Vault buttons rebuilt: one event-driven refresh function instead of watchdog and self-heal workarounds (`/rawcharwatchdog` dropped).
-- Debug log: remembers its window position across reload/relog; logs button visibility changes and refresh errors with reason and trigger ("Log self-heal errors only"), plus a stack trace for external hides; `/rawcharbtn` dumps button state.
 - Options: the "Visibility" section is now named after what it controls, the Group Loot History frame ("Beuteverteilung" in German), and the German texts use that name consistently.
+- Vendor Filter: the option text now says what is actually dimmed (any item whose appearance you already have, including regular armor).
 - Performance: fewer event registrations (portal-cast watcher, Portal Overview bag events, vault currency updates, dev-only event logger and slash commands).
+
+### Developer
+- Debug log: remembers its window position across reload/relog; logs button visibility changes and refresh errors with reason and trigger ("Log self-heal errors only"), a stack trace for external hides, and unresolved LFG applications (search result ID and status); `/rawcharbtn` dumps button state.
+- `/rawreminder` always restores the faked Voidcore count.
 
 ### Internal
 - QoL.lua split: the join reminder and keystone companion handling moved to Modules\JoinReminder.lua.
-- `/raw` / `/rollaway` is now registered by Options.lua instead of the dev-only Debug.lua; outdated and mixed-language code comments cleaned up.
-- Duplicate code replaced by shared helpers (popups, toasts, portal buttons, ElvUI roll buttons, Options builders, ElvUI skinning); dead code and unused locale keys removed.
+- `/raw` / `/rollaway` is now registered by Options.lua instead of the dev-only Debug.lua.
+- Duplicate code replaced by shared helpers (popups, toasts, portal buttons, ElvUI roll buttons, Options builders, ElvUI skinning); dead code, unused locale keys and outdated or mixed-language comments removed.
 
 ## 3.0.7
 
