@@ -1,3 +1,6 @@
+-- RollAway - WhatsNew.lua
+-- "What's New" window, shown once per version on login (and via /rawwhats).
+
 local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
@@ -87,7 +90,7 @@ local function CreateWhatsNewFrame()
         locLabel:SetWidth(CARD_W - 20)
         locLabel:SetPoint("TOPLEFT", descText, "BOTTOMLEFT", 0, -6)
         locLabel:SetJustifyH("LEFT")
-        locLabel:SetText("|cFF6A5020Options:|r |cFFA08840" .. feat.location .. "|r")
+        locLabel:SetText("|cFF6A5020" .. RA_L["whatsnew_options_label"] .. "|r |cFFA08840" .. feat.location .. "|r")
 
         local cardH = 32 + descText:GetStringHeight() + locLabel:GetStringHeight() + 14
         card:SetHeight(cardH)

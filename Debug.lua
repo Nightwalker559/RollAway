@@ -1,5 +1,6 @@
 -- RollAway - Debug.lua
--- Developer tools: slash commands and event logger. Loaded last.
+-- Developer tools: debug log window, dev slash commands and event logger.
+-- Loaded last.
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
@@ -265,17 +266,7 @@ local function TestQoLReminders()
 end
 
 local function RegisterSlashCommands()
-
-    -- /raw / /rollaway → open options (all users)
-    SLASH_ROLLAWAY1 = "/raw"
-    SLASH_ROLLAWAY2 = "/rollaway"
-    SlashCmdList["ROLLAWAY"] = function()
-        RA.RunProtectedOrQueue(function()
-            Settings.OpenToCategory(RA.RA_CategoryID)
-        end)
-    end
-
-    -- Everything below is for dev/tester characters only.
+    -- Dev/tester characters only.
     if not RA.DEV_CHARS[UnitName("player")] then return end
 
     -- /rawtest → manual auto-pass test

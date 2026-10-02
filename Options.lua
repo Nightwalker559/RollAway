@@ -82,7 +82,13 @@ function RA.InitOptions()
     local panel = CreateFrame("Frame")
     local category = Settings.RegisterCanvasLayoutCategory(panel, RA_L["addon_title"])
     local RA_CategoryID = category:GetID()
-    RA.RA_CategoryID = RA_CategoryID
+
+    -- /raw, /rollaway → open the options (queued until combat ends)
+    SLASH_ROLLAWAY1 = "/raw"
+    SLASH_ROLLAWAY2 = "/rollaway"
+    SlashCmdList["ROLLAWAY"] = function()
+        RA.RunProtectedOrQueue(function() Settings.OpenToCategory(RA_CategoryID) end)
+    end
 
     -- Header
     local icon = panel:CreateTexture(nil, "ARTWORK")
@@ -288,7 +294,7 @@ function RA.InitOptions()
         end,
     })
 
-    -- Row 2: Sichtbarkeit - hide the Group Loot History frame, per raid difficulty.
+    -- Row 2: hide the Group Loot History frame, per raid difficulty.
     local hideLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", 0, -20)
     hideLabel:SetText(RA_L["hide_in_raid_label"])
@@ -367,7 +373,7 @@ function RA.InitOptions()
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
 
-    -- Entwickler section: only visible to dev/tester characters
+    -- Developer section: only visible to dev/tester characters
     -- (isDevChar already computed above, for the Bonus Roll tab gating)
     local cmdInfo
 
@@ -520,11 +526,11 @@ function RA.InitOptions()
             end
             local isRemoved = item.removedAfterS1 and RA.ACTIVE_SEASON >= 2
             if isRemoved then
-                labelText = labelText .. " |cff888888(removed)|r"
+                labelText = labelText .. " |cff888888" .. RA_L["label_removed"] .. "|r"
             end
             local isPending = item.pendingTest
             if isPending then
-                labelText = labelText .. " |cff888888(coming soon)|r"
+                labelText = labelText .. " |cff888888" .. RA_L["label_coming_soon"] .. "|r"
             end
             if isRemoved or isPending then
                 section.dbTable[item.key] = false

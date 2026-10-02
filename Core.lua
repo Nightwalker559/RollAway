@@ -11,16 +11,15 @@ setmetatable(RA_L, { __index = function(_, k) return k end })
 local RA = _G["RollAway"] or {}
 _G["RollAway"] = RA
 
-RA.RA_L               = RA_L
+RA.RA_L                 = RA_L
 RA.VOIDCORE_CURRENCY_ID = 3418  -- Nebulous Voidcore currency
 
 ------------------------------------------------------------------------
 -- Season configuration
--- Season 2 is live; no date gate needed anymore.
 -- BONUS_ROLLS_ENABLED: Bonus Rolls were disabled in S1, re-enabled for S2.
 ------------------------------------------------------------------------
-RA.BONUS_ROLLS_ENABLED       = true
-RA.ACTIVE_SEASON = 2 -- Season 2 is active
+RA.BONUS_ROLLS_ENABLED = true
+RA.ACTIVE_SEASON       = 2
 
 ------------------------------------------------------------------------
 -- Debug output – only for designated developer/tester characters
@@ -218,7 +217,6 @@ RA.GetLegacyRaidsDB = GetLegacyRaidsDB
 -- profile. On each character's first login after the update we offer to
 -- carry the old (already-customized) values over instead, or start that
 -- character fresh on defaults - see RA_L["profile_migration_popup_text"].
--- (DeepCopy helper lives in Helpers.lua, shared with other modules.)
 ------------------------------------------------------------------------
 function RA.RunProfileMigration(legacyFlatSV)
     -- The two settings that moved to RA.db.global are applied once ever,
@@ -272,9 +270,8 @@ function RA.RunProfileMigration(legacyFlatSV)
 end
 
 ------------------------------------------------------------------------
--- Generic popup/timer/table utilities (MakeDraggable, CreatePopupFrame,
--- CreateTimerBar, CreateOneShotTimer, SafeCancelTimer, DeepCopy, etc.)
--- now live in Helpers.lua, loaded right after this file.
+-- Instance cache, loot-history handling and the main event handler.
+-- Generic popup/timer/table utilities live in Helpers.lua (loaded next).
 ------------------------------------------------------------------------
 
 local function UpdateInstanceCache()

@@ -335,6 +335,8 @@ L["delve_venomfall_deeps"]    = "Venomfall Deeps" -- Nemesis Delve
 L["delve_labyrinth_of_kindojan"] = "Labyrinth of Kindo'jan" -- 12.1.5
 
 L["nemesis_delve_label"]      = "(Nemesis Delve)"
+L["label_removed"]            = "(removed)"
+L["label_coming_soon"]        = "(coming soon)"
 
 ------------------------------------------------------------------------
 -- Open World (Prey & World Bosses)
@@ -448,3 +450,4 @@ L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 L["whatsnew_automplus_title"]    = "Preselect Mythic+ difficulty"
 L["whatsnew_automplus_desc"]     = "The Group Finder create form uses Mythic+ instead of the default Mythic when opened and after picking a dungeon. Picking another difficulty by hand still works."
 L["whatsnew_automplus_location"] = "QoL > LFG"
+L["whatsnew_options_label"]      = "Options:"

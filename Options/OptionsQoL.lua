@@ -378,7 +378,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     lfgqcPSLabel:SetPoint("TOPLEFT", lfgqcAutoPSInfo, "BOTTOMLEFT", 0, -12)
     lfgqcPSLabel:SetText(RA_L["qol_lfgqc_playstyle_label"])
 
-    -- Standard-Spielstil Dropdown (AceGUI – ElvUI-nativer Skin)
+    -- Default playstyle dropdown (AceGUI, native ElvUI skin)
     local psDD = MakeDropdown(lfg, lfgqcPSLabel, 0, -4, 160)
     psDD:SetList({
         [0] = RA_L["qol_lfgqc_ps_none"],

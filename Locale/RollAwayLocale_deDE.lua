@@ -239,7 +239,7 @@ L["combat_action_queued"]     = "Optionen können im Kampf nicht geöffnet werde
 L["season1_title"]            = "Season 1"
 L["season2_tab"]              = "Season 2 (12.1)"
 L["season3_tab"]              = "Season 3 (12.2)"
-L["season_coming_soon"]       = "Coming soon"
+L["season_coming_soon"]       = "Demnächst verfügbar"
 L["patch_12_0"]               = "Patch 12.0"
 L["patch_12_1"]               = "Patch 12.1"
 L["season1_hint"]             = "Hake einen Dungeon an, um den Bonus Roll nach jedem Abschluss automatisch zu passen. Nicht angehakte Dungeons sind davon nicht betroffen."
@@ -336,6 +336,8 @@ L["delve_venomfall_deeps"]      = "Giftfalltiefen"
 L["delve_labyrinth_of_kindojan"] = "Das Labyrinth von Kindo'Jan" -- 12.1.5
 
 L["nemesis_delve_label"]         = "(Nemesis-Tiefe)"
+L["label_removed"]               = "(entfernt)"
+L["label_coming_soon"]           = "(demnächst)"
 
 ------------------------------------------------------------------------
 -- Offene Welt (Beutejagd & Weltbosse)
@@ -449,3 +451,4 @@ L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Gro�
 L["whatsnew_automplus_title"]    = "Schwierigkeit Mythisch+ vorwählen"
 L["whatsnew_automplus_desc"]     = "Das Erstellen-Formular der Gruppensuche nutzt beim Öffnen und nach der Dungeon-Auswahl Mythisch+ statt des Standard-Mythisch. Eine von Hand gewählte andere Schwierigkeit bleibt möglich."
 L["whatsnew_automplus_location"] = "QoL > LFG"
+L["whatsnew_options_label"]      = "Optionen:"

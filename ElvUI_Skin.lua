@@ -126,11 +126,8 @@ end
 
 ------------------------------------------------------------------------
 -- Skin popup frames built on RA.CreatePopupFrame (Reminder, Paragon,
--- GreatVault, AdvLog). Called directly from CreatePopupFrame itself right
--- after construction - not via hooksecurefunc on each module's own Show
--- function, since that pattern requires every caller to route through the
--- RA.table field consistently (a local-upvalue slip breaks it silently,
--- as happened with the AdvLog reminder). One call site, no such pitfall.
+-- GreatVault, AdvLog). Called directly from CreatePopupFrame right after
+-- construction, so no per-module Show hook is needed.
 ------------------------------------------------------------------------
 
 function RA.SkinPopupFrame(frame)
@@ -226,14 +223,9 @@ local function SkinCharFrameButton(btn)
 end
 
 ------------------------------------------------------------------------
--- No checkbox/slider color forcing anymore. Both attempts (fixed accent,
--- then real class color) fought ElvUI's own AceGUI skin hook unreliably.
--- Left as plain ElvUI-native styling now, matching what ElvUI does by
--- default for every other addon's options.
---
--- Reminder/Paragon/GreatVault/AdvLog are skinned directly inside
--- RA.CreatePopupFrame (see RA.SkinPopupFrame above) - no hook needed for
--- them. The frames below have a different shape, so each gets a hook.
+-- Checkboxes/sliders keep ElvUI's native AceGUI styling (no color forcing).
+-- Reminder/Paragon/GreatVault/AdvLog are skinned inside RA.CreatePopupFrame;
+-- the frames below have a different shape, so each gets a hook.
 ------------------------------------------------------------------------
 
 -- Hooks RA[funcName] (called through the RA table by its owner) to skin the

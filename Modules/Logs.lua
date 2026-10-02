@@ -158,17 +158,14 @@ function RA.ShowAdvLogReminder()
     ShowAdvLogFrameNow()
 end
 
--- Re-evaluate on zone change. Not using hooksecurefunc(RA, "UpdateInstanceCache", ...)
--- here: Core.lua's own event handler calls the local UpdateInstanceCache()
--- upvalue directly (not RA.UpdateInstanceCache()), so a table-field hook
--- never actually fires on real zone changes. Register our own listener
--- instead and refresh the cache ourselves before evaluating.
+-- Re-evaluate on zone change with our own listener (Core.lua calls its local
+-- UpdateInstanceCache directly, so hooking RA.UpdateInstanceCache would never
+-- fire); the cache is refreshed here before evaluating.
 --
 -- Safety recheck: GetInstanceInfo() can still return stale/zero data on the
--- very first PLAYER_ENTERING_WORLD after a fast instance-to-instance zone
--- (e.g. Dungeon Finder instant requeue), which would silently skip logging
--- for the whole run since no further zone event may fire. Re-run the check
--- 1.5s later to catch that case.
+-- first PLAYER_ENTERING_WORLD after a fast instance-to-instance zone (e.g.
+-- Dungeon Finder instant requeue), which would skip logging for the whole
+-- run. Re-run the check 1.5s later to catch that.
 local function CheckLogState()
     if not RA.initialized then return end
     RA.UpdateInstanceCache()

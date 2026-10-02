@@ -455,7 +455,7 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
                 local entry = CreateGridEntry(parent, i, leftEntries, secLabel, -8)
                 local bossLabelText = RA_L["boss_"..b.key]
                 if b.pendingTest then
-                    bossLabelText = bossLabelText .. " |cff888888(coming soon)|r"
+                    bossLabelText = bossLabelText .. " |cff888888" .. RA_L["label_coming_soon"] .. "|r"
                     dbTable[b.key] = false
                 end
                 local cb = MakeGridCheckbox(entry, bossLabelText, dbTable, b.key)

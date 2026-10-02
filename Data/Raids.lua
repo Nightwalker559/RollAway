@@ -21,7 +21,7 @@ RA.RAIDS[1] = {
     { key = "chimaerus",             encounterID = 3306, raid = "dreamrift"       },
     { key = "beloren",               encounterID = 3182, raid = "march_queldanas" },
     { key = "midnight_falls",        encounterID = 3183, raid = "march_queldanas" },
-    { key = "rotmire", 				 encounterID = 3159, raid = "sporefall" 	  }, -- Sporefall (12.0.7)
+    { key = "rotmire",               encounterID = 3159, raid = "sporefall"       }, -- Sporefall (12.0.7)
 }
 
 ------------------------------------------------------------------------

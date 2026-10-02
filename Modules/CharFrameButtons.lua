@@ -162,9 +162,7 @@ local function VaultActive()
 end
 
 local function ToggleGreatVault()
-    if C_AddOns and C_AddOns.LoadAddOn then
-        C_AddOns.LoadAddOn("Blizzard_WeeklyRewards")
-    end
+    C_AddOns.LoadAddOn("Blizzard_WeeklyRewards")
     if not WeeklyRewardsFrame then return end
     WeeklyRewardsFrame:SetShown(not WeeklyRewardsFrame:IsShown())
 end

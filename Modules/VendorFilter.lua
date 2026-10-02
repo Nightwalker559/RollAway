@@ -145,9 +145,9 @@ end
 local lastDebugState = {}
 
 local function GetMerchantItemID(index)
-    local link = GetMerchantItemLink and GetMerchantItemLink(index)
+    local link = GetMerchantItemLink(index)
     if not link then return nil end
-    return C_Item and C_Item.GetItemInfoInstant and C_Item.GetItemInfoInstant(link)
+    return C_Item.GetItemInfoInstant(link)
 end
 
 local function ApplyVendorFilterButton(button, itemButton)

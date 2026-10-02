@@ -339,12 +339,8 @@ function RA.CreatePopupFrame(opts)
     end)
     frame:SetScript("OnHide", timer.Stop)
 
-    -- ElvUI skin (if loaded): applied once, right here at creation, instead
-    -- of each caller hooking its own Show function individually. Skinning
-    -- at construction time (this factory only ever runs once per frame -
-    -- callers guard with "if xFrame then return end") is simpler and safer
-    -- than hooksecurefunc: there's no local-upvalue-vs-table-field pitfall
-    -- to get wrong, since nothing needs hooking in the first place.
+    -- ElvUI skin (if loaded), applied once at creation - callers only run
+    -- this factory once per frame.
     if RA.SkinPopupFrame then RA.SkinPopupFrame(frame) end
 
     return frame
@@ -380,15 +376,13 @@ end
 
 -- Wires the common "show once per instance" popup lifecycle (Reminder.lua's
 -- Voidcore reminder, Logs.lua's Advanced Combat Logging reminder): hide on
--- pull (PLAYER_REGEN_DISABLED), and clear the dedup key on GROUP_LEFT/
--- GROUP_JOINED so the reminder can fire again for the next instance.
--- Note: GROUP_JOINED does NOT hide the frame. When queuing as a partial
--- group (e.g. 2 of 5) via the automatic Dungeon Finder, Blizzard merges
--- everyone into a new group right around the time you enter the instance -
--- GROUP_JOINED can fire a moment after the reminder is shown and was
--- hiding it immediately (reminder appeared to "never show"). Only the
--- dedup key needs resetting there; a currently-shown reminder is still
--- valid for the instance you're actually standing in.
+-- pull (PLAYER_REGEN_DISABLED) and on GROUP_LEFT, and clear the dedup key on
+-- GROUP_LEFT/GROUP_JOINED so the reminder can fire again for the next
+-- instance.
+-- GROUP_JOINED deliberately does NOT hide the frame: when queuing as a
+-- partial group via the Dungeon Finder, Blizzard merges everyone into a new
+-- group around the time you enter the instance, so it can fire right after
+-- the reminder was shown - which is still valid for that instance.
 function RA.SetupInstanceReminderLifecycle(frame, dedupKey)
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
     frame:RegisterEvent("GROUP_LEFT")
