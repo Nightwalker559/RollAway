@@ -1,7 +1,8 @@
 -- RollAway - VendorFilter.lua
 -- QoL: "Vendor Filter Light" - passively dims merchant items the player
--- already knows/owns (recipes, toys, mounts, pets, tabards, illusions,
--- housing decor). No dropdown/category UI by design - just toggle + alpha,
+-- already knows/owns (recipes, toys, mounts, pets, housing decor, and any
+-- item whose appearance is already collected). No dropdown/category UI by
+-- design - just toggle + alpha,
 -- configurable in Options > QoL > Filter.
 
 local RA  = _G["RollAway"]
@@ -103,7 +104,8 @@ local function IsPetKnown(itemID)
     return (numCollected or 0) > 0
 end
 
--- Covers both Tabards and Illusions - both resolve via itemID here.
+-- Any item whose appearance is already collected - regular armor as well as
+-- Tabards and Illusions; all of them resolve via itemID here.
 local function IsTransmogKnown(itemID)
     if not (C_TransmogCollection and C_TransmogCollection.PlayerHasTransmog) then return false end
     local ok, known = pcall(C_TransmogCollection.PlayerHasTransmog, itemID)

@@ -94,7 +94,10 @@ end
 
 local function ApplyDesiredLogState()
     local desired = DetermineDesiredLogState()
-    if desired == nil then return end          -- master toggle off, don't manage
+    if desired == nil then                     -- master toggle off, don't manage
+        lastAppliedState = nil                 -- forget it, re-sync once it is turned back on
+        return
+    end
     if desired == lastAppliedState then return end -- already in the right state
     TryApplyLogState(desired, 5)
 end

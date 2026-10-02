@@ -16,6 +16,8 @@
 - Instance join reminder: no leaked frame per join, a newer reminder cancels an older pending wait.
 - Instance join reminder: joining someone else's listing no longer triggers the reminder a second time (the follow-up listing update was mistaken for your own listing; with BigWigs this could toggle its window shut again).
 - Teleport Reminder no longer vanishes right after showing when you accept an LFG invite while already in a party (e.g. a group applying together): the `GROUP_LEFT` of the old party is only treated as leaving when you end up ungrouped.
+- Auto-log: turning the master toggle off now clears the remembered state, so logging re-syncs correctly once it is switched back on.
+- Vendor Filter: the option text now says what is actually dimmed (any item whose appearance you already have, including regular armor).
 - Debug log: unresolved LFG applications are now logged with their search result ID and status.
 - German client: the "Options:" line in What's New, "(coming soon)" / "(removed)" next to delves and bosses, and the Season tab's "Coming soon" text were English; they are now translated.
 - LFG Quick Create: keystone highlight refreshes if the Group Finder was already open at load.
