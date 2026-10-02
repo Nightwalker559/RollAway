@@ -93,8 +93,19 @@ local function CreateReminderFrame()
     reminderFrame:RegisterEvent("GROUP_LEFT")
     reminderFrame:SetScript("OnEvent", function(self, event)
         -- (RA.SafeSetShown also registers PLAYER_REGEN_ENABLED on this frame)
-        if event == "PLAYER_REGEN_DISABLED" or event == "GROUP_LEFT" then
+        if event == "PLAYER_REGEN_DISABLED" then
             RA.SafeSetShown(self, false)
+        elseif event == "GROUP_LEFT" then
+            -- Accepting an LFG invite while already in a party (e.g. a
+            -- 3-man applying together) leaves the old party: GROUP_LEFT can
+            -- arrive right AFTER the reminder for the new group was shown,
+            -- followed by GROUP_JOINED. Only hide if we ended up ungrouped.
+            C_Timer.After(1, function()
+                if not IsInGroup() then
+                    DBG("Teleport reminder hidden - left group")
+                    RA.SafeSetShown(self, false)
+                end
+            end)
         end
     end)
 end
