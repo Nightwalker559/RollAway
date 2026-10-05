@@ -15,7 +15,7 @@ local MakeSkinnedButton = UI.MakeSkinnedButton
 
 ------------------------------------------------------------------------
 -- Subcategory: QoL  (Character / Filter / Hide / LFG / Logs / Misc / Quests /
--- Reminder via left nav)
+-- Reminder via left nav, sorted alphabetically by the shown label)
 --
 -- category:        the main RollAway Settings category (from InitOptions)
 -- S:                ElvUI Skins module, or nil
@@ -37,8 +37,9 @@ function RA.BuildQoLOptions(category, S, classColor)
     qolHeaderLine:SetPoint("TOPLEFT", qolPanelInfo, "BOTTOMLEFT", 0, -10)
     qolHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    -- Left nav (alphabetical by English name). The Character tab only holds
-    -- max-level features, so it does not exist below max level.
+    -- Left nav, sorted alphabetically by the label shown (so the order follows
+    -- the client language). The Character tab only holds max-level features,
+    -- so it does not exist below max level.
     local QOL_NAV_W = 130
     local isMaxLevel = RA.IsMaxLevel()
 
@@ -55,6 +56,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     for i = #qolNavDefs, 1, -1 do
         if qolNavDefs[i].show == false then table.remove(qolNavDefs, i) end
     end
+    table.sort(qolNavDefs, function(a, b) return a.label:lower() < b.label:lower() end)
 
     local qolCatPanels  = {}
     local qolNavButtons = {}
