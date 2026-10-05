@@ -162,6 +162,7 @@ RA.defaults = {
         hideErrorMessages        = false,
         hideTalkingHead          = false,
         hideBossBanner           = false,
+        hideBonusBanner          = false,
         hideEventToasts          = false,
         questAcceptRegular       = false,
         questAcceptDaily         = false,

@@ -2,8 +2,8 @@
 -- Quality of Life features: Ready Check / durability reminders, Auction House
 -- and Crafting Orders expansion filter, Great Vault currency display, and
 -- Blizzard UI clean-ups (world map activity tracker, crafting output log,
--- red error text, Talking Head, Boss Banner, Event Toasts). Quest automation
--- lives in Modules\Quests.lua.
+-- red error text, Talking Head, Boss Banner, Bonus Objective Banner, Event
+-- Toasts). Quest automation lives in Modules\Quests.lua.
 -- The instance join reminder lives in Modules\JoinReminder.lua, the Character
 -- panel buttons in Modules\CharFrameButtons.lua.
 
@@ -630,6 +630,34 @@ function RA.ApplyHideEventToastsFeature()
         RollAwayDB and RollAwayDB.hideEventToasts)
 end
 
+-- Bonus objective / world quest banner ("Bonus Objective" with gold lines).
+-- Blizzard's ObjectiveTrackerTopBannerFrame is started by TopBannerManager_Show
+-- -> PlayBanner and is not driven by a frame event, so there is no event to
+-- take away. Instead the banner may start and is ended one frame later with
+-- Blizzard's own StopBanner(): it hides the banner and tells the
+-- TopBannerManager it is finished, so no later banner (boss kill, etc.) can
+-- get stuck. The delay matters - stopping inside PlayBanner would finish the
+-- banner before TopBannerManager_Show has recorded it. The banner's sound
+-- still plays.
+local bonusBannerHooked = false
+
+function RA.ApplyHideBonusBannerFeature()
+    if bonusBannerHooked or not (RollAwayDB and RollAwayDB.hideBonusBanner) then return end
+    local banner = ObjectiveTrackerTopBannerFrame
+    if not (banner and banner.PlayBanner and banner.StopBanner) then return end
+    bonusBannerHooked = true
+
+    hooksecurefunc(banner, "PlayBanner", function(self)
+        if not (RollAwayDB and RollAwayDB.hideBonusBanner) then return end
+        C_Timer.After(0, function()
+            if RollAwayDB and RollAwayDB.hideBonusBanner and self:IsShown() then
+                self:StopBanner()
+            end
+        end)
+    end)
+    DBG("[QoL] Bonus objective banner hook set")
+end
+
 -- Talking Head. Its frame is load-on-demand: the first line of a session
 -- triggers the load and can still show once, so a small watcher dismisses
 -- that line (same call as the X button, which also stops the voice-over)
@@ -705,6 +733,7 @@ function RA.InitQoL()
     RA.ApplyHideErrorsFeature()
     RA.ApplyHideTalkingHeadFeature()
     RA.ApplyHideBossBannerFeature()
+    RA.ApplyHideBonusBannerFeature()
     RA.ApplyHideEventToastsFeature()
 
     DBG("QoL initialized")
