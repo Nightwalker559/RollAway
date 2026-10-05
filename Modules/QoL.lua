@@ -624,10 +624,56 @@ function RA.ApplyHideBossBannerFeature()
         RollAwayDB and RollAwayDB.hideBossBanner and not RA.IsLuckyoneUIActive())
 end
 
--- Event toasts at the top of the screen (new content unlocked, etc.)
+-- Bonus objective / world quest banner ("Bonus Objective" with gold lines).
+-- It belongs to the event toasts option: both are announcements at the top of
+-- the screen. Blizzard's ObjectiveTrackerTopBannerFrame is started by
+-- TopBannerManager_Show -> PlayBanner and is not driven by a frame event, so
+-- there is no event to take away, and its animations drive the alpha of the
+-- frame and its textures themselves (setting the alpha is not enough). So the
+-- banner is allowed to run - it ends on its own and tells the objective
+-- tracker, which only then lays out the new quest - but its textures and
+-- texts are hidden. Blizzard never shows or hides those regions itself.
+-- No Blizzard function is called from here, which keeps the objective tracker
+-- and world map code free of our taint. The banner's sound still plays.
+local bonusBannerHooked = false
+local hiddenBannerRegions = {}  -- [region] = true: regions we hid
+
+local function SetBonusBannerHidden(hide)
+    local banner = ObjectiveTrackerTopBannerFrame
+    if not (banner and banner.GetRegions) then return end
+    if hide then
+        for _, region in ipairs({ banner:GetRegions() }) do
+            if region:IsShown() then
+                region:Hide()
+                hiddenBannerRegions[region] = true
+            end
+        end
+    else
+        for region in pairs(hiddenBannerRegions) do region:Show() end
+        wipe(hiddenBannerRegions)
+    end
+end
+
+local function ApplyBonusBannerHiding(on)
+    local banner = ObjectiveTrackerTopBannerFrame
+    if not (banner and banner.PlayBanner) then return end
+    if on and not bonusBannerHooked then
+        bonusBannerHooked = true
+        -- PlayBanner sets the texts again every time: hide them right after
+        hooksecurefunc(banner, "PlayBanner", function()
+            if RollAwayDB and RollAwayDB.hideEventToasts then SetBonusBannerHidden(true) end
+        end)
+        DBG("[QoL] Bonus objective banner hook set")
+    end
+    SetBonusBannerHidden(on)
+end
+
+-- Event toasts at the top of the screen (new content unlocked, etc.) and the
+-- bonus objective banner
 function RA.ApplyHideEventToastsFeature()
-    SetFrameEventsTaken(EventToastManagerFrame, { "DISPLAY_EVENT_TOASTS" },
-        RollAwayDB and RollAwayDB.hideEventToasts)
+    local on = RollAwayDB and RollAwayDB.hideEventToasts and true or false
+    SetFrameEventsTaken(EventToastManagerFrame, { "DISPLAY_EVENT_TOASTS" }, on)
+    ApplyBonusBannerHiding(on)
 end
 
 -- Alert pop-ups ("You received: ...", achievements, new
@@ -655,55 +701,6 @@ local ALERT_EVENTS = {
 
 function RA.ApplyHideAlertsFeature()
     SetFrameEventsTaken(AlertFrame, ALERT_EVENTS, RollAwayDB and RollAwayDB.hideAlerts)
-end
-
--- Bonus objective / world quest banner ("Bonus Objective" with gold lines).
--- Blizzard's ObjectiveTrackerTopBannerFrame is started by TopBannerManager_Show
--- -> PlayBanner and is not driven by a frame event, so there is no event to
--- take away. The banner is simply made fully transparent (the same effect
--- reaches all its child textures) and runs its course on its own, so
--- TopBannerManager still gets its normal "finished" call from Blizzard's own
--- code. We never call a Blizzard function from here, which keeps the
--- objective tracker / world map code free of our taint. The banner's sound
--- still plays.
-local bonusBannerHooked = false
-local bonusBannerFaded = false
-
-local function FadeBonusBanner(fade)
-    local banner = ObjectiveTrackerTopBannerFrame
-    if not (banner and banner.SetAlpha) then return end
-    if fade then
-        banner:SetAlpha(0)
-        bonusBannerFaded = true
-    elseif bonusBannerFaded then
-        banner:SetAlpha(1)
-        bonusBannerFaded = false
-    end
-end
-
-function RA.ApplyHideBonusBannerFeature()
-    local banner = ObjectiveTrackerTopBannerFrame
-    if not (banner and banner.PlayBanner) then return end
-    local on = RollAwayDB and RollAwayDB.hideBonusBanner and true or false
-
-    if on and not bonusBannerHooked then
-        bonusBannerHooked = true
-        -- Blizzard may reset the alpha when it starts a banner: set it again
-        -- right after, still before the frame is drawn.
-        hooksecurefunc(banner, "PlayBanner", function()
-            if RollAwayDB and RollAwayDB.hideBonusBanner then FadeBonusBanner(true) end
-        end)
-        -- Its animations (pop, then the slide towards the tracker) end with the
-        -- frame's alpha set back, so keep it at 0 for as long as it is shown.
-        -- OnUpdate only runs while the banner is on screen.
-        banner:HookScript("OnUpdate", function(self)
-            if RollAwayDB and RollAwayDB.hideBonusBanner and self:GetAlpha() > 0 then
-                self:SetAlpha(0)
-            end
-        end)
-        DBG("[QoL] Bonus objective banner hook set")
-    end
-    FadeBonusBanner(on)
 end
 
 -- Talking Head. Its frame is load-on-demand: the first line of a session
@@ -781,7 +778,6 @@ function RA.InitQoL()
     RA.ApplyHideErrorsFeature()
     RA.ApplyHideTalkingHeadFeature()
     RA.ApplyHideBossBannerFeature()
-    RA.ApplyHideBonusBannerFeature()
     RA.ApplyHideEventToastsFeature()
     RA.ApplyHideAlertsFeature()
 

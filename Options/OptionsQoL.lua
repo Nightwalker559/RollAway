@@ -412,12 +412,6 @@ function RA.BuildQoLOptions(category, S, classColor)
         dbKey = "hideBossBanner", onChange = RA.ApplyHideBossBannerFeature,
     }, "qol_luckyone_note", true)
 
-    -- Bonus objective / world quest banner
-    hideChain.Add({
-        label = RA_L["qol_hide_bonusbanner_label"], info = RA_L["qol_hide_bonusbanner_info"],
-        dbKey = "hideBonusBanner", onChange = RA.ApplyHideBonusBannerFeature,
-    })
-
     -- Event toasts at the top of the screen
     hideChain.Add({
         label = RA_L["qol_hide_eventtoasts_label"], info = RA_L["qol_hide_eventtoasts_info"],

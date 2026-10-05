@@ -36,7 +36,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 - **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
 - **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable. Makes MRT's logging unnecessary.
 - **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.
-- **Hide Blizzard UI elements** — red error text (important errors stay visible), Talking Head, boss banner, bonus objective banner, event toasts, alert pop-ups (loot, achievements), world map tracker, crafting output log. Everything is off by default. With LuckyoneUI loaded, Talking Head and boss banner are left to it.
+- **Hide Blizzard UI elements** — red error text (important errors stay visible), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map tracker, crafting output log. Everything is off by default. With LuckyoneUI loaded, Talking Head and boss banner are left to it.
 - **Auction House filter** — keeps "Current Expansion Only" enforced.
 - Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.
 
