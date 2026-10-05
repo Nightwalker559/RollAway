@@ -53,7 +53,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 
 ## Options
 
-Access via `/raw` or **Interface > AddOns > RollAway**. Settings are organized by tab: General, Dungeons, Raids, Delves, Open World, Legacy, plus the QoL (Filter, LFG, Logs, Misc, Reminder) and Profile subcategories.
+Access via `/raw` or **Interface > AddOns > RollAway**. Settings are organized by tab: General, Dungeons, Raids, Delves, Open World, Legacy, plus the QoL (Filter, LFG, Logs, Misc, Quests, Reminder) and Profile subcategories.
 
 ---
 
