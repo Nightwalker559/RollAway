@@ -383,7 +383,7 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     local _, qolLogMasterInfo = MakeToggle(logs, nil, 0, -8, {
         label = RA_L["qol_log_enable_label"], info = RA_L["qol_log_enable_info"], dbKey = "autoLogEnabled",
-        infoWidth = 380, onChange = UpdateLogSubCBsState,
+        infoWidth = 380, width = 400, onChange = UpdateLogSubCBsState,
     })
 
     -- Compact zone checkbox list (no per-item info text, mirrors MRT's layout)
@@ -394,8 +394,6 @@ function RA.BuildQoLOptions(category, S, classColor)
         { dbKey = "autoLogRaidHeroic",    labelKey = "qol_log_raid_heroic_label"  },
         { dbKey = "autoLogRaidNormal",    labelKey = "qol_log_raid_normal_label"  },
         { dbKey = "autoLogRaidLFR",       labelKey = "qol_log_raid_lfr_label"     },
-        { dbKey = "autoLogDelve",         labelKey = "qol_log_delve_label"        },
-        { dbKey = "autoLogArena",         labelKey = "qol_log_arena_label"        },
     }
 
     local logZoneAnchor = qolLogMasterInfo
@@ -416,7 +414,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- Chat notification toggle (own line, separated from the zone list)
     local qolLogChatCB = MakeCB(logs, RA_L["qol_log_chatnotify_label"], RollAwayDB.autoLogChatNotify, function(checked)
         RollAwayDB.autoLogChatNotify = checked
-    end)
+    end, 400) -- explicit width: long label, or it gets cut off
     qolLogChatCB.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", 0, -16)
     table.insert(logSubCBs, qolLogChatCB)
 
@@ -424,7 +422,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- master toggle above, so it still works for players who log manually.
     local qolLogAdvReminderCB = MakeCB(logs, RA_L["qol_log_advlog_reminder_label"], RollAwayDB.advLogReminderEnabled, function(checked)
         RollAwayDB.advLogReminderEnabled = checked
-    end)
+    end, 400)
     qolLogAdvReminderCB.frame:SetPoint("TOPLEFT", qolLogChatCB.frame, "BOTTOMLEFT", 0, -10)
 
     UpdateLogSubCBsState()

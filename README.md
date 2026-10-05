@@ -34,7 +34,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 
 ### Quality of Life
 - **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
-- **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios, M+/Mythic dungeons, raid difficulties, Delves, Arena), individually togglable. Makes MRT's logging unnecessary.
+- **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable. Makes MRT's logging unnecessary.
 - **Auction House filter** — keeps "Current Expansion Only" enforced.
 - Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.
 

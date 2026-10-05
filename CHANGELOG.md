@@ -9,6 +9,7 @@
 - QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; errors that are the only hint why an action failed stay visible (full bags / bank / quest log, money, quest turn-in problems, loot, vendor / mail / trade refusals, raid-only content, Group Finder vote kick, Great Vault unavailable, being dead, pickpocketing). Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
 
 ### Changed
+- QoL > Logs: Delves are logged together with Scenarios (one option "Scenarios & Delves", an old Delves choice carries over) and Arena auto-logging was removed. Long labels in the Logs tab are no longer cut off.
 - Great Vault login reminder: not shown below max level, and its option in QoL > Reminder is hidden there (the Paragon option moves up). `/rawvault` still works.
 
 ### Fixed

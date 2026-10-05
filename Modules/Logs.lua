@@ -35,17 +35,12 @@ local function DetermineDesiredLogState()
     elseif iType == "party" then
         return db.autoLogMythicDungeon and MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] and true or false
 
-    elseif iType == "arena" then
-        return db.autoLogArena and true or false
-
     elseif iType == "scenario" then
-        if RA.DELVE_MAP[RA.cachedInstanceID] then
-            return db.autoLogDelve and true or false
-        end
+        -- Delves are scenario instances, so one option covers both.
         return db.autoLogScenario and true or false
 
     else
-        -- "none", "pvp" (battlegrounds), etc. - never auto-log.
+        -- "none", "pvp" (battlegrounds), "arena", etc. - never auto-log.
         return false
     end
 end
@@ -169,8 +164,21 @@ end
 -- first PLAYER_ENTERING_WORLD after a fast instance-to-instance zone (e.g.
 -- Dungeon Finder instant requeue), which would skip logging for the whole
 -- run. Re-run the check 1.5s later to catch that.
+-- 3.0.9: Delves are logged together with scenarios and Arena logging was
+-- dropped. An old "Delves" choice carries over to the merged option; the
+-- removed keys are cleaned out of the saved profile.
+local function MigrateOldLogOptions()
+    local db = RollAwayDB
+    if db.autoLogDelve ~= nil then
+        if db.autoLogDelve then db.autoLogScenario = true end
+        db.autoLogDelve = nil
+    end
+    db.autoLogArena = nil
+end
+
 local function CheckLogState()
     if not RA.initialized then return end
+    MigrateOldLogOptions()
     RA.UpdateInstanceCache()
     ApplyDesiredLogState()
     RA.ShowAdvLogReminder()
