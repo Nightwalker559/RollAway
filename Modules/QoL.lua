@@ -497,26 +497,63 @@ end
 -- errors would pop up again.
 ------------------------------------------------------------------------
 
-local ALWAYS_SHOWN_ERRORS = {}
-for _, globalName in ipairs({
-    "ERR_INV_FULL",         -- bags full
-    "ERR_QUEST_LOG_FULL",   -- quest log full
-    "ERR_ITEM_MAX_COUNT",   -- can't carry more of this item
-    "ERR_PLAYER_DEAD",      -- can't do that while dead
-    "ERR_PET_SPELL_DEAD",
-}) do
-    local text = _G[globalName]
-    if text then ALWAYS_SHOWN_ERRORS[text] = true end
+-- Errors that stay visible: the ones that are the only hint why a deliberate
+-- action did nothing. Names of Blizzard's localized global strings, so this
+-- works in every client language; a name missing in the current client is
+-- skipped.
+local KEPT_ERRORS = {
+    -- Bags / quest log full, item limit
+    "ERR_INV_FULL", "ERR_QUEST_LOG_FULL", "ERR_ITEM_MAX_COUNT",
+    -- Dead (player or pet)
+    "ERR_PLAYER_DEAD", "ERR_PET_SPELL_DEAD",
+    -- Group restrictions
+    "ERR_RAID_GROUP_ONLY", "ERR_PARTY_LFG_TELEPORT_IN_COMBAT",
+    -- Vote kick in a Group Finder group
+    "ERR_PARTY_LFG_BOOT_LIMIT", "ERR_PARTY_LFG_BOOT_DUNGEON_COMPLETE",
+    "ERR_PARTY_LFG_BOOT_IN_COMBAT", "ERR_PARTY_LFG_BOOT_IN_PROGRESS",
+    "ERR_PARTY_LFG_BOOT_LOOT_ROLLS",
+    -- Rogue pickpocketing
+    "SPELL_FAILED_TARGET_NO_POCKETS", "ERR_ALREADY_PICKPOCKETED",
+}
+
+-- Kept errors whose text contains a player name (a "%s" placeholder)
+local KEPT_ERROR_TEMPLATES = {
+    "ERR_PARTY_LFG_BOOT_NOT_ELIGIBLE_S",
+}
+
+-- Turns a global string with %s / %1$s placeholders into a Lua pattern that
+-- matches the finished message.
+local function TemplateToPattern(template)
+    local escaped = template:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
+    escaped = escaped:gsub("%%%%%d+%%%$s", ".+"):gsub("%%%%s", ".+")
+    return "^" .. escaped .. "$"
+end
+
+local keptErrorText = {}      -- [exact text] = true
+local keptErrorPatterns = {}  -- Lua patterns for the templates
+for _, name in ipairs(KEPT_ERRORS) do
+    if _G[name] then keptErrorText[_G[name]] = true end
+end
+for _, name in ipairs(KEPT_ERROR_TEMPLATES) do
+    if _G[name] then keptErrorPatterns[#keptErrorPatterns + 1] = TemplateToPattern(_G[name]) end
 end
 
 local errorHandlerWrapped = false
 
+local function IsKeptError(message)
+    if keptErrorText[message] then return true end
+    for _, pattern in ipairs(keptErrorPatterns) do
+        if message:find(pattern) then return true end
+    end
+    return false
+end
+
 -- true if this error text should be swallowed. Messages we are not allowed
 -- to inspect are never hidden.
 local function IsHiddenError(message)
-    if message == nil then return false end
     if not RA.IsAccessible(message) then return false end
-    return not ALWAYS_SHOWN_ERRORS[message]
+    if type(message) ~= "string" then return false end
+    return not IsKeptError(message)
 end
 
 function RA.ApplyHideErrorsFeature()
