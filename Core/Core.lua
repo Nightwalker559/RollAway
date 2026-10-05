@@ -164,6 +164,7 @@ RA.defaults = {
         hideBossBanner           = false,
         hideBonusBanner          = false,
         hideEventToasts          = false,
+        hideAlerts               = false,
         questAcceptRegular       = false,
         questAcceptDaily         = false,
         questAcceptWeekly        = false,

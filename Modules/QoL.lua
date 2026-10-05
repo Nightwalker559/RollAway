@@ -630,6 +630,33 @@ function RA.ApplyHideEventToastsFeature()
         RollAwayDB and RollAwayDB.hideEventToasts)
 end
 
+-- Alert pop-ups ("You received: ...", achievements, new
+-- mounts / pets / toys, dungeon rewards, ...). All of them are fed by game
+-- events that Blizzard's AlertFrame listens to; the listed events are taken
+-- away from it while the option is on. PET_BATTLE_CLOSE stays: it only lets
+-- the frame show alerts that were held back during a pet battle.
+local ALERT_EVENTS = {
+    "ACHIEVEMENT_EARNED", "CRITERIA_EARNED", "LFG_COMPLETION_REWARD",
+    "SCENARIO_COMPLETED", "LOOT_ITEM_ROLL_WON", "SHOW_LOOT_TOAST",
+    "SHOW_LOOT_TOAST_UPGRADE", "SHOW_PVP_FACTION_LOOT_TOAST",
+    "SHOW_RATED_PVP_REWARD_TOAST", "ENTITLEMENT_DELIVERED",
+    "RAF_ENTITLEMENT_DELIVERED", "GARRISON_BUILDING_ACTIVATABLE",
+    "GARRISON_TALENT_COMPLETE", "GARRISON_MISSION_FINISHED",
+    "GARRISON_FOLLOWER_ADDED", "GARRISON_RANDOM_MISSION_ADDED",
+    "NEW_RECIPE_LEARNED", "SHOW_LOOT_TOAST_LEGENDARY_LOOTED",
+    "AZERITE_EMPOWERED_ITEM_LOOTED", "QUEST_TURNED_IN", "QUEST_LOOT_RECEIVED",
+    "NEW_PET_ADDED", "NEW_MOUNT_ADDED", "NEW_TOY_ADDED",
+    "NEW_WARBAND_SCENE_ADDED", "NEW_RUNEFORGE_POWER_ADDED",
+    "TRANSMOG_COSMETIC_COLLECTION_SOURCE_ADDED",
+    "TRANSMOG_COLLECTION_SOURCE_ADDED", "SKILL_LINE_SPECS_UNLOCKED",
+    "PERKS_PROGRAM_CURRENCY_AWARDED", "PERKS_ACTIVITY_COMPLETED",
+    "REQUESTED_GUILD_RENAME_RESULT", "INITIATIVE_TASK_COMPLETED",
+}
+
+function RA.ApplyHideAlertsFeature()
+    SetFrameEventsTaken(AlertFrame, ALERT_EVENTS, RollAwayDB and RollAwayDB.hideAlerts)
+end
+
 -- Bonus objective / world quest banner ("Bonus Objective" with gold lines).
 -- Blizzard's ObjectiveTrackerTopBannerFrame is started by TopBannerManager_Show
 -- -> PlayBanner and is not driven by a frame event, so there is no event to
@@ -756,6 +783,7 @@ function RA.InitQoL()
     RA.ApplyHideBossBannerFeature()
     RA.ApplyHideBonusBannerFeature()
     RA.ApplyHideEventToastsFeature()
+    RA.ApplyHideAlertsFeature()
 
     DBG("QoL initialized")
 end

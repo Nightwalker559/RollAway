@@ -424,6 +424,12 @@ function RA.BuildQoLOptions(category, S, classColor)
         dbKey = "hideEventToasts", onChange = RA.ApplyHideEventToastsFeature,
     })
 
+    -- Alert pop-ups (loot, achievements, new mounts / pets / toys, ...)
+    hideChain.Add({
+        label = RA_L["qol_hide_alerts_label"], info = RA_L["qol_hide_alerts_info"],
+        dbKey = "hideAlerts", onChange = RA.ApplyHideAlertsFeature,
+    })
+
     -- World Map: hide tracked-faction activity button (experimental)
     hideChain.Add({
         label = RA_L["qol_map_activity_label"], info = RA_L["qol_map_activity_info"],
