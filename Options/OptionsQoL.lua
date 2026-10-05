@@ -154,11 +154,13 @@ function RA.BuildQoLOptions(category, S, classColor)
     local _, qolQuestTurnInInfo = MakeToggle(quests, questAnchor, 0, -16, {
         label = RA_L["qol_quests_turnin_label"], info = RA_L["qol_quests_turnin_info"],
         dbKey = "questAutoTurnIn", onChange = RA.ApplyQuestAutomation,
+        width = 400, -- long label: explicit width, or it gets cut off
     })
 
     local _, qolQuestModInfo = MakeToggle(quests, qolQuestTurnInInfo, -20, -14, {
         label = RA_L["qol_quests_modifier_label"], info = RA_L["qol_quests_modifier_info"],
         dbKey = "questRequireModifier",
+        width = 400,
     })
 
     local qolQuestKeyLabel = quests:CreateFontString(nil, "ARTWORK", "GameFontNormal")
