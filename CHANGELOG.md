@@ -5,6 +5,8 @@
 ## 3.0.8
 
 ### New
+- QoL > Quests (new tab): automatic quest handling at NPCs - accept regular / daily / weekly quests and turn in completed ones, with an optional modifier key (pauses the automation while held, or is required to run it). Turn-in skips quests that cost gold or currency and quests with more than one reward to choose from.
+- QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; full bags, full quest log and being dead stay visible. Takes effect immediately.
 - QoL > LFG: option "Preselect Mythic+ difficulty" - the Group Finder create form uses Mythic+ instead of the default Mythic when opened and after picking a dungeon (data field only, no dropdown API calls, to avoid taint; the dropdown label may still show Mythic).
 
 ### Fixed

@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsQoL.lua
 -- Builds the "QoL" settings subcategory (Filter / LFG / Logs / Misc /
--- Reminder via left nav) - called once from RA.InitOptions() in Options.lua.
+-- Quests / Reminder via left nav) - called once from RA.InitOptions() in Options.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -44,6 +44,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         { key = "lfg",      label = RA_L["qol_nav_lfg"]          },
         { key = "logs",     label = RA_L["qol_nav_logs"]         },
         { key = "misc",     label = RA_L["qol_nav_misc"]         },
+        { key = "quests",   label = RA_L["qol_nav_quests"]       },
         { key = "reminder", label = RA_L["qol_reminder_section"] },
     }
 
@@ -92,10 +93,11 @@ function RA.BuildQoLOptions(category, S, classColor)
     end
 
     -- LFG/Logs/Misc/Reminder: scrollbar force-hidden for now, flip to false once needed.
-    local filter   = CreateQolCategoryPanel("filter",   "Filter",   430, false)
+    local filter   = CreateQolCategoryPanel("filter",   "Filter",   500, false)
     local lfg      = CreateQolCategoryPanel("lfg",      "Lfg",      380, true)
     local logs     = CreateQolCategoryPanel("logs",     "Logs",     380, true)
     local misc      = CreateQolCategoryPanel("misc",     "Misc",     200, true)
+    local quests   = CreateQolCategoryPanel("quests",   "Quests",   400, true)
     local reminder = CreateQolCategoryPanel("reminder", "Reminder", 660, true)
 
     -- ── Category: Misc ────────────────────────────────────────────────
@@ -126,6 +128,53 @@ function RA.BuildQoLOptions(category, S, classColor)
     if ElvUI then autoRepairDD:SetDisabled(true) end
 
     MakeInfoText(misc, autoRepairDD.frame, 20, -6, 400, RA_L["qol_autorepair_info"])
+
+    -- ── Category: Quests ───────────────────────────────────────────────
+    -- Every change re-registers only the events the settings still need.
+
+    local qolQuestAcceptLabel = quests:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    qolQuestAcceptLabel:SetPoint("TOPLEFT", quests, "TOPLEFT", 0, -8)
+    qolQuestAcceptLabel:SetText(RA_L["qol_quests_accept_label"])
+
+    local questAnchor = qolQuestAcceptLabel
+    for _, def in ipairs({
+        { dbKey = "questAcceptRegular", labelKey = "qol_quests_regular_label" },
+        { dbKey = "questAcceptDaily",   labelKey = "qol_quests_daily_label"   },
+        { dbKey = "questAcceptWeekly",  labelKey = "qol_quests_weekly_label"  },
+    }) do
+        local dbKey = def.dbKey
+        local cb = MakeCB(quests, RA_L[def.labelKey], RollAwayDB[dbKey], function(checked)
+            RollAwayDB[dbKey] = checked
+            RA.ApplyQuestAutomation()
+        end)
+        cb.frame:SetPoint("TOPLEFT", questAnchor, "BOTTOMLEFT", 0, -6)
+        questAnchor = cb.frame
+    end
+
+    local _, qolQuestTurnInInfo = MakeToggle(quests, questAnchor, 0, -16, {
+        label = RA_L["qol_quests_turnin_label"], info = RA_L["qol_quests_turnin_info"],
+        dbKey = "questAutoTurnIn", onChange = RA.ApplyQuestAutomation,
+    })
+
+    local _, qolQuestModInfo = MakeToggle(quests, qolQuestTurnInInfo, -20, -14, {
+        label = RA_L["qol_quests_modifier_label"], info = RA_L["qol_quests_modifier_info"],
+        dbKey = "questRequireModifier",
+    })
+
+    local qolQuestKeyLabel = quests:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    qolQuestKeyLabel:SetPoint("TOPLEFT", qolQuestModInfo, "BOTTOMLEFT", 0, -14)
+    qolQuestKeyLabel:SetText(RA_L["qol_quests_modkey_label"])
+
+    local questKeyDD = MakeDropdown(quests, qolQuestKeyLabel, 0, -4, 120)
+    questKeyDD:SetList({
+        ["SHIFT"] = SHIFT_KEY_TEXT or "Shift",
+        ["ALT"]   = ALT_KEY_TEXT   or "Alt",
+        ["CTRL"]  = CTRL_KEY_TEXT  or "Ctrl",
+    }, { "SHIFT", "ALT", "CTRL" })
+    questKeyDD:SetValue(RollAwayDB.questModifierKey or "SHIFT")
+    questKeyDD:SetCallback("OnValueChanged", function(_, _, value)
+        RollAwayDB.questModifierKey = value
+    end)
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
 
@@ -274,6 +323,12 @@ function RA.BuildQoLOptions(category, S, classColor)
     AddFilterToggle({
         label = RA_L["qol_crafting_output_log_label"], info = RA_L["qol_crafting_output_log_info"],
         dbKey = "hideCraftingOutputLog", onChange = RA.ApplyCraftingOutputLogFeature,
+    })
+
+    -- Red error text in the middle of the screen
+    AddFilterToggle({
+        label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
+        dbKey = "hideErrorMessages", onChange = RA.ApplyHideErrorsFeature,
     })
 
     -- Great Vault button on Character Frame

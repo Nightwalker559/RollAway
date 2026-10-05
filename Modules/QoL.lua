@@ -1,7 +1,8 @@
 -- RollAway - QoL.lua
 -- Quality of Life features: Ready Check / durability reminders, Auction House
 -- and Crafting Orders expansion filter, Great Vault currency display, and
--- Blizzard UI clean-ups (world map activity tracker, crafting output log).
+-- Blizzard UI clean-ups (world map activity tracker, crafting output log,
+-- red error text). Quest automation lives in Modules\Quests.lua.
 -- The instance join reminder lives in Modules\JoinReminder.lua, the Character
 -- panel buttons in Modules\CharFrameButtons.lua.
 
@@ -486,6 +487,68 @@ local function InitCraftingOutputLogHide()
 end
 
 ------------------------------------------------------------------------
+-- Hide the red error text in the middle of the screen
+-- Blizzard's UIErrorsFrame listens to UI_ERROR_MESSAGE on its own. While the
+-- option is on we take that event away from it and listen ourselves; only
+-- the important errors below are handed back to Blizzard's own handler, so
+-- they look exactly as usual. Turning the option off gives the event back
+-- (no /reload needed).
+------------------------------------------------------------------------
+
+local ALWAYS_SHOWN_ERRORS = {}
+for _, globalName in ipairs({
+    "ERR_INV_FULL",         -- bags full
+    "ERR_QUEST_LOG_FULL",   -- quest log full
+    "ERR_ITEM_MAX_COUNT",   -- can't carry more of this item
+    "ERR_PLAYER_DEAD",      -- can't do that while dead
+    "ERR_PET_SPELL_DEAD",
+}) do
+    local text = _G[globalName]
+    if text then ALWAYS_SHOWN_ERRORS[text] = true end
+end
+
+local errorFilterFrame
+
+local function OnErrorMessage(event, errorType, message, ...)
+    -- Messages we are not allowed to inspect are never hidden.
+    local inspectable = message ~= nil and (not canaccessvalue or canaccessvalue(message))
+    if inspectable and not ALWAYS_SHOWN_ERRORS[message] then return end
+
+    local blizzardHandler = UIErrorsFrame:GetScript("OnEvent")
+    if blizzardHandler then
+        blizzardHandler(UIErrorsFrame, event, errorType, message, ...)
+    end
+end
+
+function RA.ApplyHideErrorsFeature()
+    if not UIErrorsFrame then return end
+    -- Option off and never switched on this session: leave Blizzard alone.
+    if not errorFilterFrame and not (RollAwayDB and RollAwayDB.hideErrorMessages) then return end
+
+    if not errorFilterFrame then
+        errorFilterFrame = CreateFrame("Frame")
+        errorFilterFrame:SetScript("OnEvent", function(_, event, ...)
+            if event == "PLAYER_REGEN_ENABLED" then
+                -- ElvUI's own "hide error text" option gives the event back
+                -- to UIErrorsFrame after combat; take it away again.
+                C_Timer.After(0.5, RA.ApplyHideErrorsFeature)
+            else
+                OnErrorMessage(event, ...)
+            end
+        end)
+    end
+
+    if RollAwayDB and RollAwayDB.hideErrorMessages then
+        UIErrorsFrame:UnregisterEvent("UI_ERROR_MESSAGE")
+        errorFilterFrame:RegisterEvent("UI_ERROR_MESSAGE")
+        errorFilterFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    else
+        errorFilterFrame:UnregisterAllEvents()
+        UIErrorsFrame:RegisterEvent("UI_ERROR_MESSAGE")
+    end
+end
+
+------------------------------------------------------------------------
 -- Initialization – called from Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
@@ -518,6 +581,9 @@ function RA.InitQoL()
 
     -- Professions: hide "Crafting Output Log" popup
     InitCraftingOutputLogHide()
+
+    -- Red error text filter
+    RA.ApplyHideErrorsFeature()
 
     DBG("QoL initialized")
 end

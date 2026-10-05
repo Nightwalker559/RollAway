@@ -159,7 +159,14 @@ RA.defaults = {
         vaultButtonCharFrame     = false,
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
-        paragonAlert             = false,
+        hideErrorMessages        = false,
+        questAcceptRegular       = false,
+        questAcceptDaily         = false,
+        questAcceptWeekly        = false,
+        questAutoTurnIn          = false,
+        questRequireModifier     = false,
+        questModifierKey         = "SHIFT",   -- "SHIFT" | "ALT" | "CTRL"
+        paragonAlert            = false,
         greatVaultAlert          = false,
         talentFontSize     = 20,
         autoLogEnabled       = false,
@@ -445,7 +452,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitQuests", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 

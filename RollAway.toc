@@ -37,6 +37,7 @@ Modules\TeleportReminder.lua
 Modules\PortalOverview.lua
 Modules\JoinReminder.lua
 Modules\QoL.lua
+Modules\Quests.lua
 Modules\CharFrameButtons.lua
 Modules\VendorFilter.lua
 Modules\Paragon.lua
