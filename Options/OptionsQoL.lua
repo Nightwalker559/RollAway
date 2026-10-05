@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsQoL.lua
--- Builds the "QoL" settings subcategory (Filter / LFG / Logs / Misc /
--- Quests / Reminder via left nav) - called once from RA.InitOptions() in Options/Options.lua.
+-- Builds the "QoL" settings subcategory (Character / Filter / Hide / LFG / Logs /
+-- Misc / Quests / Reminder via left nav) - called once from RA.InitOptions() in Options/Options.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -102,18 +102,19 @@ function RA.BuildQoLOptions(category, S, classColor)
         return content
     end
 
-    -- LFG/Logs/Misc/Reminder: scrollbar force-hidden for now, flip to false once needed.
+    -- Scrollbar is force-hidden (last argument true) except for Hide, whose
+    -- content can outgrow the panel; flip a category to false once it needs one.
     local character = isMaxLevel and CreateQolCategoryPanel("character", "Character", 280, true) or nil
-    local filter   = CreateQolCategoryPanel("filter",   "Filter",   260, true)
-    local hide     = CreateQolCategoryPanel("hide",     "Hide",     460, false)
-    local lfg      = CreateQolCategoryPanel("lfg",      "Lfg",      380, true)
-    local logs     = CreateQolCategoryPanel("logs",     "Logs",     380, true)
+    local filter    = CreateQolCategoryPanel("filter",   "Filter",   260, true)
+    local hide      = CreateQolCategoryPanel("hide",     "Hide",     460, false)
+    local lfg       = CreateQolCategoryPanel("lfg",      "Lfg",      380, true)
+    local logs      = CreateQolCategoryPanel("logs",     "Logs",     380, true)
     local misc      = CreateQolCategoryPanel("misc",     "Misc",     200, true)
-    local quests   = CreateQolCategoryPanel("quests",   "Quests",   400, true)
-    local reminder = CreateQolCategoryPanel("reminder", "Reminder", 660, true)
+    local quests    = CreateQolCategoryPanel("quests",   "Quests",   400, true)
+    local reminder  = CreateQolCategoryPanel("reminder", "Reminder", 660, true)
 
     -- ── Category: Misc ────────────────────────────────────────────────
-    -- Catch-all for settings that don't fit Filter/LFG/Logs/Reminder.
+    -- Catch-all for settings that don't fit the other categories.
 
     -- Auto-accept invites and Auto Repair are Default-UI-only: ElvUI ships
     -- its own versions of both.

@@ -776,8 +776,9 @@ function RA.InitOptions()
     end
 
     ------------------------------------------------------------
-    -- Subcategories: QoL (Filter / LFG / Logs / Misc / Reminder via left
-    -- nav, Options/OptionsQoL.lua) and Profile (Options/OptionsProfile.lua).
+    -- Subcategories: QoL (left nav with Character / Filter / Hide / LFG /
+    -- Logs / Misc / Quests / Reminder, Options/OptionsQoL.lua) and Profile
+    -- (Options/OptionsProfile.lua).
     ------------------------------------------------------------
     RA.BuildQoLOptions(category, S, classColor)
     RA.BuildProfileOptions(category, S)

@@ -28,13 +28,15 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 - **Instance join reminder** (Group Finder M+ only) with optional auto-open of your keystone companion addon (BigWigs Keystones, Details! Keystones, or RollAway's own Teleport Reminder showing the exact dungeon portal).
 - **RollAway Portal Overview** — own portal reference frame (current season or all learned dungeons by expansion), open anytime with `/rat`.
 - **Ready Check talent reminder**, optionally showing your active spec/talent build.
-- **Great Vault reminder** — popup on login if you have unclaimed rewards (once per weekly reset). Manual check: `/rawvault`
+- **Great Vault reminder** — popup on login at max level if you have unclaimed rewards (once per weekly reset). Manual check: `/rawvault`
 - **Paragon Bag reminder** — popup when Paragon quests are available across all Midnight factions, with turn-in NPC & zone. Manual check: `/rawparagon`
 - Reminder positions can be locked and reset to default from the options.
 
 ### Quality of Life
 - **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
 - **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable. Makes MRT's logging unnecessary.
+- **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.
+- **Hide Blizzard UI elements** — red error text (important errors stay visible), Talking Head, boss banner, event toasts, world map tracker, crafting output log. Everything is off by default.
 - **Auction House filter** — keeps "Current Expansion Only" enforced.
 - Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.
 

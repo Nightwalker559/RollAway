@@ -1,7 +1,7 @@
 -- RollAway - Misc.lua
 -- Catch-all module for standalone features shown under the "Misc" settings
 -- tab (Options\OptionsQoL.lua) - anything too small or too unrelated to the
--- other categories (Filter/LFG/Logs/Reminder) to warrant its own file.
+-- other categories (Character/Filter/Hide/LFG/Logs/Quests/Reminder) to warrant its own file.
 --
 -- Auto-accept invites from guild/friends: accepts group invites from guild
 -- members, friends, and Battle.net friends. Default UI only - ElvUI already

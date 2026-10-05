@@ -19,7 +19,7 @@
 - Secret values (12.x): portal cooldown checks, the portal-cast watcher and the auto-accept-invite check skip values the addon is not allowed to read during combat instead of throwing a Lua error (new shared `RA.IsAccessible`).
 
 ### Internal
-- Code review pass: no dead code, unused locale keys or duplicated blocks found; no accidental globals.
+- Code review pass before release: no dead code, unused locale keys or duplicated blocks found; no accidental globals; outdated comments (tab lists, file names) updated and trailing whitespace removed - verified that the compiled code of every file is unchanged by the clean-up.
 - Folder structure: Core.lua, Helpers.lua, Debug.lua and ElvUI_Skin.lua moved into a new `Core\` folder, Options.lua into `Options\`. Load order unchanged.
 
 ## 3.0.8
