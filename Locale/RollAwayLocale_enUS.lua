@@ -457,9 +457,12 @@ L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great V
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 
 ------------------------------------------------------------------------
--- What's New (3.0.8)
+-- What's New (3.0.9)
 ------------------------------------------------------------------------
-L["whatsnew_automplus_title"]    = "Preselect Mythic+ difficulty"
-L["whatsnew_automplus_desc"]     = "The Group Finder create form uses Mythic+ instead of the default Mythic when opened and after picking a dungeon. Picking another difficulty by hand still works."
-L["whatsnew_automplus_location"] = "QoL > LFG"
+L["whatsnew_quests_title"]       = "Automatic quests"
+L["whatsnew_quests_desc"]        = "Accepts regular, daily and weekly quests and turns in finished ones when you talk to the NPC. Never turns in quests that cost gold or currency or have several rewards to choose from. An optional modifier key pauses the automation."
+L["whatsnew_quests_location"]    = "QoL > Quests"
+L["whatsnew_errors_title"]       = "Hide red error messages"
+L["whatsnew_errors_desc"]        = "Hides the red error text in the middle of the screen. Important ones such as full bags or a full quest log stay visible."
+L["whatsnew_errors_location"]    = "QoL > Filter"
 L["whatsnew_options_label"]      = "Options:"

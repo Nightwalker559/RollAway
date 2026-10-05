@@ -458,9 +458,12 @@ L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Gro
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 
 ------------------------------------------------------------------------
--- What's New (3.0.8)
+-- What's New (3.0.9)
 ------------------------------------------------------------------------
-L["whatsnew_automplus_title"]    = "Schwierigkeit Mythisch+ vorwählen"
-L["whatsnew_automplus_desc"]     = "Das Erstellen-Formular der Gruppensuche nutzt beim Öffnen und nach der Dungeon-Auswahl Mythisch+ statt des Standard-Mythisch. Eine von Hand gewählte andere Schwierigkeit bleibt möglich."
-L["whatsnew_automplus_location"] = "QoL > LFG"
+L["whatsnew_quests_title"]       = "Automatische Quests"
+L["whatsnew_quests_desc"]        = "Nimmt normale, tägliche und wöchentliche Quests an und gibt fertige beim Ansprechen des NPCs ab. Gibt nie Quests ab, die Gold oder Währung kosten oder mehrere Belohnungen zur Auswahl haben. Eine optionale Zusatztaste pausiert die Automatik."
+L["whatsnew_quests_location"]    = "QoL > Quests"
+L["whatsnew_errors_title"]       = "Rote Fehlermeldungen ausblenden"
+L["whatsnew_errors_desc"]        = "Blendet den roten Fehlertext in der Bildschirmmitte aus. Wichtige wie volle Taschen oder ein volles Questlog bleiben sichtbar."
+L["whatsnew_errors_location"]    = "QoL > Filter"
 L["whatsnew_options_label"]      = "Optionen:"
