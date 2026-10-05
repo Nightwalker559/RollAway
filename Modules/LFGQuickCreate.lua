@@ -353,7 +353,7 @@ local function Init()
 end
 
 ------------------------------------------------------------------------
--- Public init – called from Core.lua on ADDON_LOADED.
+-- Public init – called from Core/Core.lua on ADDON_LOADED.
 ------------------------------------------------------------------------
 function RA.InitLFGQuickCreate()
     local f = CreateFrame("Frame")

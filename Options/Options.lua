@@ -1,4 +1,4 @@
--- RollAway - Options.lua
+-- RollAway - Options/Options.lua
 -- Settings UI. Builds the main "RollAway" Settings category: header, tabs
 -- (General / Dungeons / Raids / Delves / Prey / Legacy), and wires up the
 -- QoL and Profile subcategories built in Options/OptionsQoL.lua and
@@ -73,7 +73,7 @@ local function SortedByName(list, keyPrefix)
 end
 
 ------------------------------------------------------------------------
--- Main init function – called from Core.lua ADDON_LOADED
+-- Main init function – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
 function RA.InitOptions()

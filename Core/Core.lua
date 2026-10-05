@@ -1,4 +1,4 @@
--- RollAway - Core.lua
+-- RollAway - Core/Core.lua
 -- Shared state, data, utilities and event handling.
 
 local addonName = ...

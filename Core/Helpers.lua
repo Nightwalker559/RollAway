@@ -1,8 +1,8 @@
--- RollAway - Helpers.lua
+-- RollAway - Core/Helpers.lua
 -- Generic, reusable utility functions with no bootstrapping/domain-state
 -- logic of their own - popup/toast frame factories, timers, portal buttons,
 -- loot-roll button lookup, table/util helpers.
--- Loads right after Core.lua so RA.DBG/RA.RA_L are already set.
+-- Loads right after Core/Core.lua so RA.DBG/RA.RA_L are already set.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L

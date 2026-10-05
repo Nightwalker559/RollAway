@@ -161,7 +161,7 @@ function RA.ShowAdvLogReminder()
     ShowAdvLogFrameNow()
 end
 
--- Re-evaluate on zone change with our own listener (Core.lua calls its local
+-- Re-evaluate on zone change with our own listener (Core/Core.lua calls its local
 -- UpdateInstanceCache directly, so hooking RA.UpdateInstanceCache would never
 -- fire); the cache is refreshed here before evaluating.
 --

@@ -31,7 +31,7 @@ end
 
 ------------------------------------------------------------------------
 -- Auto-pass matching logic – pure/read-only. Shared by TryAutoPass (which
--- acts on the result) and Core.lua's zone-change debug summary (which only
+-- acts on the result) and Core/Core.lua's zone-change debug summary (which only
 -- previews it). Keeping this in one place means the debug preview can
 -- never drift out of sync with what actually gets auto-passed.
 ------------------------------------------------------------------------
@@ -117,7 +117,7 @@ end
 RA.TryAutoPass = TryAutoPass
 
 ------------------------------------------------------------------------
--- Initialization – called from Core.lua ADDON_LOADED
+-- Initialization – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
 function RA.InitAutoPass()

@@ -539,7 +539,7 @@ function RA.ApplyHideErrorsFeature()
 end
 
 ------------------------------------------------------------------------
--- Initialization – called from Core.lua ADDON_LOADED
+-- Initialization – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
 function RA.InitQoL()

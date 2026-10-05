@@ -1,5 +1,5 @@
 -- RollAway - Options/OptionsHelpers.lua
--- Shared UI builder helpers used by Options.lua, Options/OptionsQoL.lua and
+-- Shared UI builder helpers used by Options/Options.lua, Options/OptionsQoL.lua and
 -- Options/OptionsProfile.lua.
 
 local RA   = _G["RollAway"]
@@ -17,7 +17,7 @@ local ENTRY_H = 26
 local COL_GAP = 24
 local ROW_GAP = 6
 
--- Tab label colors (active / inactive), also used by ElvUI_Skin.lua.
+-- Tab label colors (active / inactive), also used by Core/ElvUI_Skin.lua.
 local GOLD = { r = 0.85, g = 0.73, b = 0.25 }
 local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
 
@@ -469,7 +469,7 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
 end
 
 ------------------------------------------------------------------------
--- Public exports - consumed by Options.lua, Options/OptionsQoL.lua and
+-- Public exports - consumed by Options/Options.lua, Options/OptionsQoL.lua and
 -- Options/OptionsProfile.lua
 ------------------------------------------------------------------------
 RA.OptionsUI = {

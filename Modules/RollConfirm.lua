@@ -96,7 +96,7 @@ function RA.SetRollConfirmEnabled(dbKey, enabled)
 end
 
 ------------------------------------------------------------------------
--- Init - called from Core.lua on ADDON_LOADED
+-- Init - called from Core/Core.lua on ADDON_LOADED
 ------------------------------------------------------------------------
 function RA.InitRollConfirm()
     -- Delay slightly so ElvUI has finished building its frames.

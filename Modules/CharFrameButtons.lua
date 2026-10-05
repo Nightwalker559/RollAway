@@ -8,7 +8,7 @@
 -- timers, no watchdog, no cached "which tab is active" flags.
 --
 -- Compat:
---   - ElvUI: ElvUI_Skin.lua skins the buttons after each refresh.
+--   - ElvUI: Core/ElvUI_Skin.lua skins the buttons after each refresh.
 --   - Chonky Character Sheet: only CharacterFrameBg is pushed out, so the
 --     buttons anchor to it and the Stats-only restriction is skipped.
 

@@ -1,4 +1,4 @@
--- RollAway - ElvUI_Skin.lua
+-- RollAway - Core/ElvUI_Skin.lua
 -- Optional ElvUI skin. Only active when ElvUI is loaded.
 
 if not ElvUI then return end

@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsQoL.lua
 -- Builds the "QoL" settings subcategory (Filter / LFG / Logs / Misc /
--- Quests / Reminder via left nav) - called once from RA.InitOptions() in Options.lua.
+-- Quests / Reminder via left nav) - called once from RA.InitOptions() in Options/Options.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L

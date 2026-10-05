@@ -1,7 +1,7 @@
 -- RollAway - Options/OptionsProfile.lua
 -- Builds the "Profile" settings subcategory: switch, create, copy-from,
 -- delete and reset AceDB-3.0 profiles (RA.db). Called once from
--- RA.InitOptions() in Options.lua.
+-- RA.InitOptions() in Options/Options.lua.
 --
 -- Note: the rest of the Options UI (General/Dungeons/Raids/... tabs, QoL
 -- subcategory) is built once at ADDON_LOADED with each widget's initial

@@ -1,4 +1,4 @@
--- RollAway - Debug.lua
+-- RollAway - Core/Debug.lua
 -- Developer tools: debug log window, dev slash commands and event logger.
 -- Loaded last.
 
@@ -329,7 +329,7 @@ local function RegisterSlashCommands()
 end
 
 ------------------------------------------------------------------------
--- Initialization – called from Core.lua ADDON_LOADED
+-- Initialization – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
 function RA.InitDebug()

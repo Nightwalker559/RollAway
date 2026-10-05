@@ -39,6 +39,7 @@
 - `/rawreminder` always restores the faked Voidcore count.
 
 ### Internal
+- Folder structure: Core.lua, Helpers.lua, Debug.lua and ElvUI_Skin.lua moved into a new `Core\` folder, Options.lua into `Options\`. Load order unchanged.
 - QoL.lua split: the join reminder and keystone companion handling moved to Modules\JoinReminder.lua.
 - `/raw` / `/rollaway` is now registered by Options.lua instead of the dev-only Debug.lua.
 - Duplicate code replaced by shared helpers (popups, toasts, portal buttons, ElvUI roll buttons, Options builders, ElvUI skinning); dead code, unused locale keys and outdated or mixed-language comments removed.
