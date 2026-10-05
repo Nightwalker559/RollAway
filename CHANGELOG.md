@@ -9,6 +9,7 @@
 - QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; full bags, full quest log and being dead stay visible. Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
 
 ### Fixed
+- Omniumfoliant: the minimap icon is now always hidden below max level (it is of no use there and its tooltip errors), independent of the "hide minimap icon" option; it returns on reaching max level unless the option is on.
 - Secret values (12.x): portal cooldown checks, the portal-cast watcher and the auto-accept-invite check skip values the addon is not allowed to read during combat instead of throwing a Lua error (new shared `RA.IsAccessible`).
 
 ### Internal

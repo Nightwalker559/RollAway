@@ -110,8 +110,15 @@ local function OmniActive()
     return RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap and IsMaxLevel()
 end
 
--- Hooks the Blizzard minimap button once: keeps it hidden while the option
--- is active and guards its tooltip (errors below max level).
+-- Should the Blizzard minimap icon be hidden? Below max level the
+-- Omniumfoliant is of no use (its tooltip even errors), so it stays hidden
+-- then whatever the option says; at max level the option decides.
+local function OmniMinimapHidden()
+    return not IsMaxLevel() or (RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap) and true or false
+end
+
+-- Hooks the Blizzard minimap button once: keeps it hidden while
+-- OmniMinimapHidden() says so and guards its tooltip (errors below max level).
 local function SetupOmniMinimapButton()
     local mm = GetOmniMinimapButton()
     if not mm then return nil end
@@ -119,7 +126,7 @@ local function SetupOmniMinimapButton()
     mm.RA_hooked = true
 
     hooksecurefunc(mm, "Show", function(self)
-        if OmniActive() then self:Hide() end
+        if OmniMinimapHidden() then self:Hide() end
     end)
 
     local origOnEnter = mm:GetScript("OnEnter")
@@ -211,11 +218,11 @@ local function LogState(key, wanted, featureOn, statsView, source, btn)
 end
 
 local function Apply(source)
-    -- Minimap icon: only hidden by us while the option is active; never
+    -- Minimap icon: only hidden by us while OmniMinimapHidden(); never
     -- force-shown otherwise (Blizzard controls default visibility).
     local mm = SetupOmniMinimapButton()
     if mm then
-        if OmniActive() then
+        if OmniMinimapHidden() then
             mm:Hide()
             mm.RA_forceHidden = true
         elseif mm.RA_forceHidden then
