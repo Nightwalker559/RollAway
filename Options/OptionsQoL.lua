@@ -178,13 +178,22 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
 
-    -- Great Vault notification
-    local _, qolVaultAlertInfo = MakeToggle(reminder, nil, 0, -8, {
+    local isMaxLevel = RA.IsMaxLevel()
+
+    -- Great Vault notification (hidden below max level, the next toggle then
+    -- moves up into its place)
+    local qolVaultAlertCB, qolVaultAlertInfo = MakeToggle(reminder, nil, 0, -8, {
         label = RA_L["greatvault_alert_label"], info = RA_L["greatvault_alert_info"], dbKey = "greatVaultAlert",
     })
+    local paragonAnchor, paragonX, paragonY = qolVaultAlertInfo, -20, -12
+    if not isMaxLevel then
+        qolVaultAlertCB.frame:Hide()
+        qolVaultAlertInfo:Hide()
+        paragonAnchor, paragonX, paragonY = nil, 0, -8
+    end
 
     -- Paragon bag notification
-    local _, qolParagonInfo = MakeToggle(reminder, qolVaultAlertInfo, -20, -12, {
+    local _, qolParagonInfo = MakeToggle(reminder, paragonAnchor, paragonX, paragonY, {
         label = RA_L["paragon_alert_label"], info = RA_L["paragon_alert_info"], dbKey = "paragonAlert",
     })
 
@@ -286,7 +295,6 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     -- Anchor advances past shown widgets so hidden ones leave no gap.
     local qolChainAnchor = qolAHInfo
-    local isMaxLevel = RA.IsMaxLevel()
 
     -- Adds the next Filter toggle below the chain; when `visible` is false it
     -- is created (its saved setting still applies) but hidden, and the chain

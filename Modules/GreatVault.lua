@@ -64,6 +64,7 @@ end
 
 local function CheckAndShow()
     if not (RollAwayDB and RollAwayDB.greatVaultAlert) then return end
+    if not RA.IsMaxLevel() then return end  -- no Great Vault rewards below max level
     if RA.vaultAlertShownThisSession then return end  -- already shown/handled this session
     if not HasUnclaimedRewards() then return end
 
