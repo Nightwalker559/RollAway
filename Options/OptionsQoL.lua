@@ -14,7 +14,8 @@ local MakeValueSlider = UI.MakeValueSlider
 local MakeSkinnedButton = UI.MakeSkinnedButton
 
 ------------------------------------------------------------------------
--- Subcategory: QoL  (Filter / LFG / Logs / Misc / Reminder via left nav)
+-- Subcategory: QoL  (Character / Filter / Hide / LFG / Logs / Misc / Quests /
+-- Reminder via left nav)
 --
 -- category:        the main RollAway Settings category (from InitOptions)
 -- S:                ElvUI Skins module, or nil
@@ -36,17 +37,24 @@ function RA.BuildQoLOptions(category, S, classColor)
     qolHeaderLine:SetPoint("TOPLEFT", qolPanelInfo, "BOTTOMLEFT", 0, -10)
     qolHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    -- Left nav (alphabetical: Filter / LFG / Logs / Misc / Reminder)
+    -- Left nav (alphabetical by English name). The Character tab only holds
+    -- max-level features, so it does not exist below max level.
     local QOL_NAV_W = 130
+    local isMaxLevel = RA.IsMaxLevel()
 
     local qolNavDefs = {
-        { key = "filter",   label = RA_L["qol_filter_section"]   },
-        { key = "lfg",      label = RA_L["qol_nav_lfg"]          },
-        { key = "logs",     label = RA_L["qol_nav_logs"]         },
-        { key = "misc",     label = RA_L["qol_nav_misc"]         },
-        { key = "quests",   label = RA_L["qol_nav_quests"]       },
-        { key = "reminder", label = RA_L["qol_reminder_section"] },
+        { key = "character", label = RA_L["qol_nav_character"], show = isMaxLevel },
+        { key = "filter",    label = RA_L["qol_filter_section"]   },
+        { key = "hide",      label = RA_L["qol_nav_hide"]         },
+        { key = "lfg",       label = RA_L["qol_nav_lfg"]          },
+        { key = "logs",      label = RA_L["qol_nav_logs"]         },
+        { key = "misc",      label = RA_L["qol_nav_misc"]         },
+        { key = "quests",    label = RA_L["qol_nav_quests"]       },
+        { key = "reminder",  label = RA_L["qol_reminder_section"] },
     }
+    for i = #qolNavDefs, 1, -1 do
+        if qolNavDefs[i].show == false then table.remove(qolNavDefs, i) end
+    end
 
     local qolCatPanels  = {}
     local qolNavButtons = {}
@@ -93,7 +101,9 @@ function RA.BuildQoLOptions(category, S, classColor)
     end
 
     -- LFG/Logs/Misc/Reminder: scrollbar force-hidden for now, flip to false once needed.
-    local filter   = CreateQolCategoryPanel("filter",   "Filter",   500, false)
+    local character = isMaxLevel and CreateQolCategoryPanel("character", "Character", 280, true) or nil
+    local filter   = CreateQolCategoryPanel("filter",   "Filter",   260, true)
+    local hide     = CreateQolCategoryPanel("hide",     "Hide",     460, false)
     local lfg      = CreateQolCategoryPanel("lfg",      "Lfg",      380, true)
     local logs     = CreateQolCategoryPanel("logs",     "Logs",     380, true)
     local misc      = CreateQolCategoryPanel("misc",     "Misc",     200, true)
@@ -179,8 +189,6 @@ function RA.BuildQoLOptions(category, S, classColor)
     end)
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
-
-    local isMaxLevel = RA.IsMaxLevel()
 
     -- Great Vault notification (hidden below max level, the next toggle then
     -- moves up into its place)
@@ -289,86 +297,116 @@ function RA.BuildQoLOptions(category, S, classColor)
     qolResetPosBtn:SetPoint("TOPLEFT", qolLockCB.frame, "BOTTOMLEFT", 4, -8)
     qolResetPosBtn:SetScript("OnClick", RA.ResetToastPositions)
 
-    -- ── Category: Filter (alphabetical by label) ─────────────────────────
+    -- ── Toggle chains (Character / Filter / Hide) ─────────────────────────
+    -- A category stacks its toggles top to bottom: each new one hangs below
+    -- the last *visible* one, so an option that is hidden (e.g. below max
+    -- level) leaves no gap. chain.Add(opts, visible) returns the checkbox;
+    -- chain.Anchor() is the last visible description, for a widget below.
+    local function NewToggleChain(panel)
+        local anchor, x, y = nil, 0, -8
+        local chain = {}
+        function chain.Add(opts, visible)
+            local cb, info = MakeToggle(panel, anchor, x, y, opts)
+            if visible == false then
+                cb.frame:Hide()
+                info:Hide()
+            else
+                anchor, x, y = info, -20, -12
+            end
+            return cb
+        end
+        function chain.Anchor() return anchor end
+        return chain
+    end
 
-    local _, qolAHInfo = MakeToggle(filter, nil, 0, -8, {
+    -- ── Category: Character (max level only) ────────────────────────────
+    if character then
+        local charChain = NewToggleChain(character)
+
+        -- Omniumfoliant: hide minimap icon, show button on Character Frame.
+        -- Long label - explicit width so it wraps instead of running off-panel.
+        local qolOmniCB = charChain.Add({
+            label = RA_L["qol_omniumfoliant_label"], info = RA_L["qol_omniumfoliant_info"],
+            dbKey = "hideOmniumfoliantMinimap", width = 400,
+            onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
+        })
+        qolOmniCB.frame:SetHeight(40) -- room for the wrapped 2-line label
+
+        -- Great Vault button on Character Frame
+        charChain.Add({
+            label = RA_L["qol_vault_button_label"], info = RA_L["qol_vault_button_info"],
+            dbKey = "vaultButtonCharFrame",
+            onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
+        })
+
+        -- Vault currency display
+        charChain.Add({
+            label = RA_L["qol_vault_currency_label"], info = RA_L["qol_vault_currency_info"],
+            dbKey = "vaultCurrencyDisplay",
+        }, RA.BONUS_ROLLS_ENABLED and true or false)
+    end
+
+    -- ── Category: Filter (narrows what lists show) ───────────────────────
+    local filterChain = NewToggleChain(filter)
+
+    filterChain.Add({
         label = RA_L["qol_expansion_filter_label"], info = RA_L["qol_expansion_filter_info"], dbKey = "expansionFilterAH",
     })
 
-    -- Anchor advances past shown widgets so hidden ones leave no gap.
-    local qolChainAnchor = qolAHInfo
-
-    -- Adds the next Filter toggle below the chain; when `visible` is false it
-    -- is created (its saved setting still applies) but hidden, and the chain
-    -- skips it. Returns the checkbox.
-    local function AddFilterToggle(opts, visible)
-        local cb, info = MakeToggle(filter, qolChainAnchor, -20, -12, opts)
-        if visible == false then
-            cb.frame:Hide()
-            info:Hide()
-        else
-            qolChainAnchor = info
-        end
-        return cb
-    end
-
-    -- Omniumfoliant: hide minimap icon, show button on Character Frame.
-    -- Longest checkbox label in the file - explicit width so it wraps
-    -- instead of running off-panel on one line. Hidden pre-max-level,
-    -- matching the CharFrameButtons.lua feature gate.
-    local qolOmniCB = AddFilterToggle({
-        label = RA_L["qol_omniumfoliant_label"], info = RA_L["qol_omniumfoliant_info"],
-        dbKey = "hideOmniumfoliantMinimap", width = 400,
-        onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
-    }, isMaxLevel)
-    qolOmniCB.frame:SetHeight(40) -- room for the wrapped 2-line label
-
-    -- World Map: hide tracked-faction activity button (experimental)
-    AddFilterToggle({
-        label = RA_L["qol_map_activity_label"], info = RA_L["qol_map_activity_info"],
-        dbKey = "hideMapActivityTracker", onChange = RA.ApplyMapActivityTrackerFeature,
-    })
-
-    -- Professions: hide "Crafting Output Log" popup
-    AddFilterToggle({
-        label = RA_L["qol_crafting_output_log_label"], info = RA_L["qol_crafting_output_log_info"],
-        dbKey = "hideCraftingOutputLog", onChange = RA.ApplyCraftingOutputLogFeature,
-    })
-
-    -- Red error text in the middle of the screen
-    AddFilterToggle({
-        label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
-        dbKey = "hideErrorMessages", onChange = RA.ApplyHideErrorsFeature,
-    })
-
-    -- Great Vault button on Character Frame
-    AddFilterToggle({
-        label = RA_L["qol_vault_button_label"], info = RA_L["qol_vault_button_info"],
-        dbKey = "vaultButtonCharFrame",
-        onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
-    }, isMaxLevel)
-
-    -- Vault currency display
-    AddFilterToggle({
-        label = RA_L["qol_vault_currency_label"], info = RA_L["qol_vault_currency_info"],
-        dbKey = "vaultCurrencyDisplay",
-    }, RA.BONUS_ROLLS_ENABLED and isMaxLevel)
-
     -- Vendor Filter Light: dim already-known/maxed vendor items (applies the
     -- dim, or resets it when turned off)
-    AddFilterToggle({
+    filterChain.Add({
         label = RA_L["qol_vendor_filter_label"], info = RA_L["qol_vendor_filter_info"],
         dbKey = "vendorFilterEnabled", onChange = RA.ApplyVendorFilterFeature,
     })
 
     -- Alpha slider (only meaningful together with the toggle above)
-    MakeValueSlider(filter, qolChainAnchor, -20, -12, {
+    MakeValueSlider(filter, filterChain.Anchor(), -20, -12, {
         min = 10, max = 100, step = 5, value = math.floor(RollAwayDB.vendorFilterAlpha * 100 + 0.5),
         formatLabel = function(v) return string.format("%s  %d%%", RA_L["qol_vendor_filter_alpha_label"], v) end,
         onChange = function(v)
             RollAwayDB.vendorFilterAlpha = v / 100
             if RollAwayDB.vendorFilterEnabled then RA.ApplyVendorFilterFeature() end
         end,
+    })
+
+    -- ── Category: Hide (switches off Blizzard UI elements) ───────────────
+    local hideChain = NewToggleChain(hide)
+
+    -- Red error text in the middle of the screen
+    hideChain.Add({
+        label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
+        dbKey = "hideErrorMessages", onChange = RA.ApplyHideErrorsFeature,
+    })
+
+    -- Talking Head (voiced dialog box at the top of the screen)
+    hideChain.Add({
+        label = RA_L["qol_hide_talkinghead_label"], info = RA_L["qol_hide_talkinghead_info"],
+        dbKey = "hideTalkingHead", onChange = RA.ApplyHideTalkingHeadFeature,
+    })
+
+    -- Boss banner after a boss kill
+    hideChain.Add({
+        label = RA_L["qol_hide_bossbanner_label"], info = RA_L["qol_hide_bossbanner_info"],
+        dbKey = "hideBossBanner", onChange = RA.ApplyHideBossBannerFeature,
+    })
+
+    -- Event toasts at the top of the screen
+    hideChain.Add({
+        label = RA_L["qol_hide_eventtoasts_label"], info = RA_L["qol_hide_eventtoasts_info"],
+        dbKey = "hideEventToasts", onChange = RA.ApplyHideEventToastsFeature,
+    })
+
+    -- World Map: hide tracked-faction activity button (experimental)
+    hideChain.Add({
+        label = RA_L["qol_map_activity_label"], info = RA_L["qol_map_activity_info"],
+        dbKey = "hideMapActivityTracker", onChange = RA.ApplyMapActivityTrackerFeature,
+    })
+
+    -- Professions: hide "Crafting Output Log" popup
+    hideChain.Add({
+        label = RA_L["qol_crafting_output_log_label"], info = RA_L["qol_crafting_output_log_info"],
+        dbKey = "hideCraftingOutputLog", onChange = RA.ApplyCraftingOutputLogFeature,
     })
 
     -- ── Category: Logs ─────────────────────────────────────────────────
@@ -476,8 +514,8 @@ function RA.BuildQoLOptions(category, S, classColor)
         label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
     })
 
-    -- Default category on open (alphabetically first)
-    ShowQolCategory("filter")
+    -- Default category on open (the first one in the nav)
+    ShowQolCategory(qolNavDefs[1].key)
 
     return qolPanel
 end

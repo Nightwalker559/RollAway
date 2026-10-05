@@ -2,7 +2,8 @@
 -- Quality of Life features: Ready Check / durability reminders, Auction House
 -- and Crafting Orders expansion filter, Great Vault currency display, and
 -- Blizzard UI clean-ups (world map activity tracker, crafting output log,
--- red error text). Quest automation lives in Modules\Quests.lua.
+-- red error text, Talking Head, Boss Banner, Event Toasts). Quest automation
+-- lives in Modules\Quests.lua.
 -- The instance join reminder lives in Modules\JoinReminder.lua, the Character
 -- panel buttons in Modules\CharFrameButtons.lua.
 
@@ -592,6 +593,81 @@ function RA.ApplyHideErrorsFeature()
 end
 
 ------------------------------------------------------------------------
+-- Hide Talking Head, Boss Banner and Event Toasts
+-- Each of these Blizzard frames is driven by a game event. While its option
+-- is on we take that event away from the frame, and give it back when the
+-- option is turned off - the frame's own code is never replaced or hooked,
+-- and no /reload is needed.
+------------------------------------------------------------------------
+
+local takenEvents = {}  -- [frame] = { [event] = true }: events we unregistered
+
+local function SetFrameEventsTaken(frame, events, take)
+    if not frame then return end
+    if take then
+        for _, event in ipairs(events) do
+            if frame:IsEventRegistered(event) then
+                frame:UnregisterEvent(event)
+                takenEvents[frame] = takenEvents[frame] or {}
+                takenEvents[frame][event] = true
+            end
+        end
+    elseif takenEvents[frame] then
+        for event in pairs(takenEvents[frame]) do frame:RegisterEvent(event) end
+        takenEvents[frame] = nil
+    end
+end
+
+-- Banner after a boss kill (with the loot list)
+function RA.ApplyHideBossBannerFeature()
+    SetFrameEventsTaken(BossBanner, { "BOSS_KILL", "ENCOUNTER_LOOT_RECEIVED" },
+        RollAwayDB and RollAwayDB.hideBossBanner)
+end
+
+-- Event toasts at the top of the screen (new content unlocked, etc.)
+function RA.ApplyHideEventToastsFeature()
+    SetFrameEventsTaken(EventToastManagerFrame, { "DISPLAY_EVENT_TOASTS" },
+        RollAwayDB and RollAwayDB.hideEventToasts)
+end
+
+-- Talking Head. Its frame is load-on-demand: the first line of a session
+-- triggers the load and can still show once, so a small watcher dismisses
+-- that line (same call as the X button, which also stops the voice-over)
+-- and takes the event from the now existing frame.
+local talkingHeadWatcher
+
+local function DismissTalkingHead()
+    if not (TalkingHeadFrame and TalkingHeadFrame:IsShown()) then return end
+    if C_TalkingHead and C_TalkingHead.IgnoreCurrentTalkingHead then
+        pcall(C_TalkingHead.IgnoreCurrentTalkingHead)
+    end
+    TalkingHeadFrame:Hide()
+end
+
+function RA.ApplyHideTalkingHeadFeature()
+    local on = RollAwayDB and RollAwayDB.hideTalkingHead
+    SetFrameEventsTaken(TalkingHeadFrame, { "TALKINGHEAD_REQUESTED" }, on)
+
+    if on and not talkingHeadWatcher then
+        talkingHeadWatcher = CreateFrame("Frame")
+        talkingHeadWatcher:SetScript("OnEvent", function()
+            DismissTalkingHead()
+            C_Timer.After(0.1, function()
+                RA.ApplyHideTalkingHeadFeature()  -- the frame exists by now
+                DismissTalkingHead()
+            end)
+        end)
+    end
+    if talkingHeadWatcher then
+        if on then
+            talkingHeadWatcher:RegisterEvent("TALKINGHEAD_REQUESTED")
+        else
+            talkingHeadWatcher:UnregisterAllEvents()
+        end
+    end
+end
+
+------------------------------------------------------------------------
 -- Initialization – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
@@ -625,8 +701,11 @@ function RA.InitQoL()
     -- Professions: hide "Crafting Output Log" popup
     InitCraftingOutputLogHide()
 
-    -- Red error text filter
+    -- Red error text filter, Talking Head, Boss Banner, Event Toasts
     RA.ApplyHideErrorsFeature()
+    RA.ApplyHideTalkingHeadFeature()
+    RA.ApplyHideBossBannerFeature()
+    RA.ApplyHideEventToastsFeature()
 
     DBG("QoL initialized")
 end

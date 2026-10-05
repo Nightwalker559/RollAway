@@ -6,9 +6,11 @@
 
 ### New
 - QoL > Quests (new tab): automatic quest handling at NPCs - accept regular / daily / weekly quests and turn in completed ones, with an optional modifier key (pauses the automation while held, or is required to run it). Turn-in skips quests that cost gold or currency and quests with more than one reward to choose from.
-- QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; errors that are the only hint why an action failed stay visible (full bags / bank / quest log, money, quest turn-in problems, loot, vendor / mail / trade refusals, raid-only content, Group Finder vote kick, Great Vault unavailable, being dead, pickpocketing). Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
+- QoL > Hide: option "Hide red error messages" - hides the red error text in the middle of the screen; errors that are the only hint why an action failed stay visible (full bags / bank / quest log, money, quest turn-in problems, loot, vendor / mail / trade refusals, raid-only content, Group Finder vote kick, Great Vault unavailable, being dead, pickpocketing). Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
+- QoL > Hide (new tab): options "Hide Talking Head", "Hide boss banner" and "Hide event toasts". Each takes the game event away from the Blizzard frame (nothing is hooked or replaced) and gives it back when switched off; no /reload needed.
 
 ### Changed
+- QoL options sorted into clearer tabs: **Character** (Omniumfoliant, Great Vault button and currency - max level only), **Filter** (Auction House expansion filter, Vendor Filter), **Hide** (red error text, Talking Head, boss banner, event toasts, world map tracker, crafting output log). Same settings, only their place changed.
 - QoL > Logs: Delves are logged together with Scenarios (one option "Scenarios & Delves", an old Delves choice carries over) and Arena auto-logging was removed. Long labels in the Logs tab are no longer cut off.
 - Great Vault login reminder: not shown below max level, and its option in QoL > Reminder is hidden there (the Paragon option moves up). `/rawvault` still works.
 

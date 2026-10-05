@@ -22,6 +22,11 @@ local FEATURES = {
         description = RA_L["whatsnew_errors_desc"],
         location    = RA_L["whatsnew_errors_location"],
     },
+    {
+        title       = RA_L["whatsnew_hide_title"],
+        description = RA_L["whatsnew_hide_desc"],
+        location    = RA_L["whatsnew_hide_location"],
+    },
 }
 
 -- ============================================================
