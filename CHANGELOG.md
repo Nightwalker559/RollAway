@@ -5,23 +5,26 @@
 ## 3.0.9
 
 ### New
-- QoL > Quests (new tab): automatic quest handling at NPCs - accept regular / daily / weekly quests and turn in completed ones, with an optional modifier key (pauses the automation while held, or is required to run it). Turn-in skips quests that cost gold or currency and quests with more than one reward to choose from.
-- QoL > Hide: option "Hide red error messages" - hides the red error text in the middle of the screen; errors that are the only hint why an action failed stay visible (full bags / bank / quest log, money, quest turn-in problems, loot, vendor / mail / trade refusals, raid-only content, Group Finder vote kick, Great Vault unavailable, being dead, pickpocketing). Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
-- QoL > Hide (new tab): options "Hide Talking Head", "Hide boss banner", "Hide event toasts and bonus objective banner" (the bonus objective / world quest banner is part of this option) and "Hide alert pop-ups" (the "You received: ..." loot boxes, achievements, new mounts / pets / toys; the game events are taken away from Blizzard's AlertFrame). Talking Head, boss banner, event toasts and alert pop-ups take the game events away from the Blizzard frame and give it back when switched off; the bonus objective banner runs its course on its own but its textures and texts are hidden, so no Blizzard function is ever called from RollAway's code (its sound still plays). No /reload needed.
+- QoL > Quests (new tab): accepts regular / daily / weekly quests and turns in finished ones at NPCs. Turn-in skips quests that cost gold or currency or offer several rewards. Optional modifier key to pause or require the automation.
+- QoL > Hide (new tab), everything off by default, no /reload needed:
+  - Red error text - important errors (full bags, no gold, loot / vendor / mail refusals, ...) stay visible.
+  - Talking Head and boss banner.
+  - Event toasts, including the bonus objective / world quest banner.
+  - Alert pop-ups ("You received: ...", achievements, new mounts / pets / toys).
 
 ### Changed
-- LuckyoneUI compatibility: when LuckyoneUI is loaded, RollAway's "Hide Talking Head" and "Hide boss banner" are greyed out and have no effect (LuckyoneUI has its own). The red error text filter stays available, with a hint to switch off LuckyoneUI's own "UI error text" option, which hides every error.
-- QoL options sorted into clearer tabs: **Character** (Omniumfoliant, Great Vault button and currency - max level only), **Filter** (Auction House expansion filter, Vendor Filter), **Hide** (red error text, Talking Head, boss banner, event toasts, world map tracker, crafting output log). Same settings, only their place changed. The QoL tab list is sorted alphabetically in the client language.
-- QoL > Logs: Delves are logged together with Scenarios (one option "Scenarios & Delves", an old Delves choice carries over) and Arena auto-logging was removed. Long labels in the Logs tab are no longer cut off.
-- Great Vault login reminder: not shown below max level, and its option in QoL > Reminder is hidden there (the Paragon option moves up). `/rawvault` still works.
+- LuckyoneUI: if loaded, "Hide Talking Head" and "Hide boss banner" are greyed out (LuckyoneUI has its own). The error text filter stays available; switch off LuckyoneUI's own "UI error text" option for it.
+- QoL options re-sorted into tabs (Character, Filter, Hide, LFG, Logs, Misc, Quests, Reminder), alphabetical in the client language. Settings are unchanged.
+- QoL > Logs: Delves are logged together with Scenarios ("Scenarios & Delves", old choice carries over); Arena auto-logging removed.
+- Great Vault login reminder and its option are hidden below max level. `/rawvault` still works.
 
 ### Fixed
-- Omniumfoliant: the minimap icon is now always hidden below max level (it is of no use there and its tooltip errors), independent of the "hide minimap icon" option; it returns on reaching max level unless the option is on.
-- Secret values (12.x): portal cooldown checks, the portal-cast watcher and the auto-accept-invite check skip values the addon is not allowed to read during combat instead of throwing a Lua error (new shared `RA.IsAccessible`).
+- Omniumfoliant minimap icon is hidden below max level.
+- Secret values (12.x): portal cooldown, portal-cast watcher and auto-accept-invite skip values the addon may not read in combat instead of throwing Lua errors.
 
 ### Internal
-- Code review pass before release: no dead code, unused locale keys or duplicated blocks found; no accidental globals; outdated comments (tab lists, file names) updated - verified that the compiled code of every file is unchanged by the clean-up.
-- Folder structure: Core.lua, Helpers.lua, Debug.lua and ElvUI_Skin.lua moved into a new `Core\` folder, Options.lua into `Options\`. Load order unchanged.
+- Pre-release review: no dead code, unused locale keys or accidental globals.
+- Core files moved to `Core\`, Options.lua to `Options\`. Load order unchanged.
 
 ## 3.0.8
 
