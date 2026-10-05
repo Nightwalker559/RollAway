@@ -316,7 +316,7 @@ function RA.BuildQoLOptions(category, S, classColor)
             else
                 anchor, x, y = info, -20, -12
             end
-            return cb
+            return cb, info
         end
         function chain.Anchor() return anchor end
         return chain
@@ -376,23 +376,41 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- ── Category: Hide (switches off Blizzard UI elements) ───────────────
     local hideChain = NewToggleChain(hide)
 
+    -- LuckyoneUI has its own versions of Talking Head and Boss Banner: while
+    -- it is loaded ours are greyed out and have no effect (see QoL.lua). The
+    -- red error text filter stays on - LuckyoneUI's version hides every error,
+    -- this one keeps the important ones - but only works while LuckyoneUI's
+    -- own "UI error text" option is off.
+    local luckyoneActive = RA.IsLuckyoneUIActive()
+    local function AddHideToggle(opts, luckyoneNoteKey, yields)
+        local cb, info = hideChain.Add(opts)
+        if luckyoneActive and luckyoneNoteKey then
+            info:SetText(opts.info .. " " .. RA_L[luckyoneNoteKey])
+            if yields then
+                cb:SetValue(false)  -- display only, the saved choice is kept
+                cb:SetDisabled(true)
+            end
+        end
+        return cb
+    end
+
     -- Red error text in the middle of the screen
-    hideChain.Add({
+    AddHideToggle({
         label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
         dbKey = "hideErrorMessages", onChange = RA.ApplyHideErrorsFeature,
-    })
+    }, "qol_luckyone_errors_note", false)
 
     -- Talking Head (voiced dialog box at the top of the screen)
-    hideChain.Add({
+    AddHideToggle({
         label = RA_L["qol_hide_talkinghead_label"], info = RA_L["qol_hide_talkinghead_info"],
         dbKey = "hideTalkingHead", onChange = RA.ApplyHideTalkingHeadFeature,
-    })
+    }, "qol_luckyone_note", true)
 
     -- Boss banner after a boss kill
-    hideChain.Add({
+    AddHideToggle({
         label = RA_L["qol_hide_bossbanner_label"], info = RA_L["qol_hide_bossbanner_info"],
         dbKey = "hideBossBanner", onChange = RA.ApplyHideBossBannerFeature,
-    })
+    }, "qol_luckyone_note", true)
 
     -- Event toasts at the top of the screen
     hideChain.Add({

@@ -10,6 +10,7 @@
 - QoL > Hide (new tab): options "Hide Talking Head", "Hide boss banner" and "Hide event toasts". Each takes the game event away from the Blizzard frame (nothing is hooked or replaced) and gives it back when switched off; no /reload needed.
 
 ### Changed
+- LuckyoneUI compatibility: when LuckyoneUI is loaded, RollAway's "Hide Talking Head" and "Hide boss banner" are greyed out and have no effect (LuckyoneUI has its own). The red error text filter stays available, with a hint to switch off LuckyoneUI's own "UI error text" option, which hides every error.
 - QoL options sorted into clearer tabs: **Character** (Omniumfoliant, Great Vault button and currency - max level only), **Filter** (Auction House expansion filter, Vendor Filter), **Hide** (red error text, Talking Head, boss banner, event toasts, world map tracker, crafting output log). Same settings, only their place changed. The QoL tab list is sorted alphabetically in the client language.
 - QoL > Logs: Delves are logged together with Scenarios (one option "Scenarios & Delves", an old Delves choice carries over) and Arena auto-logging was removed. Long labels in the Logs tab are no longer cut off.
 - Great Vault login reminder: not shown below max level, and its option in QoL > Reminder is hidden there (the Paragon option moves up). `/rawvault` still works.
