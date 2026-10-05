@@ -8,7 +8,11 @@
 - QoL > Quests (new tab): automatic quest handling at NPCs - accept regular / daily / weekly quests and turn in completed ones, with an optional modifier key (pauses the automation while held, or is required to run it). Turn-in skips quests that cost gold or currency and quests with more than one reward to choose from.
 - QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; full bags, full quest log and being dead stay visible. Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
 
+### Fixed
+- Secret values (12.x): portal cooldown checks, the portal-cast watcher and the auto-accept-invite check skip values the addon is not allowed to read during combat instead of throwing a Lua error (new shared `RA.IsAccessible`).
+
 ### Internal
+- Code review pass: no dead code, unused locale keys or duplicated blocks found; no accidental globals.
 - Folder structure: Core.lua, Helpers.lua, Debug.lua and ElvUI_Skin.lua moved into a new `Core\` folder, Options.lua into `Options\`. Load order unchanged.
 
 ## 3.0.8

@@ -113,6 +113,7 @@ end
 
 -- Checks if spellID is one of the current season's M+ portal spells.
 local function IsKnownPortalSpell(spellID)
+    if not RA.IsAccessible(spellID) then return false end
     for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
         if d.portalSpellID == spellID then return true end
     end

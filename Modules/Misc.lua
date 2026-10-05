@@ -34,7 +34,7 @@ local function IsGuildMemberGUID(guid)
 end
 
 local function IsKnownInviter(inviterGUID)
-    if not inviterGUID then return false end
+    if not inviterGUID or not RA.IsAccessible(inviterGUID) then return false end
     return C_BattleNet.GetGameAccountInfoByGUID(inviterGUID) ~= nil
         or C_FriendList.IsFriend(inviterGUID)
         or IsGuildMemberGUID(inviterGUID)

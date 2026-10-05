@@ -50,6 +50,14 @@ local function SafeCancelTimer(timer)
 end
 RA.SafeCancelTimer = SafeCancelTimer
 
+-- 12.x "secret values": during combat/encounters some API results can't be
+-- compared, indexed or concatenated by addon code (doing so is a Lua error).
+-- False for such a value; true for everything else (also on clients without
+-- the secret-value API).
+function RA.IsAccessible(value)
+    return not canaccessvalue or canaccessvalue(value)
+end
+
 -- Shared "is the player max level" check (vault currency display, Omnium/
 -- Vault Character panel buttons, options gating).
 function RA.IsMaxLevel()
@@ -459,7 +467,8 @@ local PORTAL_COOLDOWN_THRESHOLD = 3
 -- startTime, duration of a real (non-GCD) cooldown on the spell, or nil.
 function RA.GetPortalCooldown(spellID)
     local cd = C_Spell.GetSpellCooldown(spellID)
-    if cd and cd.startTime > 0 and cd.duration > PORTAL_COOLDOWN_THRESHOLD then
+    if not cd or not (RA.IsAccessible(cd.startTime) and RA.IsAccessible(cd.duration)) then return end
+    if cd.startTime > 0 and cd.duration > PORTAL_COOLDOWN_THRESHOLD then
         return cd.startTime, cd.duration
     end
 end

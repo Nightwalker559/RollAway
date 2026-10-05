@@ -515,7 +515,7 @@ local errorHandlerWrapped = false
 -- to inspect are never hidden.
 local function IsHiddenError(message)
     if message == nil then return false end
-    if canaccessvalue and not canaccessvalue(message) then return false end
+    if not RA.IsAccessible(message) then return false end
     return not ALWAYS_SHOWN_ERRORS[message]
 end
 
