@@ -488,11 +488,13 @@ end
 
 ------------------------------------------------------------------------
 -- Hide the red error text in the middle of the screen
--- Blizzard's UIErrorsFrame listens to UI_ERROR_MESSAGE on its own. While the
--- option is on we take that event away from it and listen ourselves; only
--- the important errors below are handed back to Blizzard's own handler, so
--- they look exactly as usual. Turning the option off gives the event back
--- (no /reload needed).
+-- Blizzard's UIErrorsFrame draws the text from its own OnEvent handler. We
+-- wrap that handler once: unimportant UI_ERROR_MESSAGEs are swallowed, the
+-- rest (and every other event) goes to Blizzard's handler unchanged. The
+-- option is checked on every message, so it works without /reload.
+-- Deliberately NOT done by unregistering the event: BigWigs (after boss
+-- fights) and ElvUI (after combat) re-register it on UIErrorsFrame and the
+-- errors would pop up again.
 ------------------------------------------------------------------------
 
 local ALWAYS_SHOWN_ERRORS = {}
@@ -507,45 +509,33 @@ for _, globalName in ipairs({
     if text then ALWAYS_SHOWN_ERRORS[text] = true end
 end
 
-local errorFilterFrame
+local errorHandlerWrapped = false
 
-local function OnErrorMessage(event, errorType, message, ...)
-    -- Messages we are not allowed to inspect are never hidden.
-    local inspectable = message ~= nil and (not canaccessvalue or canaccessvalue(message))
-    if inspectable and not ALWAYS_SHOWN_ERRORS[message] then return end
-
-    local blizzardHandler = UIErrorsFrame:GetScript("OnEvent")
-    if blizzardHandler then
-        blizzardHandler(UIErrorsFrame, event, errorType, message, ...)
-    end
+-- true if this error text should be swallowed. Messages we are not allowed
+-- to inspect are never hidden.
+local function IsHiddenError(message)
+    if message == nil then return false end
+    if canaccessvalue and not canaccessvalue(message) then return false end
+    return not ALWAYS_SHOWN_ERRORS[message]
 end
 
 function RA.ApplyHideErrorsFeature()
-    if not UIErrorsFrame then return end
-    -- Option off and never switched on this session: leave Blizzard alone.
-    if not errorFilterFrame and not (RollAwayDB and RollAwayDB.hideErrorMessages) then return end
+    if errorHandlerWrapped or not UIErrorsFrame then return end
+    -- Stays untouched until the option is switched on the first time.
+    if not (RollAwayDB and RollAwayDB.hideErrorMessages) then return end
 
-    if not errorFilterFrame then
-        errorFilterFrame = CreateFrame("Frame")
-        errorFilterFrame:SetScript("OnEvent", function(_, event, ...)
-            if event == "PLAYER_REGEN_ENABLED" then
-                -- ElvUI's own "hide error text" option gives the event back
-                -- to UIErrorsFrame after combat; take it away again.
-                C_Timer.After(0.5, RA.ApplyHideErrorsFeature)
-            else
-                OnErrorMessage(event, ...)
-            end
-        end)
-    end
+    local blizzardHandler = UIErrorsFrame:GetScript("OnEvent")
+    if not blizzardHandler then return end
+    errorHandlerWrapped = true
 
-    if RollAwayDB and RollAwayDB.hideErrorMessages then
-        UIErrorsFrame:UnregisterEvent("UI_ERROR_MESSAGE")
-        errorFilterFrame:RegisterEvent("UI_ERROR_MESSAGE")
-        errorFilterFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    else
-        errorFilterFrame:UnregisterAllEvents()
-        UIErrorsFrame:RegisterEvent("UI_ERROR_MESSAGE")
-    end
+    UIErrorsFrame:SetScript("OnEvent", function(self, event, ...)
+        if event == "UI_ERROR_MESSAGE" and RollAwayDB and RollAwayDB.hideErrorMessages
+           and IsHiddenError((select(2, ...))) then
+            return
+        end
+        return blizzardHandler(self, event, ...)
+    end)
+    DBG("[QoL] UIErrorsFrame handler wrapped")
 end
 
 ------------------------------------------------------------------------
