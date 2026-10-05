@@ -666,6 +666,14 @@ function RA.ApplyHideBonusBannerFeature()
         hooksecurefunc(banner, "PlayBanner", function()
             if RollAwayDB and RollAwayDB.hideBonusBanner then FadeBonusBanner(true) end
         end)
+        -- Its animations (pop, then the slide towards the tracker) end with the
+        -- frame's alpha set back, so keep it at 0 for as long as it is shown.
+        -- OnUpdate only runs while the banner is on screen.
+        banner:HookScript("OnUpdate", function(self)
+            if RollAwayDB and RollAwayDB.hideBonusBanner and self:GetAlpha() > 0 then
+                self:SetAlpha(0)
+            end
+        end)
         DBG("[QoL] Bonus objective banner hook set")
     end
     FadeBonusBanner(on)
