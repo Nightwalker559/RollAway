@@ -6,7 +6,7 @@
 
 ### New
 - QoL > Quests (new tab): automatic quest handling at NPCs - accept regular / daily / weekly quests and turn in completed ones, with an optional modifier key (pauses the automation while held, or is required to run it). Turn-in skips quests that cost gold or currency and quests with more than one reward to choose from.
-- QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; errors that are the only hint why an action failed stay visible (full bags / bank / quest log, money, quests that cannot be accepted or turned in, vendors, mail, trade, guild bank deposits, loot rolls, group and Group Finder queue refusals, vote kick, difficulty changes, flight masters, being dead, pickpocketing). Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
+- QoL > Filter: option "Hide red error messages" - hides the red error text in the middle of the screen; errors that are the only hint why an action failed stay visible (full bags / bank / quest log, money, quest turn-in problems, loot, vendor / mail / trade refusals, raid-only content, Group Finder vote kick, Great Vault unavailable, being dead, pickpocketing). Takes effect immediately and keeps working when BigWigs or ElvUI re-enable Blizzard's error display after a fight.
 
 ### Changed
 - Great Vault login reminder: not shown below max level, and its option in QoL > Reminder is hidden there (the Paragon option moves up). `/rawvault` still works.

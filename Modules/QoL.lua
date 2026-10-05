@@ -498,63 +498,33 @@ end
 ------------------------------------------------------------------------
 
 -- Errors that stay visible: the ones that are the only hint why a deliberate
--- action did nothing. Names of Blizzard's localized global strings, so this
+-- action did nothing. Everything else (spell, resource, range and target
+-- errors) is hidden. Names of Blizzard's localized global strings, so this
 -- works in every client language; a name missing in the current client is
--- skipped.
--- Reference for the names: https://warcraft.wiki.gg/wiki/Event:UI_ERROR_MESSAGE
+-- skipped. Full list of messages: https://warcraft.wiki.gg/wiki/Event:UI_ERROR_MESSAGE
 local KEPT_ERRORS = {
     -- No room / not enough money
-    "ERR_INV_FULL", "ERR_BAG_FULL", "ERR_BANK_FULL", "ERR_REAGENT_BANK_FULL",
-    "ERR_GUILD_BANK_FULL", "ERR_ITEM_MAX_COUNT", "ERR_NOT_ENOUGH_MONEY",
-    "ERR_NOT_ENOUGH_CURRENCY",
-    -- Vendor and repair refusals
-    "ERR_VENDOR_NOT_INTERESTED", "ERR_VENDOR_DOESNT_BUY", "ERR_VENDOR_SOLD_OUT",
-    "ERR_VENDOR_HATES_YOU", "ERR_VENDOR_MISSING_TURNINS", "ERR_MUST_REPAIR_DURABILITY",
+    "ERR_INV_FULL", "ERR_BANK_FULL", "ERR_QUEST_LOG_FULL", "ERR_ITEM_MAX_COUNT",
+    "ERR_NOT_ENOUGH_MONEY",
     -- Loot
     "ERR_LOOT_ROLL_PENDING", "ERR_LOOT_CANT_LOOT_THAT", "ERR_LOOT_CANT_LOOT_THAT_NOW",
-    -- Quests that cannot be accepted or turned in
-    "ERR_QUEST_LOG_FULL", "ERR_QUEST_MUST_CHOOSE", "ERR_QUEST_NEED_PREREQS",
-    "ERR_QUEST_ALREADY_ON", "ERR_QUEST_ALREADY_DONE", "ERR_QUEST_ALREADY_DONE_DAILY",
-    "ERR_QUEST_ONLY_ONE_TIMED", "ERR_QUEST_FAILED_LOW_LEVEL",
-    "ERR_QUEST_FAILED_MISSING_ITEMS", "ERR_QUEST_FAILED_NOT_ENOUGH_MONEY",
+    -- Quest turn-in refused (relevant for the quest automation)
+    "ERR_QUEST_MUST_CHOOSE", "ERR_QUEST_FAILED_MISSING_ITEMS",
+    "ERR_QUEST_FAILED_NOT_ENOUGH_MONEY",
     -- Dead (player or pet)
     "ERR_PLAYER_DEAD", "ERR_PET_SPELL_DEAD",
-    -- Combat restrictions
-    "ERR_NOT_IN_COMBAT", "ERR_AFFECTING_COMBAT",
-    -- Group restrictions and invites
-    "ERR_RAID_GROUP_ONLY", "ERR_NOT_LEADER", "ERR_GROUP_FULL",
-    "ERR_INVITE_IN_COMBAT", "ERR_INVITE_PARTY_BUSY",
-    -- Group Finder queue refusals
-    "ERR_LFG_NO_SLOTS_PLAYER", "ERR_LFG_DESERTER_PLAYER", "ERR_LFG_DESERTER_PARTY",
-    "ERR_LFG_RANDOM_COOLDOWN_PLAYER", "ERR_LFG_RANDOM_COOLDOWN_PARTY",
-    -- Difficulty changes refused
-    "ERR_DUNGEON_DIFFICULTY_FAILED", "ERR_RAID_DIFFICULTY_FAILED",
-    "ERR_DIFFICULTY_CHANGE_COMBAT", "ERR_DIFFICULTY_CHANGE_ENCOUNTER",
-    "ERR_DIFFICULTY_CHANGE_WORLDSTATE", "ERR_DIFFICULTY_CHANGE_PLAYER_BUSY",
+    -- Group restrictions
+    "ERR_RAID_GROUP_ONLY", "ERR_PARTY_LFG_TELEPORT_IN_COMBAT",
     -- Vote kick in a Group Finder group
     "ERR_PARTY_LFG_BOOT_LIMIT", "ERR_PARTY_LFG_BOOT_DUNGEON_COMPLETE",
     "ERR_PARTY_LFG_BOOT_IN_COMBAT", "ERR_PARTY_LFG_BOOT_IN_PROGRESS",
     "ERR_PARTY_LFG_BOOT_LOOT_ROLLS", "ERR_PARTY_LFG_BOOT_TOO_FEW_PLAYERS",
-    "ERR_PARTY_LFG_TELEPORT_IN_COMBAT",
-    -- Mail
-    "ERR_MAIL_BOUND_ITEM", "ERR_MAIL_CONJURED_ITEM", "ERR_MAIL_BAG", "ERR_MAIL_QUEST_ITEM",
-    "ERR_MAIL_LIMITED_DURATION_ITEM", "ERR_MAIL_TARGET_NOT_FOUND",
-    "ERR_MAIL_RECEPIENT_CANT_RECEIVE_MAIL", "ERR_MAIL_REACHED_CAP",
-    -- Trade
-    "ERR_TRADE_BOUND_ITEM", "ERR_TRADE_QUEST_ITEM", "ERR_TRADE_BAG", "ERR_TRADE_GROUND_ITEM",
-    "ERR_TRADE_FACTION_SPECIFIC", "ERR_TRADE_TOO_FAR", "ERR_TRADE_BAG_FULL",
-    "ERR_TRADE_TARGET_BAG_FULL", "ERR_TRADE_MAX_COUNT_EXCEEDED",
-    "ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED",
-    -- Guild bank deposits
-    "ERR_GUILD_BANK_BOUND_ITEM", "ERR_GUILD_BANK_QUEST_ITEM", "ERR_GUILD_BANK_CONJURED_ITEM",
-    "ERR_GUILD_BANK_EQUIPPED_ITEM", "ERR_GUILD_BANK_WRAPPED_ITEM",
-    -- Items you cannot equip
-    "ERR_CANT_EQUIP_SKILL", "ERR_CANT_EQUIP_EVER", "ERR_CANT_EQUIP_REPUTATION",
-    -- Flight masters
-    "ERR_TAXIPLAYERALREADYMOUNTED", "ERR_TAXIPLAYERSHAPESHIFTED", "ERR_TAXINOTENOUGHMONEY",
-    "ERR_TAXINOTVISITED", "ERR_TAXINOSUCHPATH",
-    -- Great Vault, favorite mounts
-    "ERR_USE_WEEKLY_REWARDS_DISABLED", "ERR_MOUNT_NO_FAVORITES",
+    -- Vendor, mail and trade refusals
+    "ERR_VENDOR_NOT_INTERESTED", "ERR_VENDOR_DOESNT_BUY",
+    "ERR_MAIL_BOUND_ITEM", "ERR_TRADE_BOUND_ITEM",
+    "ERR_TRADE_BAG_FULL", "ERR_TRADE_TARGET_BAG_FULL",
+    -- Great Vault unavailable
+    "ERR_USE_WEEKLY_REWARDS_DISABLED",
     -- Rogue pickpocketing
     "SPELL_FAILED_TARGET_NO_POCKETS", "ERR_ALREADY_PICKPOCKETED",
 }
@@ -563,8 +533,6 @@ local KEPT_ERRORS = {
 -- %s / %d placeholder), so they cannot be compared as a whole.
 local KEPT_ERROR_TEMPLATES = {
     "ERR_QUEST_FAILED_BAG_FULL_S", "ERR_QUEST_FAILED_MAX_COUNT_S",
-    "ERR_QUEST_FAILED_TOO_MANY_DAILY_QUESTS_I", "ERR_CANT_EQUIP_LEVEL_I",
-    "ERR_DIFFICULTY_CHANGE_COOLDOWN_S", "ERR_DIFFICULTY_CHANGE_COMBAT_COOLDOWN_S",
     "ERR_PARTY_LFG_BOOT_COOLDOWN_S", "ERR_PARTY_LFG_BOOT_NOT_ELIGIBLE_S",
     "ERR_PARTY_LFG_BOOT_INPATIENT_TIMER_S",
 }
