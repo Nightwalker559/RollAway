@@ -2,6 +2,11 @@
 
 ---
 
+## 3.1.0
+
+### Fixed
+- QoL > Logs: no "Combat log stopped." chat message at login / reload any more (it only appeared because the addon had not synced its state yet). Start / stop messages on zone changes are unchanged.
+
 ## 3.0.9
 
 ### New
