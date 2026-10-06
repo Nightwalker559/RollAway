@@ -80,9 +80,11 @@ local function TryApplyLogState(desired, retriesLeft)
         end
         return
     end
+    -- First sync after login/reload: "stopped" is no news, stay quiet.
+    local initialStop = (lastAppliedState == nil and not desired)
     lastAppliedState = desired
     DBG("Auto-log:", desired and "started" or "stopped")
-    if RollAwayDB and RollAwayDB.autoLogChatNotify then
+    if not initialStop and RollAwayDB and RollAwayDB.autoLogChatNotify then
         RA.Print(desired and RA_L["qol_log_chat_started"] or RA_L["qol_log_chat_stopped"])
     end
 end
