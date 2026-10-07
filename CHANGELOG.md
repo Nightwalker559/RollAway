@@ -18,6 +18,9 @@
 - Options: long checkbox labels were cut off ("...") in English and German. Checkboxes now size to their label and wrap onto a second line when it does not fit; profile buttons widen for longer German labels. QoL: the three keystone-companion checkboxes (BigWigs / Details! / Teleport) are listed one per line, the slider labels and the default-playstyle dropdown have more room, and the long "open keystone companion addon" label wraps. All QoL tabs now use the full width up to the scrollbar (descriptions 450 instead of 400 px wide).
 - QoL > Logs: no "Combat log stopped." chat message at login / reload any more (it only appeared because the addon had not synced its state yet). Start / stop messages on zone changes are unchanged.
 
+### Internal
+- Release cleanup: What's New window and its texts now describe 3.1.0 (old 3.0.9 entries removed), README brought up to date, no unused locale keys / locals / accidental globals (checked), English and German locale files in sync.
+
 ## 3.0.9
 
 ### New

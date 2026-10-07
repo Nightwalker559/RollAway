@@ -473,15 +473,12 @@ L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Gro
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 
 ------------------------------------------------------------------------
--- What's New (3.0.9)
+-- What's New (3.1.0)
 ------------------------------------------------------------------------
-L["whatsnew_quests_title"]       = "Automatische Quests"
-L["whatsnew_quests_desc"]        = "Nimmt normale, tägliche und wöchentliche Quests an und gibt fertige beim Ansprechen des NPCs ab. Gibt nie Quests ab, die Gold oder Währung kosten oder mehrere Belohnungen zur Auswahl haben. Eine optionale Zusatztaste pausiert die Automatik."
-L["whatsnew_quests_location"]    = "QoL > Quests"
-L["whatsnew_errors_title"]       = "Rote Fehlermeldungen ausblenden"
-L["whatsnew_errors_desc"]        = "Blendet den roten Fehlertext in der Bildschirmmitte aus. Wichtige wie volle Taschen oder ein volles Questlog bleiben sichtbar."
-L["whatsnew_errors_location"]    = "QoL > Ausblenden"
-L["whatsnew_hide_title"]         = "Talking Head und Banner ausblenden"
-L["whatsnew_hide_desc"]          = "Neue Schalter blenden das vertonte Dialogfenster, das Beute-Banner nach einem Bosskill, das Bonusziel-Banner, die Einblendungen am oberen Bildschirmrand und die Hinweisfenster für Beute und Erfolge aus."
-L["whatsnew_hide_location"]      = "QoL > Ausblenden"
+L["whatsnew_warn_title"]         = "Auto-Pass-Warnung"
+L["whatsnew_warn_desc"]          = "Warnt dich beim Betreten eines Mythic-Dungeons oder Raids, in dem ein Bonusroll Auto-Pass aktiv ist, damit eine vergessene Checkbox dich keinen Wurf kostet. Der Bonusroll-Reminder kann es jetzt ebenfalls anzeigen. Erscheint nur, wenn du Leerekerne hast."
+L["whatsnew_warn_location"]      = "Allgemein > Bonusroll"
+L["whatsnew_keylevel_title"]     = "Keystufe in den Remindern"
+L["whatsnew_keylevel_desc"]      = "Der Beitritts-Reminder und der Teleport-Reminder zeigen die Keystufe deiner Gruppe, z. B. \"Windrunner Spire +14\". Sie wird aus dem \"+14\" im Titel oder Kommentar der Gruppensuche gelesen."
+L["whatsnew_keylevel_location"]  = "QoL > Reminder"
 L["whatsnew_options_label"]      = "Optionen:"

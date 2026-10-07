@@ -472,15 +472,12 @@ L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great V
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 
 ------------------------------------------------------------------------
--- What's New (3.0.9)
+-- What's New (3.1.0)
 ------------------------------------------------------------------------
-L["whatsnew_quests_title"]       = "Automatic quests"
-L["whatsnew_quests_desc"]        = "Accepts regular, daily and weekly quests and turns in finished ones when you talk to the NPC. Never turns in quests that cost gold or currency or have several rewards to choose from. An optional modifier key pauses the automation."
-L["whatsnew_quests_location"]    = "QoL > Quests"
-L["whatsnew_errors_title"]       = "Hide red error messages"
-L["whatsnew_errors_desc"]        = "Hides the red error text in the middle of the screen. Important ones such as full bags or a full quest log stay visible."
-L["whatsnew_errors_location"]    = "QoL > Hide"
-L["whatsnew_hide_title"]         = "Hide Talking Head and banners"
-L["whatsnew_hide_desc"]          = "New switches hide the voiced dialog box, the loot banner after a boss kill, the bonus objective banner, the pop-ups at the top of the screen and the alert boxes for loot and achievements."
-L["whatsnew_hide_location"]      = "QoL > Hide"
+L["whatsnew_warn_title"]         = "Auto-pass warning"
+L["whatsnew_warn_desc"]          = "Warns you when you enter a Mythic dungeon or raid where a Bonus Roll auto-pass is active, so a forgotten checkbox does not cost you a roll. The Bonus Roll reminder can now show it too. Only appears when you have Voidcores."
+L["whatsnew_warn_location"]      = "General > Bonus Roll"
+L["whatsnew_keylevel_title"]     = "Keystone level in reminders"
+L["whatsnew_keylevel_desc"]      = "The join reminder and the Teleport reminder show the keystone level of your group, e.g. \"Windrunner Spire +14\". It is read from the \"+14\" in the listing's title or comment."
+L["whatsnew_keylevel_location"]  = "QoL > Reminder"
 L["whatsnew_options_label"]      = "Options:"

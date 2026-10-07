@@ -208,6 +208,9 @@ function RA.ShowReminder()
 
     local rollsPossible = math.floor(voidcoreQty / VOIDCORE_COST[tabKey])
     local rollColor     = rollsPossible > 1 and "|cff00cc00" or "|cffffff00"
+    -- A warning is pointless when no roll can happen anyway (e.g. 1 Voidcore
+    -- in a raid, which costs 2).
+    if not RollAwayDB.showReminder and rollsPossible < 1 then return end
 
     RollAwayDBChar.lastReminderInstID = instanceID
     DBG("Showing reminder | tabKey:", tabKey, "| instanceID:", instanceID,

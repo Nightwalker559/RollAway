@@ -24,8 +24,8 @@ Auto-rolls Need/Greed/Transmog on loot from legacy Dragonflight & The War Within
 Cleans up and controls visibility of the Group Loot History frame — auto-hide per raid difficulty (LFR/Normal/Heroic/Mythic), visible by default.
 
 ### Reminders
-- **Bonus Roll reminder** on entering a Mythic dungeon/raid — shows Voidcore currency and available rolls.
-- **Instance join reminder** (Group Finder M+ only) with optional auto-open of your keystone companion addon (BigWigs Keystones, Details! Keystones, or RollAway's own Teleport Reminder showing the exact dungeon portal).
+- **Bonus Roll reminder** on entering a Mythic dungeon/raid — shows Voidcore currency and available rolls, and whether a Bonus Roll auto-pass is active there. A separate safety-net warning (on by default) appears only when an auto-pass is active, so a forgotten checkbox does not cost you a roll.
+- **Instance join reminder** (Group Finder M+ only, shows the listed key level such as +14) with optional auto-open of your keystone companion addon (BigWigs Keystones, Details! Keystones, or RollAway's own Teleport Reminder showing the exact dungeon portal).
 - **RollAway Portal Overview** — own portal reference frame (current season or all learned dungeons by expansion), open anytime with `/rat`.
 - **Ready Check talent reminder**, optionally showing your active spec/talent build.
 - **Great Vault reminder** — popup on login at max level if you have unclaimed rewards (once per weekly reset). Manual check: `/rawvault`
@@ -36,7 +36,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 - **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
 - **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable. Makes MRT's logging unnecessary.
 - **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.
-- **Hide Blizzard UI elements** — red error text (important errors stay visible), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map tracker, crafting output log. Everything is off by default. With LuckyoneUI loaded, Talking Head and boss banner are left to it.
+- **Hide Blizzard UI elements** — red error text (important errors stay visible), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map tracker, crafting output log. Everything is off by default.
 - **Auction House filter** — keeps "Current Expansion Only" enforced.
 - Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.
 
