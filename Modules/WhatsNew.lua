@@ -17,6 +17,11 @@ local FEATURES = {
         description = RA_L["whatsnew_tank_desc"],
         location    = RA_L["whatsnew_tank_location"],
     },
+    {
+        title       = RA_L["whatsnew_legacyhide_title"],
+        description = RA_L["whatsnew_legacyhide_desc"],
+        location    = RA_L["whatsnew_legacyhide_location"],
+    },
 }
 
 -- ============================================================

@@ -6,8 +6,10 @@
 
 ### New
 - Tank marker: popup offers to mark your tank in current-season Mythic dungeons (QoL > Misc).
+- Option to always hide the Group Loot History in legacy raids (General > Group Loot History).
 
 ### Changed
+- Loot history difficulty boxes now apply to current raids only.
 - Dropdown lists follow the ElvUI skin.
 
 ### Fixed

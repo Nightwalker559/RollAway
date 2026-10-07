@@ -485,4 +485,7 @@ L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Gro�
 L["whatsnew_tank_title"]         = "Tank markieren"
 L["whatsnew_tank_desc"]          = "In einem Mythic-Dungeon der aktuellen Season bietet ein Popup an, deinen Tank zu markieren (Standard: Quadrat). Ein Klick auf Markieren setzt die Markierung - Addons dürfen das nicht selbst tun. Standardmäßig aus."
 L["whatsnew_tank_location"]      = "QoL > Sonstiges"
+L["whatsnew_legacyhide_title"]   = "Beuteverteilung in Legacy-Raids ausblenden"
+L["whatsnew_legacyhide_desc"]    = "Neue Checkbox: Die Beuteverteilung bleibt in Raids aus Dragonflight und The War Within ausgeblendet, egal welche Schwierigkeit. Die Schwierigkeits-Boxen darüber gelten jetzt nur noch für aktuelle Raids."
+L["whatsnew_legacyhide_location"] = "Allgemein > Beuteverteilung"
 L["whatsnew_options_label"]      = "Optionen:"
