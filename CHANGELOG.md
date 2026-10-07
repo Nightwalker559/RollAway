@@ -10,7 +10,7 @@
 
 ### Changed
 - Prey auto-pass now only applies in Midnight zones, not in older open-world areas.
-- Hide error messages now also hides "You can't loot that item now".
+- Hide error messages now also hides the loot errors "can't loot that item now" and "still being rolled for".
 - Loot history difficulty boxes now apply to current raids only.
 - Dropdown lists follow the ElvUI skin.
 

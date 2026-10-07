@@ -517,8 +517,9 @@ local KEPT_ERRORS = {
     -- No room / not enough money
     "ERR_INV_FULL", "ERR_BANK_FULL", "ERR_QUEST_LOG_FULL", "ERR_ITEM_MAX_COUNT",
     "ERR_NOT_ENOUGH_MONEY",
-    -- Loot ("You can't loot that item now" is no hint worth keeping: hidden)
-    "ERR_LOOT_ROLL_PENDING", "ERR_LOOT_CANT_LOOT_THAT",
+    -- Loot ("can't loot that item now" and "still being rolled for" are no
+    -- hints worth keeping: hidden)
+    "ERR_LOOT_CANT_LOOT_THAT",
     -- Quest turn-in refused (relevant for the quest automation)
     "ERR_QUEST_MUST_CHOOSE", "ERR_QUEST_FAILED_MISSING_ITEMS",
     "ERR_QUEST_FAILED_NOT_ENOUGH_MONEY",
