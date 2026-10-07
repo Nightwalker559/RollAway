@@ -14,14 +14,14 @@ Automatically passes on the Bonus Roll prompt for content you've checked off:
 - Dungeons (Season 1 & 2, matched by map)
 - Delves (Season 1 & 2)
 - Raid bosses (per-boss toggle, or auto-pass an entire raid difficulty — combinable)
-- Open World / Prey encounters
+- Prey encounters in the open world (Midnight zones only, including the Coiled Isle)
 - World Bosses / Lairs fought as raid instances (e.g. Tidebound Grotto) are treated as regular raid bosses
 
 ### Legacy Auto-Roll
 Auto-rolls Need/Greed/Transmog on loot from legacy Dragonflight & The War Within raids. Priority chain: Need → Greed → Transmog, all combinable. Optional account-wide setting.
 
 ### Group Loot History
-Cleans up and controls visibility of the Group Loot History frame — auto-hide per raid difficulty (LFR/Normal/Heroic/Mythic), visible by default.
+Cleans up and controls visibility of the Group Loot History frame — auto-hide per raid difficulty (LFR/Normal/Heroic/Mythic) in current raids, plus a separate switch to always hide it in legacy raids. Visible by default.
 
 ### Reminders
 - **Bonus Roll reminder** on entering a Mythic dungeon/raid — shows Voidcore currency and available rolls, and whether a Bonus Roll auto-pass is active there. A separate safety-net warning (on by default) appears only when an auto-pass is active, so a forgotten checkbox does not cost you a roll.
