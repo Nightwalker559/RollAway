@@ -175,14 +175,13 @@ local function NotWorthMarking()
 end
 
 -- manual = true (/rawtank): ignores the setting, the instance check and the
--- "already offered" memory, and says why nothing is shown.
+-- "already offered" memory, and logs why nothing is shown (debug log).
 local function Check(manual)
     local db = RollAwayDB
     if not db or not (manual or testMode or db.tankMarkEnabled) then return end
 
-    -- show: after /rawtank also tell the player (localized message)
-    local function Skip(msg, show)
-        if manual and show then RA.Print(msg) else TestSay(msg) end
+    local function Skip(msg)
+        if manual then DBG("[TankMarker] " .. msg) else TestSay(msg) end
     end
 
     local grouped = IsInGroup()
@@ -196,7 +195,7 @@ local function Check(manual)
     end
 
     local unit = FindTank()
-    if not unit then return Skip(RA_L["tankmark_none"], true) end
+    if not unit then return Skip("No tank found in the group.") end
 
     -- The tank must be here too: still outside, offline or far away means
     -- the marker cannot be set (yet). Look again shortly, a while at most.
@@ -205,12 +204,12 @@ local function Check(manual)
             awayChecks = awayChecks + 1
             ScheduleCheck(AWAY_RECHECK_DELAY)
         end
-        return Skip(RA_L["tankmark_away"], true)
+        return Skip("The tank is not in this instance yet.")
     end
     awayChecks = 0
 
     local icon = db.tankMarkIcon
-    if ReadMarker(unit) == icon then return Skip(RA_L["tankmark_already"], true) end
+    if ReadMarker(unit) == icon then return Skip("The tank already has this marker.") end
 
     if not manual then
         local key = UnitGUID(unit) .. ":" .. icon
