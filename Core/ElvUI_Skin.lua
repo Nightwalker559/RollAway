@@ -154,6 +154,40 @@ function RA.SkinPopupButton(btn)
 end
 
 ------------------------------------------------------------------------
+-- Dropdown lists (RA.OptionsUI.MakeDropdown). ElvUI skins the dropdown box
+-- and the list frame, but not the entries: they keep Blizzard's gold tick
+-- and yellow quest highlight. Entries get a flat gold square and a soft
+-- white hover, like ElvUI's checkboxes.
+------------------------------------------------------------------------
+
+local function SkinDropdownItem(item)
+    if item.RA_ElvSkinned then return end
+    item.RA_ElvSkinned = true
+
+    local check = item.check
+    if check then
+        check:SetTexture(E.Media.Textures.White8x8)
+        check:SetVertexColor(1, .82, 0, 0.8)
+        check:SetSize(8, 8)
+        check:ClearAllPoints()
+        check:SetPoint("LEFT", item.frame, "LEFT", 7, 0)
+    end
+
+    local highlight = item.highlight
+    if highlight then
+        highlight:SetTexture(E.Media.Textures.White8x8)
+        highlight:SetVertexColor(1, 1, 1, 0.12)
+    end
+end
+
+-- dd: AceGUI Dropdown. Follows ElvUI's Ace3 skin switch, like the dropdown box.
+function RA.SkinDropdownList(dd)
+    if not (E.private.skins and E.private.skins.ace3Enable) or not dd.pullout then return end
+    for _, item in dd.pullout:IterateItems() do SkinDropdownItem(item) end
+    hooksecurefunc(dd.pullout, "AddItem", function(_, item) SkinDropdownItem(item) end)
+end
+
+------------------------------------------------------------------------
 -- Frames created lazily on first show/use. Each is skinned once, by the
 -- hook registered below (SkinOnShow) right after the function that creates
 -- or shows it.

@@ -183,6 +183,7 @@ local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
     dd.frame:ClearAllPoints()
     dd.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
     dd.frame:Show()
+    if RA.SkinDropdownList then RA.SkinDropdownList(dd) end  -- ElvUI only
     return dd
 end
 
