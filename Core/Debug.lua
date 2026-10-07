@@ -153,6 +153,28 @@ function RA.AppendDebugLogSeparator()
     AppendLine(SEPARATOR_LINE)
 end
 
+-- Opens the log window, or toggles it when it already exists (the /rawlog
+-- behaviour). Still routes through AppendDebugLog so ElvUI_Skin.lua's skin
+-- hook fires on a fresh window.
+function RA.ToggleDebugLogWindow()
+    local existed = debugLogFrame ~= nil
+    RA.AppendDebugLog("Log window toggled")
+    -- Only flip visibility if the window already existed - a fresh window was
+    -- just auto-shown by AppendDebugLog, don't hide it again.
+    if existed then debugLogFrame:SetShown(not debugLogFrame:IsShown()) end
+end
+
+-- Back to the default size and the screen centre (also forgets the saved ones).
+function RA.ResetDebugLogWindow()
+    RollAwayDB.debugLogSize = nil
+    RollAwayDB.debugLogPos  = nil
+    if debugLogFrame then
+        debugLogFrame:SetSize(560, 360)
+        debugLogFrame:ClearAllPoints()
+        debugLogFrame:SetPoint("CENTER")
+    end
+end
+
 function RA.ClearDebugLog()
     if debugLogEditBox then debugLogEditBox:SetText("") end
     if debugLogScrollFrame then
@@ -214,11 +236,32 @@ end
 
 -- Registers a dev-only slash command. Most also need debug mode on;
 -- `alwaysOn` commands (log window, diagnostics) only need a dev character.
+-- Also kept in RA.DevCommands so the Developer settings panel can run the
+-- same command from a button (RA.RunDevCommand).
+RA.DevCommands = {}
+
 local function RegisterDevCommand(name, handler, alwaysOn)
     _G["SLASH_"..name.."1"] = "/"..name:lower()
-    SlashCmdList[name] = function(msg)
+    local function Run(msg)
         if alwaysOn or RollAwayDB.debug then handler(msg) end
     end
+    SlashCmdList[name] = Run
+    RA.DevCommands[name] = { run = Run, alwaysOn = alwaysOn and true or false }
+end
+
+-- Runs a registered dev command by name ("RAWTEST", ...), with the same
+-- debug-mode check as typing it. Returns false when it is unknown.
+function RA.RunDevCommand(name, msg)
+    local command = RA.DevCommands[name]
+    if not command then return false end
+    command.run(msg or "")
+    return true
+end
+
+-- Does the command work right now? Most need debug mode on.
+function RA.DevCommandAvailable(name)
+    local command = RA.DevCommands[name]
+    return command ~= nil and (command.alwaysOn or RollAwayDB.debug == true)
 end
 
 -- Runs fn() with RollAwayDB[key] = value for each pair in `overrides`, then
@@ -327,13 +370,7 @@ local function RegisterSlashCommands()
     -- /rawlog → open/toggle the debug log window (in case it was closed
     -- manually). Works even while debug logging itself is off. Still routes
     -- through AppendDebugLog so ElvUI_Skin.lua's skin hook still fires.
-    RegisterDevCommand("RAWLOG", function()
-        local existed = debugLogFrame ~= nil
-        RA.AppendDebugLog("Log window toggled via /rawlog")
-        -- Only flip visibility if the window already existed - a fresh
-        -- window was just auto-shown by AppendDebugLog, don't hide it again.
-        if existed then debugLogFrame:SetShown(not debugLogFrame:IsShown()) end
-    end, true)
+    RegisterDevCommand("RAWLOG", RA.ToggleDebugLogWindow, true)
 
     -- /rawchonkyoffset <n> → live-tune the extra rightward nudge applied to
     -- the Omnium/Vault CharacterFrame buttons when Chonky Character Sheet is

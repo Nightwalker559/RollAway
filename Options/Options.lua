@@ -72,6 +72,21 @@ local function SortedByName(list, keyPrefix)
     return RA.SortByLabel(list, function(e) return RA_L[keyPrefix..e.key] or e.key end)
 end
 
+-- Debug mode was switched (checkbox in the Developer settings, which can be
+-- open while the main options exist): the dev-only tabs and season sub-tabs
+-- of the main panel show / hide at once, no reload.
+function RA.OnDebugModeChanged(checked)
+    for _, b in ipairs(RA.DevOnlyTabButtons or {}) do
+        b:SetShown(checked)
+    end
+    for _, b in ipairs(RA.SeasonTabButtons or {}) do
+        if checked then b:Enable() else b:Disable() end
+        if b.RA_Refresh then b.RA_Refresh() end
+    end
+    for _, reflow in ipairs(RA.SeasonTabReflows or {}) do reflow() end
+    for _, check in ipairs(RA.SeasonTabDebugChecks or {}) do check() end
+end
+
 ------------------------------------------------------------------------
 -- Main init function – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
@@ -383,50 +398,13 @@ function RA.InitOptions()
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
 
-    -- Developer section: only visible to dev/tester characters
-    -- (isDevChar already computed above, for the Bonus Roll tab gating)
-    local cmdInfo
-
-    if isDevChar then
-        local debugLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        debugLabel:SetPoint("TOPLEFT", cbLegacy.frame, "BOTTOMLEFT", 0, -30)
-        debugLabel:SetText(RA_L["debug_section_title"])
-
-        local cbDebug = MakeCB(gen, RA_L["debug_label"], RollAwayDB.debug, function(checked)
-            RollAwayDB.debug = checked
-            for _, b in ipairs(RA.DevOnlyTabButtons or {}) do
-                b:SetShown(checked)
-            end
-            for _, b in ipairs(RA.SeasonTabButtons or {}) do
-                if checked then b:Enable() else b:Disable() end
-                if b.RA_Refresh then b.RA_Refresh() end
-            end
-            for _, reflow in ipairs(RA.SeasonTabReflows or {}) do reflow() end
-            for _, check in ipairs(RA.SeasonTabDebugChecks or {}) do check() end
-        end)
-        cbDebug.frame:SetPoint("TOPLEFT", debugLabel, "BOTTOMLEFT", 0, -10)
-
-        -- Quiet channel: only self-heal/watchdog errors (RA.DBGError), not the
-        -- full verbose debug log above - for tracking down rare bugs without
-        -- the noise of every other module's debug output.
-        local cbDebugErrorsOnly = MakeCB(gen, RA_L["debug_errors_only_label"], RollAwayDB.debugErrorsOnly, function(checked)
-            RollAwayDB.debugErrorsOnly = checked
-        end)
-        cbDebugErrorsOnly.frame:SetPoint("TOPLEFT", cbDebug.frame, "BOTTOMLEFT", 0, -6)
-
-        cmdInfo = MakeInfoText(gen, cbDebugErrorsOnly.frame, 0, -14, 560,
-            "|cffFFFFFF/rawtest|r  " .. RA_L["cmd_rawtest_info"] .. "\n"
-            .. "|cffFFFFFF/rawreminder|r  " .. RA_L["cmd_rawreminder_info"] .. "\n"
-            .. "|cffFFFFFF/rawreset|r  " .. RA_L["cmd_rawreset_info"] .. "\n"
-            .. "|cffFFFFFF/rawqol|r  " .. RA_L["cmd_rawqol_info"] .. "\n"
-            .. "|cffFFFFFF/rawwhats|r  " .. RA_L["cmd_rawwhats_info"] .. "\n"
-            .. "|cffFFFFFF/rawparagon|r  " .. RA_L["cmd_rawparagon_info"])
-    end
+    -- (The Developer section lives in its own subcategory now, see
+    -- Options/OptionsDev.lua.)
 
     -- Dynamically size the scroll child to hug the last General-tab element,
     -- instead of a fixed oversized height. Deferred one frame so GetTop/GetBottom
     -- reflect actual layout (incl. wrapped multi-line text).
-    local lastGenElement = cmdInfo or cbLegacy.frame
+    local lastGenElement = cbLegacy.frame
     local function UpdateGenScrollHeight()
         local top, bottom = gen:GetTop(), lastGenElement:GetBottom()
         if top and bottom then
@@ -800,6 +778,8 @@ function RA.InitOptions()
     ------------------------------------------------------------
     RA.BuildQoLOptions(category, S, classColor)
     RA.BuildProfileOptions(category, S)
+    -- Developer subcategory (debug mode, tests, tools, command list): dev chars only.
+    if isDevChar then RA.BuildDevOptions(category, S, classColor) end
 
     ShowTab("general")
     Settings.RegisterAddOnCategory(category)

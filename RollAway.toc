@@ -48,6 +48,7 @@ Modules\Logs.lua
 Options\OptionsHelpers.lua
 Options\OptionsQoL.lua
 Options\OptionsProfile.lua
+Options\OptionsDev.lua
 Options\Options.lua
 Core\Debug.lua
 Core\ElvUI_Skin.lua

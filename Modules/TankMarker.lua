@@ -272,12 +272,21 @@ function RA.ApplyTankMarker()
     if on then ScheduleCheck() end
 end
 
+-- Test mode (dev chars; see the header): also used by the Developer settings.
+function RA.IsTankMarkerTest()
+    return testMode and true or false
+end
+
+function RA.SetTankMarkerTest(on)
+    testMode = on and true or false
+    lastOffer = nil
+    DBG("[TankMarker] Test mode " .. (testMode and "ON" or "OFF"))
+    RA.ApplyTankMarker()
+end
+
 local function SlashHandler(msg)
     if strtrim(msg or ""):lower() == "test" and RA.DEV_CHARS[UnitName("player")] then
-        testMode = not testMode
-        lastOffer = nil
-        DBG("[TankMarker] Test mode " .. (testMode and "ON" or "OFF"))
-        RA.ApplyTankMarker()
+        RA.SetTankMarkerTest(not testMode)
     else
         Check(true)
     end
