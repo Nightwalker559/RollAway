@@ -2,6 +2,19 @@
 
 ---
 
+## 3.1.1
+
+### New
+- Tank marker: popup offers to mark your tank in current-season Mythic dungeons (QoL > Misc).
+
+### Changed
+- Dropdown lists follow the ElvUI skin.
+
+### Fixed
+- Teleport reminder popping up again after joining a group via application.
+
+---
+
 ## 3.1.0
 
 ### New

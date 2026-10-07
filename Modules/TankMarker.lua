@@ -9,12 +9,11 @@
 -- Only 5-man groups; the popup shows once per tank and marker per group, and
 -- only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON).
 --
--- Test tools (the feature is experimental, it has to be tried on live):
---   /rawtank       shows the popup right now, in any place
---   /rawtank test  toggles a test mode until /reload: works solo (your own
---                  spec role counts as tank) and writes to the debug log why
---                  the popup did or did not show, and whether the marker was
---                  set after the click.
+-- /rawtank       shows the popup right now, in any place (everyone)
+-- /rawtank test  dev chars only: toggles a test mode until /reload. Works solo
+--                (your own spec role counts as tank) and writes to the debug
+--                log why the popup did or did not show, and whether the
+--                marker was set after the click.
 --
 -- Tried and ruled out: clicking the button from code (Button:Click) to mark
 -- without a popup. The click is insecure, so RunMacroText is blocked with
@@ -51,14 +50,8 @@ end
 -- Popup with the secure "Mark" button
 ------------------------------------------------------------------------
 
--- Macro variants for the button (test mode can switch: /rawtank variant 2).
--- 1: marker straight onto the unit; 2: via targeting (and back), in case
--- "/tm [@unit]" does not work in that spot.
-local MACROS = {
-    "/tm [@%s] %d",
-    "/target %s\n/tm %d\n/targetlasttarget",
-}
-local macroVariant = 1
+-- Marker straight onto the unit (unit token, marker index).
+local MACRO = "/tm [@%s] %d"
 
 -- Current marker of `unit` (nil = none). 12.0 can hand back "secret values"
 -- that must not be compared; those, and errors, count as "unknown" (nil) and
@@ -72,8 +65,7 @@ end
 
 -- After the click: did the marker really arrive? (test mode only)
 local function VerifyMarker(unit, icon)
-    TestSay(("Click received: variant %d, group %s, macro %q"):format(
-        macroVariant, tostring(IsInGroup()), (MACROS[macroVariant]:format(unit, icon):gsub("\n", " | "))))
+    TestSay(("Click received: group %s, macro %q"):format(tostring(IsInGroup()), MACRO:format(unit, icon)))
     for _, delay in ipairs({ 0.5, 2 }) do
         C_Timer.After(delay, function()
             local now, state = ReadMarker(unit)
@@ -129,13 +121,12 @@ local function ShowMarkFrame(unit, icon)
     if InCombatLockdown() then return end
 
     markFrame.unit, markFrame.icon = unit, icon
-    markFrame.markBtn:SetAttribute("macrotext", MACROS[macroVariant]:format(unit, icon))
+    markFrame.markBtn:SetAttribute("macrotext", MACRO:format(unit, icon))
     markFrame.msg:SetText(RA_L["tankmark_msg"]:format(UnitName(unit), RA.RaidIconText(icon)))
     RA.StackPopupFrame(markFrame, { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -340)
     markFrame:Show()
     DBG("[TankMarker] Offering marker " .. icon .. " for " .. unit)
 end
-
 
 ------------------------------------------------------------------------
 -- Logic
@@ -252,16 +243,11 @@ function RA.ApplyTankMarker()
 end
 
 local function SlashHandler(msg)
-    local arg, value = strtrim(msg or ""):lower():match("^(%S*)%s*(%S*)$")
-    if arg == "test" then
+    if strtrim(msg or ""):lower() == "test" and RA.DEV_CHARS[UnitName("player")] then
         testMode = not testMode
         lastOffer = nil
         DBG("[TankMarker] Test mode " .. (testMode and "ON" or "OFF"))
         RA.ApplyTankMarker()
-    elseif arg == "variant" and MACROS[tonumber(value)] then
-        macroVariant = tonumber(value)
-        lastOffer = nil
-        DBG("[TankMarker] Macro variant " .. macroVariant)
     else
         Check(true)
     end

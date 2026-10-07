@@ -477,12 +477,9 @@ L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great V
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 
 ------------------------------------------------------------------------
--- What's New (3.1.0)
+-- What's New (3.1.1)
 ------------------------------------------------------------------------
-L["whatsnew_warn_title"]         = "Auto-pass warning"
-L["whatsnew_warn_desc"]          = "Warns you when you enter a Mythic dungeon or raid where a Bonus Roll auto-pass is active, so a forgotten checkbox does not cost you a roll. The Bonus Roll reminder can now show it too. Only appears when you have Voidcores."
-L["whatsnew_warn_location"]      = "General > Bonus Roll"
-L["whatsnew_keylevel_title"]     = "Keystone level in reminders"
-L["whatsnew_keylevel_desc"]      = "The join reminder and the Teleport reminder show the keystone level of your group, e.g. \"Windrunner Spire +14\". It is read from the \"+14\" in the listing's title or comment."
-L["whatsnew_keylevel_location"]  = "QoL > Reminder"
+L["whatsnew_tank_title"]         = "Mark the tank"
+L["whatsnew_tank_desc"]          = "In a Mythic dungeon of the current season, a popup offers to put a marker (default: square) on your group's tank. One click on Mark sets it - addons cannot place markers on their own. Off by default."
+L["whatsnew_tank_location"]      = "QoL > Misc"
 L["whatsnew_options_label"]      = "Options:"

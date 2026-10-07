@@ -478,12 +478,9 @@ L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Gro
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 
 ------------------------------------------------------------------------
--- What's New (3.1.0)
+-- What's New (3.1.1)
 ------------------------------------------------------------------------
-L["whatsnew_warn_title"]         = "Auto-Pass-Warnung"
-L["whatsnew_warn_desc"]          = "Warnt dich beim Betreten eines Mythic-Dungeons oder Raids, in dem ein Bonusroll Auto-Pass aktiv ist, damit eine vergessene Checkbox dich keinen Wurf kostet. Der Bonusroll-Reminder kann es jetzt ebenfalls anzeigen. Erscheint nur, wenn du Leerekerne hast."
-L["whatsnew_warn_location"]      = "Allgemein > Bonusroll"
-L["whatsnew_keylevel_title"]     = "Keystufe in den Remindern"
-L["whatsnew_keylevel_desc"]      = "Der Beitritts-Reminder und der Teleport-Reminder zeigen die Keystufe deiner Gruppe, z. B. \"Windrunner Spire +14\". Sie wird aus dem \"+14\" im Titel oder Kommentar der Gruppensuche gelesen."
-L["whatsnew_keylevel_location"]  = "QoL > Reminder"
+L["whatsnew_tank_title"]         = "Tank markieren"
+L["whatsnew_tank_desc"]          = "In einem Mythic-Dungeon der aktuellen Season bietet ein Popup an, deinen Tank zu markieren (Standard: Quadrat). Ein Klick auf Markieren setzt die Markierung - Addons dürfen das nicht selbst tun. Standardmäßig aus."
+L["whatsnew_tank_location"]      = "QoL > Sonstiges"
 L["whatsnew_options_label"]      = "Optionen:"
