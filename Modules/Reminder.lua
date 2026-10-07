@@ -9,13 +9,14 @@ local DUNGEON_MAP = RA.DUNGEON_MAP
 
 local VOIDCORE_COST = { dungeons = 1, raids = 2 }
 
--- Raid instance mapIDs (= instanceID from GetInstanceInfo) that qualify for the reminder.
+-- Raid instance mapIDs (= instanceID from GetInstanceInfo) that qualify for the
+-- reminder, mapped to the raid key used in Data\Raids.lua.
 local REMINDER_RAID_MAP_IDS = {
-    [2912] = true,  -- The Voidspire (S1)
-    [2939] = true,  -- The Dreamrift (S1)
-    [2913] = true,  -- March on Quel'Danas (S1)
-    [1592] = true,  -- Sporefall (12.0.7, S1)
-    [3004] = true,  -- The Venomous Abyss (S2)
+    [2912] = "voidspire",        -- The Voidspire (S1)
+    [2939] = "dreamrift",        -- The Dreamrift (S1)
+    [2913] = "march_queldanas",  -- March on Quel'Danas (S1)
+    [1592] = "sporefall",        -- Sporefall (12.0.7, S1)
+    [3004] = "venomous_abyss",   -- The Venomous Abyss (S2)
 }
 
 local TIMER_DURATION = 20
@@ -26,6 +27,58 @@ local TIMER_DURATION = 20
 
 local reminderFrame
 local currentTabKey  -- stored so OnClick closure is created only once
+
+------------------------------------------------------------------------
+-- Auto-pass status for the current instance - what this character has set,
+-- so a forgotten checkbox (or one carried over from another setup) is seen
+-- before the first boss. Mirrors the matching in Modules\AutoPass.lua.
+------------------------------------------------------------------------
+
+local COLOR_ACTIVE = "|cffff5050"
+local COLOR_NONE   = "|cff00cc00"
+
+local function BuildAutoPassStatus(tabKey, instanceID)
+    local char = RollAwayDBChar
+    if not char then return nil end
+    local lines = {}
+
+    if tabKey == "dungeons" then
+        local key = DUNGEON_MAP[instanceID]
+        if char.dungeonAutoPassAll then
+            lines[1] = COLOR_ACTIVE .. RA_L["reminder_ap_dungeon_all"] .. "|r"
+        elseif key and (char.dungeons[key] or char.dungeons_s2[key]) then
+            lines[1] = COLOR_ACTIVE .. RA_L["reminder_ap_dungeon"] .. "|r"
+        end
+    else
+        local bucket = RA.RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
+        local diffActive = bucket and char.raidAutoPassDifficulty[bucket]
+        if diffActive then
+            lines[#lines + 1] = COLOR_ACTIVE
+                .. string.format(RA_L["reminder_ap_difficulty"], RA_L["raid_diff_" .. bucket]) .. "|r"
+        end
+        -- Individually checked bosses of this raid (redundant when the whole
+        -- difficulty is already on).
+        if not diffActive then
+            local raidKey, names = REMINDER_RAID_MAP_IDS[instanceID], {}
+            for _, bosses in pairs(RA.RAIDS) do
+                for _, b in ipairs(bosses) do
+                    if b.raid == raidKey and char.raids[b.key] then
+                        names[#names + 1] = RA_L["boss_" .. b.key] or b.key
+                    end
+                end
+            end
+            if #names > 0 then
+                lines[#lines + 1] = COLOR_ACTIVE
+                    .. string.format(RA_L["reminder_ap_bosses"], table.concat(names, ", ")) .. "|r"
+            end
+        end
+    end
+
+    if #lines == 0 then
+        return COLOR_NONE .. RA_L["reminder_ap_none"] .. "|r"
+    end
+    return table.concat(lines, "\n")
+end
 
 ------------------------------------------------------------------------
 -- Frame creation (once, reused on every show)
@@ -42,9 +95,10 @@ local function CreateReminderFrame()
         yOffset  = -180,
         duration = TIMER_DURATION,
         fitHeight = function(self)
-            -- message + separator(1+20) + currency line + gap before the button
+            -- message + separator(1+20) + currency line + status (+6 gap)
+            -- + gap before the button
             return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 21
-                + self.currency:GetStringHeight() + 8
+                + self.currency:GetStringHeight() + 6 + self.status:GetStringHeight() + 8
         end,
     })
 
@@ -63,6 +117,12 @@ local function CreateReminderFrame()
     reminderFrame.currency:SetPoint("TOPLEFT",  reminderFrame.sep, "BOTTOMLEFT",  0, -10)
     reminderFrame.currency:SetPoint("TOPRIGHT", reminderFrame.sep, "BOTTOMRIGHT", 0, -10)
     reminderFrame.currency:SetJustifyH("LEFT")
+
+    -- Auto-pass status line(s) (see BuildAutoPassStatus)
+    reminderFrame.status = reminderFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    reminderFrame.status:SetPoint("TOPLEFT",  reminderFrame.currency, "BOTTOMLEFT",  0, -6)
+    reminderFrame.status:SetPoint("TOPRIGHT", reminderFrame.currency, "BOTTOMRIGHT", 0, -6)
+    reminderFrame.status:SetJustifyH("LEFT")
 
     -- Open options button (left of the factory's Okay button)
     reminderFrame.btn = CreateFrame("Button", "RollAwayReminderBtn", reminderFrame, "UIPanelButtonTemplate")
@@ -147,6 +207,7 @@ function RA.ShowReminder()
         voidcoreQty,
         rollColor .. rollsPossible .. "|r",
         rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
+    reminderFrame.status:SetText(BuildAutoPassStatus(tabKey, instanceID) or "")
 
     reminderFrame:Show()
 end

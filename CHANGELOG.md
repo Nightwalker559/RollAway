@@ -6,6 +6,7 @@
 
 ### New
 - Join reminder and Teleport reminder show the keystone level of the group you joined or listed, e.g. "Windrunner Spire +14". Blizzard gives no key level for a listing, so it is read from the "+14" in the listing's title or comment; without one, nothing extra is shown.
+- Auto-pass reminder (entering a Mythic dungeon / raid) now says what is actually active for that instance - e.g. "Auto-pass ACTIVE: all bosses on Mythic." or the checked bosses, in red - or "No Bonus Roll auto-pass is active here." in green, so a forgotten checkbox is spotted before the first boss. (The reminder itself is still off by default: Options > General.)
 
 ### Changed
 - ElvUI / LuckyoneUI no longer grey out any RollAway option: "Auto-accept invites", "Auto Repair", "Hide Talking Head" and "Hide boss banner" are always available. All options are off by default, so just leave them off if the other UI already does the job.
