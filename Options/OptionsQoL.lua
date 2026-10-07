@@ -12,6 +12,8 @@ local MakeToggle = UI.MakeToggle
 local MakeDropdown = UI.MakeDropdown
 local MakeValueSlider = UI.MakeValueSlider
 local MakeSkinnedButton = UI.MakeSkinnedButton
+local QOL_CONTENT_W = UI.QOL_CONTENT_W
+local QOL_INFO_W    = UI.QOL_INFO_W
 
 ------------------------------------------------------------------------
 -- Subcategory: QoL  (Character / Filter / Hide / LFG / Logs / Misc / Quests /
@@ -93,7 +95,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         scroll:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -26, 0)
 
         local content = CreateFrame("Frame", nil, scroll)
-        content:SetSize(420, height)
+        content:SetSize(QOL_CONTENT_W, height)
         scroll:SetScrollChild(content)
 
         UI.SetupScrollBar(scroll, _G["RollAwayQol"..name.."ScrollScrollBar"], S, forceHideBar)
@@ -136,7 +138,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         RollAwayDB.autoRepairMode = value
     end)
 
-    MakeInfoText(misc, autoRepairDD.frame, 20, -6, 400, RA_L["qol_autorepair_info"])
+    MakeInfoText(misc, autoRepairDD.frame, 20, -6, QOL_INFO_W, RA_L["qol_autorepair_info"])
 
     -- ── Category: Quests ───────────────────────────────────────────────
     -- Every change re-registers only the events the settings still need.
@@ -163,13 +165,11 @@ function RA.BuildQoLOptions(category, S, classColor)
     local _, qolQuestTurnInInfo = MakeToggle(quests, questAnchor, 0, -16, {
         label = RA_L["qol_quests_turnin_label"], info = RA_L["qol_quests_turnin_info"],
         dbKey = "questAutoTurnIn", onChange = RA.ApplyQuestAutomation,
-        width = 400, -- long label: explicit width, or it gets cut off
     })
 
     local _, qolQuestModInfo = MakeToggle(quests, qolQuestTurnInInfo, -20, -14, {
         label = RA_L["qol_quests_modifier_label"], info = RA_L["qol_quests_modifier_info"],
         dbKey = "questRequireModifier",
-        width = 400,
     })
 
     local qolQuestKeyLabel = quests:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -227,7 +227,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- Teleport reminder — mutually exclusive)
     local qolKeyAddonLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     qolKeyAddonLabel:SetPoint("TOPLEFT", qolJoinInfo, "BOTTOMLEFT", 0, -10)
-    qolKeyAddonLabel:SetWidth(400)  -- wraps instead of running off the panel
+    qolKeyAddonLabel:SetWidth(QOL_INFO_W)  -- wraps instead of running off the panel
     qolKeyAddonLabel:SetJustifyH("LEFT")
     qolKeyAddonLabel:SetText(RA_L["qol_join_keyaddon_label"])
 
@@ -241,7 +241,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     local cbTeleport = MakeCB(reminder, RA_L["qol_join_keyaddon_teleport"], nil, nil)
     cbTeleport.frame:SetPoint("TOPLEFT", cbDetails.frame, "BOTTOMLEFT", 0, -4)
 
-    local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, 400, RA_L["qol_join_keyaddon_info"])
+    local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, QOL_INFO_W, RA_L["qol_join_keyaddon_info"])
 
     -- Re-syncs checkbox state from saved DB + live addon detection. Does NOT
     -- clear the saved choice when the addon isn't detected right now - BigWigs'
@@ -284,7 +284,7 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     qolShowSpecCB = MakeCB(reminder, RA_L["qol_readycheck_showspec_label"], RollAwayDB.readyCheckShowSpec, function(checked)
         RollAwayDB.readyCheckShowSpec = checked
-    end)
+    end, nil, QOL_INFO_W)  -- indented 20, so 20 less room
     qolShowSpecCB.frame:SetPoint("TOPLEFT", qolInfo, "BOTTOMLEFT", 20, -10)
     qolShowSpecCB:SetDisabled(not RollAwayDB.readyCheckReminder)
 
@@ -427,9 +427,8 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     local _, qolLogMasterInfo = MakeToggle(logs, nil, 0, -8, {
         label = RA_L["qol_log_enable_label"], info = RA_L["qol_log_enable_info"], dbKey = "autoLogEnabled",
-        infoWidth = 380, width = 400, onChange = UpdateLogSubCBsState,
+        onChange = UpdateLogSubCBsState,
     })
-
     -- Compact zone checkbox list (no per-item info text, mirrors MRT's layout)
     local LOG_ZONE_DEFS = {
         { dbKey = "autoLogScenario",      labelKey = "qol_log_scenario_label"     },
@@ -458,7 +457,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- Chat notification toggle (own line, separated from the zone list)
     local qolLogChatCB = MakeCB(logs, RA_L["qol_log_chatnotify_label"], RollAwayDB.autoLogChatNotify, function(checked)
         RollAwayDB.autoLogChatNotify = checked
-    end, 400) -- explicit width: long label, or it gets cut off
+    end, nil, QOL_CONTENT_W)
     qolLogChatCB.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", 0, -16)
     table.insert(logSubCBs, qolLogChatCB)
 
@@ -466,7 +465,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- master toggle above, so it still works for players who log manually.
     local qolLogAdvReminderCB = MakeCB(logs, RA_L["qol_log_advlog_reminder_label"], RollAwayDB.advLogReminderEnabled, function(checked)
         RollAwayDB.advLogReminderEnabled = checked
-    end, 400)
+    end, nil, QOL_CONTENT_W)
     qolLogAdvReminderCB.frame:SetPoint("TOPLEFT", qolLogChatCB.frame, "BOTTOMLEFT", 0, -10)
 
     UpdateLogSubCBsState()

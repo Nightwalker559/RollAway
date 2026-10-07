@@ -105,25 +105,30 @@ local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
     return info
 end
 
+-- Width of a QoL category's scrolling content: the room between the left nav
+-- and the scrollbar. Descriptions sit 20 px indented below their checkbox.
+local QOL_CONTENT_W = 470
+local QOL_INFO_W    = QOL_CONTENT_W - 20
+
 -- Checkbox bound to the boolean RollAwayDB[opts.dbKey], with its gray
 -- description (opts.info) indented below it. The checkbox is placed
 -- (xOffset, yOffset) below `anchor`, or at (xOffset, yOffset) from the
 -- parent's top-left when anchor is nil. opts.onChange(checked) runs after
 -- the setting is saved; opts.width overrides the checkbox width and
--- opts.infoWidth (default 400) the description's; without opts.width the
--- checkbox grows with its label up to opts.maxWidth (default 400, the QoL
+-- opts.infoWidth (default QOL_INFO_W) the description's; without opts.width the
+-- checkbox grows with its label up to opts.maxWidth (default QOL_CONTENT_W, the QoL
 -- panels' room) and wraps beyond that. Returns checkbox, info.
 local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     local cb = MakeCB(parent, opts.label, RollAwayDB[opts.dbKey], function(checked)
         RollAwayDB[opts.dbKey] = checked
         if opts.onChange then opts.onChange(checked) end
-    end, opts.width, opts.maxWidth or 400)
+    end, opts.width, opts.maxWidth or QOL_CONTENT_W)
     if anchor then
         cb.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
     else
         cb.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
     end
-    local info = MakeInfoText(parent, cb.frame, 20, -6, opts.infoWidth or 400, opts.info)
+    local info = MakeInfoText(parent, cb.frame, 20, -6, opts.infoWidth or QOL_INFO_W, opts.info)
     return cb, info
 end
 
@@ -519,6 +524,8 @@ RA.OptionsUI = {
     COL_GAP           = COL_GAP,
     ROW_GAP           = ROW_GAP,
     GOLD              = GOLD,
+    QOL_CONTENT_W     = QOL_CONTENT_W,
+    QOL_INFO_W        = QOL_INFO_W,
     GRAY              = GRAY,
     MakeSectionHeader = MakeSectionHeader,
     MakeCB            = MakeCB,
