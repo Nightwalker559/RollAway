@@ -26,14 +26,14 @@ local DBG  = RA.DBG
 
 local TIMER_DURATION = 20
 local CHECK_DELAY    = 1.5   -- roles / roster settle a moment after the event
-local AWAY_RECHECK_DELAY = 3
-local MAX_AWAY_CHECKS    = 60  -- 3 minutes of waiting for the tank to arrive
+local RECHECK_DELAY = 3
+local MAX_RECHECKS    = 60  -- 3 minutes of waiting for the instance data / the tank
 
 local markFrame
 local eventFrame
 local checkPending
 local ScheduleCheck   -- defined below, Check() needs it for the re-check
-local awayChecks = 0  -- re-checks in a row because the tank was not here yet
+local rechecks = 0  -- re-checks in a row (instance data not settled / tank not here yet)
 local lastOffer   -- "guid:icon" already offered on this dungeon visit
 local testMode    -- session only, see header
 
@@ -152,10 +152,16 @@ local function FindTank()
 end
 
 -- Only a Mythic dungeon of the current season gets the offer. Returns why
--- not (for the test log), or nil when it fits.
+-- not (for the test log), or nil when it fits; the second result is true when
+-- the instance data has not settled yet (look again shortly).
 local function NotWorthMarking()
+    RA.UpdateInstanceCache()  -- right now, not the copy from the last zone event
     if RA.cachedInstanceType ~= "party" then
         return "Not in a dungeon (instance type: " .. tostring(RA.cachedInstanceType) .. ")."
+    end
+    -- Just after the loading screen the difficulty still reads 0 for a moment.
+    if RA.cachedDiffID == 0 then
+        return "Dungeon difficulty not known yet.", true
     end
     if not RA.MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] then
         return "Dungeon is not Mythic (difficulty " .. tostring(RA.cachedDiffID) .. ")."
@@ -186,8 +192,14 @@ local function Check(manual)
         if C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive() then
             return Skip("A Mythic+ key is running.")
         end
-        local reason = NotWorthMarking()
-        if reason then return Skip(reason) end
+        local reason, settling = NotWorthMarking()
+        if reason then
+            if settling and rechecks < MAX_RECHECKS then
+                rechecks = rechecks + 1
+                ScheduleCheck(RECHECK_DELAY)
+            end
+            return Skip(reason)
+        end
     end
 
     local unit = FindTank()
@@ -197,14 +209,14 @@ local function Check(manual)
     -- the marker cannot be set (yet). Look again shortly, a while at most.
     local connected, visible = UnitIsConnected(unit), UnitIsVisible(unit)
     if not (connected and visible) then
-        if not manual and awayChecks < MAX_AWAY_CHECKS then
-            awayChecks = awayChecks + 1
-            ScheduleCheck(AWAY_RECHECK_DELAY)
+        if not manual and rechecks < MAX_RECHECKS then
+            rechecks = rechecks + 1
+            ScheduleCheck(RECHECK_DELAY)
         end
         return Skip(("The tank (%s) is not here yet: connected=%s visible=%s, check %d/%d."):format(
-            unit, tostring(connected), tostring(visible), awayChecks, MAX_AWAY_CHECKS))
+            unit, tostring(connected), tostring(visible), rechecks, MAX_RECHECKS))
     end
-    awayChecks = 0
+    rechecks = 0
 
     local icon = db.tankMarkIcon
     if ReadMarker(unit) == icon then return Skip("The tank already has this marker.") end
@@ -232,7 +244,7 @@ end
 function RA.ApplyTankMarker()
     if not eventFrame then return end
     local on = testMode or (RollAwayDB and RollAwayDB.tankMarkEnabled)
-    for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED" }) do
+    for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED" }) do
         if on then
             eventFrame:RegisterEvent(event)
         else
@@ -271,7 +283,7 @@ function RA.InitTankMarker()
             -- Outside an instance = the last visit is over: the next dungeon
             -- (even with the same group) gets its own offer.
             if event == "PLAYER_ENTERING_WORLD" and not IsInInstance() then lastOffer = nil end
-            awayChecks = 0
+            rechecks = 0
             ScheduleCheck()
         end
     end)
