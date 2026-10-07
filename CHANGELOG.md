@@ -6,7 +6,7 @@
 
 ### New
 - Join reminder and Teleport reminder show the keystone level of the group you joined or listed, e.g. "Windrunner Spire +14". Blizzard gives no key level for a listing, so it is read from the "+14" in the listing's title or comment; without one, nothing extra is shown.
-- Auto-pass reminder (entering a Mythic dungeon / raid) now says what is actually active for that instance - e.g. "Auto-pass ACTIVE: all bosses on Mythic." or the checked bosses, in red - or "No Bonus Roll auto-pass is active here." in green, so a forgotten checkbox is spotted before the first boss. (The reminder itself is still off by default: Options > General.)
+- Auto-pass reminder (entering a Mythic dungeon / raid), when "Warn me" below is on, now says what is actually active for that instance - e.g. "Auto-pass ACTIVE: all bosses on Mythic." or the checked bosses, in red - or "No Bonus Roll auto-pass is active here." in green, so a forgotten checkbox is spotted before the first boss. (The reminder itself is still off by default: Options > General.)
 - New safety net "Warn me when an auto-pass is active for the content I enter" (Options > General, on by default): shows a short warning (only the red "auto-pass ACTIVE" text) on entering a Mythic dungeon / raid only when a Bonus Roll auto-pass is active there and you have Voidcores, even with the general reminder off. Silent otherwise.
 
 ### Changed

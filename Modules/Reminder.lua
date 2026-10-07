@@ -102,8 +102,9 @@ local function CreateReminderFrame()
             end
             -- message + separator(1+20) + currency line + status (+6 gap)
             -- + gap before the button
+            local statusH = self.status:GetText() ~= "" and (6 + self.status:GetStringHeight()) or 0
             return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 21
-                + self.currency:GetStringHeight() + 6 + self.status:GetStringHeight() + 8
+                + self.currency:GetStringHeight() + statusH + 8
         end,
     })
 
@@ -241,7 +242,9 @@ function RA.ShowReminder()
             voidcoreQty,
             rollColor .. rollsPossible .. "|r",
             rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
-        reminderFrame.status:SetText(statusText or "")
+        -- The red / green auto-pass status line belongs to the warning
+        -- option; with it off this is the plain reminder.
+        reminderFrame.status:SetText(RollAwayDB.autoPassWarning and statusText or "")
     end
 
     reminderFrame:Show()
