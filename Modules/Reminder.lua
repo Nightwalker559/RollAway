@@ -37,9 +37,10 @@ local currentTabKey  -- stored so OnClick closure is created only once
 local COLOR_ACTIVE = "|cffff5050"
 local COLOR_NONE   = "|cff00cc00"
 
+-- Returns the status text and whether any auto-pass is active here.
 local function BuildAutoPassStatus(tabKey, instanceID)
     local char = RollAwayDBChar
-    if not char then return nil end
+    if not char then return nil, false end
     local lines = {}
 
     if tabKey == "dungeons" then
@@ -75,9 +76,9 @@ local function BuildAutoPassStatus(tabKey, instanceID)
     end
 
     if #lines == 0 then
-        return COLOR_NONE .. RA_L["reminder_ap_none"] .. "|r"
+        return COLOR_NONE .. RA_L["reminder_ap_none"] .. "|r", false
     end
-    return table.concat(lines, "\n")
+    return table.concat(lines, "\n"), true
 end
 
 ------------------------------------------------------------------------
@@ -143,8 +144,12 @@ end
 -- Show reminder for current content
 ------------------------------------------------------------------------
 
+-- Shown when "showReminder" is on, or - independent of it - when the
+-- "autoPassWarning" safety net is on and an auto-pass is active for this
+-- instance (so a forgotten checkbox does not cost a bonus roll).
 function RA.ShowReminder()
-    if not RollAwayDB or not RollAwayDB.showReminder then return end
+    if not RollAwayDB then return end
+    if not (RollAwayDB.showReminder or RollAwayDB.autoPassWarning) then return end
     if not RA.BONUS_ROLLS_ENABLED then return end
 
     local instanceType = RA.cachedInstanceType
@@ -185,6 +190,12 @@ function RA.ShowReminder()
         return
     end
 
+    local statusText, autoPassActive = BuildAutoPassStatus(tabKey, instanceID)
+    if not RollAwayDB.showReminder and not autoPassActive then
+        DBG("Reminder: no auto-pass active – warning not needed")
+        return
+    end
+
     local rollsPossible = math.floor(voidcoreQty / VOIDCORE_COST[tabKey])
     local rollColor     = rollsPossible > 1 and "|cff00cc00" or "|cffffff00"
 
@@ -207,7 +218,7 @@ function RA.ShowReminder()
         voidcoreQty,
         rollColor .. rollsPossible .. "|r",
         rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
-    reminderFrame.status:SetText(BuildAutoPassStatus(tabKey, instanceID) or "")
+    reminderFrame.status:SetText(statusText or "")
 
     reminderFrame:Show()
 end

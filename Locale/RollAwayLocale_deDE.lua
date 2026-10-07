@@ -41,6 +41,8 @@ L["raid_diff_heroic"]         = "Heroisch"
 L["raid_diff_mythic"]         = "Mythisch"
 L["reminder_label"]           = "Erinnerung anzeigen beim Betreten von Dungeons & Raids"
 L["reminder_info"]            = "Zeigt ein Popup beim Betreten eines Mythic-Dungeons oder Raids und erinnert dich, deine Auto-Pass-Einstellungen zu überprüfen."
+L["autopass_warning_label"]   = "Warnen, wenn für den betretenen Inhalt ein Auto-Pass aktiv ist"
+L["autopass_warning_info"]    = "Sicherheitsnetz gegen eine vergessene Checkbox: zeigt das Popup beim Betreten eines Mythic-Dungeons oder Raids nur dann, wenn dort ein Bonusroll Auto-Pass aktiv ist - auch bei ausgeschaltetem Reminder darüber. Sonst bleibt es still."
 L["bonusroll_reminder_section_title"] = "Bonusroll"
 
 -- Reminder Popup

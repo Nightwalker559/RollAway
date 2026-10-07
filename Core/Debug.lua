@@ -198,38 +198,6 @@ local function RegisterDevCommand(name, handler, alwaysOn)
     end
 end
 
--- /rawreminder → test all the popup reminders at once
-local function TestReminders()
-    local savedType   = RA.cachedInstanceType
-    local savedID     = RA.cachedInstanceID
-    local savedDiff   = RA.cachedDiffID
-    local savedInstID = RollAwayDB.lastReminderInstID
-    RA.cachedInstanceType         = "party"
-    RA.cachedInstanceID           = 2805
-    RA.cachedDiffID               = 8
-    RollAwayDB.lastReminderInstID = nil
-
-    -- Pretend to own 3 Voidcores while the reminder decides what to show;
-    -- restored even if ShowReminder errors.
-    local origGetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
-    C_CurrencyInfo.GetCurrencyInfo = function(id)
-        if id == RA.VOIDCORE_CURRENCY_ID then return { quantity = 3 } end
-        return origGetCurrencyInfo(id)
-    end
-    local ok, err = pcall(RA.ShowReminder)
-    C_CurrencyInfo.GetCurrencyInfo = origGetCurrencyInfo
-
-    RA.cachedInstanceType         = savedType
-    RA.cachedInstanceID           = savedID
-    RA.cachedDiffID               = savedDiff
-    RollAwayDB.lastReminderInstID = savedInstID
-    DBG(ok and "Reminder test triggered." or ("Reminder test failed: " .. tostring(err)))
-
-    RA.ParagonTestShow()
-    RA.ShowGreatVaultFrame()
-    RA.ShowAdvLogFrameNow()
-end
-
 -- Runs fn() with RollAwayDB[key] = value for each pair in `overrides`, then
 -- restores the saved settings (even if fn errors).
 local function WithSettings(overrides, fn)
@@ -242,6 +210,44 @@ local function WithSettings(overrides, fn)
     local ok, err = pcall(fn)
     for _, key in ipairs(keys) do RollAwayDB[key] = saved[key] end
     if not ok then error(err, 0) end
+end
+
+-- /rawreminder → test all the popup reminders at once
+local function TestReminders()
+    local savedType   = RA.cachedInstanceType
+    local savedID     = RA.cachedInstanceID
+    local savedDiff   = RA.cachedDiffID
+    local savedInstID = RollAwayDB.lastReminderInstID
+    -- Mythic raid (The Venomous Abyss) with the standalone auto-pass warning:
+    -- the general reminder is forced off and "Mythic" auto-pass forced on, so
+    -- the popup you see is the safety-net one (red status line).
+    RA.cachedInstanceType         = "raid"
+    RA.cachedInstanceID           = 3004
+    RA.cachedDiffID               = 16
+    RollAwayDB.lastReminderInstID = nil
+
+    -- Pretend to own 3 Voidcores while the reminder decides what to show;
+    -- restored even if ShowReminder errors.
+    local origGetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
+    C_CurrencyInfo.GetCurrencyInfo = function(id)
+        if id == RA.VOIDCORE_CURRENCY_ID then return { quantity = 3 } end
+        return origGetCurrencyInfo(id)
+    end
+    local savedMythicPass = RollAwayDBChar.raidAutoPassDifficulty.mythic
+    RollAwayDBChar.raidAutoPassDifficulty.mythic = true
+    local ok, err = pcall(WithSettings, { showReminder = false, autoPassWarning = true }, RA.ShowReminder)
+    RollAwayDBChar.raidAutoPassDifficulty.mythic = savedMythicPass
+    C_CurrencyInfo.GetCurrencyInfo = origGetCurrencyInfo
+
+    RA.cachedInstanceType         = savedType
+    RA.cachedInstanceID           = savedID
+    RA.cachedDiffID               = savedDiff
+    RollAwayDB.lastReminderInstID = savedInstID
+    DBG(ok and "Reminder test triggered." or ("Reminder test failed: " .. tostring(err)))
+
+    RA.ParagonTestShow()
+    RA.ShowGreatVaultFrame()
+    RA.ShowAdvLogFrameNow()
 end
 
 -- /rawqol → test all QoL reminders

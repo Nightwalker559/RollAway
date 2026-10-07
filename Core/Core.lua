@@ -139,6 +139,7 @@ RA.defaults = {
         legacyGreed        = false,
         legacyTransmog     = false,
         showReminder       = false,
+        autoPassWarning    = true,   -- safety net: only ever shows when an auto-pass is active
         readyCheckReminder = false,
         readyCheckShowSpec = false,
         qolReminderLockPosition = false,

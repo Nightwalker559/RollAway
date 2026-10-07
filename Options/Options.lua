@@ -344,6 +344,14 @@ function RA.InitOptions()
 
     local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, 480, RA_L["reminder_info"])
 
+    -- Safety net: warn on entering content where an auto-pass is active,
+    -- even with the general reminder above switched off.
+    local cbWarn = MakeCB(gen, RA_L["autopass_warning_label"], RollAwayDB.autoPassWarning, function(checked)
+        RollAwayDB.autoPassWarning = checked
+    end)
+    cbWarn.frame:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -10)
+    local warnInfo = MakeInfoText(gen, cbWarn.frame, 20, -6, 480, RA_L["autopass_warning_info"])
+
     -- Hide reminder option when Bonus Rolls are disabled, or below max level
     -- (Bonus Roll reminder is meaningless before max level; same gating as
     -- the Dungeons/Raids/Delves/Prey tabs above).
@@ -352,16 +360,18 @@ function RA.InitOptions()
         reminderSectionLabel:Hide()
         cbReminder.frame:Hide()
         reminderInfo:Hide()
+        cbWarn.frame:Hide()
+        warnInfo:Hide()
     end
 
     -- Row 3: Legacy
     local legacyLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    -- reminderInfo is indented +20 from the outer margin, so -20 undoes that
+    -- warnInfo is indented +20 from the outer margin, so -20 undoes that
     -- indent back to the margin; hideRow is already at the outer margin, so
     -- it needs a plain 0 offset - reusing the same -20 here previously
     -- pushed the label off the left edge of the scroll frame.
     if showBonusRollReminder then
-        legacyLabel:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -14)
+        legacyLabel:SetPoint("TOPLEFT", warnInfo, "BOTTOMLEFT", -20, -14)
     else
         legacyLabel:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
     end
