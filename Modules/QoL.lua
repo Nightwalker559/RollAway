@@ -299,7 +299,7 @@ local function InitVaultCurrency()
     local function QueueVaultCurrencyUpdate()
         if updateQueued then return end
         updateQueued = true
-        C_Timer.After(0.1, function()
+        RunNextFrame(function()
             updateQueued = false
             UpdateVaultCurrency()
         end)
@@ -397,9 +397,19 @@ local function RestoreMapActivityTracker()
     wipe(hiddenMapActivityButtons)
 end
 
+local mapTrackerCombatWatcher
+
 function RA.ApplyMapActivityTrackerFeature()
     if InCombatLockdown() then
-        C_Timer.After(1, RA.ApplyMapActivityTrackerFeature)
+        -- Applied right after combat instead of polling.
+        if not mapTrackerCombatWatcher then
+            mapTrackerCombatWatcher = CreateFrame("Frame")
+            mapTrackerCombatWatcher:SetScript("OnEvent", function(self)
+                self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+                RA.ApplyMapActivityTrackerFeature()
+            end)
+        end
+        mapTrackerCombatWatcher:RegisterEvent("PLAYER_REGEN_ENABLED")
         return
     end
     if not WorldMapFrame then return end
