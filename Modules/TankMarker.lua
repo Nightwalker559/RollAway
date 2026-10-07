@@ -14,7 +14,7 @@
 -- /rawtank test  dev chars only: toggles a test mode until /reload. Works solo
 --                (your own spec role counts as tank) and writes to the debug
 --                log why the popup did or did not show, and whether the
---                marker was set after the click.
+--                marker changed after the click (RAID_TARGET_UPDATE).
 --
 -- Tried and ruled out: clicking the button from code (Button:Click) to mark
 -- without a popup. The click is insecure, so RunMacroText is blocked with
@@ -51,29 +51,19 @@ end
 -- Popup with the secure "Mark" button
 ------------------------------------------------------------------------
 
--- Marker straight onto the unit (unit token, marker index).
-local MACRO = "/tm [@%s] %d"
-
--- Current marker of `unit` (nil = none). 12.0 can hand back "secret values"
--- that must not be compared; those, and errors, count as "unknown" (nil) and
--- the second result says what happened.
-local function ReadMarker(unit)
-    local ok, index = pcall(GetRaidTargetIndex, unit)
-    if not ok then return nil, "error: " .. tostring(index) end
-    if issecretvalue and issecretvalue(index) then return nil, "secret value" end
-    return index, "ok"
+-- Marker onto the unit. Setting a marker the unit already has would take it
+-- off again (SetRaidTarget toggles), and in an instance the current marker
+-- cannot be read (secret value) - so the macro clears first (0), then sets:
+-- the result is the same marker whatever was there before.
+local function MacroFor(unit, icon)
+    return ("/tm [@%s] 0\n/tm [@%s] %d"):format(unit, unit, icon)
 end
 
--- After the click: did the marker really arrive? (test mode only)
-local function VerifyMarker(unit, icon)
-    TestSay(("Click received: group %s, macro %q"):format(tostring(IsInGroup()), MACRO:format(unit, icon)))
-    for _, delay in ipairs({ 0.5, 2 }) do
-        C_Timer.After(delay, function()
-            local now, state = ReadMarker(unit)
-            TestSay(("After %.1fs: %s marker read = %s (%s) - %s"):format(
-                delay, unit, tostring(now), state, now == icon and "SET" or "not confirmed by reading"))
-        end)
-    end
+-- After the click (test mode only). The proof that the marker arrived is the
+-- RAID_TARGET_UPDATE line from the event frame below.
+local function LogClick(unit, icon)
+    TestSay(("Click received: group %s, macro %q"):format(
+        tostring(IsInGroup()), (MacroFor(unit, icon):gsub("\n", " | "))))
 end
 
 local function CreateMarkFrame()
@@ -107,7 +97,7 @@ local function CreateMarkFrame()
     btn:SetScript("PostClick", function(_, _, down)
         -- Only the phase that ran the macro closes the popup.
         if (down and true or false) ~= (GetCVarBool("ActionButtonUseKeyDown") and true or false) then return end
-        if testMode then VerifyMarker(markFrame.unit, markFrame.icon) end
+        if testMode then LogClick(markFrame.unit, markFrame.icon) end
         markFrame:Hide()
     end)
     if RA.SkinPopupButton then RA.SkinPopupButton(btn) end
@@ -122,7 +112,7 @@ local function ShowMarkFrame(unit, icon)
     if InCombatLockdown() then return end
 
     markFrame.unit, markFrame.icon = unit, icon
-    markFrame.markBtn:SetAttribute("macrotext", MACRO:format(unit, icon))
+    markFrame.markBtn:SetAttribute("macrotext", MacroFor(unit, icon))
     markFrame.msg:SetText(RA_L["tankmark_msg"]:format(UnitName(unit), RA.RaidIconText(icon)))
     RA.StackPopupFrame(markFrame, { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -340)
     markFrame:Show()
@@ -219,7 +209,6 @@ local function Check(manual)
     rechecks = 0
 
     local icon = db.tankMarkIcon
-    if ReadMarker(unit) == icon then return Skip("The tank already has this marker.") end
 
     if not manual then
         local key = UnitGUID(unit) .. ":" .. icon
