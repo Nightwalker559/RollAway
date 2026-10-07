@@ -372,6 +372,14 @@ end
 -- execution context, which later surfaces as unrelated "secret number value"
 -- arithmetic errors in Blizzard's own tooltip/layout code (GetUnscaledFrameRect,
 -- GameTooltip_InsertFrame) when the player hovers a loot history row.
+-- Transparency only (SetAlpha runs no Blizzard script, so it is safe to call
+-- right away, unlike Hide()). Covers Blizzard's frame and ElvUI's.
+local function SetHistoryAlpha(alpha)
+    if GroupLootHistoryFrame then GroupLootHistoryFrame:SetAlpha(alpha) end
+    local elvFrame = RA.ElvLootModule and RA.ElvLootModule.GroupLootHistoryFrame
+    if elvFrame then elvFrame:SetAlpha(alpha) end
+end
+
 local function DoHideHistoryFrame()
     if GroupLootHistoryFrame and GroupLootHistoryFrame:IsShown() then
         DBG("Hiding loot history frame")
@@ -381,10 +389,18 @@ local function DoHideHistoryFrame()
     and RA.ElvLootModule.GroupLootHistoryFrame:IsShown() then
         RA.ElvLootModule.GroupLootHistoryFrame:Hide()
     end
+    SetHistoryAlpha(1)  -- hidden now; full alpha again for the next time it is opened
 end
 
 local function HideHistoryFrame()
     RunNextFrame(DoHideHistoryFrame)
+end
+
+-- For frames that must never be seen (hide-in-raid): Hide() has to wait a
+-- frame, so make the frame see-through at once - no flash in between.
+local function HideHistoryFrameAtOnce()
+    SetHistoryAlpha(0)
+    HideHistoryFrame()
 end
 
 local function CancelAllRollTimers()
@@ -551,7 +567,7 @@ f:SetScript("OnEvent", function(_, event, ...)
             end)
         end
 
-        if ShouldHideInInstance() then HideHistoryFrame() end
+        if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
 
         -- Legacy auto-roll
         if RollAwayDB and RollAwayDB.legacy and RA.ExecuteLegacyRoll then
@@ -636,7 +652,7 @@ f:SetScript("OnEvent", function(_, event, ...)
             RollAwayDBChar.lastAdvLogReminderInstID = nil
         end
         LogInstanceSummary()
-        if ShouldHideInInstance() then HideHistoryFrame() end
+        if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
         -- PLAYER_ENTERING_WORLD and ZONE_CHANGED_NEW_AREA both fire for a
         -- single actual zone change; cancel any pending timer from the
         -- other one so ShowReminder only runs once, not twice ~1s apart.
@@ -721,7 +737,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if GroupLootHistoryFrame then
             hooksecurefunc(GroupLootHistoryFrame, "Show", function()
                 if ShouldHideInInstance() and HasActiveRolls() then
-                    HideHistoryFrame()
+                    HideHistoryFrameAtOnce()
                 end
             end)
         end

@@ -15,6 +15,7 @@
 
 ### Fixed
 - Teleport reminder popping up again after joining a group via application.
+- Group Loot History flashing up briefly where it is set to be hidden.
 
 ---
 
