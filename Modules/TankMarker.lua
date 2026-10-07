@@ -70,7 +70,7 @@ local function VerifyMarker(unit, icon)
         C_Timer.After(delay, function()
             local now, state = ReadMarker(unit)
             TestSay(("After %.1fs: %s marker read = %s (%s) - %s"):format(
-                delay, unit, tostring(now), state, now == icon and "SET" or "not confirmed"))
+                delay, unit, tostring(now), state, now == icon and "SET" or "not confirmed by reading"))
         end)
     end
 end
@@ -209,6 +209,12 @@ function RA.ApplyTankMarker()
         end
     end
     eventFrame:RegisterEvent("GROUP_LEFT")   -- always: keeps lastOffer honest
+    -- Test mode: fires whenever any marker changes, readable value or not.
+    if testMode then
+        eventFrame:RegisterEvent("RAID_TARGET_UPDATE")
+    else
+        eventFrame:UnregisterEvent("RAID_TARGET_UPDATE")
+    end
     if on then ScheduleCheck() end
 end
 
@@ -233,6 +239,8 @@ function RA.InitTankMarker()
     eventFrame:SetScript("OnEvent", function(_, event)
         if event == "GROUP_LEFT" then
             lastOffer = nil
+        elseif event == "RAID_TARGET_UPDATE" then
+            TestSay("RAID_TARGET_UPDATE: a marker was set or changed.")
         else
             ScheduleCheck()
         end
