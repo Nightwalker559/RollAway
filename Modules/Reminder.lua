@@ -152,21 +152,26 @@ end
 -- "autoPassWarning" safety net is on and an auto-pass is active for this
 -- instance (so a forgotten checkbox does not cost a bonus roll).
 function RA.ShowReminder()
-    if not RollAwayDB then return end
-    if not (RollAwayDB.showReminder or RollAwayDB.autoPassWarning) then return end
-    if not RA.BONUS_ROLLS_ENABLED then return end
+    if not RollAwayDB or not RollAwayDBChar then return end
 
     local instanceType = RA.cachedInstanceType
     local instanceID   = RA.cachedInstanceID
 
-    -- Hide if not in supported dungeon/raid content
+    -- Outside dungeon/raid content: hide, and forget the "already shown"
+    -- mark so the next entry (even into the same instance, with the same
+    -- group) shows the reminder again.
     if not (instanceType == "party" or instanceType == "raid") then
+        RollAwayDBChar.lastReminderInstID = nil
         if reminderFrame and reminderFrame:IsShown() then reminderFrame:Hide() end
         return
     end
 
-    -- Only show once per instance (persists through /reload, resets on GROUP_LEFT)
-    if RollAwayDB.lastReminderInstID == instanceID then return end
+    if not (RollAwayDB.showReminder or RollAwayDB.autoPassWarning) then return end
+    if not RA.BONUS_ROLLS_ENABLED then return end
+
+    -- Only show once per instance visit (kept through /reload; cleared on
+    -- login, group leave and when leaving the instance)
+    if RollAwayDBChar.lastReminderInstID == instanceID then return end
 
     local tabKey, msgKey
 
@@ -203,7 +208,7 @@ function RA.ShowReminder()
     local rollsPossible = math.floor(voidcoreQty / VOIDCORE_COST[tabKey])
     local rollColor     = rollsPossible > 1 and "|cff00cc00" or "|cffffff00"
 
-    RollAwayDB.lastReminderInstID = instanceID
+    RollAwayDBChar.lastReminderInstID = instanceID
     DBG("Showing reminder | tabKey:", tabKey, "| instanceID:", instanceID,
         "| Voidcores:", voidcoreQty, "| rolls:", rollsPossible)
 

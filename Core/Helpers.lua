@@ -407,7 +407,7 @@ function RA.SetupInstanceReminderLifecycle(frame, dedupKey)
             self:Hide()
         end
         if event == "GROUP_LEFT" or event == "GROUP_JOINED" then
-            RollAwayDB[dedupKey] = nil
+            if RollAwayDBChar then RollAwayDBChar[dedupKey] = nil end
         end
     end)
 end

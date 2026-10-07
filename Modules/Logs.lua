@@ -141,18 +141,22 @@ end
 RA.ShowAdvLogFrameNow = ShowAdvLogFrameNow
 
 function RA.ShowAdvLogReminder()
-    if not RollAwayDB or not RollAwayDB.advLogReminderEnabled then return end
+    if not RollAwayDB or not RollAwayDBChar or not RollAwayDB.advLogReminderEnabled then return end
 
     local iType  = RA.cachedInstanceType
     local instID = RA.cachedInstanceID
     local isMPlus = iType == "party" and MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID]
     local isRaid  = iType == "raid"
-    if not (isMPlus or isRaid) then return end
+    if not (isMPlus or isRaid) then
+        -- Left the instance: the next visit gets the reminder again.
+        if iType == "none" then RollAwayDBChar.lastAdvLogReminderInstID = nil end
+        return
+    end
 
-    if RollAwayDB.lastAdvLogReminderInstID == instID then return end
+    if RollAwayDBChar.lastAdvLogReminderInstID == instID then return end
     if C_CVar.GetCVar("advancedCombatLogging") == "1" then return end
 
-    RollAwayDB.lastAdvLogReminderInstID = instID
+    RollAwayDBChar.lastAdvLogReminderInstID = instID
     DBG("Advanced Combat Logging reminder | instanceID:", instID)
 
     ShowAdvLogFrameNow()

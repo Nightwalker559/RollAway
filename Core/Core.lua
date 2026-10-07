@@ -143,8 +143,6 @@ RA.defaults = {
         readyCheckReminder = false,
         readyCheckShowSpec = false,
         qolReminderLockPosition = false,
-        lastReminderInstID = nil,
-        lastAdvLogReminderInstID = nil,
         durabilityWarning    = false,
         expansionFilterAH    = false,
         vaultCurrencyDisplay = false,
@@ -416,8 +414,9 @@ local function FullReset(reason)
     ResetState(reason)
     RA.lastLegacyEncounterID = 0
     -- Clear reminder state so the next raid/dungeon entry shows the reminder again.
-    if RollAwayDB then
-        RollAwayDB.lastReminderInstID = nil
+    if RollAwayDBChar then
+        RollAwayDBChar.lastReminderInstID = nil
+        RollAwayDBChar.lastAdvLogReminderInstID = nil
         DBG("Reminder reset: FullReset triggered by:", reason)
     end
     HideHistoryFrame()
@@ -611,7 +610,15 @@ f:SetScript("OnEvent", function(_, event, ...)
         UpdateInstanceCache()
         ResetState(event)
         RA.lastLegacyEncounterID = 0
-        -- Note: lastReminderInstID is only reset on GROUP_LEFT (see Reminder.lua)
+        -- "Shown once per instance" marks (per character, so a shared profile
+        -- cannot suppress another character's reminder): cleared on group
+        -- leave, on a fresh login, and whenever the reminders see that we are
+        -- outside instanced content (Reminder.lua / Logs.lua). A /reload
+        -- inside an instance keeps them, so it does not pop up again.
+        if arg1 and RollAwayDBChar then  -- arg1 = isInitialLogin
+            RollAwayDBChar.lastReminderInstID = nil
+            RollAwayDBChar.lastAdvLogReminderInstID = nil
+        end
         LogInstanceSummary()
         if ShouldHideInInstance() then HideHistoryFrame() end
         -- PLAYER_ENTERING_WORLD and ZONE_CHANGED_NEW_AREA both fire for a

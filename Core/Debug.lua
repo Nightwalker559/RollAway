@@ -217,14 +217,14 @@ local function TestReminders()
     local savedType   = RA.cachedInstanceType
     local savedID     = RA.cachedInstanceID
     local savedDiff   = RA.cachedDiffID
-    local savedInstID = RollAwayDB.lastReminderInstID
+    local savedInstID = RollAwayDBChar.lastReminderInstID
     -- Mythic raid (The Venomous Abyss) with the standalone auto-pass warning:
     -- the general reminder is forced off and "Mythic" auto-pass forced on, so
     -- the popup you see is the safety-net one (red status line).
     RA.cachedInstanceType         = "raid"
     RA.cachedInstanceID           = 3004
     RA.cachedDiffID               = 16
-    RollAwayDB.lastReminderInstID = nil
+    RollAwayDBChar.lastReminderInstID = nil
 
     -- Pretend to own 3 Voidcores while the reminder decides what to show;
     -- restored even if ShowReminder errors.
@@ -242,7 +242,7 @@ local function TestReminders()
     RA.cachedInstanceType         = savedType
     RA.cachedInstanceID           = savedID
     RA.cachedDiffID               = savedDiff
-    RollAwayDB.lastReminderInstID = savedInstID
+    RollAwayDBChar.lastReminderInstID = savedInstID
     DBG(ok and "Reminder test triggered." or ("Reminder test failed: " .. tostring(err)))
 
     RA.ParagonTestShow()
@@ -294,7 +294,7 @@ local function RegisterSlashCommands()
 
     -- /rawreset → reset reminder state
     RegisterDevCommand("RAWRESET", function()
-        RollAwayDB.lastReminderInstID = nil
+        RollAwayDBChar.lastReminderInstID = nil
         DBG("Reminder reset – will show again on next instance entry.")
     end)
 

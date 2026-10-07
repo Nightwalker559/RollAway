@@ -14,6 +14,7 @@
 - ElvUI / LuckyoneUI no longer grey out any RollAway option: "Auto-accept invites", "Auto Repair", "Hide Talking Head" and "Hide boss banner" are always available. All options are off by default, so just leave them off if the other UI already does the job.
 
 ### Fixed
+- Auto-pass reminder (and the Advanced Combat Logging reminder) could stay silent for an instance you had already been in: the "already shown" mark was kept in the settings profile - shared by every character on that profile - and was only cleared when leaving a group. It is now stored per character and also cleared on login and when leaving the instance.
 - Options: long checkbox labels were cut off ("...") in English and German. Checkboxes now size to their label and wrap onto a second line when it does not fit; profile buttons widen for longer German labels. QoL: the three keystone-companion checkboxes (BigWigs / Details! / Teleport) are listed one per line, the slider labels and the default-playstyle dropdown have more room, and the long "open keystone companion addon" label wraps. All QoL tabs now use the full width up to the scrollbar (descriptions 450 instead of 400 px wide).
 - QoL > Logs: no "Combat log stopped." chat message at login / reload any more (it only appeared because the addon had not synced its state yet). Start / stop messages on zone changes are unchanged.
 
