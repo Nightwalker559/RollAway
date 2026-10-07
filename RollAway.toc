@@ -38,6 +38,7 @@ Modules\PortalOverview.lua
 Modules\JoinReminder.lua
 Modules\QoL.lua
 Modules\Quests.lua
+Modules\TankMarker.lua
 Modules\CharFrameButtons.lua
 Modules\VendorFilter.lua
 Modules\Paragon.lua

@@ -157,7 +157,29 @@ function RA.BuildQoLOptions(category, S, classColor)
         RollAwayDB.autoRepairMode = value
     end)
 
-    MakeInfoText(misc, autoRepairDD.frame, 20, -6, QOL_INFO_W, RA_L["qol_autorepair_info"])
+    local qolAutoRepairInfo = MakeInfoText(misc, autoRepairDD.frame, 20, -6, QOL_INFO_W, RA_L["qol_autorepair_info"])
+
+    -- Tank marker offer (popup with a secure Mark button, see TankMarker.lua)
+    local _, qolTankMarkInfo = MakeToggle(misc, qolAutoRepairInfo, -20, -14, {
+        label = RA_L["qol_tankmark_label"], info = RA_L["qol_tankmark_info"],
+        dbKey = "tankMarkEnabled", onChange = RA.ApplyTankMarker,
+    })
+
+    local qolTankIconLabel = misc:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    qolTankIconLabel:SetPoint("TOPLEFT", qolTankMarkInfo, "BOTTOMLEFT", -20, -12)
+    qolTankIconLabel:SetText(RA_L["qol_tankmark_icon_label"])
+
+    local tankIconDD = MakeDropdown(misc, qolTankIconLabel, 0, -4, 160)
+    local tankIconList, tankIconOrder = {}, {}
+    for i = 1, 8 do
+        tankIconList[i]  = RA.RaidIconText(i) .. " " .. _G["RAID_TARGET_" .. i]
+        tankIconOrder[i] = i
+    end
+    tankIconDD:SetList(tankIconList, tankIconOrder)
+    tankIconDD:SetValue(RollAwayDB.tankMarkIcon or 6)
+    tankIconDD:SetCallback("OnValueChanged", function(_, _, value)
+        RollAwayDB.tankMarkIcon = value
+    end)
 
     -- ── Category: Quests ───────────────────────────────────────────────
     -- Every change re-registers only the events the settings still need.
