@@ -58,17 +58,47 @@ local CB_LINE_H     = 14
 -- Sizes the checkbox to its label: as wide as the label needs, up to
 -- widthOverride / maxWidth; a longer label wraps onto more lines (frame and
 -- label grow with it, so anything anchored below moves down).
+local function SetCBLines(cb, lines)
+    local text = cb.text
+    text:SetWordWrap(true)
+    text:ClearAllPoints()
+    if lines > 1 then
+        -- Top-anchored so the first line stays beside the checkbox.
+        text:SetPoint("TOPLEFT", cb.checkbg, "TOPRIGHT", 0, -4)
+        text:SetPoint("TOPRIGHT", cb.frame, "TOPRIGHT", 0, -4)
+        text:SetJustifyV("TOP")
+        text:SetHeight(lines * CB_LINE_H)
+        cb.frame:SetHeight(lines * CB_LINE_H + 8)
+    else
+        -- Same anchors AceGUI's CheckBox uses.
+        text:SetPoint("LEFT", cb.checkbg, "RIGHT")
+        text:SetPoint("RIGHT")
+        text:SetJustifyV("MIDDLE")
+        text:SetHeight(18)
+        cb.frame:SetHeight(24)
+    end
+    cb.raLines = lines
+end
+
 local function FitCB(cb, label, widthOverride, maxWidth)
     local textW   = MeasureLabelWidth(cb.text, label)
     local width   = widthOverride or math.min(CB_BOX_WIDTH + textW + CB_SLACK, maxWidth)
     local lines   = math.max(1, math.ceil(textW / (width - CB_BOX_WIDTH - 6)))
     cb:SetWidth(width)
-    if lines > 1 then
-        cb.text:SetHeight(lines * CB_LINE_H)
-        cb.frame:SetHeight(lines * CB_LINE_H + 8)
-    else
-        cb.text:SetHeight(18)
-        cb.frame:SetHeight(24)
+    SetCBLines(cb, lines)
+end
+
+-- Safety net for the estimate above: if the label still renders cut off
+-- ("..."), give it another line, up to 4. Checked a few frames in a row (the
+-- text only re-lays out on the next frame) and again whenever the checkbox
+-- is shown, since hidden tabs do not lay out their text.
+local function GrowCBIfTruncated(cb, tries)
+    if not cb.text:IsVisible() then return end
+    if cb.text:IsTruncated() and (cb.raLines or 1) < 4 then
+        SetCBLines(cb, (cb.raLines or 1) + 1)
+        if tries > 0 then
+            C_Timer.After(0, function() GrowCBIfTruncated(cb, tries - 1) end)
+        end
     end
 end
 
@@ -81,13 +111,21 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     maxWidth = maxWidth or 520
     FitCB(cb, label, widthOverride, maxWidth)
     -- Again once ElvUI has skinned the new widget (may change its font).
-    C_Timer.After(0, function() FitCB(cb, label, widthOverride, maxWidth) end)
+    C_Timer.After(0, function()
+        FitCB(cb, label, widthOverride, maxWidth)
+        C_Timer.After(0, function() GrowCBIfTruncated(cb, 3) end)
+    end)
     cb:SetCallback("OnValueChanged", function(_, _, value)
         if onChange then onChange(value) end
     end)
     cb.frame:SetParent(parent)
     cb.frame:ClearAllPoints()
     cb.frame:Show()
+    cb.frame:HookScript("OnShow", function()
+        C_Timer.After(0, function() GrowCBIfTruncated(cb, 3) end)
+    end)
+    -- AceGUI nudges the label's anchor on press and does not restore it.
+    cb.frame:HookScript("OnMouseUp", function() SetCBLines(cb, cb.raLines or 1) end)
     return cb
 end
 
