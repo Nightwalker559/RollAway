@@ -15,6 +15,7 @@
 ### Fixed
 - Reminder missing for an instance you had visited before.
 - Cut-off option texts (General and QoL).
+- Scrollbars only appear where there is something to scroll.
 - No "Combat log stopped" message at login.
 
 ## 3.0.9

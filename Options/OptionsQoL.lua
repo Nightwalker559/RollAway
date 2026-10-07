@@ -81,10 +81,26 @@ function RA.BuildQoLOptions(category, S, classColor)
         qolNavButtons[key] = btn
     end
 
-    -- Own ScrollFrame per category; height is fixed (live measurement unreliable).
-    -- forceHideBar: force scrollbar hidden until a category needs scrolling.
-    -- Estimated heights - adjust when a category gains/loses an option.
-    local function CreateQolCategoryPanel(key, name, height, forceHideBar)
+    -- Own ScrollFrame per category. Its content height hugs the lowest element
+    -- once laid out (so the scrollbar only exists where something is cut off);
+    -- measured on every show, since a hidden category has no layout and the
+    -- checkboxes settle their final height a few frames after creation.
+    local function FitQolContentHeight(content)
+        local top = content:GetTop()
+        if not top then return end
+        local lowest = top
+        local function Consider(obj)
+            if obj:IsShown() then
+                local bottom = obj:GetBottom()
+                if bottom and bottom < lowest then lowest = bottom end
+            end
+        end
+        for _, child in ipairs({ content:GetChildren() }) do Consider(child) end
+        for _, region in ipairs({ content:GetRegions() }) do Consider(region) end
+        content:SetHeight(math.max(1, (top - lowest) + 12))
+    end
+
+    local function CreateQolCategoryPanel(key, name)
         local p = CreateFrame("Frame", nil, qolPanel)
         p:SetPoint("TOPLEFT",     qolHeaderLine, "BOTTOMLEFT", QOL_NAV_W + 16, -14)
         p:SetPoint("BOTTOMRIGHT", qolPanel,      "BOTTOMRIGHT", 0, 0)
@@ -95,25 +111,28 @@ function RA.BuildQoLOptions(category, S, classColor)
         scroll:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -26, 0)
 
         local content = CreateFrame("Frame", nil, scroll)
-        content:SetSize(QOL_CONTENT_W, height)
+        content:SetSize(QOL_CONTENT_W, 1)  -- real height set by FitQolContentHeight
         scroll:SetScrollChild(content)
 
-        UI.SetupScrollBar(scroll, _G["RollAwayQol"..name.."ScrollScrollBar"], S, forceHideBar)
+        UI.SetupScrollBar(scroll, _G["RollAwayQol"..name.."ScrollScrollBar"], S, false)
+
+        p:SetScript("OnShow", function()
+            C_Timer.After(0, function() FitQolContentHeight(content) end)
+            C_Timer.After(0.3, function() FitQolContentHeight(content) end)
+        end)
 
         qolCatPanels[key] = p
         return content
     end
 
-    -- Scrollbar is force-hidden (last argument true) except for Hide, whose
-    -- content can outgrow the panel; flip a category to false once it needs one.
-    local character = isMaxLevel and CreateQolCategoryPanel("character", "Character", 320, true) or nil
-    local filter    = CreateQolCategoryPanel("filter",   "Filter",   300, true)
-    local hide      = CreateQolCategoryPanel("hide",     "Hide",     500, false)
-    local lfg       = CreateQolCategoryPanel("lfg",      "Lfg",      420, true)
-    local logs      = CreateQolCategoryPanel("logs",     "Logs",     420, true)
-    local misc      = CreateQolCategoryPanel("misc",     "Misc",     240, true)
-    local quests    = CreateQolCategoryPanel("quests",   "Quests",   440, true)
-    local reminder  = CreateQolCategoryPanel("reminder", "Reminder", 760, true)
+    local character = isMaxLevel and CreateQolCategoryPanel("character", "Character") or nil
+    local filter    = CreateQolCategoryPanel("filter",   "Filter")
+    local hide      = CreateQolCategoryPanel("hide",     "Hide")
+    local lfg       = CreateQolCategoryPanel("lfg",      "Lfg")
+    local logs      = CreateQolCategoryPanel("logs",     "Logs")
+    local misc      = CreateQolCategoryPanel("misc",     "Misc")
+    local quests    = CreateQolCategoryPanel("quests",   "Quests")
+    local reminder  = CreateQolCategoryPanel("reminder", "Reminder")
 
     -- ── Category: Misc ────────────────────────────────────────────────
     -- Catch-all for settings that don't fit the other categories.
