@@ -160,9 +160,14 @@ function RA.BuildQoLOptions(category, S, classColor)
     local qolAutoRepairInfo = MakeInfoText(misc, autoRepairDD.frame, 20, -6, QOL_INFO_W, RA_L["qol_autorepair_info"])
 
     -- Tank marker offer (popup with a secure Mark button, see TankMarker.lua)
+    local UpdateTankIconState  -- forward-declared: needs the dropdown created below
     local _, qolTankMarkInfo = MakeToggle(misc, qolAutoRepairInfo, -20, -14, {
         label = RA_L["qol_tankmark_label"], info = RA_L["qol_tankmark_info"],
-        dbKey = "tankMarkEnabled", onChange = RA.ApplyTankMarker,
+        dbKey = "tankMarkEnabled",
+        onChange = function(checked)
+            RA.ApplyTankMarker()
+            UpdateTankIconState(checked)
+        end,
     })
 
     local qolTankIconLabel = misc:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -180,6 +185,14 @@ function RA.BuildQoLOptions(category, S, classColor)
     tankIconDD:SetCallback("OnValueChanged", function(_, _, value)
         RollAwayDB.tankMarkIcon = value
     end)
+
+    -- Marker choice only matters while the option is on.
+    UpdateTankIconState = function(enabled)
+        local shade = enabled and 1 or 0.5
+        qolTankIconLabel:SetTextColor(shade, shade, shade, 1)
+        tankIconDD:SetDisabled(not enabled)
+    end
+    UpdateTankIconState(RollAwayDB.tankMarkEnabled)
 
     -- ── Category: Quests ───────────────────────────────────────────────
     -- Every change re-registers only the events the settings still need.
