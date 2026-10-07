@@ -12,7 +12,6 @@ local MakeCB  = UI.MakeCB
 local MakeInfoText = UI.MakeInfoText
 local MakeToggle = UI.MakeToggle
 local MakeSkinnedButton = UI.MakeSkinnedButton
-local QOL_CONTENT_W = UI.QOL_CONTENT_W
 local QOL_INFO_W    = UI.QOL_INFO_W
 
 local NAV_W = 130
@@ -93,46 +92,9 @@ function RA.BuildDevOptions(category, S, classColor)
         navButtons[key] = btn
     end
 
-    -- Own scroll frame per category; its content height hugs the lowest
-    -- element once laid out (same approach as the QoL panel).
-    local function FitContentHeight(content)
-        local top = content:GetTop()
-        if not top then return end
-        local lowest = top
-        local function Consider(obj)
-            if obj:IsShown() then
-                local bottom = obj:GetBottom()
-                if bottom and bottom < lowest then lowest = bottom end
-            end
-        end
-        for _, child in ipairs({ content:GetChildren() }) do Consider(child) end
-        for _, region in ipairs({ content:GetRegions() }) do Consider(region) end
-        content:SetHeight(math.max(1, (top - lowest) + 12))
-    end
-
+    -- Own scroll frame per category (see UI.MakeCategoryPage).
     local function CreateCategoryPanel(key, name)
-        local p = CreateFrame("Frame", nil, panel)
-        p:SetPoint("TOPLEFT",     headerLine, "BOTTOMLEFT", NAV_W + 16, -14)
-        p:SetPoint("BOTTOMRIGHT", panel,      "BOTTOMRIGHT", 0, 0)
-        p:Hide()
-
-        local scroll = CreateFrame("ScrollFrame", "RollAwayDev" .. name .. "Scroll", p, "UIPanelScrollFrameTemplate")
-        scroll:SetPoint("TOPLEFT",     p, "TOPLEFT",     0,   0)
-        scroll:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -26, 0)
-
-        local content = CreateFrame("Frame", nil, scroll)
-        content:SetSize(QOL_CONTENT_W, 1)
-        scroll:SetScrollChild(content)
-
-        UI.SetupScrollBar(scroll, _G["RollAwayDev" .. name .. "ScrollScrollBar"], S, false)
-
-        p:SetScript("OnShow", function()
-            RunNextFrame(function() FitContentHeight(content) end)
-            C_Timer.After(0.3, function() FitContentHeight(content) end)
-        end)
-
-        catPanels[key] = p
-        return content
+        return UI.MakeCategoryPage(panel, headerLine, NAV_W, "RollAwayDev", name, catPanels, key, S)
     end
 
     local logPage      = CreateCategoryPanel("log",      "Log")

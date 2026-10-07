@@ -285,10 +285,13 @@ end
 --   fitHeight - optional function(frame) -> total desired height, evaluated
 --               one frame after OnShow (once the content is laid out). The
 --               popup is never made smaller than `height`.
+--   hide      - optional function(frame) that closes the popup, used by the
+--               Okay button and the countdown (default: frame:Hide()). A popup
+--               with secure buttons needs RA.SafeSetShown(frame, false) here.
 --
 -- Returns the frame with these extra fields already set up:
 --   .iconHolder, .icon, .titleText - header chrome
---   .okayBtn                       - bottom-right button, wired to Hide()
+--   .okayBtn                       - bottom-right button, closes the popup
 --   .bar, .barText, .timer         - from RA.CreateTimerBar
 -- Global frame/button names are kept explicit (not derived) so ElvUI_Skin.lua's
 -- _G[...] lookups for these frames keep working unchanged.
@@ -335,11 +338,12 @@ function RA.CreatePopupFrame(opts)
     okayBtn:SetSize(80, 22)
     okayBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 18)
     okayBtn:SetText(RA_L["reminder_okay"])
-    okayBtn:SetScript("OnClick", function() frame:Hide() end)
+    local hide = opts.hide or function(f) f:Hide() end
+    okayBtn:SetScript("OnClick", function() hide(frame) end)
     frame.okayBtn = okayBtn
 
     -- Countdown status bar, started/stopped by OnShow/OnHide below.
-    local timer = RA.CreateTimerBar(frame, function() frame:Hide() end)
+    local timer = RA.CreateTimerBar(frame, function() hide(frame) end)
     frame.bar     = timer.bar
     frame.barText = timer.barText
     frame.timer   = timer

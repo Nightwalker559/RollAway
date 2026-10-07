@@ -566,10 +566,63 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
 end
 
 ------------------------------------------------------------------------
--- Public exports - consumed by Options/Options.lua, Options/OptionsQoL.lua and
--- Options/OptionsProfile.lua
+-- One page of a left-nav settings panel (QoL, Developer): a scrolling area
+-- next to the nav buttons. Its content height hugs the lowest element once
+-- laid out (so the scrollbar only exists where something is cut off); it is
+-- measured on every show, since a hidden page has no layout and the
+-- checkboxes settle their final height a few frames after creation.
+--   panel, headerLine - the settings panel and the line under its header
+--   navWidth          - width of the nav buttons on the left
+--   prefix, name      - global names: <prefix><name>Scroll (+ "ScrollBar")
+--   pages, key        - the pages table of the nav; the page is stored there
+-- Returns the scroll child to hang the page's content on.
+------------------------------------------------------------------------
+local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages, key, S)
+    local function FitContentHeight(content)
+        local top = content:GetTop()
+        if not top then return end
+        local lowest = top
+        local function Consider(obj)
+            if obj:IsShown() then
+                local bottom = obj:GetBottom()
+                if bottom and bottom < lowest then lowest = bottom end
+            end
+        end
+        for _, child in ipairs({ content:GetChildren() }) do Consider(child) end
+        for _, region in ipairs({ content:GetRegions() }) do Consider(region) end
+        content:SetHeight(math.max(1, (top - lowest) + 12))
+    end
+
+    local page = CreateFrame("Frame", nil, panel)
+    page:SetPoint("TOPLEFT",     headerLine, "BOTTOMLEFT", navWidth + 16, -14)
+    page:SetPoint("BOTTOMRIGHT", panel,      "BOTTOMRIGHT", 0, 0)
+    page:Hide()
+
+    local scroll = CreateFrame("ScrollFrame", prefix .. name .. "Scroll", page, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT",     page, "TOPLEFT",     0,   0)
+    scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -26, 0)
+
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(QOL_CONTENT_W, 1)  -- real height set by FitContentHeight
+    scroll:SetScrollChild(content)
+
+    SetupScrollBar(scroll, _G[prefix .. name .. "ScrollScrollBar"], S, false)
+
+    page:SetScript("OnShow", function()
+        RunNextFrame(function() FitContentHeight(content) end)
+        C_Timer.After(0.3, function() FitContentHeight(content) end)
+    end)
+
+    pages[key] = page
+    return content
+end
+
+------------------------------------------------------------------------
+-- Public exports - consumed by Options/Options.lua, Options/OptionsQoL.lua,
+-- Options/OptionsDev.lua and Options/OptionsProfile.lua
 ------------------------------------------------------------------------
 RA.OptionsUI = {
+    MakeCategoryPage  = MakeCategoryPage,
     ENTRY_W           = ENTRY_W,
     COL_GAP           = COL_GAP,
     GOLD              = GOLD,

@@ -773,12 +773,12 @@ function RA.InitOptions()
 
     ------------------------------------------------------------
     -- Subcategories: QoL (left nav with Character / Filter / Hide / LFG /
-    -- Logs / Misc / Quests / Reminder, Options/OptionsQoL.lua) and Profile
-    -- (Options/OptionsProfile.lua).
+    -- Logs / Misc / Quests / Reminder, Options/OptionsQoL.lua), Profile
+    -- (Options/OptionsProfile.lua) and, on dev characters only, Developer
+    -- (Logging / Tests / Tools / Commands, Options/OptionsDev.lua).
     ------------------------------------------------------------
     RA.BuildQoLOptions(category, S, classColor)
     RA.BuildProfileOptions(category, S)
-    -- Developer subcategory (debug mode, tests, tools, command list): dev chars only.
     if isDevChar then RA.BuildDevOptions(category, S, classColor) end
 
     ShowTab("general")

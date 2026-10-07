@@ -25,17 +25,17 @@ local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
 local TIMER_DURATION = 20
-local CHECK_DELAY    = 1.5   -- roles / roster settle a moment after the event
-local RECHECK_DELAY = 3
-local MAX_RECHECKS    = 60  -- 3 minutes of waiting for the instance data / the tank
+local CHECK_DELAY     = 1.5  -- roles / roster settle a moment after the event
+local RECHECK_DELAY   = 3
+local MAX_RECHECKS    = 60   -- 3 minutes of waiting for the instance data / the tank
 
 local markFrame
 local eventFrame
 local checkPending
-local ScheduleCheck   -- defined below, Check() needs it for the re-check
-local rechecks = 0  -- re-checks in a row (instance data not settled / tank not here yet)
-local lastOffer   -- "guid:icon" already offered on this dungeon visit
-local testMode    -- session only, see header
+local ScheduleCheck      -- defined below, Check() needs it for the re-check
+local rechecks = 0       -- re-checks in a row (instance data not settled / tank not here yet)
+local lastOffer          -- "guid:icon" already offered on this dungeon visit
+local testMode           -- session only, see header
 
 -- Inline texture of raid marker `index`, for popup text and the options list.
 function RA.RaidIconText(index)
@@ -88,6 +88,12 @@ local function LogClick(unit, icon)
         tostring(IsInGroup()), (MacroFor(unit, icon):gsub("\n", " | "))))
 end
 
+-- The popup holds a secure button: hiding it in combat is a protected action,
+-- so it is closed through RA.SafeSetShown (deferred until combat ends).
+local function ClosePopup(frame)
+    RA.SafeSetShown(frame, false)
+end
+
 local function CreateMarkFrame()
     if markFrame then return end
 
@@ -98,6 +104,7 @@ local function CreateMarkFrame()
         height    = 100,
         yOffset   = -340,
         duration  = TIMER_DURATION,
+        hide      = ClosePopup,
         fitHeight = function(self)
             return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 10
         end,
@@ -120,12 +127,19 @@ local function CreateMarkFrame()
         -- Only the phase that ran the macro closes the popup.
         if (down and true or false) ~= (GetCVarBool("ActionButtonUseKeyDown") and true or false) then return end
         if testMode then LogClick(markFrame.unit, markFrame.icon) end
-        markFrame:Hide()
+        ClosePopup(markFrame)
     end)
     if RA.SkinPopupButton then RA.SkinPopupButton(btn) end
     markFrame.markBtn = btn
 
-    RA.SetupInstanceReminderLifecycle(markFrame, "tankMarkShown")
+    -- Closes on a pull and when the group is left (same as the other popups).
+    markFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    markFrame:RegisterEvent("GROUP_LEFT")
+    markFrame:SetScript("OnEvent", function(self, event)
+        if event == "PLAYER_REGEN_DISABLED" or event == "GROUP_LEFT" then
+            ClosePopup(self)
+        end
+    end)
 end
 
 local function ShowMarkFrame(unit, icon)
@@ -233,7 +247,8 @@ local function Check(manual)
     local icon = db.tankMarkIcon
 
     if not manual then
-        local key = UnitGUID(unit) .. ":" .. icon
+        local guid = UnitGUID(unit)
+        local key = (RA.IsAccessible(guid) and guid or unit) .. ":" .. icon
         if key == lastOffer then return end
         lastOffer = key
     end

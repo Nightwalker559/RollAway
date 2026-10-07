@@ -81,48 +81,9 @@ function RA.BuildQoLOptions(category, S, classColor)
         qolNavButtons[key] = btn
     end
 
-    -- Own ScrollFrame per category. Its content height hugs the lowest element
-    -- once laid out (so the scrollbar only exists where something is cut off);
-    -- measured on every show, since a hidden category has no layout and the
-    -- checkboxes settle their final height a few frames after creation.
-    local function FitQolContentHeight(content)
-        local top = content:GetTop()
-        if not top then return end
-        local lowest = top
-        local function Consider(obj)
-            if obj:IsShown() then
-                local bottom = obj:GetBottom()
-                if bottom and bottom < lowest then lowest = bottom end
-            end
-        end
-        for _, child in ipairs({ content:GetChildren() }) do Consider(child) end
-        for _, region in ipairs({ content:GetRegions() }) do Consider(region) end
-        content:SetHeight(math.max(1, (top - lowest) + 12))
-    end
-
+    -- Own ScrollFrame per category (see UI.MakeCategoryPage).
     local function CreateQolCategoryPanel(key, name)
-        local p = CreateFrame("Frame", nil, qolPanel)
-        p:SetPoint("TOPLEFT",     qolHeaderLine, "BOTTOMLEFT", QOL_NAV_W + 16, -14)
-        p:SetPoint("BOTTOMRIGHT", qolPanel,      "BOTTOMRIGHT", 0, 0)
-        p:Hide()
-
-        local scroll = CreateFrame("ScrollFrame", "RollAwayQol"..name.."Scroll", p, "UIPanelScrollFrameTemplate")
-        scroll:SetPoint("TOPLEFT",     p, "TOPLEFT",     0,   0)
-        scroll:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -26, 0)
-
-        local content = CreateFrame("Frame", nil, scroll)
-        content:SetSize(QOL_CONTENT_W, 1)  -- real height set by FitQolContentHeight
-        scroll:SetScrollChild(content)
-
-        UI.SetupScrollBar(scroll, _G["RollAwayQol"..name.."ScrollScrollBar"], S, false)
-
-        p:SetScript("OnShow", function()
-            RunNextFrame(function() FitQolContentHeight(content) end)
-            C_Timer.After(0.3, function() FitQolContentHeight(content) end)
-        end)
-
-        qolCatPanels[key] = p
-        return content
+        return UI.MakeCategoryPage(qolPanel, qolHeaderLine, QOL_NAV_W, "RollAwayQol", name, qolCatPanels, key, S)
     end
 
     local character = isMaxLevel and CreateQolCategoryPanel("character", "Character") or nil
