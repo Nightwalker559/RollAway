@@ -56,6 +56,50 @@ function RA.IsInMidnightZone()
     return false, playerMap
 end
 
+-- Continent map (uiMapID) -> expansion index (EXPANSION_NAMEn): only for the
+-- debug log's "Zone: Name (Expansion)". Midnight zones are recognised by
+-- RA.IsInMidnightZone, the Eastern Kingdoms / Kalimdor count as Classic.
+local CONTINENT_EXPANSION = {
+    [12] = 0, [13] = 0,                  -- Kalimdor, Eastern Kingdoms
+    [101] = 1,                           -- Outland
+    [113] = 2,                           -- Northrend
+    [948] = 3,                           -- The Maelstrom
+    [424] = 4,                           -- Pandaria
+    [572] = 5,                           -- Draenor
+    [619] = 6, [905] = 6,                -- Broken Isles, Argus
+    [875] = 7, [876] = 7,                -- Zandalar, Kul Tiras
+    [1550] = 8,                          -- The Shadowlands
+    [1978] = 9,                          -- Dragon Isles
+    [2274] = 10,                         -- Khaz Algar
+}
+
+-- "Zone name (Expansion)" of the player's current map for the debug log; the
+-- expansion is left out when it is not known.
+function RA.GetZoneLabel()
+    local mapID = C_Map.GetBestMapForUnit("player")
+    if not mapID then return "?" end
+    local info = C_Map.GetMapInfo(mapID)
+    local name = info and info.name or tostring(mapID)
+
+    local expansion
+    if RA.IsInMidnightZone() then
+        expansion = EXPANSION_NAME11 or "Midnight"
+    else
+        local id, hops = mapID, 0
+        while id and id ~= 0 and hops < 10 do
+            local index = CONTINENT_EXPANSION[id]
+            if index then
+                expansion = _G["EXPANSION_NAME" .. index]
+                break
+            end
+            local parent = C_Map.GetMapInfo(id)
+            id = parent and parent.parentMapID
+            hops = hops + 1
+        end
+    end
+    return expansion and string.format("%s (%s)", name, expansion) or name
+end
+
 ------------------------------------------------------------------------
 -- Auto-pass matching logic – pure/read-only. Shared by TryAutoPass (which
 -- acts on the result) and Core/Core.lua's zone-change debug summary (which only
