@@ -83,14 +83,18 @@ local function CreateMarkFrame()
     markFrame.msg = RA.CreatePopupBodyText(markFrame)
 
     -- The macro runs on the click itself; PostClick only closes the popup.
-    -- Up-only: a second run on key-down would toggle the marker off again.
+    -- Registered for both phases: a secure button only fires in the one that
+    -- matches the "ActionButtonUseKeyDown" CVar (so it still runs once), and
+    -- an up-only button never fires when that CVar is on.
     local btn = CreateFrame("Button", "RollAwayTankMarkBtn", markFrame, "UIPanelButtonTemplate,SecureActionButtonTemplate")
     btn:SetSize(100, 22)
     btn:SetPoint("RIGHT", markFrame.okayBtn, "LEFT", -6, 0)
     btn:SetText(RA_L["tankmark_button"])
-    btn:RegisterForClicks("AnyUp")
+    btn:RegisterForClicks("AnyUp", "AnyDown")
     btn:SetAttribute("type", "macro")
-    btn:SetScript("PostClick", function()
+    btn:SetScript("PostClick", function(_, _, down)
+        -- Only the phase that ran the macro closes the popup.
+        if (down and true or false) ~= (GetCVarBool("ActionButtonUseKeyDown") and true or false) then return end
         if testMode then VerifyMarker(markFrame.unit, markFrame.icon) end
         markFrame:Hide()
     end)
