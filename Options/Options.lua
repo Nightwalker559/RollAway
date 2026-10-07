@@ -381,14 +381,14 @@ function RA.InitOptions()
 
     -- Row 3: Legacy
     local legacyLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    -- warnInfo is indented +20 from the outer margin, so -20 undoes that
-    -- indent back to the margin; hideRow is already at the outer margin, so
-    -- it needs a plain 0 offset - reusing the same -20 here previously
-    -- pushed the label off the left edge of the scroll frame.
+    -- warnInfo and hideLegacyInfo (the last element above when the Bonus Roll
+    -- reminder is hidden) are indented +20 from the outer margin, so -20 undoes
+    -- that indent back to the margin. The label must hang below hideLegacyInfo,
+    -- not below hideRow, or it lands on top of the legacy-hide checkbox.
     if showBonusRollReminder then
         legacyLabel:SetPoint("TOPLEFT", warnInfo, "BOTTOMLEFT", -20, -14)
     else
-        legacyLabel:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
+        legacyLabel:SetPoint("TOPLEFT", hideLegacyInfo, "BOTTOMLEFT", -20, -14)
     end
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
