@@ -408,6 +408,12 @@ function RA.InitJoinReminder()
                     DBG("[QoL] Listing update ignored – joined via application, not own listing")
                     return
                 end
+                -- Only a leader (or someone alone) can own a listing. A plain
+                -- member sees the group's listing too, e.g. when it is re-posted.
+                if IsInGroup() and not UnitIsGroupLeader("player") then
+                    DBG("[QoL] Listing update ignored – member of someone else's group")
+                    return
+                end
                 -- Own listing created or updated (M+ or raid)
                 local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
                 if isMythicPlus == nil then return end  -- neither M+ nor current raid
@@ -430,8 +436,9 @@ function RA.InitJoinReminder()
                     OpenKeyAddon()
                 end
             else
-                -- Listing removed (cancelled or group full)
-                joinedViaApplication = false
+                -- Listing removed (cancelled or group full). joinedViaApplication
+                -- stays set until you leave the group: the group's listing can
+                -- come back (re-posted) and is still not one of ours.
                 if not keyAddonOpenedByCreation then return end
                 keyAddonOpenedByCreation = false
                 keyAddonSafetyTimer.Stop()
