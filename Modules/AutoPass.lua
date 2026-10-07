@@ -71,6 +71,7 @@ local CONTINENT_EXPANSION = {
     [1550] = 8,                          -- The Shadowlands
     [1978] = 9,                          -- Dragon Isles
     [2274] = 10,                         -- Khaz Algar
+    [2537] = 11,                         -- Quel'Thalas (Midnight), also where the map is not a zone yet
 }
 
 -- "Zone name (Expansion)" of the player's current map for the debug log; the

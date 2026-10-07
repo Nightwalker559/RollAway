@@ -34,7 +34,11 @@ local function CreateDebugLogFrame()
     if debugLogFrame then return end
 
     local f = CreateFrame("Frame", "RollAwayDebugLogFrame", UIParent, "BackdropTemplate")
-    f:SetSize(560, 360)
+    -- Size is remembered too (grip in the bottom right corner).
+    local size = RollAwayDB.debugLogSize
+    f:SetSize(size and size.w or 560, size and size.h or 360)
+    f:SetResizable(true)
+    f:SetResizeBounds(380, 200, 1400, 1000)
     -- Position is remembered across /reload and relog (like the Portal Overview).
     local pos = RollAwayDB.debugLogPos
     if pos then
@@ -88,9 +92,28 @@ local function CreateDebugLogFrame()
 
     local clearBtn = CreateFrame("Button", "RollAwayDebugLogClear", f, "UIPanelButtonTemplate")
     clearBtn:SetSize(80, 22)
-    clearBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -16, 14)
+    clearBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 14)
     clearBtn:SetText("Clear")
     clearBtn:SetScript("OnClick", function() RA.ClearDebugLog() end)
+
+    -- Resize grip (bottom right corner): drag to change the window size.
+    local grip = CreateFrame("Button", "RollAwayDebugLogResize", f)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -8, 8)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
+    grip:SetScript("OnMouseUp", function()
+        f:StopMovingOrSizing()
+        RollAwayDB.debugLogSize = { w = math.floor(f:GetWidth() + 0.5), h = math.floor(f:GetHeight() + 0.5) }
+    end)
+
+    -- The text wraps to the new width and keeps the newest line in view.
+    f:SetScript("OnSizeChanged", function()
+        editBox:SetWidth(scrollFrame:GetWidth())
+        ScrollDebugLogToBottom()
+    end)
 
     debugLogFrame      = f
     debugLogEditBox    = editBox
