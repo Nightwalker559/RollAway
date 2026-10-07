@@ -309,6 +309,27 @@ local function SetupScrollBar(scroll, bar, S, forceHide)
     if forceHide then bar:Hide() end
 end
 
+-- Lays a row of tab buttons out left-to-right, `gap` apart, closing the gaps
+-- left by hidden ones. placeFirst(btn) anchors the first visible button;
+-- placeHidden(btn), if given, anchors hidden ones (so they have a valid
+-- anchor when they are shown again).
+local function ReflowTabRow(order, gap, placeFirst, placeHidden)
+    local prevVisible = nil
+    for _, btn in ipairs(order) do
+        if btn:IsShown() then
+            btn:ClearAllPoints()
+            if prevVisible then
+                btn:SetPoint("LEFT", prevVisible, "RIGHT", gap, 0)
+            else
+                placeFirst(btn)
+            end
+            prevVisible = btn
+        elseif placeHidden then
+            placeHidden(btn)
+        end
+    end
+end
+
 -- Gold label for the active tab, gray for the others. ElvUI-skinned buttons
 -- (RA.ElvSkinTab) supply their own RA_ApplyActive/RA_ApplyInactive, which
 -- restyle the backdrop as well.
@@ -387,18 +408,9 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
 
     -- Re-anchors visible tabs left-to-right, closing gaps from hidden ones.
     local function ReflowTabButtons()
-        local prevVisible = nil
-        for _, btn in ipairs(buttonOrder) do
-            if btn:IsShown() then
-                btn:ClearAllPoints()
-                if prevVisible then
-                    btn:SetPoint("LEFT", prevVisible, "RIGHT", TAB_GAP, 0)
-                else
-                    btn:SetPoint("LEFT", tabRow, "LEFT", 0, 0)
-                end
-                prevVisible = btn
-            end
-        end
+        ReflowTabRow(buttonOrder, TAB_GAP, function(btn)
+            btn:SetPoint("LEFT", tabRow, "LEFT", 0, 0)
+        end)
     end
 
     local devOnlyKeys = {}
@@ -558,9 +570,7 @@ end
 ------------------------------------------------------------------------
 RA.OptionsUI = {
     ENTRY_W           = ENTRY_W,
-    ENTRY_H           = ENTRY_H,
     COL_GAP           = COL_GAP,
-    ROW_GAP           = ROW_GAP,
     GOLD              = GOLD,
     QOL_CONTENT_W     = QOL_CONTENT_W,
     QOL_INFO_W        = QOL_INFO_W,
@@ -576,6 +586,7 @@ RA.OptionsUI = {
     MakeHintText      = MakeHintText,
     SetupScrollBar    = SetupScrollBar,
     MakeTabSelector   = MakeTabSelector,
+    ReflowTabRow      = ReflowTabRow,
     MakeCheckboxRow   = MakeCheckboxRow,
     MakeSeasonTabs    = MakeSeasonTabs,
     CreateGridEntry   = CreateGridEntry,

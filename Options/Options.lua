@@ -184,21 +184,11 @@ function RA.InitOptions()
     -- Re-anchors visible top-level tabs left-to-right, closing gaps from
     -- hidden ones. Re-run after the debug checkbox shows/hides dev-gated
     -- tabs so the row doesn't leave a blank gap or overlap.
+    local function PlaceTopTab(btn)
+        btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
+    end
     local function ReflowTopTabButtons()
-        local prevVisible = nil
-        for _, btn in ipairs(tabButtonOrder) do
-            if btn:IsShown() then
-                btn:ClearAllPoints()
-                if prevVisible then
-                    btn:SetPoint("LEFT", prevVisible, "RIGHT", TAB_GAP, 0)
-                else
-                    btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
-                end
-                prevVisible = btn
-            else
-                btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
-            end
-        end
+        UI.ReflowTabRow(tabButtonOrder, TAB_GAP, PlaceTopTab, PlaceTopTab)
     end
     ReflowTopTabButtons()
 
