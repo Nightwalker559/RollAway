@@ -9,6 +9,7 @@
 - Option to always hide the Group Loot History in legacy raids (General > Group Loot History).
 
 ### Changed
+- Prey auto-pass now only applies in Midnight zones, not in older open-world areas.
 - Loot history difficulty boxes now apply to current raids only.
 - Dropdown lists follow the ElvUI skin.
 

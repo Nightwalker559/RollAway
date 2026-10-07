@@ -376,7 +376,7 @@ L["label_coming_soon"]        = "(coming soon)"
 -- Open World (Prey & World Bosses)
 ------------------------------------------------------------------------
 L["prey_title"]               = "Prey"
-L["prey_hint"]                = "When enabled, the bonus roll is automatically passed for Prey encounters in the open world."
+L["prey_hint"]                = "When enabled, the bonus roll is automatically passed for Prey encounters in the Midnight zones of the open world."
 L["prey_toggle_label"]        = "Enable auto-pass for Prey"
 
 L["raid_tidebound_grotto"]    = "Tidebound Grotto"

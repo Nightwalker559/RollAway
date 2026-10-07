@@ -377,7 +377,7 @@ L["label_coming_soon"]           = "(demnächst)"
 -- Offene Welt (Beutejagd & Weltbosse)
 ------------------------------------------------------------------------
 L["prey_title"]               = "Beutejagd"
-L["prey_hint"]                = "Wenn aktiviert, wird der Bonus Roll bei Beutejagd-Begegnungen in der offenen Welt automatisch gepasst."
+L["prey_hint"]                = "Wenn aktiviert, wird der Bonus Roll bei Beutejagd-Begegnungen in den Midnight-Gebieten der offenen Welt automatisch gepasst."
 L["prey_toggle_label"]        = "Auto-Pass für Beutejagd aktivieren"
 
 L["raid_tidebound_grotto"]    = "Die Gezeitengebundene Grotte"

@@ -29,6 +29,30 @@ local function GetCurrentRaidBossKey()
     return RAID_ENCOUNTER_MAP[RA.lastEncounterID]
 end
 
+-- World map (uiMapID) of every Midnight zone: Silvermoon City, Eversong
+-- Woods, Voidstorm, Harandar, Isle of Quel'Danas, Zul'Aman. Prey auto-pass
+-- only counts there; swap this list when the next expansion's zones are meant.
+local MIDNIGHT_ZONE_MAPS = {
+    [2393] = true, [2395] = true, [2405] = true,
+    [2413] = true, [2424] = true, [2437] = true,
+}
+
+-- Is the player in a Midnight zone? A map is Midnight when it or one of its
+-- parent maps is in the list (covers sub-zones). Returns true / false, and
+-- the player's map ID; nil when the map is not known (e.g. while loading).
+function RA.IsInMidnightZone()
+    local playerMap = C_Map.GetBestMapForUnit("player")
+    local mapID, hops = playerMap, 0
+    while mapID and mapID ~= 0 and hops < 10 do
+        if MIDNIGHT_ZONE_MAPS[mapID] then return true, playerMap end
+        local info = C_Map.GetMapInfo(mapID)
+        mapID = info and info.parentMapID
+        hops = hops + 1
+    end
+    if not playerMap then return nil end
+    return false, playerMap
+end
+
 ------------------------------------------------------------------------
 -- Auto-pass matching logic – pure/read-only. Shared by TryAutoPass (which
 -- acts on the result) and Core/Core.lua's zone-change debug summary (which only
@@ -68,8 +92,10 @@ local function ComputeAutoPassState()
         end
     end
 
-    -- 4. Prey (open world – any BonusRollFrame outside an instance)
-    if RA.cachedInstanceType == "none" and RollAwayDBChar.prey then
+    -- 4. Prey (open world - a BonusRollFrame outside an instance, in a
+    -- Midnight zone only; an unknown map (nil) keeps the old behaviour)
+    if RA.cachedInstanceType == "none" and RollAwayDBChar.prey
+       and RA.IsInMidnightZone() ~= false then
         return true, "prey"
     end
 

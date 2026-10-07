@@ -318,8 +318,16 @@ local function LogInstanceSummary()
     end
     local passLabel = shouldPass and ("yes (" .. tostring(reason) .. ")") or "no"
 
-    DBG(string.format("Instance: %s | Type: %s | ID: %d | Diff: %d | %s | Auto-pass: %s",
-        (ok and instName) or "?", RA.cachedInstanceType, id, RA.cachedDiffID, matchLabel, passLabel))
+    -- Open world: also show the world map and whether it counts as Midnight
+    -- (Prey auto-pass only applies there).
+    local mapLabel = ""
+    if RA.cachedInstanceType == "none" and RA.IsInMidnightZone then
+        local midnight, mapID = RA.IsInMidnightZone()
+        mapLabel = string.format(" | Map: %s | Midnight: %s", tostring(mapID), tostring(midnight))
+    end
+
+    DBG(string.format("Instance: %s | Type: %s | ID: %d | Diff: %d | %s%s | Auto-pass: %s",
+        (ok and instName) or "?", RA.cachedInstanceType, id, RA.cachedDiffID, matchLabel, mapLabel, passLabel))
 end
 RA.LogInstanceSummary = LogInstanceSummary
 
