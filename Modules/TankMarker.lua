@@ -190,12 +190,14 @@ local function Check(manual)
 
     -- The tank must be here too: still outside, offline or far away means
     -- the marker cannot be set (yet). Look again shortly, a while at most.
-    if not (UnitIsConnected(unit) and UnitIsVisible(unit)) then
+    local connected, visible = UnitIsConnected(unit), UnitIsVisible(unit)
+    if not (connected and visible) then
         if not manual and awayChecks < MAX_AWAY_CHECKS then
             awayChecks = awayChecks + 1
             ScheduleCheck(AWAY_RECHECK_DELAY)
         end
-        return Skip("The tank is not in this instance yet.")
+        return Skip(("The tank (%s) is not here yet: connected=%s visible=%s, check %d/%d."):format(
+            unit, tostring(connected), tostring(visible), awayChecks, MAX_AWAY_CHECKS))
     end
     awayChecks = 0
 
