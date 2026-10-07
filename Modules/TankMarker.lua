@@ -43,16 +43,26 @@ end
 -- Popup with the secure "Mark" button
 ------------------------------------------------------------------------
 
+-- Macro variants for the button (test mode can switch: /rawtank variant 2).
+-- 1: marker straight onto the unit; 2: via targeting (and back), in case
+-- "/tm [@unit]" does not work in that spot.
+local MACROS = {
+    "/tm [@%s] %d",
+    "/target %s\n/tm %d\n/targetlasttarget",
+}
+local macroVariant = 1
+
 -- After the click: did the marker really arrive? (test mode only)
 local function VerifyMarker(unit, icon)
-    C_Timer.After(0.5, function()
-        local now = GetRaidTargetIndex(unit)
-        if now == icon then
-            TestSay("Marker set - the click works here.")
-        else
-            TestSay("Marker NOT set (unit " .. unit .. " has marker " .. tostring(now) .. ").")
-        end
-    end)
+    TestSay(("Click received: variant %d, group %s, macro %q"):format(
+        macroVariant, tostring(IsInGroup()), (MACROS[macroVariant]:format(unit, icon):gsub("\n", " | "))))
+    for _, delay in ipairs({ 0.5, 2 }) do
+        C_Timer.After(delay, function()
+            local now = GetRaidTargetIndex(unit)
+            TestSay(("After %.1fs: %s has marker %s - %s"):format(
+                delay, unit, tostring(now), now == icon and "SET" or "NOT set"))
+        end)
+    end
 end
 
 local function CreateMarkFrame()
@@ -96,7 +106,7 @@ local function ShowMarkFrame(unit, icon)
     if InCombatLockdown() then return end
 
     markFrame.unit, markFrame.icon = unit, icon
-    markFrame.markBtn:SetAttribute("macrotext", ("/tm [@%s] %d"):format(unit, icon))
+    markFrame.markBtn:SetAttribute("macrotext", MACROS[macroVariant]:format(unit, icon))
     markFrame.msg:SetText(RA_L["tankmark_msg"]:format(UnitName(unit), RA.RaidIconText(icon)))
     RA.StackPopupFrame(markFrame, { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -340)
     markFrame:Show()
@@ -189,11 +199,16 @@ function RA.ApplyTankMarker()
 end
 
 local function SlashHandler(msg)
-    if strtrim(msg or ""):lower() == "test" then
+    local arg, value = strtrim(msg or ""):lower():match("^(%S*)%s*(%S*)$")
+    if arg == "test" then
         testMode = not testMode
         lastOffer = nil
         DBG("[TankMarker] Test mode " .. (testMode and "ON" or "OFF"))
         RA.ApplyTankMarker()
+    elseif arg == "variant" and MACROS[tonumber(value)] then
+        macroVariant = tonumber(value)
+        lastOffer = nil
+        DBG("[TankMarker] Macro variant " .. macroVariant)
     else
         Check(true)
     end
