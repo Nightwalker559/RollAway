@@ -111,7 +111,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     local logs      = CreateQolCategoryPanel("logs",     "Logs",     420, true)
     local misc      = CreateQolCategoryPanel("misc",     "Misc",     240, true)
     local quests    = CreateQolCategoryPanel("quests",   "Quests",   440, true)
-    local reminder  = CreateQolCategoryPanel("reminder", "Reminder", 700, true)
+    local reminder  = CreateQolCategoryPanel("reminder", "Reminder", 760, true)
 
     -- ── Category: Misc ────────────────────────────────────────────────
     -- Catch-all for settings that don't fit the other categories.
@@ -227,18 +227,21 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- Teleport reminder — mutually exclusive)
     local qolKeyAddonLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     qolKeyAddonLabel:SetPoint("TOPLEFT", qolJoinInfo, "BOTTOMLEFT", 0, -10)
+    qolKeyAddonLabel:SetWidth(400)  -- wraps instead of running off the panel
+    qolKeyAddonLabel:SetJustifyH("LEFT")
     qolKeyAddonLabel:SetText(RA_L["qol_join_keyaddon_label"])
 
+    -- One per line: side by side the three did not fit the panel width.
     local cbBigWigs = MakeCB(reminder, RA_L["qol_join_keyaddon_bigwigs"], nil, nil)
     cbBigWigs.frame:SetPoint("TOPLEFT", qolKeyAddonLabel, "BOTTOMLEFT", 0, -6)
 
     local cbDetails = MakeCB(reminder, RA_L["qol_join_keyaddon_details"], nil, nil)
-    cbDetails.frame:SetPoint("LEFT", cbBigWigs.frame, "RIGHT", 10, 0)
+    cbDetails.frame:SetPoint("TOPLEFT", cbBigWigs.frame, "BOTTOMLEFT", 0, -4)
 
     local cbTeleport = MakeCB(reminder, RA_L["qol_join_keyaddon_teleport"], nil, nil)
-    cbTeleport.frame:SetPoint("LEFT", cbDetails.frame, "RIGHT", 10, 0)
+    cbTeleport.frame:SetPoint("TOPLEFT", cbDetails.frame, "BOTTOMLEFT", 0, -4)
 
-    local qolKeyAddonInfo = MakeInfoText(reminder, cbBigWigs.frame, 20, -6, 400, RA_L["qol_join_keyaddon_info"])
+    local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, 400, RA_L["qol_join_keyaddon_info"])
 
     -- Re-syncs checkbox state from saved DB + live addon detection. Does NOT
     -- clear the saved choice when the addon isn't detected right now - BigWigs'
@@ -483,7 +486,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     lfgqcPSLabel:SetText(RA_L["qol_lfgqc_playstyle_label"])
 
     -- Default playstyle dropdown (AceGUI, native ElvUI skin)
-    local psDD = MakeDropdown(lfg, lfgqcPSLabel, 0, -4, 160)
+    local psDD = MakeDropdown(lfg, lfgqcPSLabel, 0, -4, 230) -- "Beförderung angeboten" needs room
     psDD:SetList({
         [0] = RA_L["qol_lfgqc_ps_none"],
         [1] = RA_L["qol_lfgqc_ps_standard"],
