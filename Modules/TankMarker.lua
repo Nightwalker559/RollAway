@@ -26,10 +26,14 @@ local DBG  = RA.DBG
 
 local TIMER_DURATION = 20
 local CHECK_DELAY    = 1.5   -- roles / roster settle a moment after the event
+local AWAY_RECHECK_DELAY = 3
+local MAX_AWAY_CHECKS    = 60  -- 3 minutes of waiting for the tank to arrive
 
 local markFrame
 local eventFrame
 local checkPending
+local ScheduleCheck   -- defined below, Check() needs it for the re-check
+local awayChecks = 0  -- re-checks in a row because the tank was not here yet
 local lastOffer   -- "guid:icon" already offered in this group
 local testMode    -- session only, see header
 
@@ -194,6 +198,17 @@ local function Check(manual)
     local unit = FindTank()
     if not unit then return Skip(RA_L["tankmark_none"], true) end
 
+    -- The tank must be here too: still outside, offline or far away means
+    -- the marker cannot be set (yet). Look again shortly, a while at most.
+    if not (UnitIsConnected(unit) and UnitIsVisible(unit)) then
+        if not manual and awayChecks < MAX_AWAY_CHECKS then
+            awayChecks = awayChecks + 1
+            ScheduleCheck(AWAY_RECHECK_DELAY)
+        end
+        return Skip(RA_L["tankmark_away"], true)
+    end
+    awayChecks = 0
+
     local icon = db.tankMarkIcon
     if ReadMarker(unit) == icon then return Skip(RA_L["tankmark_already"], true) end
 
@@ -206,10 +221,10 @@ local function Check(manual)
     ShowMarkFrame(unit, icon)
 end
 
-local function ScheduleCheck()
+function ScheduleCheck(delay)
     if checkPending then return end
     checkPending = true
-    C_Timer.After(CHECK_DELAY, function()
+    C_Timer.After(delay or CHECK_DELAY, function()
         checkPending = false
         Check()
     end)
@@ -261,6 +276,7 @@ function RA.InitTankMarker()
         elseif event == "RAID_TARGET_UPDATE" then
             TestSay("RAID_TARGET_UPDATE: a marker was set or changed.")
         else
+            awayChecks = 0
             ScheduleCheck()
         end
     end)
