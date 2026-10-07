@@ -132,6 +132,7 @@ RA.defaults = {
     profile = {
         delay              = 5,
         hideInRaidBuckets  = { lfr = false, normal = false, heroic = false, mythic = false },
+        hideInLegacyRaids  = false,   -- own switch: legacy raids ignore the per-difficulty boxes
         rollTimeout        = 60,
         lootFrameAutoCloseDisabled = false,
         legacy             = false,
@@ -427,6 +428,11 @@ end
 local function ShouldHideInInstance()
     if not RollAwayDB or RollAwayDB.lootFrameAutoCloseDisabled then return false end
     if RA.cachedInstanceType ~= "raid" then return false end
+    -- Legacy raids have their own switch, whatever the difficulty; the
+    -- per-difficulty boxes below are for current-season raids only.
+    if RA.LEGACY_RAID_INSTANCES[RA.cachedInstanceID] then
+        return RollAwayDB.hideInLegacyRaids == true
+    end
     local bucket = RA.RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
     if not bucket or not RollAwayDB.hideInRaidBuckets then return false end
     return RollAwayDB.hideInRaidBuckets[bucket] == true

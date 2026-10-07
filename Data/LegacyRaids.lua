@@ -6,6 +6,18 @@
 _G["RollAway"] = _G["RollAway"] or {}
 local RA = _G["RollAway"]
 
+-- Instance (map) ID of every legacy raid -> its raid key. A raid whose ID is
+-- not listed here counts as a current-season raid. Append new tiers together
+-- with their bosses below.
+RA.LEGACY_RAID_INSTANCES = {
+    [2522] = "vault_of_incarnates",
+    [2569] = "aberrus",
+    [2549] = "amirdrassil",
+    [2657] = "nerubar_palace",
+    [2769] = "liberation_undermine",
+    [2810] = "manaforge_omega",  -- not confirmed against a source, check the "Instance: ... ID:" debug line
+}
+
 RA.LEGACY_RAIDS = {
     -- Vault of the Incarnates (Dragonflight)
     { key = "eranog",               encounterID = 2587, raid = "vault_of_incarnates"    },

@@ -297,6 +297,14 @@ function RA.InitOptions()
             RollAwayDB.hideInRaidBuckets[k] = checked
         end)
 
+    -- Legacy raids (Dragonflight / The War Within): their own switch, apart
+    -- from the per-difficulty boxes above, which only count for current raids.
+    local cbHideLegacy = MakeCB(gen, RA_L["hide_in_legacy_label"], RollAwayDB.hideInLegacyRaids, function(checked)
+        RollAwayDB.hideInLegacyRaids = checked
+    end)
+    cbHideLegacy.frame:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
+    local hideLegacyInfo = MakeInfoText(gen, cbHideLegacy.frame, 20, -6, 460, RA_L["hide_in_legacy_info"])
+
     -- Now that the sliders and hideRow checkboxes exist, wire up the actual
     -- enable/disable logic for the master switch above and apply its
     -- initial state.
@@ -311,13 +319,15 @@ function RA.InitOptions()
         end
         hideInfo:SetAlpha(alpha)
         hideLabel:SetAlpha(alpha)
+        cbHideLegacy:SetDisabled(not enabled)
+        hideLegacyInfo:SetAlpha(alpha)
     end
     SetLootFrameFeatureEnabled(not RollAwayDB.lootFrameAutoCloseDisabled)
 
     -- Bonus Roll reminder (own section: this popup is specifically the
     -- auto-pass reminder shown when entering a Mythic dungeon/raid).
     local reminderSectionLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    reminderSectionLabel:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -16)
+    reminderSectionLabel:SetPoint("TOPLEFT", hideLegacyInfo, "BOTTOMLEFT", -20, -16)
     reminderSectionLabel:SetText(RA_L["bonusroll_reminder_section_title"])
 
     local cbReminder = MakeCB(gen, RA_L["reminder_label"], RollAwayDB.showReminder, function(checked)
