@@ -356,7 +356,7 @@ local function HasActiveRolls()
     return false
 end
 
--- Deferred by one tick (C_Timer.After 0) so our Hide() call runs on a fresh,
+-- Deferred by one frame (RunNextFrame) so our Hide() call runs on a fresh,
 -- untainted execution stack instead of directly inside whatever event handler
 -- (START_LOOT_ROLL, ENCOUNTER_END, etc.) triggered it. Calling Hide() on
 -- GroupLootHistoryFrame synchronously from insecure code taints that frame's
@@ -375,7 +375,7 @@ local function DoHideHistoryFrame()
 end
 
 local function HideHistoryFrame()
-    C_Timer.After(0, DoHideHistoryFrame)
+    RunNextFrame(DoHideHistoryFrame)
 end
 
 local function CancelAllRollTimers()

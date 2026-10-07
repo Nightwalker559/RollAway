@@ -117,7 +117,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         UI.SetupScrollBar(scroll, _G["RollAwayQol"..name.."ScrollScrollBar"], S, false)
 
         p:SetScript("OnShow", function()
-            C_Timer.After(0, function() FitQolContentHeight(content) end)
+            RunNextFrame(function() FitQolContentHeight(content) end)
             C_Timer.After(0.3, function() FitQolContentHeight(content) end)
         end)
 

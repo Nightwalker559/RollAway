@@ -161,7 +161,7 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_EXPORT", {
                 if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) then
                     -- Deferred: closing immediately on keydown pre-empted the
                     -- native clipboard copy, so the string never got copied.
-                    C_Timer.After(0, function() dialog:Hide() end)
+                    RunNextFrame(function() dialog:Hide() end)
                 end
             end)
         end

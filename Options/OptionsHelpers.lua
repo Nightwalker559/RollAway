@@ -97,7 +97,7 @@ local function GrowCBIfTruncated(cb, tries)
     if cb.text:IsTruncated() and (cb.raLines or 1) < 4 then
         SetCBLines(cb, (cb.raLines or 1) + 1)
         if tries > 0 then
-            C_Timer.After(0, function() GrowCBIfTruncated(cb, tries - 1) end)
+            RunNextFrame(function() GrowCBIfTruncated(cb, tries - 1) end)
         end
     end
 end
@@ -111,9 +111,9 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     maxWidth = maxWidth or 520
     FitCB(cb, label, widthOverride, maxWidth)
     -- Again once ElvUI has skinned the new widget (may change its font).
-    C_Timer.After(0, function()
+    RunNextFrame(function()
         FitCB(cb, label, widthOverride, maxWidth)
-        C_Timer.After(0, function() GrowCBIfTruncated(cb, 3) end)
+        RunNextFrame(function() GrowCBIfTruncated(cb, 3) end)
     end)
     cb:SetCallback("OnValueChanged", function(_, _, value)
         if onChange then onChange(value) end
@@ -122,7 +122,7 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     cb.frame:ClearAllPoints()
     cb.frame:Show()
     cb.frame:HookScript("OnShow", function()
-        C_Timer.After(0, function() GrowCBIfTruncated(cb, 3) end)
+        RunNextFrame(function() GrowCBIfTruncated(cb, 3) end)
     end)
     -- AceGUI nudges the label's anchor on press and does not restore it.
     cb.frame:HookScript("OnMouseUp", function() SetCBLines(cb, cb.raLines or 1) end)
@@ -193,7 +193,7 @@ end
 local function HideSliderEditbox(slider)
     if not slider.editbox then return end
     slider.editbox:SetScript("OnShow", function(self) self:Hide() end)
-    C_Timer.After(0, function() if slider.editbox then slider.editbox:Hide() end end)
+    RunNextFrame(function() if slider.editbox then slider.editbox:Hide() end end)
 end
 
 -- AceGUI slider whose current value is part of its label, placed

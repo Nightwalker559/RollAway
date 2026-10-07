@@ -218,7 +218,7 @@ function RA.ApplyVendorFilterFeature()
     -- Blizzard assigns some slots' IDs (observed: 11/12) one frame later
     -- than the rest during MerchantFrame_UpdateMerchantInfo, so a second
     -- deferred pass catches any button that still read index 0 just now.
-    C_Timer.After(0, function()
+    RunNextFrame(function()
         if MerchantFrame and MerchantFrame:IsShown() and RollAwayDB and RollAwayDB.vendorFilterEnabled then
             ForEachMerchantButton(ApplyVendorFilterButton)
         end

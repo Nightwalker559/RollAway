@@ -345,7 +345,7 @@ function RA.CreatePopupFrame(opts)
 
     frame:SetScript("OnShow", function(self)
         if opts.fitHeight then
-            C_Timer.After(0, function()
+            RunNextFrame(function()
                 if not self:IsShown() then return end
                 self:SetHeight(math.max(opts.height, opts.fitHeight(self)))
             end)

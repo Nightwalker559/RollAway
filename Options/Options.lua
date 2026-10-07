@@ -432,10 +432,10 @@ function RA.InitOptions()
     -- Again later and on every show: the checkboxes settle their final height
     -- (wrapped labels) a few frames after creation, and a hidden tab has no
     -- layout yet.
-    C_Timer.After(0, UpdateGenScrollHeight)
+    RunNextFrame(UpdateGenScrollHeight)
     C_Timer.After(0.3, UpdateGenScrollHeight)
     genScroll:HookScript("OnShow", function()
-        C_Timer.After(0, UpdateGenScrollHeight)
+        RunNextFrame(UpdateGenScrollHeight)
         C_Timer.After(0.3, UpdateGenScrollHeight)
     end)
 

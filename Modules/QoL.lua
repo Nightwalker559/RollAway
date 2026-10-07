@@ -411,7 +411,7 @@ function RA.ApplyMapActivityTrackerFeature()
 
     if not mapActivityHooked then
         mapActivityHooked = true
-        local function DeferredHide() C_Timer.After(0, HideMapActivityTracker) end
+        local function DeferredHide() RunNextFrame(HideMapActivityTracker) end
         WorldMapFrame:HookScript("OnShow", DeferredHide)
         if WorldMapFrame.OnMapChanged then
             hooksecurefunc(WorldMapFrame, "OnMapChanged", DeferredHide)
