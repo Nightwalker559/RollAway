@@ -10,6 +10,7 @@
 - New safety net "Warn me when an auto-pass is active for the content I enter" (Options > General, on by default): shows a short warning (only the red "auto-pass ACTIVE" text) on entering a Mythic dungeon / raid only when a Bonus Roll auto-pass is active there and you have Voidcores, even with the general reminder off. Silent otherwise.
 
 ### Changed
+- The auto-pass reminder / warning pops up immediately on entering the dungeon or raid instead of ~2 seconds later (a quick recheck follows 1.5 s later in case the game data was not ready yet).
 - ElvUI / LuckyoneUI no longer grey out any RollAway option: "Auto-accept invites", "Auto Repair", "Hide Talking Head" and "Hide boss banner" are always available. All options are off by default, so just leave them off if the other UI already does the job.
 
 ### Fixed

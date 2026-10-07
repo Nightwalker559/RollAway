@@ -628,7 +628,12 @@ f:SetScript("OnEvent", function(_, event, ...)
             if RA.reminderShowToken ~= myReminderToken then return end  -- superseded
             if RA.ShowReminder then RA.ShowReminder() end
         end
-        RA.reminderShowTimer = C_Timer.NewTimer(2, FireReminder)
+        -- Show right away (the instance cache was just refreshed), then once
+        -- more shortly after as a safety recheck: GetInstanceInfo() and the
+        -- Voidcore currency can still be stale on the very first event after
+        -- a fast zone / login. ShowReminder is idempotent per instance.
+        if RA.ShowReminder then RA.ShowReminder() end
+        RA.reminderShowTimer = C_Timer.NewTimer(1.5, FireReminder)
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then
 
