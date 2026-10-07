@@ -96,6 +96,10 @@ local function CreateReminderFrame()
         yOffset  = -180,
         duration = TIMER_DURATION,
         fitHeight = function(self)
+            -- Warning-only popup: just the status text as the message.
+            if self.warnOnly then
+                return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 8
+            end
             -- message + separator(1+20) + currency line + status (+6 gap)
             -- + gap before the button
             return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 21
@@ -211,14 +215,29 @@ function RA.ShowReminder()
 
     -- Update content (no new closures created here)
     currentTabKey = tabKey
-    reminderFrame.msg:SetText(RA_L[msgKey])
     reminderFrame.btn:SetText(RA_L["reminder_btn_"..tabKey])
-    reminderFrame.currency:SetText(string.format(
-        RA_L["reminder_voidcore"],
-        voidcoreQty,
-        rollColor .. rollsPossible .. "|r",
-        rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
-    reminderFrame.status:SetText(statusText or "")
+
+    -- Only the safety-net warning is on (not the general reminder): the popup
+    -- is just the "auto-pass ACTIVE" text, without the generic hint and the
+    -- Voidcore line.
+    local warnOnly = not RollAwayDB.showReminder
+    reminderFrame.warnOnly = warnOnly
+    reminderFrame.sep:SetShown(not warnOnly)
+    reminderFrame.currency:SetShown(not warnOnly)
+    reminderFrame.status:SetShown(not warnOnly)
+    if warnOnly then
+        reminderFrame.msg:SetText(statusText or "")
+        reminderFrame.currency:SetText("")
+        reminderFrame.status:SetText("")
+    else
+        reminderFrame.msg:SetText(RA_L[msgKey])
+        reminderFrame.currency:SetText(string.format(
+            RA_L["reminder_voidcore"],
+            voidcoreQty,
+            rollColor .. rollsPossible .. "|r",
+            rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
+        reminderFrame.status:SetText(statusText or "")
+    end
 
     reminderFrame:Show()
 end

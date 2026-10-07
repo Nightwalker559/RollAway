@@ -41,7 +41,7 @@ L["raid_diff_mythic"]         = "Mythic"
 L["reminder_label"]           = "Show auto-pass reminder when entering dungeons & raids"
 L["reminder_info"]            = "Shows a popup when entering a Mythic dungeon or raid, reminding you to check your auto-pass settings."
 L["autopass_warning_label"]   = "Warn me when an auto-pass is active for the content I enter"
-L["autopass_warning_info"]    = "Safety net against a forgotten checkbox: shows the popup on entering a Mythic dungeon or raid only if a Bonus Roll auto-pass is active there, even with the reminder above switched off. Stays silent otherwise."
+L["autopass_warning_info"]    = "Safety net against a forgotten checkbox: on entering a Mythic dungeon or raid, shows a short warning only if a Bonus Roll auto-pass is active there, even with the reminder above switched off. Stays silent otherwise."
 L["bonusroll_reminder_section_title"] = "Bonus Roll"
 
 -- Reminder popup
