@@ -104,14 +104,14 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     -- Scrollbar is force-hidden (last argument true) except for Hide, whose
     -- content can outgrow the panel; flip a category to false once it needs one.
-    local character = isMaxLevel and CreateQolCategoryPanel("character", "Character", 280, true) or nil
-    local filter    = CreateQolCategoryPanel("filter",   "Filter",   260, true)
-    local hide      = CreateQolCategoryPanel("hide",     "Hide",     460, false)
-    local lfg       = CreateQolCategoryPanel("lfg",      "Lfg",      380, true)
-    local logs      = CreateQolCategoryPanel("logs",     "Logs",     380, true)
-    local misc      = CreateQolCategoryPanel("misc",     "Misc",     200, true)
-    local quests    = CreateQolCategoryPanel("quests",   "Quests",   400, true)
-    local reminder  = CreateQolCategoryPanel("reminder", "Reminder", 660, true)
+    local character = isMaxLevel and CreateQolCategoryPanel("character", "Character", 320, true) or nil
+    local filter    = CreateQolCategoryPanel("filter",   "Filter",   300, true)
+    local hide      = CreateQolCategoryPanel("hide",     "Hide",     500, false)
+    local lfg       = CreateQolCategoryPanel("lfg",      "Lfg",      420, true)
+    local logs      = CreateQolCategoryPanel("logs",     "Logs",     420, true)
+    local misc      = CreateQolCategoryPanel("misc",     "Misc",     240, true)
+    local quests    = CreateQolCategoryPanel("quests",   "Quests",   440, true)
+    local reminder  = CreateQolCategoryPanel("reminder", "Reminder", 700, true)
 
     -- ── Category: Misc ────────────────────────────────────────────────
     -- Catch-all for settings that don't fit the other categories.
@@ -323,13 +323,11 @@ function RA.BuildQoLOptions(category, S, classColor)
         local charChain = NewToggleChain(character)
 
         -- Omniumfoliant: hide minimap icon, show button on Character Frame.
-        -- Long label - explicit width so it wraps instead of running off-panel.
-        local qolOmniCB = charChain.Add({
+        charChain.Add({
             label = RA_L["qol_omniumfoliant_label"], info = RA_L["qol_omniumfoliant_info"],
-            dbKey = "hideOmniumfoliantMinimap", width = 400,
+            dbKey = "hideOmniumfoliantMinimap",
             onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
         })
-        qolOmniCB.frame:SetHeight(40) -- room for the wrapped 2-line label
 
         -- Great Vault button on Character Frame
         charChain.Add({

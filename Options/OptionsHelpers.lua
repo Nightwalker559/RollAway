@@ -39,11 +39,49 @@ end
 
 -- Creates a self-contained AceGUI checkbox (own textures per instance, no
 -- ElvUI template-skin dependency). Caller positions it via cb.frame:SetPoint().
-local function MakeCB(parent, label, checked, onChange, widthOverride)
+-- Full single-line width of `text` in the font `fs` currently uses. A label's
+-- own GetStringWidth is cut by the checkbox's width and by ElvUI re-fonting
+-- the widget after creation, which made long labels end in "...".
+local widthProbe
+local function MeasureLabelWidth(fs, text)
+    widthProbe = widthProbe or UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    local font, size, flags = fs:GetFont()
+    if font then widthProbe:SetFont(font, size, flags) end
+    widthProbe:SetText(text)
+    return widthProbe:GetStringWidth()
+end
+
+local CB_BOX_WIDTH  = 24  -- checkbox graphic left of the label
+local CB_SLACK      = 16  -- breathing room after the label
+local CB_LINE_H     = 14
+
+-- Sizes the checkbox to its label: as wide as the label needs, up to
+-- widthOverride / maxWidth; a longer label wraps onto more lines (frame and
+-- label grow with it, so anything anchored below moves down).
+local function FitCB(cb, label, widthOverride, maxWidth)
+    local textW   = MeasureLabelWidth(cb.text, label)
+    local width   = widthOverride or math.min(CB_BOX_WIDTH + textW + CB_SLACK, maxWidth)
+    local lines   = math.max(1, math.ceil(textW / (width - CB_BOX_WIDTH - 6)))
+    cb:SetWidth(width)
+    if lines > 1 then
+        cb.text:SetHeight(lines * CB_LINE_H)
+        cb.frame:SetHeight(lines * CB_LINE_H + 8)
+    else
+        cb.text:SetHeight(18)
+        cb.frame:SetHeight(24)
+    end
+end
+
+-- widthOverride: fixed width; otherwise sized to the label, at most
+-- maxWidth (default 520, the General tab's room).
+local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     local cb = AceGUI:Create("CheckBox")
     cb:SetLabel(label)
     cb:SetValue(checked)
-    cb:SetWidth(widthOverride or (24 + (cb.text:GetStringWidth() or 200) + 10))
+    maxWidth = maxWidth or 520
+    FitCB(cb, label, widthOverride, maxWidth)
+    -- Again once ElvUI has skinned the new widget (may change its font).
+    C_Timer.After(0, function() FitCB(cb, label, widthOverride, maxWidth) end)
     cb:SetCallback("OnValueChanged", function(_, _, value)
         if onChange then onChange(value) end
     end)
@@ -72,12 +110,14 @@ end
 -- (xOffset, yOffset) below `anchor`, or at (xOffset, yOffset) from the
 -- parent's top-left when anchor is nil. opts.onChange(checked) runs after
 -- the setting is saved; opts.width overrides the checkbox width and
--- opts.infoWidth (default 400) the description's. Returns checkbox, info.
+-- opts.infoWidth (default 400) the description's; without opts.width the
+-- checkbox grows with its label up to opts.maxWidth (default 400, the QoL
+-- panels' room) and wraps beyond that. Returns checkbox, info.
 local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     local cb = MakeCB(parent, opts.label, RollAwayDB[opts.dbKey], function(checked)
         RollAwayDB[opts.dbKey] = checked
         if opts.onChange then opts.onChange(checked) end
-    end, opts.width)
+    end, opts.width, opts.maxWidth or 400)
     if anchor then
         cb.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
     else
@@ -140,8 +180,9 @@ end
 -- show through underneath ElvUI's backdrop - clear those too.
 local function MakeSkinnedButton(parent, label, width, S)
     local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    btn:SetSize(width or 110, 22)
     btn:SetText(label)
+    -- Never narrower than the label needs (longer in German than in English).
+    btn:SetSize(math.max(width or 110, btn:GetTextWidth() + 24), 22)
     if S and S.HandleButton then
         S:HandleButton(btn)
         btn:SetNormalTexture("")

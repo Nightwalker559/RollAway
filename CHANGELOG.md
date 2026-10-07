@@ -13,6 +13,7 @@
 - ElvUI / LuckyoneUI no longer grey out any RollAway option: "Auto-accept invites", "Auto Repair", "Hide Talking Head" and "Hide boss banner" are always available. All options are off by default, so just leave them off if the other UI already does the job.
 
 ### Fixed
+- Options: long checkbox labels were cut off ("...") in English and German. Checkboxes now size to their label and wrap onto a second line when it does not fit; profile buttons widen for longer German labels.
 - QoL > Logs: no "Combat log stopped." chat message at login / reload any more (it only appeared because the addon had not synced its state yet). Start / stop messages on zone changes are unchanged.
 
 ## 3.0.9
