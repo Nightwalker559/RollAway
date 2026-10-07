@@ -6,8 +6,9 @@
 -- marking by itself.
 --
 -- Settings: RollAwayDB.tankMarkEnabled / tankMarkIcon (1-8)
--- Only 5-man groups; the popup shows once per tank and marker per group, and
--- only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON).
+-- Only 5-man groups; the popup shows once per tank and marker per dungeon
+-- visit, only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON),
+-- and never once a Mythic+ key is running (it belongs to entering).
 --
 -- /rawtank       shows the popup right now, in any place (everyone)
 -- /rawtank test  dev chars only: toggles a test mode until /reload. Works solo
@@ -33,7 +34,7 @@ local eventFrame
 local checkPending
 local ScheduleCheck   -- defined below, Check() needs it for the re-check
 local awayChecks = 0  -- re-checks in a row because the tank was not here yet
-local lastOffer   -- "guid:icon" already offered in this group
+local lastOffer   -- "guid:icon" already offered on this dungeon visit
 local testMode    -- session only, see header
 
 -- Inline texture of raid marker `index`, for popup text and the options list.
@@ -181,6 +182,10 @@ local function Check(manual)
     if not grouped and not (manual or testMode) then return end
 
     if not manual then
+        -- The offer belongs to entering the dungeon, not to the key start.
+        if C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive() then
+            return Skip("A Mythic+ key is running.")
+        end
         local reason = NotWorthMarking()
         if reason then return Skip(reason) end
     end
@@ -263,6 +268,9 @@ function RA.InitTankMarker()
         elseif event == "RAID_TARGET_UPDATE" then
             TestSay("RAID_TARGET_UPDATE: a marker was set or changed.")
         else
+            -- Outside an instance = the last visit is over: the next dungeon
+            -- (even with the same group) gets its own offer.
+            if event == "PLAYER_ENTERING_WORLD" and not IsInInstance() then lastOffer = nil end
             awayChecks = 0
             ScheduleCheck()
         end
