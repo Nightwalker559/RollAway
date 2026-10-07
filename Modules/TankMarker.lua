@@ -15,9 +15,10 @@
 --                  spec role counts as tank) and writes to the debug log why
 --                  the popup did or did not show, and whether the marker was
 --                  set after the click.
---   /rawtank auto  (in test mode) clicks the button from code instead of
---                  showing the popup, never during a running M+ key; the log
---                  also reports taint blocks (ADDON_ACTION_BLOCKED/FORBIDDEN).
+--
+-- Tried and ruled out: clicking the button from code (Button:Click) to mark
+-- without a popup. The click is insecure, so RunMacroText is blocked with
+-- ADDON_ACTION_FORBIDDEN; only a real click works.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -31,7 +32,6 @@ local eventFrame
 local checkPending
 local lastOffer   -- "guid:icon" already offered in this group
 local testMode    -- session only, see header
-local autoMode    -- session only, test mode + /rawtank auto: no popup, click from code
 
 -- Inline texture of raid marker `index`, for popup text and the options list.
 function RA.RaidIconText(index)
@@ -118,39 +118,19 @@ local function CreateMarkFrame()
     RA.SetupInstanceReminderLifecycle(markFrame, "tankMarkShown")
 end
 
--- Points the button at `unit` / `icon`. Attributes of a secure button can
--- only change out of combat; returns false then.
-local function PrepareMark(unit, icon)
+local function ShowMarkFrame(unit, icon)
     CreateMarkFrame()
-    if InCombatLockdown() then return false end
+    -- Attributes of a secure button can only change out of combat.
+    if InCombatLockdown() then return end
 
     markFrame.unit, markFrame.icon = unit, icon
     markFrame.markBtn:SetAttribute("macrotext", MACROS[macroVariant]:format(unit, icon))
     markFrame.msg:SetText(RA_L["tankmark_msg"]:format(UnitName(unit), RA.RaidIconText(icon)))
-    return true
-end
-
-local function ShowMarkFrame(unit, icon)
-    if not PrepareMark(unit, icon) then return end
     RA.StackPopupFrame(markFrame, { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -340)
     markFrame:Show()
     DBG("[TankMarker] Offering marker " .. icon .. " for " .. unit)
 end
 
--- Experiment (test mode, /rawtank auto): click the secure button from code,
--- without a popup. Never during a running Mythic+ key. The test log shows
--- whether the marker arrived and whether Blizzard blocked anything.
-local function AutoMark(unit, icon)
-    if C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive() then
-        return TestSay("Auto: a Mythic+ key is running, skipped.")
-    end
-    if not PrepareMark(unit, icon) then return TestSay("Auto: in combat, skipped.") end
-
-    TestSay("Auto: clicking the button from code.")
-    local ok, err = pcall(markFrame.markBtn.Click, markFrame.markBtn, "LeftButton",
-        GetCVarBool("ActionButtonUseKeyDown") and true or false)
-    if not ok then TestSay("Auto: Click() failed: " .. tostring(err)) end
-end
 
 ------------------------------------------------------------------------
 -- Logic
@@ -208,10 +188,6 @@ local function Check(manual)
         if key == lastOffer then return end
         lastOffer = key
     end
-    if testMode and autoMode and not manual then
-        TestSay("Tank is " .. unit .. ", marking automatically.")
-        return AutoMark(unit, icon)
-    end
     TestSay("Tank is " .. unit .. ", offering the popup.")
     ShowMarkFrame(unit, icon)
 end
@@ -239,13 +215,10 @@ function RA.ApplyTankMarker()
     end
     eventFrame:RegisterEvent("GROUP_LEFT")   -- always: keeps lastOffer honest
     -- Test mode: fires whenever any marker changes, readable value or not.
-    -- Also Blizzard's taint blocks (the auto experiment), only for RollAway.
-    for _, event in ipairs({ "RAID_TARGET_UPDATE", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN" }) do
-        if testMode then
-            eventFrame:RegisterEvent(event)
-        else
-            eventFrame:UnregisterEvent(event)
-        end
+    if testMode then
+        eventFrame:RegisterEvent("RAID_TARGET_UPDATE")
+    else
+        eventFrame:UnregisterEvent("RAID_TARGET_UPDATE")
     end
     if on then ScheduleCheck() end
 end
@@ -257,11 +230,6 @@ local function SlashHandler(msg)
         lastOffer = nil
         DBG("[TankMarker] Test mode " .. (testMode and "ON" or "OFF"))
         RA.ApplyTankMarker()
-    elseif arg == "auto" then
-        autoMode = not autoMode
-        lastOffer = nil
-        DBG("[TankMarker] Auto mode " .. (autoMode and "ON (needs test mode)" or "OFF"))
-        if testMode then ScheduleCheck() end
     elseif arg == "variant" and MACROS[tonumber(value)] then
         macroVariant = tonumber(value)
         lastOffer = nil
@@ -273,15 +241,11 @@ end
 
 function RA.InitTankMarker()
     eventFrame = CreateFrame("Frame")
-    eventFrame:SetScript("OnEvent", function(_, event, addonName, funcName)
+    eventFrame:SetScript("OnEvent", function(_, event)
         if event == "GROUP_LEFT" then
             lastOffer = nil
         elseif event == "RAID_TARGET_UPDATE" then
             TestSay("RAID_TARGET_UPDATE: a marker was set or changed.")
-        elseif event == "ADDON_ACTION_BLOCKED" or event == "ADDON_ACTION_FORBIDDEN" then
-            if addonName == "RollAway" then
-                TestSay(("%s: %s tried %s"):format(event, tostring(addonName), tostring(funcName)))
-            end
         else
             ScheduleCheck()
         end
