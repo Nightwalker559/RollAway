@@ -7,7 +7,7 @@
 --
 -- Settings: RollAwayDB.tankMarkEnabled / tankMarkIcon (1-8)
 -- Only 5-man groups; the popup shows once per tank and marker per group, and
--- only in a dungeon (instance type "party").
+-- only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON).
 --
 -- Test tools (the feature is experimental, it has to be tried on live):
 --   /rawtank       shows the popup right now, in any place
@@ -155,6 +155,21 @@ local function FindTank()
     end
 end
 
+-- Only a Mythic dungeon of the current season gets the offer. Returns why
+-- not (for the test log), or nil when it fits.
+local function NotWorthMarking()
+    if RA.cachedInstanceType ~= "party" then
+        return "Not in a dungeon (instance type: " .. tostring(RA.cachedInstanceType) .. ")."
+    end
+    if not RA.MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] then
+        return "Dungeon is not Mythic (difficulty " .. tostring(RA.cachedDiffID) .. ")."
+    end
+    for _, dungeon in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
+        if dungeon.mapID == RA.cachedInstanceID then return nil end
+    end
+    return "Not a dungeon of the current season (instance " .. tostring(RA.cachedInstanceID) .. ")."
+end
+
 -- manual = true (/rawtank): ignores the setting, the instance check and the
 -- "already offered" memory, and says why nothing is shown.
 local function Check(manual)
@@ -172,10 +187,8 @@ local function Check(manual)
     if not grouped and not (manual or testMode) then return end
 
     if not manual then
-        local _, instanceType = IsInInstance()
-        if instanceType ~= "party" then
-            return Skip("Not in a dungeon (instance type: " .. tostring(instanceType) .. ").")
-        end
+        local reason = NotWorthMarking()
+        if reason then return Skip(reason) end
     end
 
     local unit = FindTank()
