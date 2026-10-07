@@ -171,7 +171,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     })
 
     local qolTankIconLabel = misc:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    qolTankIconLabel:SetPoint("TOPLEFT", qolTankMarkInfo, "BOTTOMLEFT", -20, -12)
+    qolTankIconLabel:SetPoint("TOPLEFT", qolTankMarkInfo, "BOTTOMLEFT", 0, -12)  -- indented like the info text: belongs to the checkbox
     qolTankIconLabel:SetText(RA_L["qol_tankmark_icon_label"])
 
     local tankIconDD = MakeDropdown(misc, qolTankIconLabel, 0, -4, 160)
