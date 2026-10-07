@@ -95,6 +95,7 @@ local function CreateMarkFrame()
     })
 
     markFrame.msg = RA.CreatePopupBodyText(markFrame)
+    markFrame.okayBtn:SetText(NO)  -- it is a yes/no question here: "Mark" or "No"
 
     -- The macro runs on the click itself; PostClick only closes the popup.
     -- Registered for both phases: a secure button only fires in the one that
