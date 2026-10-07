@@ -52,15 +52,25 @@ local MACROS = {
 }
 local macroVariant = 1
 
+-- Current marker of `unit` (nil = none). 12.0 can hand back "secret values"
+-- that must not be compared; those, and errors, count as "unknown" (nil) and
+-- the second result says what happened.
+local function ReadMarker(unit)
+    local ok, index = pcall(GetRaidTargetIndex, unit)
+    if not ok then return nil, "error: " .. tostring(index) end
+    if issecretvalue and issecretvalue(index) then return nil, "secret value" end
+    return index, "ok"
+end
+
 -- After the click: did the marker really arrive? (test mode only)
 local function VerifyMarker(unit, icon)
     TestSay(("Click received: variant %d, group %s, macro %q"):format(
         macroVariant, tostring(IsInGroup()), (MACROS[macroVariant]:format(unit, icon):gsub("\n", " | "))))
     for _, delay in ipairs({ 0.5, 2 }) do
         C_Timer.After(delay, function()
-            local now = GetRaidTargetIndex(unit)
-            TestSay(("After %.1fs: %s has marker %s - %s"):format(
-                delay, unit, tostring(now), now == icon and "SET" or "NOT set"))
+            local now, state = ReadMarker(unit)
+            TestSay(("After %.1fs: %s marker read = %s (%s) - %s"):format(
+                delay, unit, tostring(now), state, now == icon and "SET" or "not confirmed"))
         end)
     end
 end
@@ -166,7 +176,7 @@ local function Check(manual)
     if not unit then return Skip(RA_L["tankmark_none"], true) end
 
     local icon = db.tankMarkIcon
-    if GetRaidTargetIndex(unit) == icon then return Skip(RA_L["tankmark_already"], true) end
+    if ReadMarker(unit) == icon then return Skip(RA_L["tankmark_already"], true) end
 
     if not manual then
         local key = UnitGUID(unit) .. ":" .. icon
