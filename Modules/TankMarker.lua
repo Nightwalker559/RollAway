@@ -8,7 +8,8 @@
 -- Settings: RollAwayDB.tankMarkEnabled / tankMarkIcon (1-8)
 -- Only 5-man groups; the popup shows once per tank and marker per dungeon
 -- visit, only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON),
--- and never once a Mythic+ key is running (it belongs to entering).
+-- and never once a Mythic+ key is running (it belongs to entering); an open
+-- popup closes when the key starts.
 --
 -- /rawtank       shows the popup right now, in any place (everyone)
 -- /rawtank test  dev chars only: toggles a test mode until /reload. Works solo
@@ -132,11 +133,13 @@ local function CreateMarkFrame()
     if RA.SkinPopupButton then RA.SkinPopupButton(btn) end
     markFrame.markBtn = btn
 
-    -- Closes on a pull and when the group is left (same as the other popups).
+    -- Closes on a pull, when the group is left (same as the other popups) and
+    -- when the key starts: the offer belongs to entering the dungeon.
     markFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     markFrame:RegisterEvent("GROUP_LEFT")
+    markFrame:RegisterEvent("CHALLENGE_MODE_START")
     markFrame:SetScript("OnEvent", function(self, event)
-        if event == "PLAYER_REGEN_DISABLED" or event == "GROUP_LEFT" then
+        if event == "PLAYER_REGEN_DISABLED" or event == "GROUP_LEFT" or event == "CHALLENGE_MODE_START" then
             ClosePopup(self)
         end
     end)
