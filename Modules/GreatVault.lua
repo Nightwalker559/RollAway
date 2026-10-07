@@ -38,8 +38,8 @@ end
 function RA.ShowGreatVaultFrame()
     CreateVaultFrame()
 
-    -- Stack below Reminder/Paragon frames if shown, to avoid overlap.
-    RA.StackPopupFrame(vaultFrame, { "RollAwayParagonFrame", "RollAwayReminderFrame" }, -260)
+    -- Stacked in the shared popup order (Core/Helpers.lua), no overlap.
+    RA.StackPopupFrame(vaultFrame)
 
     vaultFrame.msg:SetText(RA_L["greatvault_alert_msg"])
     vaultFrame:Show()

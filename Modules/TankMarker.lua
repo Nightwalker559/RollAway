@@ -136,7 +136,7 @@ local function ShowMarkFrame(unit, icon)
     markFrame.unit, markFrame.icon = unit, icon
     markFrame.markBtn:SetAttribute("macrotext", MacroFor(unit, icon))
     markFrame.msg:SetText(RA_L["tankmark_msg"]:format(UnitName(unit), RA.RaidIconText(icon)))
-    RA.StackPopupFrame(markFrame, { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -340)
+    RA.StackPopupFrame(markFrame)
     markFrame:Show()
     DBG("[TankMarker] Offering marker " .. icon .. " for " .. unit)
 end

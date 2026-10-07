@@ -218,9 +218,9 @@ function RA.ShowReminder()
 
     CreateReminderFrame()
 
-    -- Stack below the Paragon frame if it's currently shown, to avoid
-    -- both notifications overlapping at the same default position.
-    RA.StackPopupFrame(reminderFrame, { "RollAwayParagonFrame" }, -180)
+    -- Stacked in the shared popup order (Core/Helpers.lua), so the
+    -- notifications never overlap.
+    RA.StackPopupFrame(reminderFrame)
 
     -- Update content (no new closures created here)
     currentTabKey = tabKey

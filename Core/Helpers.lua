@@ -302,6 +302,7 @@ function RA.CreatePopupFrame(opts)
     local frame = CreateFrame("Frame", opts.name, UIParent, "BackdropTemplate")
     frame:SetSize(opts.width, opts.height)
     frame:SetPoint("TOP", UIParent, "TOP", 0, opts.yOffset)
+    frame.defaultY = opts.yOffset  -- where RA.StackPopupFrame puts it when nothing is above it
     frame:SetFrameStrata("HIGH")
     frame:SetClampedToScreen(true)
     RA.MakeDraggable(frame)
@@ -371,22 +372,38 @@ function RA.CreatePopupBodyText(frame)
     return text
 end
 
--- Stacks `frame` directly below the first currently-shown frame among
--- `aboveNames` (checked in priority order, by global name), or at `frame`'s
--- own default TOP position if none of them are shown. Shared by the popup
--- notifications (Reminder/Paragon/GreatVault/AdvLog) so any combination
--- can be shown together without overlapping - a new popup only needs to
--- list what it should stack below, not re-implement the chain.
-function RA.StackPopupFrame(frame, aboveNames, defaultYOffset)
-    frame:ClearAllPoints()
-    for _, name in ipairs(aboveNames) do
-        local above = _G[name]
-        if above and above:IsShown() then
-            frame:SetPoint("TOP", above, "BOTTOM", 0, -10)
-            return
+-- The popup notifications always sit in this order, top to bottom. A fixed
+-- order is what keeps the anchors free of loops: a frame is only ever
+-- anchored below one that comes earlier in the list.
+local POPUP_STACK_ORDER = {
+    "RollAwayReminderFrame", "RollAwayParagonFrame", "RollAwayGreatVaultFrame",
+    "RollAwayAdvLogFrame", "RollAwayTankMarkFrame",
+}
+
+-- Lays out `frame` (about to be shown) together with every popup that is
+-- shown right now, in POPUP_STACK_ORDER: the first one at its own default TOP
+-- position (opts.yOffset of CreatePopupFrame), each next one directly below
+-- the previous. So any combination can be shown without overlapping, and a
+-- new popup only has to be added to the list above. In combat only `frame`
+-- is placed: popups with secure buttons must not be moved then.
+function RA.StackPopupFrame(frame)
+    local inCombat = InCombatLockdown()
+    local above
+    for _, name in ipairs(POPUP_STACK_ORDER) do
+        local f = _G[name]
+        local isNew = (f == frame)
+        if f and (isNew or f:IsShown()) then
+            if isNew or not inCombat then
+                f:ClearAllPoints()
+                if above then
+                    f:SetPoint("TOP", above, "BOTTOM", 0, -10)
+                else
+                    f:SetPoint("TOP", UIParent, "TOP", 0, f.defaultY or -180)
+                end
+            end
+            above = f
         end
     end
-    frame:SetPoint("TOP", UIParent, "TOP", 0, defaultYOffset)
 end
 
 -- Wires the common "show once per instance" popup lifecycle (Reminder.lua's

@@ -127,9 +127,9 @@ end
 function RA.ShowParagonFrame(quests)
     CreateParagonFrame()
 
-    -- Stack below the Reminder frame if it's currently shown, to avoid
-    -- both notifications overlapping at the same default position.
-    RA.StackPopupFrame(paragonFrame, { "RollAwayReminderFrame" }, -220)
+    -- Stacked in the shared popup order (Core/Helpers.lua), so the
+    -- notifications never overlap.
+    RA.StackPopupFrame(paragonFrame)
 
     local countKey = (#quests == 1) and "paragon_count_one" or "paragon_count_many"
     paragonFrame.header:SetText(string.format(RA_L[countKey], #quests))

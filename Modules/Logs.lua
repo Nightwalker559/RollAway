@@ -129,13 +129,11 @@ local function CreateAdvLogFrame()
 end
 
 -- Shared by RA.ShowAdvLogReminder (real gating) and the dev test below.
--- Also stacks below any other popup notification already shown (Great
--- Vault/Paragon/Reminder), matching the same pattern those use, so
--- /rawreminder's four test popups never land on top of each other.
+-- Also stacks in the shared popup order (Core/Helpers.lua), so
+-- /rawreminder's test popups never land on top of each other.
 local function ShowAdvLogFrameNow()
     CreateAdvLogFrame()
-    RA.StackPopupFrame(advLogFrame,
-        { "RollAwayGreatVaultFrame", "RollAwayParagonFrame", "RollAwayReminderFrame" }, -260)
+    RA.StackPopupFrame(advLogFrame)
     advLogFrame:Show()
 end
 RA.ShowAdvLogFrameNow = ShowAdvLogFrameNow
