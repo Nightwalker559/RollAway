@@ -12,9 +12,9 @@
 -- Test tools (the feature is experimental, it has to be tried on live):
 --   /rawtank       shows the popup right now, in any place
 --   /rawtank test  toggles a test mode until /reload: works solo (your own
---                  spec role counts as tank), prints in chat why the popup
---                  did or did not show, and whether the marker was set after
---                  the click.
+--                  spec role counts as tank) and writes to the debug log why
+--                  the popup did or did not show, and whether the marker was
+--                  set after the click.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -34,9 +34,9 @@ function RA.RaidIconText(index)
     return ("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_%d:16|t"):format(index)
 end
 
--- Test-mode output only.
+-- Test-mode output only (debug log).
 local function TestSay(msg)
-    if testMode then RA.Print("|cffD4AF37[Tank marker test]|r " .. msg) end
+    if testMode then DBG("[TankMarker test] " .. msg) end
 end
 
 ------------------------------------------------------------------------
@@ -48,9 +48,9 @@ local function VerifyMarker(unit, icon)
     C_Timer.After(0.5, function()
         local now = GetRaidTargetIndex(unit)
         if now == icon then
-            TestSay("|cff00ff00Marker set.|r The click works here.")
+            TestSay("Marker set - the click works here.")
         else
-            TestSay("|cffff4040Marker NOT set|r (unit " .. unit .. " has marker " .. tostring(now) .. ").")
+            TestSay("Marker NOT set (unit " .. unit .. " has marker " .. tostring(now) .. ").")
         end
     end)
 end
@@ -131,8 +131,9 @@ local function Check(manual)
     local db = RollAwayDB
     if not db or not (manual or testMode or db.tankMarkEnabled) then return end
 
-    local function Skip(msg)
-        if manual then RA.Print(msg) else TestSay(msg) end
+    -- show: after /rawtank also tell the player (localized message)
+    local function Skip(msg, show)
+        if manual and show then RA.Print(msg) else TestSay(msg) end
     end
 
     local grouped = IsInGroup()
@@ -148,10 +149,10 @@ local function Check(manual)
     end
 
     local unit = FindTank()
-    if not unit then return Skip(RA_L["tankmark_none"]) end
+    if not unit then return Skip(RA_L["tankmark_none"], true) end
 
     local icon = db.tankMarkIcon
-    if GetRaidTargetIndex(unit) == icon then return Skip(RA_L["tankmark_already"]) end
+    if GetRaidTargetIndex(unit) == icon then return Skip(RA_L["tankmark_already"], true) end
 
     if not manual then
         local key = UnitGUID(unit) .. ":" .. icon
@@ -191,8 +192,7 @@ local function SlashHandler(msg)
     if strtrim(msg or ""):lower() == "test" then
         testMode = not testMode
         lastOffer = nil
-        RA.Print("Tank marker test mode " .. (testMode and "|cff00ff00ON|r" or "|cffff4040OFF|r")
-            .. (testMode and ": enter a dungeon (also solo), the result is printed here." or "."))
+        DBG("[TankMarker] Test mode " .. (testMode and "ON" or "OFF"))
         RA.ApplyTankMarker()
     else
         Check(true)
