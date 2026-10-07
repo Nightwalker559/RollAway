@@ -29,12 +29,15 @@ local function GetCurrentRaidBossKey()
     return RAID_ENCOUNTER_MAP[RA.lastEncounterID]
 end
 
--- World map (uiMapID) of every Midnight zone: Silvermoon City, Eversong
--- Woods, Voidstorm, Harandar, Isle of Quel'Danas, Zul'Aman. Prey auto-pass
--- only counts there; swap this list when the next expansion's zones are meant.
+-- World map (uiMapID) of every Midnight zone. Prey auto-pass only counts
+-- there; add the new zone's map here with each patch (12.1: Coiled Isle).
 local MIDNIGHT_ZONE_MAPS = {
-    [2393] = true, [2395] = true, [2405] = true,
-    [2413] = true, [2424] = true, [2437] = true,
+    -- 12.0: Silvermoon City, Eversong Woods, Voidstorm, Harandar,
+    -- Isle of Quel'Danas, Zul'Aman (2479 / 2480: second maps of Voidstorm / Harandar)
+    [2393] = true, [2395] = true, [2405] = true, [2479] = true,
+    [2413] = true, [2480] = true, [2424] = true, [2437] = true,
+    -- 12.1
+    [2512] = true,  -- The Coiled Isle
 }
 
 -- Is the player in a Midnight zone? A map is Midnight when it or one of its
