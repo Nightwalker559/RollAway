@@ -4,6 +4,9 @@
 
 ## 3.1.0
 
+### New
+- Join reminder and Teleport reminder show the keystone level of the group you joined or listed, e.g. "Windrunner Spire +14". Blizzard gives no key level for a listing, so it is read from the "+14" in the listing's title or comment; without one, nothing extra is shown.
+
 ### Changed
 - ElvUI / LuckyoneUI no longer grey out any RollAway option: "Auto-accept invites", "Auto Repair", "Hide Talking Head" and "Hide boss banner" are always available. All options are off by default, so just leave them off if the other UI already does the job.
 

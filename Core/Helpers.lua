@@ -64,6 +64,13 @@ function RA.IsMaxLevel()
     return UnitLevel("player") >= GetMaxPlayerLevel()
 end
 
+-- Reminder text: instance name plus the listed keystone level ("+14", gold)
+-- when one is known.
+function RA.FormatInstanceWithKey(name, keyLevel)
+    if not keyLevel then return name end
+    return name .. " |cffFFD100+" .. keyLevel .. "|r"
+end
+
 -- The Mythic+ keystone currently in the player's bags, if any: activity ID
 -- (matches a dungeon's lfgID) and keystone level.
 function RA.GetOwnedKeystone()

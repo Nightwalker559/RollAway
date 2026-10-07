@@ -169,7 +169,7 @@ FinishGroupWait = function()
     if start then start() end
 end
 
-local function ShowJoinReminder(instanceName, forceTimer)
+local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
     if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
     if not instanceName or instanceName == "" then return end
     -- Don't show reminder if we are the group leader (own listing creation)
@@ -187,7 +187,7 @@ local function ShowJoinReminder(instanceName, forceTimer)
 
     local fontPath, fontSize = RA.GetQoLFont()
     joinFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
-    joinFrame.text:SetText("|cffFFFFFF" .. instanceName .. "|r")
+    joinFrame.text:SetText("|cffFFFFFF" .. RA.FormatInstanceWithKey(instanceName, keyLevel) .. "|r")
     joinFrame:Show()
 
     -- Auto-open companion addon for party only (no keystone teleports in raid);
@@ -259,14 +259,32 @@ local function GetNameFromActivityID(activityID)
     return blizzardName, false, nil
 end
 
+-- The API has no keystone level for a listing, so read it from the title or
+-- comment the group leader wrote ("+14", "M+14", "+14 Altar ..."). info is a
+-- search result / active entry table. Returns a number or nil (not written,
+-- or the text is not readable - 12.x secret strings).
+local function ParseKeyLevel(info)
+    if not info then return nil end
+    for _, field in ipairs({ "name", "comment" }) do
+        local text = info[field]
+        if type(text) == "string" and text ~= "" and RA.IsAccessible(text) then
+            local level = tonumber(text:match("%+%s*(%d+)"))
+            if level and level >= 2 and level <= 40 then return level end
+        end
+    end
+    return nil
+end
+
 -- Routes to the teleport reminder for Mythic+ when selected, otherwise the
 -- default instance-name join reminder. Raids always use the default one -
 -- BigWigs/Details/teleport portals don't apply to raid teleports.
-local function DispatchJoinReminder(name, isMythicPlus, dungeon)
+-- keyLevel only applies to Mythic+ (nil for raids).
+local function DispatchJoinReminder(name, isMythicPlus, dungeon, keyLevel)
+    if not isMythicPlus then keyLevel = nil end
     if isMythicPlus and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
-        RA.ShowTeleportReminder(name, dungeon)
+        RA.ShowTeleportReminder(name, dungeon, keyLevel)
     else
-        ShowJoinReminder(name)
+        ShowJoinReminder(name, nil, keyLevel)
     end
 end
 
@@ -334,7 +352,7 @@ function RA.InitJoinReminder()
         DBG("[QoL] Join reminder (active entry): resolved name=", name or "nil")
         if name then
             resolvedEntryID = entryID
-            DispatchJoinReminder(name, isMythicPlus, dungeon)
+            DispatchJoinReminder(name, isMythicPlus, dungeon, ParseKeyLevel(entryInfo))
         end
     end
 
@@ -357,7 +375,10 @@ function RA.InitJoinReminder()
                 local activityID = resultInfo and resultInfo.activityIDs and resultInfo.activityIDs[1]
                 if activityID then
                     local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
-                    applicationDungeons[searchResultID] = name and { name = name, isMythicPlus = isMythicPlus, dungeon = dungeon } or false
+                    applicationDungeons[searchResultID] = name and {
+                        name = name, isMythicPlus = isMythicPlus, dungeon = dungeon,
+                        keyLevel = ParseKeyLevel(resultInfo),
+                    } or false
                     DBG("[QoL] Application resolved: searchResultID=", searchResultID, "activityID=", activityID, "name=", name or "nil")
                 else
                     DBG("[QoL] Application: no search result info yet for searchResultID=", searchResultID, "status=", newStatus)
@@ -373,7 +394,7 @@ function RA.InitJoinReminder()
             end
             resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
             joinedViaApplication = true
-            DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon)
+            DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon, resolved.keyLevel)
 
         elseif event == "GROUP_ROSTER_UPDATE" then
             TryResolveAndShow()
@@ -398,7 +419,7 @@ function RA.InitJoinReminder()
                 -- below since it has no auto-close timer.
                 if isMythicPlus and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
                     DBG("[QoL] Own M+ listing created – showing teleport reminder:", name or "nil")
-                    RA.ShowTeleportReminder(name, dungeon)
+                    RA.ShowTeleportReminder(name, dungeon, ParseKeyLevel(entryInfo))
                     return
                 end
 

@@ -256,12 +256,12 @@ local function TestQoLReminders()
     WithSettings({ durabilityWarning = true }, function() RA.CheckDurability(true) end)
 
     WithSettings({ instanceJoinReminder = true }, function()
-        RA.ShowJoinReminder("Windrunner Spire", true)  -- true = force immediate timer (test mode)
+        RA.ShowJoinReminder("Windrunner Spire", true, 14)  -- true = force immediate timer (test mode)
     end)
 
     WithSettings({ instanceJoinReminder = true, joinReminderKeyAddon = "teleport" }, function()
         local dungeon = RA.DUNGEONS[RA.ACTIVE_SEASON][1]
-        RA.ShowTeleportReminder(RA.RA_L["dungeon_"..dungeon.key], dungeon)
+        RA.ShowTeleportReminder(RA.RA_L["dungeon_"..dungeon.key], dungeon, 14)
     end)
 end
 

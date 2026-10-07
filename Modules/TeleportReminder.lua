@@ -141,7 +141,8 @@ end
 -- only that dungeon's portal is shown; when nil (dungeon not resolved,
 -- e.g. an M+ activity outside the tracked season pool), all portals are
 -- shown so the correct one can still be picked manually.
-function RA.ShowTeleportReminder(instanceName, dungeon)
+-- keyLevel: listed keystone level (number) or nil - shown as "+N" after the name.
+function RA.ShowTeleportReminder(instanceName, dungeon, keyLevel)
     if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
     if RollAwayDB.joinReminderKeyAddon ~= "teleport" then return end
     -- The portal buttons are secure frames: no re-layout in combat.
@@ -164,7 +165,8 @@ function RA.ShowTeleportReminder(instanceName, dungeon)
     DBG("Showing teleport reminder | instance:", instanceName or "n/a",
         "| dungeon:", dungeon and dungeon.key or "all")
 
-    reminderFrame.msg:SetText(instanceName and ("|cffFFFFFF"..instanceName.."|r")
+    reminderFrame.msg:SetText(instanceName
+        and ("|cffFFFFFF"..RA.FormatInstanceWithKey(instanceName, keyLevel).."|r")
         or RA_L["teleport_reminder_generic"])
 
     LayoutAndUpdate(dungeonButton and { dungeonButton } or portalButtons)
