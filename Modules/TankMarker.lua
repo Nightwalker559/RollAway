@@ -59,6 +59,28 @@ local function MacroFor(unit, icon)
     return ("/tm [@%s] 0\n/tm [@%s] %d"):format(unit, unit, icon)
 end
 
+-- What the group's markers look like right now, for the test log. In an
+-- instance a marker's number is a secret value, but "no marker" reads as a
+-- plain nil (seen in the log) - so: "none", "set" (hidden) or the number.
+local function MarkerSummary()
+    local parts = {}
+    local units = { "player" }
+    for i = 1, GetNumSubgroupMembers() do units[#units + 1] = "party" .. i end
+    for _, unit in ipairs(units) do
+        local ok, index = pcall(GetRaidTargetIndex, unit)
+        local state
+        if not ok then
+            state = "error"
+        elseif issecretvalue and issecretvalue(index) then
+            state = "set"
+        else
+            state = index and tostring(index) or "none"
+        end
+        parts[#parts + 1] = unit .. "=" .. state
+    end
+    return table.concat(parts, " ")
+end
+
 -- After the click (test mode only). The proof that the marker arrived is the
 -- RAID_TARGET_UPDATE line from the event frame below.
 local function LogClick(unit, icon)
@@ -267,7 +289,7 @@ function RA.InitTankMarker()
         if event == "GROUP_LEFT" then
             lastOffer = nil
         elseif event == "RAID_TARGET_UPDATE" then
-            TestSay("RAID_TARGET_UPDATE: a marker was set or changed.")
+            TestSay("RAID_TARGET_UPDATE: " .. MarkerSummary())
         else
             -- Outside an instance = the last visit is over: the next dungeon
             -- (even with the same group) gets its own offer.
