@@ -621,7 +621,7 @@ end
 -- Banner after a boss kill (with the loot list)
 function RA.ApplyHideBossBannerFeature()
     SetFrameEventsTaken(BossBanner, { "BOSS_KILL", "ENCOUNTER_LOOT_RECEIVED" },
-        RollAwayDB and RollAwayDB.hideBossBanner and not RA.IsLuckyoneUIActive())
+        RollAwayDB and RollAwayDB.hideBossBanner)
 end
 
 -- Bonus objective / world quest banner ("Bonus Objective" with gold lines).
@@ -718,7 +718,7 @@ local function DismissTalkingHead()
 end
 
 function RA.ApplyHideTalkingHeadFeature()
-    local on = RollAwayDB and RollAwayDB.hideTalkingHead and not RA.IsLuckyoneUIActive()
+    local on = RollAwayDB and RollAwayDB.hideTalkingHead
     SetFrameEventsTaken(TalkingHeadFrame, { "TALKINGHEAD_REQUESTED" }, on)
 
     if on and not talkingHeadWatcher then

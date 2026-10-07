@@ -116,12 +116,9 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- ── Category: Misc ────────────────────────────────────────────────
     -- Catch-all for settings that don't fit the other categories.
 
-    -- Auto-accept invites and Auto Repair are Default-UI-only: ElvUI ships
-    -- its own versions of both.
-    local qolAutoAcceptCB, qolAutoAcceptInfo = MakeToggle(misc, nil, 0, -8, {
+    local _, qolAutoAcceptInfo = MakeToggle(misc, nil, 0, -8, {
         label = RA_L["qol_autoaccept_label"], info = RA_L["qol_autoaccept_info"], dbKey = "autoAcceptInvite",
     })
-    if ElvUI then qolAutoAcceptCB:SetDisabled(true) end
 
     -- Auto Repair (dropdown: None / Player / Guild)
     local qolAutoRepairLabel = misc:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -138,7 +135,6 @@ function RA.BuildQoLOptions(category, S, classColor)
     autoRepairDD:SetCallback("OnValueChanged", function(_, _, value)
         RollAwayDB.autoRepairMode = value
     end)
-    if ElvUI then autoRepairDD:SetDisabled(true) end
 
     MakeInfoText(misc, autoRepairDD.frame, 20, -6, 400, RA_L["qol_autorepair_info"])
 
@@ -376,41 +372,23 @@ function RA.BuildQoLOptions(category, S, classColor)
     -- ── Category: Hide (switches off Blizzard UI elements) ───────────────
     local hideChain = NewToggleChain(hide)
 
-    -- LuckyoneUI has its own versions of Talking Head and Boss Banner: while
-    -- it is loaded ours are greyed out and have no effect (see QoL.lua). The
-    -- red error text filter stays on - LuckyoneUI's version hides every error,
-    -- this one keeps the important ones - but only works while LuckyoneUI's
-    -- own "UI error text" option is off.
-    local luckyoneActive = RA.IsLuckyoneUIActive()
-    local function AddHideToggle(opts, luckyoneNoteKey, yields)
-        local cb, info = hideChain.Add(opts)
-        if luckyoneActive and luckyoneNoteKey then
-            info:SetText(opts.info .. " " .. RA_L[luckyoneNoteKey])
-            if yields then
-                cb:SetValue(false)  -- display only, the saved choice is kept
-                cb:SetDisabled(true)
-            end
-        end
-        return cb
-    end
-
     -- Red error text in the middle of the screen
-    AddHideToggle({
+    hideChain.Add({
         label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
         dbKey = "hideErrorMessages", onChange = RA.ApplyHideErrorsFeature,
-    }, "qol_luckyone_errors_note", false)
+    })
 
     -- Talking Head (voiced dialog box at the top of the screen)
-    AddHideToggle({
+    hideChain.Add({
         label = RA_L["qol_hide_talkinghead_label"], info = RA_L["qol_hide_talkinghead_info"],
         dbKey = "hideTalkingHead", onChange = RA.ApplyHideTalkingHeadFeature,
-    }, "qol_luckyone_note", true)
+    })
 
     -- Boss banner after a boss kill
-    AddHideToggle({
+    hideChain.Add({
         label = RA_L["qol_hide_bossbanner_label"], info = RA_L["qol_hide_bossbanner_info"],
         dbKey = "hideBossBanner", onChange = RA.ApplyHideBossBannerFeature,
-    }, "qol_luckyone_note", true)
+    })
 
     -- Event toasts at the top of the screen
     hideChain.Add({

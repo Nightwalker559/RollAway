@@ -4,21 +4,15 @@
 -- other categories (Character/Filter/Hide/LFG/Logs/Quests/Reminder) to warrant its own file.
 --
 -- Auto-accept invites from guild/friends: accepts group invites from guild
--- members, friends, and Battle.net friends. Default UI only - ElvUI already
--- ships this exact behavior under its own General options, so this stays
--- inactive when ElvUI is loaded (avoids fighting ElvUI's own
--- PARTY_INVITE_REQUEST handler / double-accepting the same invite).
+-- members, friends, and Battle.net friends.
 -- Setting: RollAwayDB.autoAcceptInvite
 --
--- Auto Repair: repairs at any merchant, using player or guild funds. Same
--- Default-UI-only reasoning as above - ElvUI has its own Auto Repair option.
+-- Auto Repair: repairs at any merchant, using player or guild funds.
 -- Setting: RollAwayDB.autoRepairMode ("none" | "player" | "guild")
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
 local RA_L = RA.RA_L
-
-if ElvUI then return end
 
 -- IsGuildMember(unit) takes a unit token ("target", "party1", ...), not a
 -- GUID - there is no direct GUID-based guild check, so match against the

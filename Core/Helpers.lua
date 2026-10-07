@@ -58,13 +58,6 @@ function RA.IsAccessible(value)
     return not canaccessvalue or canaccessvalue(value)
 end
 
--- LuckyoneUI ships its own "hide Blizzard windows" options (Boss Banner,
--- Talking Head, ...). When it is loaded, RollAway's options for the same
--- windows step aside (greyed out in the settings, no effect).
-function RA.IsLuckyoneUIActive()
-    return C_AddOns.IsAddOnLoaded("LuckyoneUI") and true or false
-end
-
 -- Shared "is the player max level" check (vault currency display, Omnium/
 -- Vault Character panel buttons, options gating).
 function RA.IsMaxLevel()
