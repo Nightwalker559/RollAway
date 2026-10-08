@@ -247,20 +247,23 @@ local function CreateOverviewFrame()
     overviewFrame.emptyText:SetText(RA_L["portal_overview_empty"])
     overviewFrame.emptyText:Hide()
 
-    -- Bag changes (keystone highlight) only matter while the frame is open.
-    -- OnShow also covers a Show deferred until after combat.
+    -- Bag changes (keystone highlight) and newly learned teleports (the spell
+    -- book changed) only matter while the frame is open. OnShow also covers a
+    -- Show deferred until after combat.
     overviewFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     overviewFrame:SetScript("OnShow", function(self)
         self:RegisterEvent("BAG_UPDATE_DELAYED")
+        self:RegisterEvent("SPELLS_CHANGED")
         RA.RefreshPortalOverview()
     end)
     overviewFrame:SetScript("OnHide", function(self)
         self:UnregisterEvent("BAG_UPDATE_DELAYED")
+        self:UnregisterEvent("SPELLS_CHANGED")
     end)
     overviewFrame:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_REGEN_DISABLED" then
             RA.SafeSetShown(self, false)
-        elseif event == "BAG_UPDATE_DELAYED" then
+        elseif event == "BAG_UPDATE_DELAYED" or event == "SPELLS_CHANGED" then
             RA.RefreshPortalOverview()
         end
     end)

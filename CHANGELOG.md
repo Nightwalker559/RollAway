@@ -17,6 +17,7 @@
 - Hide error messages: new sub-option to also hide yellow messages (quest progress).
 - Vendor filter: owned heirlooms are dimmed too; pets only once you own the maximum.
 - Paragon reminder also announces Major Factions that are not in the addon's list.
+- Portal frame: a newly learned teleport shows up while the frame is open.
 - Join reminder: uses Blizzard's "joined group" event; the check timer only runs while needed.
 - Roll confirmation: Blizzard's roll buttons are prepared at once (only ElvUI waits).
 - Group Finder quick-create waits for the season data by event instead of a timer.
