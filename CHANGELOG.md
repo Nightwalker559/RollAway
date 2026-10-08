@@ -11,9 +11,11 @@
 - World Map: the hide option now also hides the bounty board and the N'Zoth eye, and finds them via Blizzard's own frame list.
 - Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
 - Hide error messages now also hides "you can't carry any more of these items".
+- Legacy auto-roll: new Pass option; with no roll type selected it no longer passes on everything.
 
 ### Fixed
 - Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.
+- Legacy auto-roll used a wrong roll type for Transmog when the roll button was not found.
 
 ---
 

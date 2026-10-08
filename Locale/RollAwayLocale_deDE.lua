@@ -428,12 +428,13 @@ L["boss_kithix"]              = "Kith'ix"
 -- Legacy-Raids
 ------------------------------------------------------------------------
 L["legacy_tab_title"]         = "Legacy-Raids"
-L["legacy_tab_hint"]          = "Hake einen Raid an, um automatisch auf alle Beute daraus zu würfeln. Aktiviere die gewünschten Würfeltypen — Bedarf hat die höchste Priorität, dann Gier, dann Transmog. Alle drei können gleichzeitig aktiv sein und dienen als Fallback-Kette."
+L["legacy_tab_hint"]          = "Hake einen Raid an, um automatisch auf alle Beute daraus zu würfeln. Aktiviere die gewünschten Würfeltypen — Bedarf hat die höchste Priorität, dann Gier, dann Transmog; alle drei können als Fallback-Kette aktiv sein. Passen passt stattdessen auf alles (die anderen drei sind dann aus). Ist nichts ausgewählt, wird nichts automatisch gewürfelt."
 L["legacy_account_wide_label"] = "Legacy-Einstellungen für alle Charaktere übernehmen"
 L["legacy_roll_label"]        = "Würfeltyp wenn Beute droppt:"
 L["legacy_roll_need"]         = "Bedarf"
 L["legacy_roll_greed"]        = "Gier"
 L["legacy_roll_transmog"]     = "Transmog"
+L["legacy_roll_pass"]         = "Passen"
 
 ------------------------------------------------------------------------
 -- Profil-Migration (3.0.1)

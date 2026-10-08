@@ -694,17 +694,25 @@ function RA.InitOptions()
     legacyRollLabel:SetPoint("TOPLEFT", legacyAccountWideCB.frame, "BOTTOMLEFT", 0, -14)
     legacyRollLabel:SetText(RA_L["legacy_roll_label"])
 
+    -- Need / Greed / Transmog form the fallback chain; Pass replaces it, so the
+    -- other three are greyed out while Pass is on.
     local rollDefs = {
         { dbKey = "legacyNeed",     labelKey = "legacy_roll_need"     },
         { dbKey = "legacyGreed",    labelKey = "legacy_roll_greed"    },
         { dbKey = "legacyTransmog", labelKey = "legacy_roll_transmog" },
+        { dbKey = "legacyPass",     labelKey = "legacy_roll_pass"     },
     }
+    local chainCBs = {}
+    local function RefreshRollChainState()
+        for _, cb in ipairs(chainCBs) do cb:SetDisabled(RollAwayDB.legacyPass == true) end
+    end
     local prevRollCB = nil
     for _, rd in ipairs(rollDefs) do
         local dbKey = rd.dbKey
         local rollCB = MakeCB(legacyPanel, RA_L[rd.labelKey], RollAwayDB[dbKey], function(checked)
             RollAwayDB[dbKey] = checked
             DBG("[Legacy UI]", dbKey, "=", tostring(checked))
+            if dbKey == "legacyPass" then RefreshRollChainState() end
         end)
         if not prevRollCB then
             rollCB.frame:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -10)
@@ -712,7 +720,9 @@ function RA.InitOptions()
             rollCB.frame:SetPoint("LEFT", prevRollCB, "RIGHT", 16, 0)
         end
         prevRollCB = rollCB.frame
+        if dbKey ~= "legacyPass" then chainCBs[#chainCBs + 1] = rollCB end
     end
+    RefreshRollChainState()
 
     local legacyRaidLine = legacyPanel:CreateTexture(nil, "ARTWORK")
     legacyRaidLine:SetHeight(1)

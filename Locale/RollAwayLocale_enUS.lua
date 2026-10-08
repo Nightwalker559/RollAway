@@ -427,12 +427,13 @@ L["boss_kithix"]              = "Kith'ix"
 -- Legacy Raids
 ------------------------------------------------------------------------
 L["legacy_tab_title"]         = "Legacy Raids"
-L["legacy_tab_hint"]          = "Check a raid to automatically roll on all loot from that raid. Enable the roll types you want — Need has highest priority, then Greed, then Transmog. All three can be active simultaneously as a fallback chain."
+L["legacy_tab_hint"]          = "Check a raid to automatically roll on all loot from that raid. Enable the roll types you want — Need has highest priority, then Greed, then Transmog; all three can be active as a fallback chain. Pass passes on everything instead (the other three are then off). With none selected, nothing is rolled automatically."
 L["legacy_account_wide_label"] = "Apply Legacy settings to all characters"
 L["legacy_roll_label"]        = "Roll type when loot drops:"
 L["legacy_roll_need"]         = "Need"
 L["legacy_roll_greed"]        = "Greed"
 L["legacy_roll_transmog"]     = "Transmog"
+L["legacy_roll_pass"]         = "Pass"
 
 ------------------------------------------------------------------------
 -- Profile migration (3.0.1)

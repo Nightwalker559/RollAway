@@ -4,8 +4,11 @@
 local RA  = _G["RollAway"]
 local DBG = RA.DBG
 
--- RollOnLoot roll type -> RA.ROLL_BUTTONS dbKey (0 = pass has no button click)
-local ROLL_KEY = { [1] = "need", [2] = "greed", [3] = "transmog" }
+-- RollOnLoot roll type (Blizzard's button ids: 1 Need, 2 Greed, 4 Transmog;
+-- 3 is Disenchant and is never used) -> RA.ROLL_BUTTONS dbKey. 0 = pass has no
+-- button click.
+local ROLL_NEED, ROLL_GREED, ROLL_TRANSMOG = 1, 2, 4
+local ROLL_KEY = { [ROLL_NEED] = "need", [ROLL_GREED] = "greed", [ROLL_TRANSMOG] = "transmog" }
 
 ------------------------------------------------------------------------
 -- Execute legacy roll on a given rollID
@@ -15,6 +18,13 @@ local function ExecuteLegacyRoll(rollID)
     if not RollAwayDB or not RollAwayDB.legacy then return end
     if not RollOnLoot then
         DBG("[Legacy] RollOnLoot API not available")
+        return
+    end
+
+    -- Nothing chosen = leave the roll to the player (passing is its own choice).
+    local db = RollAwayDB
+    if not (db.legacyPass or db.legacyNeed or db.legacyGreed or db.legacyTransmog) then
+        DBG("[Legacy] No roll type selected – leaving the roll alone")
         return
     end
 
@@ -30,14 +40,17 @@ local function ExecuteLegacyRoll(rollID)
         "| canGreed:", tostring(canGreed),
         "| canTransmog:", tostring(canTransmog))
 
-    -- Priority: Need > Greed > Transmog > Pass
+    -- Pass overrides the rest; otherwise Need > Greed > Transmog, and Pass when
+    -- none of the chosen types is available for this item.
     local actualRoll = 0
-    if RollAwayDB.legacyNeed and canNeed then
-        actualRoll = 1; DBG("[Legacy] Rolling Need")
-    elseif RollAwayDB.legacyGreed and canGreed then
-        actualRoll = 2; DBG("[Legacy] Rolling Greed")
-    elseif RollAwayDB.legacyTransmog and canTransmog then
-        actualRoll = 3; DBG("[Legacy] Rolling Transmog")
+    if db.legacyPass then
+        DBG("[Legacy] Passing (Pass selected)")
+    elseif db.legacyNeed and canNeed then
+        actualRoll = ROLL_NEED; DBG("[Legacy] Rolling Need")
+    elseif db.legacyGreed and canGreed then
+        actualRoll = ROLL_GREED; DBG("[Legacy] Rolling Greed")
+    elseif db.legacyTransmog and canTransmog then
+        actualRoll = ROLL_TRANSMOG; DBG("[Legacy] Rolling Transmog")
     else
         DBG("[Legacy] No matching roll type – passing")
     end
