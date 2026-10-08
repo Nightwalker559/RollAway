@@ -221,7 +221,10 @@ function RA.InitAutoPass()
     hooksecurefunc("BonusRollFrame_StartBonusRoll", function(spellID)
         DBG("[AutoPass] BonusRollFrame_StartBonusRoll | spellID:", spellID)
         RA.bonusRollEncounterID = GetBonusRollEncounterID()
-        RunNextFrame(TryAutoPass)
+        RunNextFrame(function()
+            TryAutoPass()
+            RA.bonusRollEncounterID = nil  -- only meant for this prompt
+        end)
     end)
     DBG("BonusRollFrame hook set")
 end

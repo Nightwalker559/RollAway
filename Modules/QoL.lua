@@ -333,12 +333,11 @@ end
 --   WorldMapBountyBoardTemplate     - a Frame with a BountyName
 --   WorldMapThreatFrameTemplate     - a Frame with an Eye
 -- and re-shows them in their own Refresh() on every map change /
--- QUEST_LOG_UPDATE. We find them in
--- WorldMapFrame.overlayFrames and hide them again right after each Refresh()
--- (same frame, so no flash). Hidden, the coordinates panel next to them moves
--- to the next neighbour or back to its normal spot
--- (WorldMapCoordsPanelMixin:PostRefresh). Turning the option off needs no
--- restore: Blizzard shows them again on the next refresh.
+-- QUEST_LOG_UPDATE. We find them in WorldMapFrame.overlayFrames and hide them
+-- again right after each Refresh() (same frame, so no flash). Hidden, the
+-- coordinates panel next to them moves to the next neighbour or back to its
+-- normal spot (WorldMapCoordsPanelMixin:PostRefresh). Turning the option off
+-- needs no restore: Blizzard shows them again on the next refresh.
 ------------------------------------------------------------------------
 
 local mapOverlays          -- the overlay frames found (any of them may be missing)
