@@ -326,12 +326,14 @@ local function InitVaultCurrency()
 end
 
 ------------------------------------------------------------------------
--- World Map: hide the tracked-faction activity button and the bounty board
--- (bottom-left)
--- Blizzard creates both once as overlay frames of WorldMapFrame
--- (WorldMapActivityTrackerTemplate: a Button with a BountyDropdown, and
--- WorldMapBountyBoardTemplate: a Frame with a BountyName) and re-shows them in
--- their own Refresh() on every map change / QUEST_LOG_UPDATE. We find them in
+-- World Map: hide the tracked-faction activity button, the bounty board and the
+-- threat eye (bottom-left)
+-- Blizzard creates them once as overlay frames of WorldMapFrame:
+--   WorldMapActivityTrackerTemplate - a Button with a BountyDropdown
+--   WorldMapBountyBoardTemplate     - a Frame with a BountyName
+--   WorldMapThreatFrameTemplate     - a Frame with an Eye
+-- and re-shows them in their own Refresh() on every map change /
+-- QUEST_LOG_UPDATE. We find them in
 -- WorldMapFrame.overlayFrames and hide them again right after each Refresh()
 -- (same frame, so no flash). Hidden, the coordinates panel next to them moves
 -- to the next neighbour or back to its normal spot
@@ -339,7 +341,7 @@ end
 -- restore: Blizzard shows them again on the next refresh.
 ------------------------------------------------------------------------
 
-local mapOverlays          -- { tracker, board } once found (either may be missing)
+local mapOverlays          -- the overlay frames found (any of them may be missing)
 local mapOverlaysHooked
 
 local function FindMapOverlays()
@@ -347,10 +349,13 @@ local function FindMapOverlays()
     local found = {}
     for _, frame in ipairs(WorldMapFrame and WorldMapFrame.overlayFrames or {}) do
         if frame.Refresh and frame.IsObjectType then
-            -- Both share the bounty methods, so tell them apart by their children.
+            -- Tracker and board share the bounty methods, so tell all three apart
+            -- by their children.
             if frame.BountyDropdown and frame:IsObjectType("Button") then
                 found[#found + 1] = frame
             elseif frame.BountyName and frame.CalculateNumActivitiesForSelectedBountyByMap then
+                found[#found + 1] = frame
+            elseif frame.Eye and frame.ModelSceneTop then
                 found[#found + 1] = frame
             end
         end
@@ -361,12 +366,16 @@ end
 
 local loggedMapOverlays = {}  -- Blizzard re-shows them on every refresh; log the first hide only
 
+local function MapOverlayLabel(frame)
+    return frame.BountyDropdown and "activity tracker" or frame.BountyName and "bounty board" or "threat eye"
+end
+
 local function HideMapOverlay(frame)
     if RollAwayDB and RollAwayDB.hideMapActivityTracker and frame:IsShown() then
         frame:Hide()
         if not loggedMapOverlays[frame] then
             loggedMapOverlays[frame] = true
-            DBG("[QoL] Hid map overlay:", frame.BountyDropdown and "activity tracker" or "bounty board")
+            DBG("[QoL] Hid map overlay:", MapOverlayLabel(frame))
         end
     end
 end
