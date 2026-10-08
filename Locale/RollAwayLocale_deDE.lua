@@ -536,12 +536,15 @@ L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Gro
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 
 ------------------------------------------------------------------------
--- What's New (3.1.1)
+-- What's New (3.1.2)
 ------------------------------------------------------------------------
-L["whatsnew_tank_title"]         = "Tank markieren"
-L["whatsnew_tank_desc"]          = "In einem Mythic-Dungeon der aktuellen Season bietet ein Popup an, deinen Tank zu markieren (Standard: Quadrat). Ein Klick auf Markieren setzt die Markierung - Addons dürfen das nicht selbst tun. Standardmäßig aus."
-L["whatsnew_tank_location"]      = "QoL > Sonstiges"
-L["whatsnew_legacyhide_title"]   = "Beuteverteilung in Legacy-Raids ausblenden"
-L["whatsnew_legacyhide_desc"]    = "Neue Checkbox: Die Beuteverteilung bleibt in Raids aus Dragonflight und The War Within ausgeblendet, egal welche Schwierigkeit. Die Schwierigkeits-Boxen darüber gelten jetzt nur noch für aktuelle Raids."
-L["whatsnew_legacyhide_location"] = "Allgemein > Beuteverteilung"
+L["whatsnew_pass_title"]         = "Legacy-Auto-Roll: Passen"
+L["whatsnew_pass_desc"]          = "Neue Checkbox Passen neben Bedarf, Gier und Transmog: passt auf alles aus den angehakten Raids und schaltet die anderen drei ab. Ohne gewählte Würfelart wird nicht mehr automatisch gewürfelt."
+L["whatsnew_pass_location"]      = "Legacy"
+L["whatsnew_map_title"]          = "Aufgeräumte Weltkarte"
+L["whatsnew_map_desc"]           = "Die Karten-Option blendet jetzt auch das Bounty-Board und das N'Zoth-Auge unten links aus, nicht nur den Fraktions-Button."
+L["whatsnew_map_location"]       = "QoL > Ausblenden"
+L["whatsnew_info_title"]         = "Gelbe Meldungen ausblenden"
+L["whatsnew_info_desc"]          = "Neue Unteroption bei den roten Fehlermeldungen: blendet auch die gelben Meldungen wie den Questfortschritt aus. \"Ihr könnt nicht noch mehr davon tragen\" wird jetzt ebenfalls von der Fehler-Option ausgeblendet."
+L["whatsnew_info_location"]      = "QoL > Ausblenden"
 L["whatsnew_options_label"]      = "Optionen:"

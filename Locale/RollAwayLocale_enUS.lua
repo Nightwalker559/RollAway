@@ -535,12 +535,15 @@ L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great V
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 
 ------------------------------------------------------------------------
--- What's New (3.1.1)
+-- What's New (3.1.2)
 ------------------------------------------------------------------------
-L["whatsnew_tank_title"]         = "Mark the tank"
-L["whatsnew_tank_desc"]          = "In a Mythic dungeon of the current season, a popup offers to put a marker (default: square) on your group's tank. One click on Mark sets it - addons cannot place markers on their own. Off by default."
-L["whatsnew_tank_location"]      = "QoL > Misc"
-L["whatsnew_legacyhide_title"]   = "Hide loot history in legacy raids"
-L["whatsnew_legacyhide_desc"]    = "New checkbox: the Group Loot History stays hidden in Dragonflight and The War Within raids, whatever the difficulty. The difficulty boxes above it now only apply to current raids."
-L["whatsnew_legacyhide_location"] = "General > Group Loot History"
+L["whatsnew_pass_title"]         = "Legacy auto-roll: Pass"
+L["whatsnew_pass_desc"]          = "New Pass checkbox next to Need, Greed and Transmog: passes on everything from the checked raids and switches the other three off. With no roll type selected, nothing is rolled automatically any more."
+L["whatsnew_pass_location"]      = "Legacy"
+L["whatsnew_map_title"]          = "Cleaner World Map"
+L["whatsnew_map_desc"]           = "The map option now also hides the bounty board and the N'Zoth eye at the bottom left, not just the faction button."
+L["whatsnew_map_location"]       = "QoL > Hide"
+L["whatsnew_info_title"]         = "Hide yellow messages"
+L["whatsnew_info_desc"]          = "New sub-option under the red error messages: also hides the yellow messages such as quest progress. \"You can't carry any more of these\" is now hidden by the error option too."
+L["whatsnew_info_location"]      = "QoL > Hide"
 L["whatsnew_options_label"]      = "Options:"
