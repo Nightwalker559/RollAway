@@ -327,110 +327,50 @@ end
 
 ------------------------------------------------------------------------
 -- World Map: hide tracked-faction activity button (bottom-left)
--- EXPERIMENTAL (12.1): no fixed global name (anonymous WorldMapActivityTrackerTemplate),
--- so we detect it by scanning for a BOTTOMLEFT-anchored Button after every map draw.
+-- Blizzard creates it once as an overlay frame of WorldMapFrame
+-- (WorldMapActivityTrackerTemplate) and re-shows it in its own Refresh() on
+-- every map change / QUEST_LOG_UPDATE. We find that frame in
+-- WorldMapFrame.overlayFrames and hide it again right after each Refresh()
+-- (same frame, so no flash). Hidden, the coordinates panel next to it moves
+-- back to its normal spot (WorldMapCoordsPanelMixin:PostRefresh). Turning the
+-- option off needs no restore: Blizzard shows the button again on the next
+-- refresh.
 ------------------------------------------------------------------------
 
-local mapActivityHooked = false
-local hiddenMapActivityButtons = {}
-local hookedActivityButtons = {}
+local mapActivityTracker, mapActivityHooked
 
--- Anonymous button (no GetName); identified by texture signature
--- (IconBorder/IconMask/BackgroundMask) since its anchor moves between patches.
-local function IsActivityTrackerButton(frame)
-    if not (frame.IsObjectType and frame:IsObjectType("Button")) then return false end
-    if frame.GetName and frame:GetName() then return false end -- must be anonymous
-    local iconBorder, iconMask, bgMask = false, false, false
-    for _, region in ipairs({ frame:GetRegions() }) do
-        local dbgName = region.GetDebugName and region:GetDebugName() or ""
-        if dbgName:match("IconBorder$") then iconBorder = true end
-        if dbgName:match("IconMask$") then iconMask = true end
-        if dbgName:match("BackgroundMask$") then bgMask = true end
-    end
-    return iconBorder and iconMask and bgMask
-end
-
--- NOTE (12.1): a cursor-coordinates widget anchors to this button's IsShown()
--- state. Hide() breaks its anchor, so fade instead (alpha 0, mouse disabled).
-local function SetButtonFaded(child, faded)
-    child:SetAlpha(faded and 0 or 1)
-    if child.EnableMouse then child:EnableMouse(not faded) end
-end
-
-local function ScanAndHide(parent)
-    if not parent then return end
-    for _, child in ipairs({ parent:GetChildren() }) do
-        if IsActivityTrackerButton(child) then
-            if not hookedActivityButtons[child] then
-                hookedActivityButtons[child] = true
-                -- Re-fade instantly on Show to avoid a one-frame flash.
-                hooksecurefunc(child, "Show", function(self)
-                    if RollAwayDB and RollAwayDB.hideMapActivityTracker then
-                        SetButtonFaded(self, true)
-                    end
-                end)
-            end
-            if child:IsShown() and child:GetAlpha() > 0 then
-                SetButtonFaded(child, true)
-                hiddenMapActivityButtons[child] = true
-                DBG("[QoL] Hid map activity tracker button")
-            end
+local function FindMapActivityTracker()
+    if mapActivityTracker then return mapActivityTracker end
+    for _, frame in ipairs(WorldMapFrame and WorldMapFrame.overlayFrames or {}) do
+        if frame.CalculateNumActivitiesForSelectedBountyByMap and frame.Refresh then
+            mapActivityTracker = frame
+            return frame
         end
     end
 end
 
-local function HideMapActivityTracker()
-    if not (RollAwayDB and RollAwayDB.hideMapActivityTracker) then return end
-    if not WorldMapFrame then return end
-
-    ScanAndHide(WorldMapFrame)
-    if WorldMapFrame.GetCanvasContainer then
-        ScanAndHide(WorldMapFrame:GetCanvasContainer())
+local function HideMapActivityTracker(tracker)
+    if RollAwayDB and RollAwayDB.hideMapActivityTracker and tracker:IsShown() then
+        tracker:Hide()
+        DBG("[QoL] Hid map activity tracker button")
     end
 end
-
--- Re-shows any buttons we previously hid, e.g. when the option is turned off
-local function RestoreMapActivityTracker()
-    for btn in pairs(hiddenMapActivityButtons) do
-        SetButtonFaded(btn, false)
-    end
-    wipe(hiddenMapActivityButtons)
-end
-
-local mapTrackerCombatWatcher
 
 function RA.ApplyMapActivityTrackerFeature()
-    if InCombatLockdown() then
-        -- Applied right after combat instead of polling.
-        if not mapTrackerCombatWatcher then
-            mapTrackerCombatWatcher = CreateFrame("Frame")
-            mapTrackerCombatWatcher:SetScript("OnEvent", function(self)
-                self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-                RA.ApplyMapActivityTrackerFeature()
-            end)
-        end
-        mapTrackerCombatWatcher:RegisterEvent("PLAYER_REGEN_ENABLED")
-        return
-    end
-    if not WorldMapFrame then return end
+    -- Nothing to do (and nothing to hook) while the option is off and never was on.
+    if not mapActivityHooked and not (RollAwayDB and RollAwayDB.hideMapActivityTracker) then return end
 
-    if not (RollAwayDB and RollAwayDB.hideMapActivityTracker) then
-        RestoreMapActivityTracker()
+    local tracker = FindMapActivityTracker()
+    if not tracker then
+        DBG("[QoL] Map activity tracker not found – skipped")
         return
     end
 
     if not mapActivityHooked then
         mapActivityHooked = true
-        local function DeferredHide() RunNextFrame(HideMapActivityTracker) end
-        WorldMapFrame:HookScript("OnShow", DeferredHide)
-        if WorldMapFrame.OnMapChanged then
-            hooksecurefunc(WorldMapFrame, "OnMapChanged", DeferredHide)
-        end
+        hooksecurefunc(tracker, "Refresh", HideMapActivityTracker)
     end
-
-    if WorldMapFrame:IsShown() then
-        HideMapActivityTracker()
-    end
+    HideMapActivityTracker(tracker)
 end
 
 ------------------------------------------------------------------------
