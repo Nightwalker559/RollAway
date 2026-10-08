@@ -326,53 +326,63 @@ local function InitVaultCurrency()
 end
 
 ------------------------------------------------------------------------
--- World Map: hide tracked-faction activity button (bottom-left)
--- Blizzard creates it once as an overlay frame of WorldMapFrame
--- (WorldMapActivityTrackerTemplate: a Button with a BountyDropdown) and
--- re-shows it in its own Refresh() on every map change / QUEST_LOG_UPDATE. We
--- find that frame in WorldMapFrame.overlayFrames and hide it again right after
--- each Refresh() (same frame, so no flash). Hidden, the coordinates panel next
--- to it moves back to its normal spot (WorldMapCoordsPanelMixin:PostRefresh).
--- Turning the option off needs no restore: Blizzard shows the button again on
--- the next refresh.
+-- World Map: hide the tracked-faction activity button and the bounty board
+-- (bottom-left)
+-- Blizzard creates both once as overlay frames of WorldMapFrame
+-- (WorldMapActivityTrackerTemplate: a Button with a BountyDropdown, and
+-- WorldMapBountyBoardTemplate: a Frame with a BountyName) and re-shows them in
+-- their own Refresh() on every map change / QUEST_LOG_UPDATE. We find them in
+-- WorldMapFrame.overlayFrames and hide them again right after each Refresh()
+-- (same frame, so no flash). Hidden, the coordinates panel next to them moves
+-- to the next neighbour or back to its normal spot
+-- (WorldMapCoordsPanelMixin:PostRefresh). Turning the option off needs no
+-- restore: Blizzard shows them again on the next refresh.
 ------------------------------------------------------------------------
 
-local mapActivityTracker, mapActivityHooked
+local mapOverlays          -- { tracker, board } once found (either may be missing)
+local mapOverlaysHooked
 
-local function FindMapActivityTracker()
-    if mapActivityTracker then return mapActivityTracker end
+local function FindMapOverlays()
+    if mapOverlays then return mapOverlays end
+    local found = {}
     for _, frame in ipairs(WorldMapFrame and WorldMapFrame.overlayFrames or {}) do
-        -- The Bounty Board (a Frame) shares the bounty methods; only the tracker is a
-        -- Button with a BountyDropdown.
-        if frame.BountyDropdown and frame.Refresh and frame.IsObjectType and frame:IsObjectType("Button") then
-            mapActivityTracker = frame
-            return frame
+        if frame.Refresh and frame.IsObjectType then
+            -- Both share the bounty methods, so tell them apart by their children.
+            if frame.BountyDropdown and frame:IsObjectType("Button") then
+                found[#found + 1] = frame
+            elseif frame.BountyName and frame.CalculateNumActivitiesForSelectedBountyByMap then
+                found[#found + 1] = frame
+            end
         end
     end
+    if #found > 0 then mapOverlays = found end
+    return found
 end
 
-local function HideMapActivityTracker(tracker)
-    if RollAwayDB and RollAwayDB.hideMapActivityTracker and tracker:IsShown() then
-        tracker:Hide()
-        DBG("[QoL] Hid map activity tracker button")
+local function HideMapOverlay(frame)
+    if RollAwayDB and RollAwayDB.hideMapActivityTracker and frame:IsShown() then
+        frame:Hide()
+        DBG("[QoL] Hid map overlay:", frame.BountyDropdown and "activity tracker" or "bounty board")
     end
 end
 
 function RA.ApplyMapActivityTrackerFeature()
     -- Nothing to do (and nothing to hook) while the option is off and never was on.
-    if not mapActivityHooked and not (RollAwayDB and RollAwayDB.hideMapActivityTracker) then return end
+    if not mapOverlaysHooked and not (RollAwayDB and RollAwayDB.hideMapActivityTracker) then return end
 
-    local tracker = FindMapActivityTracker()
-    if not tracker then
-        DBG("[QoL] Map activity tracker not found – skipped")
+    local overlays = FindMapOverlays()
+    if #overlays == 0 then
+        DBG("[QoL] Map overlay frames not found – skipped")
         return
     end
 
-    if not mapActivityHooked then
-        mapActivityHooked = true
-        hooksecurefunc(tracker, "Refresh", HideMapActivityTracker)
+    if not mapOverlaysHooked then
+        mapOverlaysHooked = true
+        for _, frame in ipairs(overlays) do
+            hooksecurefunc(frame, "Refresh", HideMapOverlay)
+        end
     end
-    HideMapActivityTracker(tracker)
+    for _, frame in ipairs(overlays) do HideMapOverlay(frame) end
 end
 
 ------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 - Bonus roll auto-pass reacts faster and reads the raid boss from the roll itself.
 - Auto-passed bonus roll no longer flashes up on screen.
 - Roll confirmations (bind-on-pickup) no longer use a fixed delay.
-- Hiding the World Map faction button now uses Blizzard's own button instead of searching for it.
+- World Map: the hide option now also hides the bounty board and finds the buttons via Blizzard's own frame list.
 - Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
 
 ### Fixed
