@@ -96,6 +96,12 @@ local function ApplyDesiredLogState()
         return
     end
     if desired == lastAppliedState then return end -- already in the right state
+    -- Ask the game too: no call (and no rate-limit use) if logging already is
+    -- as wanted, e.g. after /reload or a manual /combatlog.
+    if C_ChatInfo.IsLoggingCombat() == desired then
+        lastAppliedState = desired
+        return
+    end
     TryApplyLogState(desired, 5)
 end
 

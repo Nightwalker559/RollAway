@@ -106,10 +106,12 @@ local handlers = {
 }
 
 function handlers.QUEST_DETAIL()
+    -- QuestIsDaily / QuestIsWeekly do not appear in Blizzard's own UI code, so
+    -- a client without them must not break the automation (counts as regular).
     local frequency = Frequency.Default
-    if QuestIsDaily() then
+    if QuestIsDaily and QuestIsDaily() then
         frequency = Frequency.Daily
-    elseif QuestIsWeekly() then
+    elseif QuestIsWeekly and QuestIsWeekly() then
         frequency = Frequency.Weekly
     end
     if not CanAcceptFrequency(frequency) then return end

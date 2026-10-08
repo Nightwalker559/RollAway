@@ -18,6 +18,12 @@
 ### Fixed
 - Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.
 - Legacy auto-roll used a wrong roll type for Transmog when the roll button was not found.
+- Tank marker: solo role check used a function the game no longer has.
+- Auto repair: the cost in the chat message used a removed function.
+- Great Vault reminder: could show again on every login (weekly reset time was not read).
+- Loot history auto-close: finished rolls are now matched by the game's loot handle and cancelled rolls are noticed.
+- Auto-log no longer toggles combat logging when it already is as wanted.
+- Removed leftovers for Blizzard addons that no longer exist (Talking Head, Character panel).
 
 ---
 

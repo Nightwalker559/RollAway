@@ -179,7 +179,7 @@ end
 local function GetRole(unit)
     local role = UnitGroupRolesAssigned(unit)
     if role == "NONE" and unit == "player" then
-        local spec = GetSpecialization()
+        local spec = C_SpecializationInfo.GetSpecialization()
         role = spec and GetSpecializationRole(spec) or role
     end
     return role

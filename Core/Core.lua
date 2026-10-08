@@ -422,6 +422,13 @@ local function CancelAllRollTimers()
     wipe(RA.rollTimers)
 end
 
+-- A roll that is over: drops it and its watchdog.
+local function ForgetRoll(rollID)
+    RA.activeRolls[rollID] = nil
+    RA.SafeCancelTimer(RA.rollTimers[rollID])
+    RA.rollTimers[rollID] = nil
+end
+
 -- Resets roll state and timers – does not touch the loot history frame.
 local function ResetState(reason)
     DBG("ResetState:", reason)
@@ -546,6 +553,8 @@ end
 local f = CreateFrame("Frame")
 f:RegisterEvent("START_LOOT_ROLL")
 f:RegisterEvent("LOOT_ROLLS_COMPLETE")
+f:RegisterEvent("CANCEL_LOOT_ROLL")
+f:RegisterEvent("CANCEL_ALL_LOOT_ROLLS")
 f:RegisterEvent("ENCOUNTER_END")
 f:RegisterEvent("PLAYER_REGEN_DISABLED")
 f:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -558,9 +567,11 @@ f:SetScript("OnEvent", function(_, event, ...)
     local arg1 = (...)
 
     if event == "START_LOOT_ROLL" then
-        DBG("START_LOOT_ROLL rollID:", arg1)
+        local _, _, lootHandle = ...
+        DBG("START_LOOT_ROLL rollID:", arg1, "| lootHandle:", lootHandle)
 
-        RA.activeRolls[arg1] = true
+        -- LOOT_ROLLS_COMPLETE reports the lootHandle, not the rollID, so keep it.
+        RA.activeRolls[arg1] = lootHandle or true
 
         if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
 
@@ -592,25 +603,37 @@ f:SetScript("OnEvent", function(_, event, ...)
         end
 
     elseif event == "LOOT_ROLLS_COMPLETE" then
-        DBG("LOOT_ROLLS_COMPLETE arg1:", arg1)
+        DBG("LOOT_ROLLS_COMPLETE lootHandle:", arg1)
 
-        -- Remove the completed roll and its watchdog.
-        RA.activeRolls[arg1] = nil
-        RA.SafeCancelTimer(RA.rollTimers[arg1])
-        RA.rollTimers[arg1] = nil
+        -- Remove the completed roll and its watchdog (matched by its lootHandle,
+        -- or by rollID in case the game reports that).
+        for rollID, lootHandle in pairs(RA.activeRolls) do
+            if rollID == arg1 or lootHandle == arg1 then ForgetRoll(rollID) end
+        end
 
-        -- Clean up stale rolls with no valid item link (concurrent rolls only).
-        if next(RA.activeRolls) then
-            for rollID in pairs(RA.activeRolls) do
-                if not GetLootRollItemLink(rollID) then
-                    RA.SafeCancelTimer(RA.rollTimers[rollID])
-                    RA.rollTimers[rollID] = nil
-                    RA.activeRolls[rollID] = nil
-                end
-            end
+        -- Clean up stale rolls the game no longer knows (concurrent rolls only).
+        for rollID in pairs(RA.activeRolls) do
+            if not select(2, GetLootRollItemInfo(rollID)) then ForgetRoll(rollID) end
         end
 
         C_Timer.After(0.1, CheckAndClose)
+
+    elseif event == "CANCEL_LOOT_ROLL" then
+        -- Blizzard closes the roll frame on this event; the roll is over.
+        -- Only rolls RollAway tracks count, so the history frame is left alone
+        -- when it was opened by hand.
+        if RA.activeRolls[arg1] then
+            DBG("CANCEL_LOOT_ROLL rollID:", arg1)
+            ForgetRoll(arg1)
+            C_Timer.After(0.1, CheckAndClose)
+        end
+
+    elseif event == "CANCEL_ALL_LOOT_ROLLS" then
+        if next(RA.activeRolls) then
+            DBG("CANCEL_ALL_LOOT_ROLLS")
+            for rollID in pairs(RA.activeRolls) do ForgetRoll(rollID) end
+            C_Timer.After(0.1, CheckAndClose)
+        end
 
     elseif event == "ENCOUNTER_END" then
         local encounterID, encounterName, _, _, endStatus = ...

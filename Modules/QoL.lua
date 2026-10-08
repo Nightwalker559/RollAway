@@ -680,41 +680,11 @@ function RA.ApplyHideAlertsFeature()
     SetFrameEventsTaken(AlertFrame, ALERT_EVENTS, RollAwayDB and RollAwayDB.hideAlerts)
 end
 
--- Talking Head. Its frame is load-on-demand: the first line of a session
--- triggers the load and can still show once, so a small watcher dismisses
--- that line (same call as the X button, which also stops the voice-over)
--- and takes the event from the now existing frame.
-local talkingHeadWatcher
-
-local function DismissTalkingHead()
-    if not (TalkingHeadFrame and TalkingHeadFrame:IsShown()) then return end
-    if C_TalkingHead and C_TalkingHead.IgnoreCurrentTalkingHead then
-        pcall(C_TalkingHead.IgnoreCurrentTalkingHead)
-    end
-    TalkingHeadFrame:Hide()
-end
-
+-- Talking Head. TalkingHeadFrame is part of Blizzard_FrameXML (always loaded),
+-- so its request event can be taken before the first line of a session.
 function RA.ApplyHideTalkingHeadFeature()
-    local on = RollAwayDB and RollAwayDB.hideTalkingHead
-    SetFrameEventsTaken(TalkingHeadFrame, { "TALKINGHEAD_REQUESTED" }, on)
-
-    if on and not talkingHeadWatcher then
-        talkingHeadWatcher = CreateFrame("Frame")
-        talkingHeadWatcher:SetScript("OnEvent", function()
-            DismissTalkingHead()
-            C_Timer.After(0.1, function()
-                RA.ApplyHideTalkingHeadFeature()  -- the frame exists by now
-                DismissTalkingHead()
-            end)
-        end)
-    end
-    if talkingHeadWatcher then
-        if on then
-            talkingHeadWatcher:RegisterEvent("TALKINGHEAD_REQUESTED")
-        else
-            talkingHeadWatcher:UnregisterAllEvents()
-        end
-    end
+    SetFrameEventsTaken(TalkingHeadFrame, { "TALKINGHEAD_REQUESTED" },
+        RollAwayDB and RollAwayDB.hideTalkingHead)
 end
 
 ------------------------------------------------------------------------

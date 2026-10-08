@@ -56,7 +56,7 @@ end
 -- Weekly reward period ID, used so the reminder only re-shows once per new
 -- reset instead of every login within the same week.
 local function GetRewardPeriod()
-    local remaining = GetServerWeeklyResetTimeRemaining and GetServerWeeklyResetTimeRemaining()
+    local remaining = C_DateAndTime.GetSecondsUntilWeeklyReset()
     if remaining then
         return math.floor((time() + remaining) / 604800)
     end

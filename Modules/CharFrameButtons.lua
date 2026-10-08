@@ -300,7 +300,8 @@ end
 
 local paperDollHooked = false
 
--- Blizzard_CharacterFrame is load-on-demand; hook its frames once they exist.
+-- The Character panel belongs to Blizzard_UIPanels_Game (always loaded), so
+-- its frames exist when RollAway starts.
 local function HookPaperDoll()
     if paperDollHooked or not (PaperDollFrame and CharacterStatsPane) then return end
     paperDollHooked = true
@@ -317,18 +318,13 @@ function RA.InitCharacterFrameButtons()
     RA.RefreshCharFrameButtons("init")
 
     local f = CreateFrame("Frame")
-    f:RegisterEvent("ADDON_LOADED")
     f:RegisterEvent("PLAYER_ENTERING_WORLD")
     f:RegisterEvent("PLAYER_LEVEL_UP")
-    f:SetScript("OnEvent", function(_, event, arg1)
-        if event == "ADDON_LOADED" and arg1 ~= "Blizzard_CharacterFrame"
-            and arg1 ~= "Blizzard_ExpansionLandingPage" then
-            return
-        end
+    f:SetScript("OnEvent", function(_, event)
         HookPaperDoll()
         -- UnitLevel can be stale in the same frame as PLAYER_LEVEL_UP, and
-        -- Blizzard's own frame setup runs after ADDON_LOADED/loading screens,
-        -- so let it settle first.
+        -- Blizzard's own frame setup runs after loading screens, so let it
+        -- settle first.
         C_Timer.After(0.5, function() RA.RefreshCharFrameButtons(event) end)
     end)
 end

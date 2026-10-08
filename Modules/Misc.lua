@@ -39,10 +39,9 @@ end
 -- doesn't need it - finds the dialog by its StaticPopupDialogs key directly.
 local function HidePartyInvitePopup()
     for _, which in ipairs({ "PARTY_INVITE", "PARTY_INVITE_XREALM" }) do
-        local popupName = StaticPopup_Visible(which)
+        local popupName, popup = StaticPopup_Visible(which)
         if popupName then
-            local popup = _G[popupName]
-            if popup then popup.inviteAccepted = 1 end
+            popup.inviteAccepted = 1
             StaticPopup_Hide(which)
         end
     end
@@ -80,7 +79,7 @@ local function TryAutoRepair()
         local available = (withdrawLimit == -1) and guildMoney or math.min(withdrawLimit, guildMoney)
         if available >= cost then
             RepairAllItems(1)
-            RA.Print(string.format(RA_L["qol_autorepair_msg_guild"], GetCoinTextureString(cost)))
+            RA.Print(string.format(RA_L["qol_autorepair_msg_guild"], C_CurrencyInfo.GetCoinTextureString(cost)))
             DBG("[Misc] Auto-repaired via guild funds:", cost)
             return
         end
@@ -89,7 +88,7 @@ local function TryAutoRepair()
 
     if GetMoney() >= cost then
         RepairAllItems()
-        RA.Print(string.format(RA_L["qol_autorepair_msg_player"], GetCoinTextureString(cost)))
+        RA.Print(string.format(RA_L["qol_autorepair_msg_player"], C_CurrencyInfo.GetCoinTextureString(cost)))
         DBG("[Misc] Auto-repaired via player funds:", cost)
     else
         DBG("[Misc] Auto-repair skipped - not enough gold:", cost)
