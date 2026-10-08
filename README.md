@@ -18,7 +18,7 @@ Automatically passes on the Bonus Roll prompt for content you've checked off:
 - World Bosses / Lairs fought as raid instances (e.g. Tidebound Grotto) are treated as regular raid bosses
 
 ### Legacy Auto-Roll
-Auto-rolls Need/Greed/Transmog on loot from legacy Dragonflight & The War Within raids. Priority chain: Need → Greed → Transmog, all combinable. Optional account-wide setting.
+Auto-rolls Need/Greed/Transmog on loot from legacy Dragonflight & The War Within raids. Priority chain: Need → Greed → Transmog, all combinable, or Pass. Optional account-wide setting.
 
 ### Group Loot History
 Cleans up and controls visibility of the Group Loot History frame — auto-hide per raid difficulty (LFR/Normal/Heroic/Mythic) in current raids, plus a separate switch to always hide it in legacy raids. Visible by default.
@@ -37,7 +37,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 - **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable. Makes MRT's logging unnecessary.
 - **Tank marker** — in current-season Mythic dungeons a popup offers to put a raid marker (default: square) on your group's tank. It needs your click: since 12.0 addons cannot set markers themselves. Off by default.
 - **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.
-- **Hide Blizzard UI elements** — red error text (important errors stay visible), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map trackers (bounty board, faction button, eye), crafting output log. Everything is off by default.
+- **Hide Blizzard UI elements** — red error text (important errors stay visible, optionally the yellow quest-progress messages too), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map trackers (bounty board, faction button, eye), crafting output log. Everything is off by default.
 - **Auction House filter** — keeps "Current Expansion Only" enforced.
 - Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.
 
