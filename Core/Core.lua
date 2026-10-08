@@ -164,6 +164,7 @@ RA.defaults = {
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
         hideErrorMessages        = false,
+        hideInfoMessages         = false,
         hideTalkingHead          = false,
         hideBossBanner           = false,
         hideEventToasts          = false,
@@ -296,6 +297,48 @@ local function UpdateInstanceCache()
     RA.cachedDiffID       = (ok and diffID)     or 0
 end
 RA.UpdateInstanceCache = UpdateInstanceCache
+
+-- Season data check (developer aid): compares the Mythic+ pool the game reports
+-- with RA.DUNGEONS and flags a stale RA.ACTIVE_SEASON or a dungeon missing in
+-- Data/Dungeons.lua in the error log. Needs the map info the game sends after
+-- C_MythicPlus.RequestMapInfo() (CHALLENGE_MODE_MAPS_UPDATE); runs once.
+local seasonChecked = false
+
+local function CheckSeasonData()
+    if seasonChecked or not C_ChallengeMode or not C_MythicPlus then return end
+    local live = C_ChallengeMode.GetMapTable()
+    if not live or #live == 0 then return end
+    seasonChecked = true
+
+    local liveSet = {}
+    for _, cmID in ipairs(live) do liveSet[cmID] = true end
+
+    local matching, missing = {}, {}
+    for season, dungeons in pairs(RA.DUNGEONS) do
+        local known, covered = {}, 0
+        for _, d in ipairs(dungeons) do
+            if d.cmID then known[d.cmID] = true end
+        end
+        for cmID in pairs(liveSet) do
+            if known[cmID] then covered = covered + 1 end
+        end
+        if covered == #live then
+            local size = 0
+            for _ in pairs(known) do size = size + 1 end
+            if size == #live then matching[#matching + 1] = season end
+        end
+    end
+
+    if #matching == 0 then
+        for cmID in pairs(liveSet) do missing[#missing + 1] = cmID end
+        table.sort(missing)
+        DBGError("[Season] The game's Mythic+ pool matches no season in Data/Dungeons.lua | live cmIDs:", table.concat(missing, ","))
+    elseif not tContains(matching, RA.ACTIVE_SEASON) then
+        DBGError("[Season] The game's Mythic+ pool matches season", matching[1], "but RA.ACTIVE_SEASON is", RA.ACTIVE_SEASON)
+    else
+        DBG("[Season] Mythic+ pool matches season", RA.ACTIVE_SEASON)
+    end
+end
 
 -- Compact, single-line zone-change summary: instance identity + matched
 -- dungeon/delve + whether auto-pass would currently trigger. Replaces the
@@ -555,6 +598,7 @@ f:RegisterEvent("START_LOOT_ROLL")
 f:RegisterEvent("LOOT_ROLLS_COMPLETE")
 f:RegisterEvent("CANCEL_LOOT_ROLL")
 f:RegisterEvent("CANCEL_ALL_LOOT_ROLLS")
+f:RegisterEvent("CHALLENGE_MODE_MAPS_UPDATE")
 f:RegisterEvent("ENCOUNTER_END")
 f:RegisterEvent("PLAYER_REGEN_DISABLED")
 f:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -618,6 +662,9 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         C_Timer.After(0.1, CheckAndClose)
 
+    elseif event == "CHALLENGE_MODE_MAPS_UPDATE" then
+        CheckSeasonData()
+
     elseif event == "CANCEL_LOOT_ROLL" then
         -- Blizzard closes the roll frame on this event; the roll is over.
         -- Only rolls RollAway tracks count, so the history frame is left alone
@@ -675,6 +722,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if not RA.initialized then return end  -- wait for ADDON_LOADED
         NoteDebugLogSectionEvent()
         UpdateInstanceCache()
+        if not seasonChecked and C_MythicPlus then C_MythicPlus.RequestMapInfo() end
         ResetState(event)
         RA.lastLegacyEncounterID = 0
         -- "Shown once per instance" marks (per character, so a shared profile

@@ -333,6 +333,18 @@ function RA.BuildQoLOptions(category, S, classColor)
             return cb, info
         end
         function chain.Anchor() return anchor end
+        -- Indented sub-checkbox under the toggle just added; the toggles that
+        -- follow hang below it. Disabled while the parent (parentKey) is off.
+        function chain.AddSub(opts, parentKey)
+            local sub = MakeCB(panel, opts.label, RollAwayDB[opts.dbKey], function(checked)
+                RollAwayDB[opts.dbKey] = checked
+                if opts.onChange then opts.onChange(checked) end
+            end, nil, QOL_INFO_W)
+            sub.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 20, -10)
+            sub:SetDisabled(not RollAwayDB[parentKey])
+            anchor, x, y = sub.frame, -20, -12
+            return sub
+        end
         return chain
     end
 
@@ -389,10 +401,17 @@ function RA.BuildQoLOptions(category, S, classColor)
     local hideChain = NewToggleChain(hide)
 
     -- Red error text in the middle of the screen
+    local infoMsgCB  -- sub-option, switched with the toggle below
     hideChain.Add({
         label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
-        dbKey = "hideErrorMessages", onChange = RA.ApplyHideErrorsFeature,
+        dbKey = "hideErrorMessages",
+        onChange = function(checked)
+            RA.ApplyHideErrorsFeature()
+            if infoMsgCB then infoMsgCB:SetDisabled(not checked) end
+        end,
     })
+    infoMsgCB = hideChain.AddSub({ label = RA_L["qol_hide_infomsg_label"], dbKey = "hideInfoMessages" },
+        "hideErrorMessages")
 
     -- Talking Head (voiced dialog box at the top of the screen)
     hideChain.Add({

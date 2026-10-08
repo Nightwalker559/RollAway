@@ -1,6 +1,6 @@
 -- RollAway - VendorFilter.lua
 -- QoL: "Vendor Filter Light" - passively dims merchant items the player
--- already knows/owns (recipes, toys, mounts, pets, housing decor, and any
+-- already knows/owns (recipes, toys, mounts, pets (all copies), heirlooms, housing decor, and any
 -- item whose appearance is already collected). No dropdown/category UI by
 -- design - just toggle + alpha,
 -- configurable in Options > QoL > Filter.
@@ -100,8 +100,15 @@ local function IsPetKnown(itemID)
     -- canBattle, isTradeable, isUnique, obtainable, displayID, speciesID
     local speciesID = select(13, C_PetJournal.GetPetInfoByItemID(itemID))
     if not speciesID then return false end
-    local numCollected = C_PetJournal.GetNumCollectedInfo and C_PetJournal.GetNumCollectedInfo(speciesID)
-    return (numCollected or 0) > 0
+    -- Battle pets can be owned several times: only "maxed" counts as known.
+    local numCollected, limit = C_PetJournal.GetNumCollectedInfo(speciesID)
+    return (numCollected or 0) > 0 and (numCollected or 0) >= (limit or 1)
+end
+
+-- Heirlooms: Blizzard greys out an owned one on its own; dim it like the rest.
+local function IsHeirloomKnown(itemID)
+    if not (C_Heirloom and C_Heirloom.IsItemHeirloom and C_Heirloom.IsItemHeirloom(itemID)) then return false end
+    return C_Heirloom.PlayerHasHeirloom(itemID) and true or false
 end
 
 -- Any item whose appearance is already collected - regular armor as well as
@@ -131,6 +138,7 @@ local function IsMerchantItemKnown(itemID, index)
     if IsToyKnown(itemID) then return true end
     if IsMountKnown(itemID) then return true end
     if IsPetKnown(itemID) then return true end
+    if IsHeirloomKnown(itemID) then return true end
     if IsTransmogKnown(itemID) then return true end
     if IsHousingDecorKnown(itemID) then return true end
     return false
@@ -145,12 +153,6 @@ end
 -- item's data finishes loading), producing dozens of identical DBG lines
 -- per vendor open. Only log when a button's result actually changed.
 local lastDebugState = {}
-
-local function GetMerchantItemID(index)
-    local link = GetMerchantItemLink(index)
-    if not link then return nil end
-    return C_Item.GetItemInfoInstant(link)
-end
 
 local function ApplyVendorFilterButton(button, itemButton)
     -- The merchant index lives on the child "...ItemButton" (set by

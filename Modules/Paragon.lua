@@ -114,11 +114,26 @@ end
 -- Logic
 ------------------------------------------------------------------------
 
+-- Pending paragon rewards: the listed quests (any faction) plus every Major
+-- Faction of the current expansion that reports a pending paragon reward, so
+-- a faction missing from the table above still gets announced (by the name
+-- the game gives it).
 local function GetAvailableParagonQuests()
-    local found = {}
+    local found, seen = {}, {}
     for questID, locKey in pairs(PARAGON_QUESTS) do
         if C_QuestLog.IsOnQuest(questID) then
+            seen[questID] = true
             found[#found + 1] = { name = RA_L[locKey], questID = questID }
+        end
+    end
+    if C_MajorFactions and C_MajorFactions.GetMajorFactionIDs then
+        for _, factionID in ipairs(C_MajorFactions.GetMajorFactionIDs(LE_EXPANSION_LEVEL_CURRENT) or {}) do
+            local _, _, questID, hasRewardPending = C_Reputation.GetFactionParagonInfo(factionID)
+            if hasRewardPending and questID and not seen[questID] then
+                seen[questID] = true
+                local data = C_MajorFactions.GetMajorFactionData(factionID)
+                found[#found + 1] = { name = data and data.name or tostring(factionID), questID = questID }
+            end
         end
     end
     return RA.SortByLabel(found, function(e) return e.name end)
@@ -204,11 +219,20 @@ function RA.InitParagon()
 
         elseif event == "QUEST_ACCEPTED" then
             -- arg1 is the questID in modern WoW (Shadowlands+).
-            if not PARAGON_QUESTS[arg1] then return end
-            DBG("[Paragon] Paragon quest accepted:", arg1)
             if not (RollAwayDB and RollAwayDB.paragonAlert) then return end
-            -- Short delay so IsOnQuest() returns true reliably.
-            C_Timer.After(0.5, CheckAndShow)
+            -- Short delay so IsOnQuest() / hasRewardPending are reliable. Any
+            -- accepted quest may be a paragon reward of a faction that is not in
+            -- the table, so check for it there too (a few API calls).
+            C_Timer.After(0.5, function()
+                local quests = GetAvailableParagonQuests()
+                for _, q in ipairs(quests) do
+                    if q.questID == arg1 then
+                        DBG("[Paragon] Paragon quest accepted:", arg1)
+                        RA.ShowParagonFrame(quests)
+                        return
+                    end
+                end
+            end)
         end
     end)
 

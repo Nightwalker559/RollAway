@@ -142,7 +142,7 @@ end
 -- In the order of the Developer panel. The label is the locale key
 -- "dev_filter_<key>"; a line that matches nothing is "other".
 RA.DEBUG_CATEGORIES = {
-    { key = "zone",     prefixes = { "Instance:", "--- GetInstanceInfo", "  ", "->", "----" } },
+    { key = "zone",     prefixes = { "Instance:", "[Season]", "--- GetInstanceInfo", "  ", "->", "----" } },
     { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "ENCOUNTER_END", "Watchdog",
                                      "ResetState", "FullReset", "Close timer", "Starting close",
                                      "Hiding loot history", "Entering combat" } },

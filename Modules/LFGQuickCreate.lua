@@ -273,6 +273,8 @@ end
 ------------------------------------------------------------------------
 -- One-time initialization, deferred until Blizzard_GroupFinder is ready.
 ------------------------------------------------------------------------
+local seasonWait  -- frame that waits for the season data (created when needed)
+
 local function Init()
     if initialized then return end
 
@@ -283,7 +285,17 @@ local function Init()
     if not C_MythicPlus then return end
     C_MythicPlus.RequestMapInfo()
     if C_MythicPlus.GetCurrentSeason() == -1 then
-        C_Timer.After(0.5, Init)
+        -- CHALLENGE_MODE_MAPS_UPDATE is the answer to RequestMapInfo; the
+        -- timer only covers an answer that never comes.
+        if not seasonWait then
+            seasonWait = CreateFrame("Frame")
+            seasonWait:SetScript("OnEvent", function(self)
+                self:UnregisterAllEvents()
+                Init()
+            end)
+        end
+        seasonWait:RegisterEvent("CHALLENGE_MODE_MAPS_UPDATE")
+        C_Timer.After(3, Init)
         return
     end
 

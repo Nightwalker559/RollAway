@@ -14,6 +14,13 @@
 - Legacy auto-roll: new Pass option; with no roll type selected it no longer passes on everything.
 - Tank marker popup closes when the tank gets marked (by anyone) and is not offered for a marked tank.
 - Developer panel: debug log filter by category.
+- Hide error messages: new sub-option to also hide yellow messages (quest progress).
+- Vendor filter: owned heirlooms are dimmed too; pets only once you own the maximum.
+- Paragon reminder also announces Major Factions that are not in the addon's list.
+- Join reminder: uses Blizzard's "joined group" event; the check timer only runs while needed.
+- Roll confirmation: Blizzard's roll buttons are prepared at once (only ElvUI waits).
+- Group Finder quick-create waits for the season data by event instead of a timer.
+- Developer: the error log flags a Mythic+ season that does not match Data/Dungeons.lua.
 
 ### Fixed
 - Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.

@@ -95,7 +95,8 @@ end
 -- Init - called from Core/Core.lua on ADDON_LOADED
 ------------------------------------------------------------------------
 function RA.InitRollConfirm()
-    -- Delay slightly so ElvUI has finished building its frames.
-    C_Timer.After(0.5, BuildOverlays)
+    -- Blizzard's roll frames exist already; ElvUI builds its own a moment later.
+    BuildOverlays()
+    if ElvUI then C_Timer.After(0.5, BuildOverlays) end
     DBG("RollConfirm initialized")
 end

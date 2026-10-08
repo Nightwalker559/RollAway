@@ -313,6 +313,7 @@ function RA.InitJoinReminder()
     f:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
     f:RegisterEvent("GROUP_ROSTER_UPDATE")
     f:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
+    f:RegisterEvent("LFG_LIST_JOINED_GROUP")
 
     -- Per-group state, all reset together on ungroup (see ResetGroupState).
     local resolvedEntryID   = nil   -- activityID we've already shown/dispatched for
@@ -325,11 +326,55 @@ function RA.InitJoinReminder()
     -- true once an application-accepted join was handled: the listing update
     -- that follows (also fired for members) isn't one of our own creations.
     local joinedViaApplication = false
+    -- searchResultIDs whose join was already announced (the status update and
+    -- LFG_LIST_JOINED_GROUP can both report the same join).
+    local announcedJoins = {}
+    local pollTicker
+
+    local function StopPoll()
+        if pollTicker then pollTicker:Cancel(); pollTicker = nil end
+    end
 
     local function ResetGroupState()
         resolvedEntryID = nil
         joinedViaApplication = false
         wipe(applicationDungeons)
+        wipe(announcedJoins)
+        StopPoll()
+    end
+
+    -- Reads the activity of a search result once and remembers it in
+    -- applicationDungeons (false = resolved, but not M+/raid).
+    local function ResolveApplication(searchResultID, status)
+        if applicationDungeons[searchResultID] ~= nil then return end
+        local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
+        local activityID = resultInfo and resultInfo.activityIDs and resultInfo.activityIDs[1]
+        if activityID then
+            local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
+            applicationDungeons[searchResultID] = name and {
+                name = name, isMythicPlus = isMythicPlus, dungeon = dungeon,
+                keyLevel = ParseKeyLevel(resultInfo),
+            } or false
+            DBG("[QoL] Application resolved: searchResultID=", searchResultID, "activityID=", activityID, "name=", name or "nil")
+        else
+            DBG("[QoL] Application: no search result info yet for searchResultID=", searchResultID, "status=", status)
+        end
+    end
+
+    -- Announces a join through an application (once per searchResultID).
+    local function AnnounceApplicationJoin(searchResultID)
+        if announcedJoins[searchResultID] then return end
+        local resolved = applicationDungeons[searchResultID]
+        applicationDungeons[searchResultID] = nil
+        if not resolved then
+            DBG("[QoL] Join reminder: application never resolved to a name (searchResultID=", searchResultID, "- not applicant / not M+ / cache purged)")
+            return
+        end
+        announcedJoins[searchResultID] = true
+        resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
+        joinedViaApplication = true
+        StopPoll()
+        DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon, resolved.keyLevel)
     end
 
     -- Tries to resolve + show from the group's current LFG listing
@@ -343,7 +388,10 @@ function RA.InitJoinReminder()
             ResetGroupState()
             return
         end
-        if resolvedEntryID then return end -- already shown for this group
+        if resolvedEntryID then StopPoll(); return end -- already shown for this group
+
+        -- Not resolved yet: keep checking until the listing becomes readable.
+        if not pollTicker then pollTicker = C_Timer.NewTicker(POLL_INTERVAL, TryResolveAndShow) end
 
         local entryInfo = C_LFGList.GetActiveEntryInfo()
         local entryID = entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]
@@ -352,16 +400,16 @@ function RA.InitJoinReminder()
         DBG("[QoL] Join reminder (active entry): resolved name=", name or "nil")
         if name then
             resolvedEntryID = entryID
+            StopPoll()
             DispatchJoinReminder(name, isMythicPlus, dungeon, ParseKeyLevel(entryInfo))
         end
     end
 
     -- Safety-net poll: GROUP_ROSTER_UPDATE can fire before the LFG listing
     -- state is actually queryable yet (a member added to an already-active
-    -- listing doesn't get a creation event of its own to react to). Cheap
-    -- early-exits inside TryResolveAndShow() make this a no-op once resolved
-    -- or ungrouped, so it's safe to just leave running for the session.
-    C_Timer.NewTicker(POLL_INTERVAL, TryResolveAndShow)
+    -- listing doesn't get a creation event of its own to react to). Started by
+    -- TryResolveAndShow() while a group is unresolved, stopped once it is
+    -- resolved or the group is left.
 
     f:SetScript("OnEvent", function(_, event, searchResultID, newStatus)
         if event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
@@ -370,31 +418,18 @@ function RA.InitJoinReminder()
             -- inviteaccepted - the search-result cache backing
             -- GetSearchResultInfo can already be gone by then, especially
             -- for a party member who never personally browsed/applied.
-            if applicationDungeons[searchResultID] == nil then
-                local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
-                local activityID = resultInfo and resultInfo.activityIDs and resultInfo.activityIDs[1]
-                if activityID then
-                    local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
-                    applicationDungeons[searchResultID] = name and {
-                        name = name, isMythicPlus = isMythicPlus, dungeon = dungeon,
-                        keyLevel = ParseKeyLevel(resultInfo),
-                    } or false
-                    DBG("[QoL] Application resolved: searchResultID=", searchResultID, "activityID=", activityID, "name=", name or "nil")
-                else
-                    DBG("[QoL] Application: no search result info yet for searchResultID=", searchResultID, "status=", newStatus)
-                end
-            end
+            ResolveApplication(searchResultID, newStatus)
 
             if newStatus ~= "inviteaccepted" then return end
-            local resolved = applicationDungeons[searchResultID]
-            applicationDungeons[searchResultID] = nil
-            if not resolved then
-                DBG("[QoL] Join reminder: application never resolved to a name (searchResultID=", searchResultID, "- not applicant / not M+ / cache purged)")
-                return
-            end
-            resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
-            joinedViaApplication = true
-            DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon, resolved.keyLevel)
+            AnnounceApplicationJoin(searchResultID)
+
+        elseif event == "LFG_LIST_JOINED_GROUP" then
+            -- Blizzard's own "you joined this group" signal, also for members who
+            -- did not apply themselves (their leader did).
+            if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
+            DBG("[QoL] LFG_LIST_JOINED_GROUP: searchResultID=", searchResultID)
+            ResolveApplication(searchResultID, "joined")
+            AnnounceApplicationJoin(searchResultID)
 
         elseif event == "GROUP_ROSTER_UPDATE" then
             TryResolveAndShow()

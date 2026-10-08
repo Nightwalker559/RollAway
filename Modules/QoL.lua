@@ -560,9 +560,15 @@ function RA.ApplyHideErrorsFeature()
     errorHandlerWrapped = true
 
     UIErrorsFrame:SetScript("OnEvent", function(self, event, ...)
-        if event == "UI_ERROR_MESSAGE" and RollAwayDB and RollAwayDB.hideErrorMessages
-           and IsHiddenError((select(2, ...))) then
-            return
+        local db = RollAwayDB
+        if db and db.hideErrorMessages then
+            if event == "UI_ERROR_MESSAGE" and IsHiddenError((select(2, ...))) then
+                return
+            end
+            -- Yellow info text (quest progress etc.): sub-option of this feature
+            if event == "UI_INFO_MESSAGE" and db.hideInfoMessages then
+                return
+            end
         end
         return blizzardHandler(self, event, ...)
     end)
