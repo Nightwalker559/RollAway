@@ -4,33 +4,29 @@
 
 ## 3.1.2
 
-### Changed
-- Bonus roll auto-pass reacts faster and reads the raid boss from the roll itself.
-- Auto-passed bonus roll no longer flashes up on screen.
-- Roll confirmations (bind-on-pickup) no longer use a fixed delay.
-- World Map: the hide option now also hides the bounty board and the N'Zoth eye, and finds them via Blizzard's own frame list.
-- Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
-- Hide error messages now also hides "you can't carry any more of these items".
-- Legacy auto-roll: new Pass option; with no roll type selected it no longer passes on everything.
+### New
+- Legacy auto-roll: Pass option (turns the other roll types off); with nothing selected it no longer passes on everything.
+- Hide error messages: sub-option to also hide yellow messages (quest progress); "you can't carry any more of these" is hidden too.
+- World Map: the hide option now also hides the bounty board and the N'Zoth eye.
 - Tank marker popup closes when the tank gets marked (by anyone) and is not offered for a marked tank.
-- Developer panel: debug log filter by category.
-- Hide error messages: new sub-option to also hide yellow messages (quest progress).
+- Developer: debug log filter by category; the error log flags a Mythic+ season that does not match Data/Dungeons.lua.
+
+### Changed
+- Bonus roll auto-pass is faster, reads the raid boss from the roll itself and no longer flashes up.
+- Bind-on-pickup roll confirmations no longer use a fixed delay.
 - Vendor filter: owned heirlooms are dimmed too; pets only once you own the maximum.
 - Paragon reminder also announces Major Factions that are not in the addon's list.
 - Portal frame: a newly learned teleport shows up while the frame is open.
-- Join reminder: uses Blizzard's "joined group" event; the check timer only runs while needed.
-- Roll confirmation: Blizzard's roll buttons are prepared at once (only ElvUI waits).
-- Group Finder quick-create waits for the season data by event instead of a timer.
-- Developer: the error log flags a Mythic+ season that does not match Data/Dungeons.lua.
+- Group Finder quick-create and the join reminder use Blizzard events instead of timers.
 
 ### Fixed
-- Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.
-- Legacy auto-roll used a wrong roll type for Transmog when the roll button was not found.
+- Loot history auto-close: finished rolls are matched by the game's loot handle and cancelled rolls are noticed.
+- Great Vault reminder could show again on every login.
 - Tank marker: solo role check used a function the game no longer has.
 - Auto repair: the cost in the chat message used a removed function.
-- Great Vault reminder: could show again on every login (weekly reset time was not read).
-- Loot history auto-close: finished rolls are now matched by the game's loot handle and cancelled rolls are noticed.
 - Auto-log no longer toggles combat logging when it already is as wanted.
+- Legacy auto-roll used a wrong roll type for Transmog when the roll button was not found.
+- Crafting Orders filter and Group Finder quick-create waited for Blizzard addons that do not exist.
 - Removed leftovers for Blizzard addons that no longer exist (Talking Head, Character panel).
 
 ---
