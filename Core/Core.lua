@@ -47,7 +47,7 @@ RA.DBG = DBG
 -- verbose debug log for everything else.
 local function DBGError(...)
     if RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly) and DEV_CHARS[UnitName("player")] then
-        if RA.AppendDebugLog then RA.AppendDebugLog(...) end
+        if RA.AppendDebugLogUnfiltered then RA.AppendDebugLogUnfiltered(...) end
     end
 end
 RA.DBGError = DBGError

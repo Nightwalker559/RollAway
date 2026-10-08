@@ -131,8 +131,68 @@ local function AppendLine(text)
     ScrollDebugLogToBottom()
 end
 
+------------------------------------------------------------------------
+-- Log filter. Every line belongs to a category: its "[Tag]" prefix or, for the
+-- older untagged lines, a known start of text. Categories can be switched off
+-- in the Developer panel (RollAwayDB.debugFilter[key] = false; missing = on).
+-- Only the full debug log is filtered: lines of the errors-only channel, the
+-- log window messages and tool output (RA.AppendDebugLogUnfiltered) always show.
+------------------------------------------------------------------------
+
+-- In the order of the Developer panel. The label is the locale key
+-- "dev_filter_<key>"; a line that matches nothing is "other".
+RA.DEBUG_CATEGORIES = {
+    { key = "zone",     prefixes = { "Instance:", "--- GetInstanceInfo", "  ", "->", "----" } },
+    { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "ENCOUNTER_END", "Watchdog",
+                                     "ResetState", "FullReset", "Close timer", "Starting close",
+                                     "Hiding loot history", "Entering combat" } },
+    { key = "autopass", prefixes = { "[AutoPass]", "AutoPass:", "BonusRollFrame", "WARNING: BonusRollFrame",
+                                     "Manual auto-pass" } },
+    { key = "roll",     prefixes = { "[Legacy", "[Roll", "RollConfirm" } },
+    { key = "reminder", prefixes = { "Reminder", "Showing reminder", "Teleport reminder", "Showing teleport",
+                                     "Advanced Combat Logging reminder" } },
+    { key = "logs",     prefixes = { "Auto-log" } },
+    { key = "lfg",      prefixes = { "[LFGQuickCreate]" } },
+    { key = "tank",     prefixes = { "[TankMarker" } },
+    { key = "qol",      prefixes = { "[QoL]", "[Misc]", "[VendorFilter]", "[Quests]", "[GreatVault]",
+                                     "[Paragon]", "[CharFrameButtons]", "QoL" } },
+    { key = "events",   prefixes = { "[Event]" } },
+    { key = "other",    prefixes = {} },
+}
+
+-- Category key of a log line (judged by its first value).
+local function DebugCategoryOf(first)
+    if type(first) == "string" then
+        for _, category in ipairs(RA.DEBUG_CATEGORIES) do
+            for _, prefix in ipairs(category.prefixes) do
+                if first:sub(1, #prefix) == prefix then return category.key end
+            end
+        end
+    end
+    return "other"
+end
+
+function RA.IsDebugCategoryOn(key)
+    local filter = RollAwayDB and RollAwayDB.debugFilter
+    return not (filter and filter[key] == false)
+end
+
+function RA.SetDebugCategory(key, on)
+    RollAwayDB.debugFilter = RollAwayDB.debugFilter or {}
+    RollAwayDB.debugFilter[key] = on and true or false
+end
+
+function RA.SetAllDebugCategories(on)
+    for _, category in ipairs(RA.DEBUG_CATEGORIES) do RA.SetDebugCategory(category.key, on) end
+end
+
+local bypassFilter = false
+
 -- Appends one formatted line.
 function RA.AppendDebugLog(...)
+    if not bypassFilter and RollAwayDB.debug and not RA.IsDebugCategoryOn(DebugCategoryOf((...))) then
+        return
+    end
     CreateDebugLogFrame()
 
     local parts = {}
@@ -140,6 +200,13 @@ function RA.AppendDebugLog(...)
         parts[i] = tostring((select(i, ...)))
     end
     AppendLine(date("%H:%M:%S") .. "  " .. table.concat(parts, " "))
+end
+
+-- Same, but never filtered: errors, window messages, tool output.
+function RA.AppendDebugLogUnfiltered(...)
+    bypassFilter = true
+    RA.AppendDebugLog(...)
+    bypassFilter = false
 end
 
 -- Inserts a colored divider line to visually separate log sections (e.g.
@@ -158,7 +225,7 @@ end
 -- hook fires on a fresh window.
 function RA.ToggleDebugLogWindow()
     local existed = debugLogFrame ~= nil
-    RA.AppendDebugLog("Log window toggled")
+    RA.AppendDebugLogUnfiltered("Log window toggled")
     -- Only flip visibility if the window already existed - a fresh window was
     -- just auto-shown by AppendDebugLog, don't hide it again.
     if existed then debugLogFrame:SetShown(not debugLogFrame:IsShown()) end
@@ -389,7 +456,7 @@ local function RegisterSlashCommands()
     -- panel buttons to the log (run it while they are missing).
     RegisterDevCommand("RAWCHARBTN", function()
         for _, line in ipairs(RA.DescribeCharFrameButtons()) do
-            RA.AppendDebugLog("[CharFrameButtons] " .. line)
+            RA.AppendDebugLogUnfiltered("[CharFrameButtons] " .. line)
         end
     end, true)
 end

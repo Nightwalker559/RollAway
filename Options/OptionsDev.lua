@@ -161,7 +161,37 @@ function RA.BuildDevOptions(category, S, classColor)
     resetBtn:SetPoint("LEFT", clearBtn, "RIGHT", 8, 0)
     resetBtn:SetScript("OnClick", RA.ResetDebugLogWindow)
 
-    MakeInfoText(logPage, openBtn, 0, -6, QOL_INFO_W, RA_L["dev_log_hint"])
+    local logHint = MakeInfoText(logPage, openBtn, 0, -6, QOL_INFO_W, RA_L["dev_log_hint"])
+
+    -- Log filter: which kinds of lines the debug log shows (RA.DEBUG_CATEGORIES,
+    -- Core/Debug.lua). Two columns of checkboxes plus All / None.
+    local filterHeader = logPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    filterHeader:SetPoint("TOPLEFT", logHint, "BOTTOMLEFT", 0, -18)
+    filterHeader:SetText(RA_L["dev_filter_title"])
+    local filterInfo = MakeInfoText(logPage, filterHeader, 0, -6, QOL_INFO_W, RA_L["dev_filter_info"])
+
+    local allBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_all"], 80, S)
+    allBtn:SetPoint("TOPLEFT", filterInfo, "BOTTOMLEFT", 0, -8)
+    local noneBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_none"], 80, S)
+    noneBtn:SetPoint("LEFT", allBtn, "RIGHT", 8, 0)
+
+    local filterCBs = {}
+    for i, category in ipairs(RA.DEBUG_CATEGORIES) do
+        local key = category.key
+        local cb = MakeCB(logPage, RA_L["dev_filter_" .. key], RA.IsDebugCategoryOn(key), function(checked)
+            RA.SetDebugCategory(key, checked)
+        end, 220)
+        local column, row = (i - 1) % 2, math.floor((i - 1) / 2)
+        cb.frame:SetPoint("TOPLEFT", allBtn, "BOTTOMLEFT", column * 240, -10 - row * 28)
+        filterCBs[#filterCBs + 1] = { cb = cb, key = key }
+    end
+
+    local function SetAllFilters(on)
+        RA.SetAllDebugCategories(on)
+        for _, entry in ipairs(filterCBs) do entry.cb:SetValue(on) end
+    end
+    allBtn:SetScript("OnClick", function() SetAllFilters(true) end)
+    noneBtn:SetScript("OnClick", function() SetAllFilters(false) end)
 
     ------------------------------------------------------------------
     -- Tests: popups and automation, tank marker test mode
