@@ -12,6 +12,7 @@
 - Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
 - Hide error messages now also hides "you can't carry any more of these items".
 - Legacy auto-roll: new Pass option; with no roll type selected it no longer passes on everything.
+- Tank marker popup closes when the tank gets marked (by anyone) and is not offered for a marked tank.
 
 ### Fixed
 - Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.

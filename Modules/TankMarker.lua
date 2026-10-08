@@ -9,7 +9,10 @@
 -- Only 5-man groups; the popup shows once per tank and marker per dungeon
 -- visit, only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON),
 -- and never once a Mythic+ key is running (it belongs to entering); an open
--- popup closes when the key starts.
+-- popup closes when the key starts. Nothing is offered for a tank that already
+-- carries a marker, and an open popup closes as soon as the tank gets one (set
+-- by another player too) - detected through RAID_TARGET_UPDATE, so it needs no
+-- addon messages and also works when the other player does not have RollAway.
 --
 -- /rawtank       shows the popup right now, in any place (everyone)
 -- /rawtank test  dev chars only: toggles a test mode until /reload. Works solo
@@ -58,6 +61,16 @@ end
 -- the result is the same marker whatever was there before.
 local function MacroFor(unit, icon)
     return ("/tm [@%s] 0\n/tm [@%s] %d"):format(unit, unit, icon)
+end
+
+-- Does the unit carry a marker (whoever set it, whichever one)? In an instance
+-- the number is a secret value, but "no marker" reads as a plain nil - so
+-- anything but nil counts as marked. false when the value cannot be read.
+local function HasMarker(unit)
+    local ok, index = pcall(GetRaidTargetIndex, unit)
+    if not ok then return false end
+    if issecretvalue and issecretvalue(index) then return true end  -- set, number hidden
+    return index ~= nil
 end
 
 -- What the group's markers look like right now, for the test log. In an
@@ -234,6 +247,9 @@ local function Check(manual)
     local unit = FindTank()
     if not unit then return Skip("No tank found in the group.") end
 
+    -- Somebody (another player, or you earlier) already marked the tank.
+    if not manual and HasMarker(unit) then return Skip("The tank already has a marker.") end
+
     -- The tank must be here too: still outside, offline or far away means
     -- the marker cannot be set (yet). Look again shortly, a while at most.
     local connected, visible = UnitIsConnected(unit), UnitIsVisible(unit)
@@ -273,7 +289,10 @@ end
 function RA.ApplyTankMarker()
     if not eventFrame then return end
     local on = testMode or (RollAwayDB and RollAwayDB.tankMarkEnabled)
-    for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED" }) do
+    -- RAID_TARGET_UPDATE fires whenever any marker changes: it closes the popup
+    -- once the tank has been marked (by anyone, no addon messages needed) and
+    -- feeds the test log.
+    for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED", "RAID_TARGET_UPDATE" }) do
         if on then
             eventFrame:RegisterEvent(event)
         else
@@ -281,12 +300,6 @@ function RA.ApplyTankMarker()
         end
     end
     eventFrame:RegisterEvent("GROUP_LEFT")   -- always: keeps lastOffer honest
-    -- Test mode: fires whenever any marker changes, readable value or not.
-    if testMode then
-        eventFrame:RegisterEvent("RAID_TARGET_UPDATE")
-    else
-        eventFrame:UnregisterEvent("RAID_TARGET_UPDATE")
-    end
     if on then ScheduleCheck() end
 end
 
@@ -316,7 +329,11 @@ function RA.InitTankMarker()
         if event == "GROUP_LEFT" then
             lastOffer = nil
         elseif event == "RAID_TARGET_UPDATE" then
-            TestSay("RAID_TARGET_UPDATE: " .. MarkerSummary())
+            if testMode then TestSay("RAID_TARGET_UPDATE: " .. MarkerSummary()) end
+            if markFrame and markFrame:IsShown() and markFrame.unit and HasMarker(markFrame.unit) then
+                DBG("[TankMarker] The tank got a marker – closing the popup")
+                ClosePopup(markFrame)
+            end
         else
             -- Outside an instance = the last visit is over: the next dungeon
             -- (even with the same group) gets its own offer.
