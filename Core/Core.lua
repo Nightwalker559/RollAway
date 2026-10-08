@@ -382,6 +382,12 @@ local function SetHistoryAlpha(alpha)
     if elvFrame then elvFrame:SetAlpha(alpha) end
 end
 
+local function HistoryFrameShown()
+    local elvFrame = RA.ElvLootModule and RA.ElvLootModule.GroupLootHistoryFrame
+    return (GroupLootHistoryFrame and GroupLootHistoryFrame:IsShown())
+        or (elvFrame and elvFrame:IsShown()) or false
+end
+
 local function DoHideHistoryFrame()
     if GroupLootHistoryFrame and GroupLootHistoryFrame:IsShown() then
         DBG("Hiding loot history frame")
@@ -628,7 +634,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         -- difficulty" preference - this applies everywhere, unless the whole
         -- auto-close/auto-hide feature is disabled via its master switch.
         if not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
-            DBG("Entering combat – hiding loot history frame")
+            if HistoryFrameShown() then DBG("Entering combat – hiding loot history frame") end
             HideHistoryFrame()
         end
 
