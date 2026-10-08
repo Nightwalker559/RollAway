@@ -487,14 +487,16 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     -- ── Category: LFG (alphabetical by label) ─────────────────────────────
 
-    -- Enable checkbox
-    local _, lfgqcInfo = MakeToggle(lfg, nil, 0, -8, {
-        label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
+    -- Auto-apply playstyle checkbox
+    local UpdatePSState  -- forward-declared: needs the dropdown created below
+    local _, lfgqcAutoPSInfo = MakeToggle(lfg, nil, 0, -8, {
+        label = RA_L["qol_lfgqc_autops_label"], info = RA_L["qol_lfgqc_autops_info"], dbKey = "lfgAutoPlaystyle",
+        onChange = function(checked) UpdatePSState(checked) end,
     })
 
-    -- Default playstyle of the quick-create buttons (label indented under the checkbox)
+    -- Default playstyle label (indented, sub-option of autops checkbox)
     local lfgqcPSLabel = lfg:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    lfgqcPSLabel:SetPoint("TOPLEFT", lfgqcInfo, "BOTTOMLEFT", 0, -12)
+    lfgqcPSLabel:SetPoint("TOPLEFT", lfgqcAutoPSInfo, "BOTTOMLEFT", 0, -12)
     lfgqcPSLabel:SetText(RA_L["qol_lfgqc_playstyle_label"])
 
     -- Default playstyle dropdown (AceGUI, native ElvUI skin)
@@ -510,6 +512,27 @@ function RA.BuildQoLOptions(category, S, classColor)
     psDD:SetCallback("OnValueChanged", function(_, _, value)
         RollAwayDB.lfgDefaultPlaystyle = value
     end)
+
+    -- Enable/disable label and dropdown based on checkbox state
+    UpdatePSState = function(enabled)
+        if enabled then
+            lfgqcPSLabel:SetTextColor(1, 1, 1, 1)
+        else
+            lfgqcPSLabel:SetTextColor(0.5, 0.5, 0.5, 1)
+        end
+        psDD:SetDisabled(not enabled)
+    end
+    UpdatePSState(RollAwayDB.lfgAutoPlaystyle)
+
+    -- Preselect the Mythic+ difficulty in the Group Finder's create form
+    local _, lfgqcMPlusInfo = MakeToggle(lfg, psDD.frame, -20, -14, {
+        label = RA_L["qol_lfgqc_automplus_label"], info = RA_L["qol_lfgqc_automplus_info"], dbKey = "lfgAutoMythicPlus",
+    })
+
+    -- Enable checkbox (last alphabetically: "Show dungeon quick-create...")
+    MakeToggle(lfg, lfgqcMPlusInfo, -20, -12, {
+        label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
+    })
 
     -- Default category on open (the first one in the nav)
     ShowQolCategory(qolNavDefs[1].key)

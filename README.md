@@ -33,7 +33,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 - Reminder positions can be locked and reset to default from the options.
 
 ### Quality of Life
-- **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with a default playstyle.
+- **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
 - **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable. Makes MRT's logging unnecessary.
 - **Tank marker** — in current-season Mythic dungeons a popup offers to put a raid marker (default: square) on your group's tank. It needs your click: since 12.0 addons cannot set markers themselves. Off by default.
 - **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.

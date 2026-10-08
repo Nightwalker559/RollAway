@@ -7,11 +7,10 @@
 ### Changed
 - Bonus roll auto-pass reacts faster and reads the raid boss from the roll itself.
 - Roll confirmations (bind-on-pickup) no longer use a fixed delay.
-- Group Finder: the auto playstyle and auto Mythic+ options are removed; the default playstyle now applies to the quick-create buttons.
+- Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
 
 ### Fixed
 - Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.
-- Error (ADDON_ACTION_BLOCKED) when clicking Edit in the Group Finder application viewer.
 
 ---
 
