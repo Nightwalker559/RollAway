@@ -2,6 +2,18 @@
 
 ---
 
+## 3.1.2
+
+### Changed
+- Bonus roll auto-pass reacts faster and reads the raid boss from the roll itself.
+- Roll confirmations (bind-on-pickup) no longer use a fixed delay.
+- Group Finder quick-create reacts to dropdown picks without delay.
+
+### Fixed
+- Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.
+
+---
+
 ## 3.1.1
 
 ### New

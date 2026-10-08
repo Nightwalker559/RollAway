@@ -271,7 +271,7 @@ local function MakeButton(parent, dungeon, index)
 end
 
 ------------------------------------------------------------------------
--- One-time initialization, deferred until Blizzard_LFGList is ready.
+-- One-time initialization, deferred until Blizzard_GroupFinder is ready.
 ------------------------------------------------------------------------
 local function Init()
     if initialized then return end
@@ -305,22 +305,15 @@ local function Init()
         buttons[#buttons + 1] = MakeButton(container, d, i)
     end
 
-    -- After a dropdown closes: re-sync the button row; when it was a
-    -- dungeon/category pick (not the difficulty dropdown), Mythic+ again.
-    local function HookDD(dd, isDifficultyDropdown)
-        if not dd then return end
-        dd:HookScript("OnHide", function()
-            C_Timer.After(0.05, function()
-                SyncVisibility()
-                if not isDifficultyDropdown and ec:IsShown() then ApplyMythicPlus(ec) end
-            end)
-        end)
-    end
-    HookDD(ec.GroupDropdown)
-    HookDD(ec.ActivityDropdown, true)
-    if ec.CategoryDropdown and ec.CategoryDropdown ~= ec.GroupDropdown then
-        HookDD(ec.CategoryDropdown)
-    end
+    -- After every dropdown pick (Blizzard routes them all through
+    -- LFGListEntryCreation_Select): re-sync the button row; when it was a
+    -- dungeon/category pick (no explicit activityID, that is the difficulty
+    -- dropdown), Mythic+ again.
+    hooksecurefunc("LFGListEntryCreation_Select", function(self, _, _, _, activityID)
+        if self ~= ec then return end
+        SyncVisibility()
+        if not activityID and ec:IsShown() then ApplyMythicPlus(ec) end
+    end)
 
     -- Applies the current options to the entry-creation frame - on every open,
     -- and once right away if it is already open.
@@ -336,8 +329,9 @@ local function Init()
             PopLayout(ec)
             container:Hide()
         end
-        -- Apply default playstyle / Mythic+ independently of the dungeon buttons.
-        C_Timer.After(0.05, function()
+        -- Apply default playstyle / Mythic+ independently of the dungeon buttons,
+        -- once Blizzard has finished setting up the panel (next frame).
+        RunNextFrame(function()
             if not ec:IsShown() then return end
             if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then ApplyDefaultPlaystyle(ec) end
             ApplyMythicPlus(ec)
@@ -356,18 +350,9 @@ end
 -- Public init – called from Core/Core.lua on ADDON_LOADED.
 ------------------------------------------------------------------------
 function RA.InitLFGQuickCreate()
-    local f = CreateFrame("Frame")
-    f:RegisterEvent("ADDON_LOADED")
-    f:RegisterEvent("PLAYER_ENTERING_WORLD")
-
-    f:SetScript("OnEvent", function(self, event, arg1)
-        if event == "ADDON_LOADED" and arg1 == "Blizzard_LFGList" then
-            C_Timer.After(0.1, Init)
-        elseif event == "PLAYER_ENTERING_WORLD" then
-            C_Timer.After(0.5, Init)
-            self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-        end
-    end)
+    -- The Group Finder (Blizzard_GroupFinder) loads at startup; Init itself
+    -- waits for the season data.
+    EventUtil.ContinueOnPlayerLogin(function() Init() end)
 
     DBG("[LFGQuickCreate] Ready")
 end

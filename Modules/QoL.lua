@@ -220,7 +220,7 @@ local function InitAHFilter()
     end)
 
     if not HookCraftingFrame() then
-        RA.WaitForAddon("Blizzard_ProfessionsUI", HookCraftingFrame)
+        RA.WaitForAddon("Blizzard_ProfessionsCustomerOrders", HookCraftingFrame)
     end
 
     DBG("[QoL] AH/Crafting Orders expansion filter hook ready")

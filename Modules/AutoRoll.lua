@@ -44,6 +44,10 @@ local function ExecuteLegacyRoll(rollID)
 
     DBG("[Legacy] RollOnLoot rollID:", rollID, "| roll:", actualRoll)
 
+    -- BoP items ask for a confirmation after the roll (CONFIRM_LOOT_ROLL);
+    -- armed first so the event cannot be missed.
+    if actualRoll ~= 0 then RA.ArmRollConfirm(rollID) end
+
     -- Click the real button (native or ElvUI roll frame) when there is one.
     local clicked = false
     if actualRoll ~= 0 then
@@ -63,12 +67,6 @@ local function ExecuteLegacyRoll(rollID)
         local ok, err = pcall(RollOnLoot, rollID, actualRoll)
         if not ok then DBG("[Legacy] RollOnLoot failed:", err) end
     end
-
-    -- BoP confirmation: popup needs ~0.15s to appear after the roll.
-    C_Timer.After(0.15, function()
-        pcall(ConfirmLootRoll, rollID, actualRoll)
-        RA.CloseLootRollPopups("[Legacy]")
-    end)
 end
 
 RA.ExecuteLegacyRoll = ExecuteLegacyRoll

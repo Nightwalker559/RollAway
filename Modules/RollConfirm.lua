@@ -25,19 +25,15 @@ RA.RegisterPopup("ROLLAWAY_CONFIRM_ROLL", {
     OnAccept     = function(_, data)
         if not (data and data.btn) then return end
 
+        -- BoP items (most Transmog rolls) fire CONFIRM_LOOT_ROLL after the
+        -- roll and need an explicit ConfirmLootRoll to actually complete it;
+        -- armed first so the event cannot be missed.
+        RA.ArmRollConfirm(data.rollID)
+
         -- Click the real button - reuses whatever internal logic
         -- Blizzard/ElvUI runs on that click (same approach as AutoRoll).
         local ok, err = pcall(data.btn.Click, data.btn)
         if not ok then DBG("[RollConfirm] Button click failed:", err) end
-
-        -- BoP items (most Transmog rolls) fire CONFIRM_LOOT_ROLL after
-        -- the roll and need an explicit ConfirmLootRoll to actually
-        -- complete it. The popup needs ~0.15s to appear.
-        local rollID, rollType = data.rollID, data.rollType
-        C_Timer.After(0.15, function()
-            pcall(ConfirmLootRoll, rollID, rollType)
-            RA.CloseLootRollPopups("[RollConfirm]")
-        end)
     end,
     showAlert    = true,
 })
@@ -62,7 +58,7 @@ local function AttachOverlay(btn, getRollID, rollDef)
         if not rollID then return end
         local _, name = GetLootRollItemInfo(rollID)
         StaticPopup_Show("ROLLAWAY_CONFIRM_ROLL", RA_L["confirm_type_"..rollDef.dbKey], name or "?",
-            { rollID = rollID, rollType = rollDef.rollType, btn = btn })
+            { rollID = rollID, btn = btn })
     end)
 
     btn.raRollOverlay = overlay

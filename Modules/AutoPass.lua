@@ -24,9 +24,12 @@ local function GetCurrentDelveKey()
     return DELVE_MAP[RA.cachedInstanceID]
 end
 
+-- Boss of the raid bonus roll: the one Blizzard names for the open prompt
+-- (RA.bonusRollEncounterID), else the last kill seen via ENCOUNTER_END.
 local function GetCurrentRaidBossKey()
-    if RA.lastEncounterID == 0 then return nil end
-    return RAID_ENCOUNTER_MAP[RA.lastEncounterID]
+    local encounterID = RA.bonusRollEncounterID or RA.lastEncounterID
+    if encounterID == 0 then return nil end
+    return RAID_ENCOUNTER_MAP[encounterID]
 end
 
 -- World map (uiMapID) of every Midnight zone. Prey auto-pass only counts
@@ -194,15 +197,27 @@ RA.TryAutoPass = TryAutoPass
 -- Initialization – called from Core/Core.lua ADDON_LOADED
 ------------------------------------------------------------------------
 
+-- DungeonEncounterID (the key of RAID_ENCOUNTER_MAP) of the boss the open
+-- bonus roll belongs to. Blizzard stores the Encounter Journal ID of that
+-- boss on BonusRollFrame; nil when it has none.
+local function GetBonusRollEncounterID()
+    local journalEncounterID = BonusRollFrame and BonusRollFrame.encounterID
+    if not journalEncounterID or journalEncounterID == 0 then return nil end
+    local dungeonEncounterID = select(7, EJ_GetEncounterInfo(journalEncounterID))
+    if dungeonEncounterID and dungeonEncounterID ~= 0 then return dungeonEncounterID end
+end
+
 function RA.InitAutoPass()
-    local promptFrame = BonusRollFrame and BonusRollFrame.PromptFrame
-    if promptFrame then
-        hooksecurefunc(promptFrame, "Show", function()
-            DBG("[AutoPass] BonusRollFrame.PromptFrame:Show() fired")
-            C_Timer.After(0.1, TryAutoPass)
-        end)
-        DBG("BonusRollFrame hook set")
-    else
+    if not (BonusRollFrame and BonusRollFrame.PromptFrame) then
         DBG("WARNING: BonusRollFrame not found – hook not set")
+        return
     end
+    -- Runs after Blizzard has fully set the prompt up (SPELL_CONFIRMATION_PROMPT),
+    -- so one frame later the Pass button is ready to click.
+    hooksecurefunc("BonusRollFrame_StartBonusRoll", function(spellID)
+        DBG("[AutoPass] BonusRollFrame_StartBonusRoll | spellID:", spellID)
+        RA.bonusRollEncounterID = GetBonusRollEncounterID()
+        RunNextFrame(TryAutoPass)
+    end)
+    DBG("BonusRollFrame hook set")
 end

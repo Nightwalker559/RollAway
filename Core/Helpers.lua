@@ -560,15 +560,12 @@ end
 -- localized global-name fragments).
 ------------------------------------------------------------------------
 
--- dbKey, RollOnLoot rollType id (only used for the follow-up ConfirmLootRoll),
--- native button field, ElvUI button name fragments (localized).
--- Note: Transmog uses rollType 2, the same id as Greed, for ConfirmLootRoll.
--- rollType 3 is Disenchant and must never be used here.
+-- dbKey, native button field, ElvUI button name fragments (localized).
 RA.ROLL_BUTTONS = {
-    { dbKey = "need",     rollType = 1, nativeField = "NeedButton",     elvNames = { "Bedarf", "Need" } },
-    { dbKey = "greed",    rollType = 2, nativeField = "GreedButton",    elvNames = { "Gier", "Greed" } },
-    { dbKey = "transmog", rollType = 2, nativeField = "TransmogButton", elvNames = { "Transmog" } },
-    { dbKey = "pass",     rollType = 0, nativeField = "PassButton",     elvNames = { "Passen", "Pass" } },
+    { dbKey = "need",     nativeField = "NeedButton",     elvNames = { "Bedarf", "Need" } },
+    { dbKey = "greed",    nativeField = "GreedButton",    elvNames = { "Gier", "Greed" } },
+    { dbKey = "transmog", nativeField = "TransmogButton", elvNames = { "Transmog" } },
+    { dbKey = "pass",     nativeField = "PassButton",     elvNames = { "Passen", "Pass" } },
 }
 
 local NATIVE_FIELD_BY_KEY = {}
@@ -619,18 +616,23 @@ function RA.FindRollButton(rollID, dbKey)
     end
 end
 
--- Closes any shown native loot-roll/confirm-roll popup. Used right after we
--- programmatically roll or confirm a roll, so Blizzard's own popup for the
--- same action doesn't linger on screen.
-function RA.CloseLootRollPopups(debugTag)
-    for i = 1, 10 do
-        local popup = _G["StaticPopup"..i]
-        if popup and popup:IsShown() then
-            local which = popup.which or ""
-            if which:find("LOOT_ROLL") or which:find("CONFIRM_ROLL") then
-                popup:Hide()
-                DBG(debugTag or "[Core]", "Closed popup:", which)
-            end
-        end
-    end
+-- Auto-confirms the bind-on-pickup prompt of a roll RollAway rolled itself.
+-- Call RA.ArmRollConfirm(rollID) right before the roll; when the game asks for
+-- the confirmation (CONFIRM_LOOT_ROLL) the roll is confirmed and Blizzard's
+-- own popup for it is dropped. Rolls that were not armed are left alone.
+local armedRolls = {}
+
+function RA.ArmRollConfirm(rollID)
+    armedRolls[rollID] = true
 end
+
+local confirmFrame = CreateFrame("Frame")
+confirmFrame:RegisterEvent("CONFIRM_LOOT_ROLL")
+confirmFrame:SetScript("OnEvent", function(_, _, rollID, rollType)
+    if not armedRolls[rollID] then return end
+    armedRolls[rollID] = nil
+    DBG("[Roll] Confirming rollID:", rollID, "| rollType:", rollType)
+    pcall(ConfirmLootRoll, rollID, rollType)
+    -- Blizzard's handler for the same event shows its popup; drop it once it exists.
+    RunNextFrame(function() StaticPopup_Hide("CONFIRM_LOOT_ROLL", rollID) end)
+end)

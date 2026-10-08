@@ -112,6 +112,7 @@ RA.cachedInstanceType = "none"
 RA.cachedInstanceID   = 0
 RA.cachedDiffID       = 0
 RA.lastEncounterID    = 0
+RA.bonusRollEncounterID = nil  -- DungeonEncounterID of the open bonus roll's boss (AutoPass.lua)
 RA.lastLegacyEncounterID = 0
 RA.closeTimer            = nil
 RA.ElvLootModule         = nil
@@ -419,6 +420,7 @@ local function ResetState(reason)
     if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
     wipe(RA.activeRolls)
     RA.lastEncounterID = 0
+    RA.bonusRollEncounterID = nil
 end
 
 -- Debug-log section divider: a call more than 3s after the previous one
