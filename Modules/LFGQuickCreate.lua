@@ -140,62 +140,6 @@ local function SyncVisibility()
 end
 
 ------------------------------------------------------------------------
--- Applies the saved default playstyle to the EC frame on every open.
--- The player can still change it manually in the EC form afterwards.
-------------------------------------------------------------------------
-local function ApplyDefaultPlaystyle(ec)
-    if not RollAwayDB then return end
-    local ps = RollAwayDB.lfgDefaultPlaystyle
-    if not ps or ps == 0 then return end
-    -- Only set the plain data field. Do NOT call dd:SetSelectedValue()/
-    -- GenerateMenu(): that routes into Blizzard's OnPlayStyleSelectedInternal
-    -- -> SetTitleFromActivityInfo -> protected SetEntryTitle(). Calling it from
-    -- insecure code (no hardware event) doesn't just fail once - it taints the
-    -- EntryCreation frame/dropdown, and that taint persists until /reload,
-    -- causing ADDON_ACTION_BLOCKED later even on genuine hardware-event clicks
-    -- (e.g. "Edit" in the Application Viewer). The dropdown label simply won't
-    -- reflect the default visually; our own CreateListing() call and Blizzard's
-    -- native "List Group" both read ec.generalPlaystyle directly, so behavior
-    -- is unaffected.
-    ec.generalPlaystyle = ps
-    DBG("[LFGQuickCreate] Playstyle set:", ps)
-    if LFGListEntryCreation_UpdateValidState then
-        pcall(LFGListEntryCreation_UpdateValidState, ec)
-        DBG("[LFGQuickCreate] UpdateValidState triggered")
-    end
-end
-
-------------------------------------------------------------------------
--- Switches the EC frame's selected difficulty to Mythic+ (Blizzard defaults
--- to plain Mythic), for the currently selected dungeon. Runs when the form
--- opens and after another dungeon was picked - never after a manual
--- difficulty pick, so choosing Normal/Heroic/Mythic still works.
-------------------------------------------------------------------------
-local function ApplyMythicPlus(ec)
-    if not (RollAwayDB and RollAwayDB.lfgAutoMythicPlus) then return end
-    if ec.selectedCategory ~= 2 or not ec.selectedActivity then return end
-
-    local current = C_LFGList.GetActivityInfoTable(ec.selectedActivity)
-    if not current or current.isMythicPlusActivity then return end
-
-    for _, activityID in ipairs(C_LFGList.GetAvailableActivities(ec.selectedCategory, ec.selectedGroup, ec.selectedFilters) or {}) do
-        local info = C_LFGList.GetActivityInfoTable(activityID)
-        if info and info.isMythicPlusActivity then
-            -- Plain data field only, for the same taint reason as the
-            -- default playstyle above (no dropdown API calls). The dropdown
-            -- label may keep showing "Mythic", but Blizzard's List Group
-            -- button reads ec.selectedActivity.
-            ec.selectedActivity = activityID
-            DBG("[LFGQuickCreate] Difficulty set to Mythic+, activityID:", activityID)
-            if LFGListEntryCreation_UpdateValidState then
-                pcall(LFGListEntryCreation_UpdateValidState, ec)
-            end
-            return
-        end
-    end
-end
-
-------------------------------------------------------------------------
 -- Creates a single dungeon icon button.
 ------------------------------------------------------------------------
 local function MakeButton(parent, dungeon, index)
@@ -305,18 +249,12 @@ local function Init()
         buttons[#buttons + 1] = MakeButton(container, d, i)
     end
 
-    -- After every dropdown pick (Blizzard routes them all through
-    -- LFGListEntryCreation_Select): re-sync the button row; when it was a
-    -- dungeon/category pick (no explicit activityID, that is the difficulty
-    -- dropdown), Mythic+ again.
-    hooksecurefunc("LFGListEntryCreation_Select", function(self, _, _, _, activityID)
-        if self ~= ec then return end
-        SyncVisibility()
-        if not activityID and ec:IsShown() then ApplyMythicPlus(ec) end
-    end)
-
     -- Applies the current options to the entry-creation frame - on every open,
-    -- and once right away if it is already open.
+    -- and once right away if it is already open. Only our own frames and the
+    -- layout are touched; values of Blizzard's frame (ec.generalPlaystyle,
+    -- ec.selectedActivity, ...) are never written: insecure writes taint them,
+    -- and Blizzard reads them again in "Edit" (SetEditMode ->
+    -- SetEntryTitle -> ADDON_ACTION_BLOCKED).
     local function OnEntryCreationShown()
         if RollAwayDB and RollAwayDB.lfgQuickCreate then
             PushLayout(ec)
@@ -329,13 +267,6 @@ local function Init()
             PopLayout(ec)
             container:Hide()
         end
-        -- Apply default playstyle / Mythic+ independently of the dungeon buttons,
-        -- once Blizzard has finished setting up the panel (next frame).
-        RunNextFrame(function()
-            if not ec:IsShown() then return end
-            if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then ApplyDefaultPlaystyle(ec) end
-            ApplyMythicPlus(ec)
-        end)
     end
 
     ec:HookScript("OnShow", OnEntryCreationShown)
