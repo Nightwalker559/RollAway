@@ -328,13 +328,13 @@ end
 ------------------------------------------------------------------------
 -- World Map: hide tracked-faction activity button (bottom-left)
 -- Blizzard creates it once as an overlay frame of WorldMapFrame
--- (WorldMapActivityTrackerTemplate) and re-shows it in its own Refresh() on
--- every map change / QUEST_LOG_UPDATE. We find that frame in
--- WorldMapFrame.overlayFrames and hide it again right after each Refresh()
--- (same frame, so no flash). Hidden, the coordinates panel next to it moves
--- back to its normal spot (WorldMapCoordsPanelMixin:PostRefresh). Turning the
--- option off needs no restore: Blizzard shows the button again on the next
--- refresh.
+-- (WorldMapActivityTrackerTemplate: a Button with a BountyDropdown) and
+-- re-shows it in its own Refresh() on every map change / QUEST_LOG_UPDATE. We
+-- find that frame in WorldMapFrame.overlayFrames and hide it again right after
+-- each Refresh() (same frame, so no flash). Hidden, the coordinates panel next
+-- to it moves back to its normal spot (WorldMapCoordsPanelMixin:PostRefresh).
+-- Turning the option off needs no restore: Blizzard shows the button again on
+-- the next refresh.
 ------------------------------------------------------------------------
 
 local mapActivityTracker, mapActivityHooked
@@ -342,7 +342,9 @@ local mapActivityTracker, mapActivityHooked
 local function FindMapActivityTracker()
     if mapActivityTracker then return mapActivityTracker end
     for _, frame in ipairs(WorldMapFrame and WorldMapFrame.overlayFrames or {}) do
-        if frame.CalculateNumActivitiesForSelectedBountyByMap and frame.Refresh then
+        -- The Bounty Board (a Frame) shares the bounty methods; only the tracker is a
+        -- Button with a BountyDropdown.
+        if frame.BountyDropdown and frame.Refresh and frame.IsObjectType and frame:IsObjectType("Button") then
             mapActivityTracker = frame
             return frame
         end
