@@ -186,6 +186,10 @@ local function TryAutoPass()
     if promptFrame.PassButton and promptFrame.PassButton:IsVisible() then
         DBG("[AutoPass] v Clicking PassButton!")
         promptFrame.PassButton:Click()
+        -- The server needs a moment to answer the pass before Blizzard closes the
+        -- prompt; keep it from flashing up meanwhile (Blizzard resets the alpha
+        -- itself when the next bonus roll starts).
+        promptFrame:SetAlpha(0)
     else
         DBG("[AutoPass] x PassButton not visible")
     end

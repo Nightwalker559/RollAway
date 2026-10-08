@@ -6,6 +6,7 @@
 
 ### Changed
 - Bonus roll auto-pass reacts faster and reads the raid boss from the roll itself.
+- Auto-passed bonus roll no longer flashes up on screen.
 - Roll confirmations (bind-on-pickup) no longer use a fixed delay.
 - Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
 
