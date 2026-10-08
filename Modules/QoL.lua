@@ -359,10 +359,15 @@ local function FindMapOverlays()
     return found
 end
 
+local loggedMapOverlays = {}  -- Blizzard re-shows them on every refresh; log the first hide only
+
 local function HideMapOverlay(frame)
     if RollAwayDB and RollAwayDB.hideMapActivityTracker and frame:IsShown() then
         frame:Hide()
-        DBG("[QoL] Hid map overlay:", frame.BountyDropdown and "activity tracker" or "bounty board")
+        if not loggedMapOverlays[frame] then
+            loggedMapOverlays[frame] = true
+            DBG("[QoL] Hid map overlay:", frame.BountyDropdown and "activity tracker" or "bounty board")
+        end
     end
 end
 
