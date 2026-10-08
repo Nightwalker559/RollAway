@@ -10,6 +10,7 @@
 - Roll confirmations (bind-on-pickup) no longer use a fixed delay.
 - World Map: the hide option now also hides the bounty board and the N'Zoth eye, and finds them via Blizzard's own frame list.
 - Group Finder: quick-create no longer waits for a Blizzard addon that does not exist.
+- Hide error messages now also hides "you can't carry any more of these items".
 
 ### Fixed
 - Crafting Orders expansion filter hook waited for a Blizzard addon that does not exist.

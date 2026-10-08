@@ -479,8 +479,9 @@ end
 -- works in every client language; a name missing in the current client is
 -- skipped. Full list of messages: https://warcraft.wiki.gg/wiki/Event:UI_ERROR_MESSAGE
 local KEPT_ERRORS = {
-    -- No room / not enough money
-    "ERR_INV_FULL", "ERR_BANK_FULL", "ERR_QUEST_LOG_FULL", "ERR_ITEM_MAX_COUNT",
+    -- No room / not enough money ("can't carry any more of these items",
+    -- ERR_ITEM_MAX_COUNT, is no hint worth keeping: hidden)
+    "ERR_INV_FULL", "ERR_BANK_FULL", "ERR_QUEST_LOG_FULL",
     "ERR_NOT_ENOUGH_MONEY",
     -- Loot ("can't loot that item now" and "still being rolled for" are no
     -- hints worth keeping: hidden)
