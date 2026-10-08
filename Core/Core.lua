@@ -113,6 +113,8 @@ RA.cachedInstanceID   = 0
 RA.cachedDiffID       = 0
 RA.lastEncounterID    = 0
 RA.bonusRollEncounterID = nil  -- DungeonEncounterID of the open bonus roll's boss (AutoPass.lua)
+-- Developer test switches (Options/OptionsDev.lua); never saved, off after /reload.
+RA.devTest = { oldRaidAutoPass = false, legacyRoll = false }
 RA.lastLegacyEncounterID = 0
 RA.closeTimer            = nil
 RA.ElvLootModule         = nil
@@ -582,8 +584,8 @@ f:SetScript("OnEvent", function(_, event, ...)
         if RollAwayDB and RollAwayDB.legacy and RA.ExecuteLegacyRoll then
             local raidKey = LEGACY_ENCOUNTER_MAP[RA.lastLegacyEncounterID]
             local legacyRaidsDB = GetLegacyRaidsDB()
-            if raidKey and legacyRaidsDB and legacyRaidsDB[raidKey] then
-                DBG("[Legacy] Auto-roll for rollID:", arg1, "| raid:", raidKey)
+            if (raidKey and legacyRaidsDB and legacyRaidsDB[raidKey]) or RA.devTest.legacyRoll then
+                DBG("[Legacy] Auto-roll for rollID:", arg1, "| raid:", raidKey or "(dev test: any content)")
                 RA.ExecuteLegacyRoll(arg1)
             end
         end

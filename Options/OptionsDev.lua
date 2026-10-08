@@ -182,7 +182,21 @@ function RA.BuildDevOptions(category, S, classColor)
         RA.SetTankMarkerTest(checked)
     end)
     tankTestCB.frame:SetPoint("TOPLEFT", testsAnchor, "BOTTOMLEFT", 0, -22)
-    MakeInfoText(testsPage, tankTestCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_tank_test_info"])
+    local tankTestInfo = MakeInfoText(testsPage, tankTestCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_tank_test_info"])
+
+    -- Session-only switches (RA.devTest): try bonus roll auto-pass and legacy
+    -- auto-roll in old content, e.g. MoP raids.
+    local oldRaidCB = MakeCB(testsPage, RA_L["dev_oldraid_test_label"], RA.devTest.oldRaidAutoPass, function(checked)
+        RA.devTest.oldRaidAutoPass = checked
+    end)
+    oldRaidCB.frame:SetPoint("TOPLEFT", tankTestInfo, "BOTTOMLEFT", -20, -22)
+    local oldRaidInfo = MakeInfoText(testsPage, oldRaidCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_oldraid_test_info"])
+
+    local legacyRollCB = MakeCB(testsPage, RA_L["dev_legacyroll_test_label"], RA.devTest.legacyRoll, function(checked)
+        RA.devTest.legacyRoll = checked
+    end)
+    legacyRollCB.frame:SetPoint("TOPLEFT", oldRaidInfo, "BOTTOMLEFT", -20, -22)
+    MakeInfoText(testsPage, legacyRollCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_legacyroll_test_info"])
 
     ------------------------------------------------------------------
     -- Tools: diagnostics into the log

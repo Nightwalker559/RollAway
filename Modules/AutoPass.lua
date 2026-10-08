@@ -10,6 +10,14 @@ local DELVE_MAP          = RA.DELVE_MAP
 local RAID_ENCOUNTER_MAP = RA.RAID_ENCOUNTER_MAP
 local RAID_DIFFICULTY_BUCKET = RA.RAID_DIFFICULTY_BUCKET
 
+-- Difficulty IDs of old raids (10/25 player, LFR). Only used by the developer
+-- test switch RA.devTest.oldRaidAutoPass, to try the auto-pass in e.g. MoP.
+local OLD_RAID_DIFFICULTY_BUCKET = {
+    [3] = "normal", [4] = "normal",   -- 10 / 25 player
+    [5] = "heroic", [6] = "heroic",   -- 10 / 25 player heroic
+    [7] = "lfr",
+}
+
 ------------------------------------------------------------------------
 -- Instance matching helpers
 ------------------------------------------------------------------------
@@ -138,6 +146,7 @@ local function ComputeAutoPassState()
         return true, "raid:" .. key
     elseif RA.cachedInstanceType == "raid" then
         local bucket = RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
+            or (RA.devTest.oldRaidAutoPass and OLD_RAID_DIFFICULTY_BUCKET[RA.cachedDiffID])
         if bucket and RollAwayDBChar.raidAutoPassDifficulty[bucket] then
             return true, "raid_difficulty:" .. bucket
         end
