@@ -119,6 +119,13 @@ end
 -- never drift out of sync with what actually gets auto-passed.
 ------------------------------------------------------------------------
 
+-- Difficulty bucket (normal / heroic / mythic / lfr) of the current raid; old
+-- raids only with the developer test switch.
+local function GetRaidDifficultyBucket()
+    return RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
+        or (RA.devTest.oldRaidAutoPass and OLD_RAID_DIFFICULTY_BUCKET[RA.cachedDiffID])
+end
+
 local function ComputeAutoPassState()
     if not RollAwayDB or not RollAwayDBChar then return false end
     if not RA.BONUS_ROLLS_ENABLED then return false end
@@ -145,8 +152,7 @@ local function ComputeAutoPassState()
     if key and RollAwayDBChar.raids[key] then
         return true, "raid:" .. key
     elseif RA.cachedInstanceType == "raid" then
-        local bucket = RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
-            or (RA.devTest.oldRaidAutoPass and OLD_RAID_DIFFICULTY_BUCKET[RA.cachedDiffID])
+        local bucket = GetRaidDifficultyBucket()
         if bucket and RollAwayDBChar.raidAutoPassDifficulty[bucket] then
             return true, "raid_difficulty:" .. bucket
         end
@@ -177,8 +183,14 @@ local function TryAutoPass()
     local shouldPass, reason = ComputeAutoPassState()
 
     if RollAwayDB.debug then
+        local diffID = RA.cachedDiffID
+        local bucket = GetRaidDifficultyBucket()
         DBG("[AutoPass] Check | instanceID:", RA.cachedInstanceID,
             "| type:", RA.cachedInstanceType,
+            "| diffID:", diffID,
+            "| bucket:", bucket or "none",
+            "| bucketOn:", bucket and RollAwayDBChar.raidAutoPassDifficulty[bucket] or false,
+            "| oldRaidTest:", RA.devTest.oldRaidAutoPass,
             "| lastEncounterID:", RA.lastEncounterID)
         if shouldPass then
             DBG("[AutoPass] v Triggered by:", reason)
