@@ -5,29 +5,29 @@
 ## 3.1.2
 
 ### New
-- Auto-log: checkbox "Raids: current season only" skips every raid outside the running season; the season is read from the game, no list to maintain. The Advanced Combat Logging reminder is skipped there too.
-- Legacy auto-roll: Pass option (turns the other roll types off); with nothing selected it no longer passes on everything.
-- Hide error messages: sub-option to also hide yellow messages (quest progress); "you can't carry any more of these" is hidden too.
-- World Map: the hide option now also hides the bounty board and the N'Zoth eye.
-- Tank marker popup closes when the tank gets marked (by anyone) and is not offered for a marked tank.
-- Developer: debug log filter by category; log lines can no longer be overwritten while you select text; millisecond timestamps; commands /rawraids, /rawdungeons, /rawbosses and /rawseason read raids, dungeons and boss IDs from the game; the error log flags a Mythic+ season that does not match Data/Dungeons.lua.
+- Auto-log: "Raids: current season only" (the season is read from the game).
+- Legacy auto-roll: Pass option; with nothing selected it no longer passes on everything.
+- Hide error messages: sub-option for yellow messages (quest progress); also hides "can't carry any more".
+- World Map: the hide option now also covers the bounty board and the N'Zoth eye.
+- Tank marker popup closes when the tank gets marked and is not offered for a marked tank.
+- Developer: debug log filter; /rawraids, /rawdungeons, /rawbosses and /rawseason; season check in the error log.
 
 ### Changed
-- Bonus roll auto-pass is faster, reads the raid boss from the roll itself and no longer flashes up.
+- Bonus roll auto-pass: faster, reads the raid boss from the roll, no longer flashes up.
 - Bind-on-pickup roll confirmations no longer use a fixed delay.
-- Vendor filter: owned heirlooms are dimmed too; pets only once you own the maximum.
-- Paragon reminder also announces Major Factions that are not in the addon's list.
-- Portal frame: a newly learned teleport shows up while the frame is open.
-- Group Finder quick-create and the join reminder use Blizzard events instead of timers.
+- Vendor filter dims owned heirlooms; pets only once you own the maximum.
+- Paragon reminder also covers Major Factions that are not in the list.
+- Portal frame shows a newly learned teleport while it is open.
+- Group Finder quick-create and the join reminder use game events instead of timers.
+- Debug log: lines can no longer be overwritten while you select text; millisecond timestamps.
 
 ### Fixed
-- Loot history auto-close: finished rolls are matched by the game's loot handle, cancelled rolls are noticed, the frame closes after the LAST roll of a boss, and a timer of an already finished roll can no longer close it.
+- Loot history auto-close: rolls are matched by the game's loot handle; it closes after the last roll of a boss.
 - Great Vault reminder could show again on every login.
-- Tank marker: solo role check used a function the game no longer has.
-- Auto repair: the cost in the chat message used a removed function.
-- Auto-log no longer toggles combat logging when it already is as wanted.
-- Legacy auto-roll used a wrong roll type for Transmog when the roll button was not found.
-- Crafting Orders filter and Group Finder quick-create waited for Blizzard addons that do not exist.
+- Tank marker (solo role check) and auto repair (cost text) used functions the game no longer has.
+- Auto-log toggled combat logging although it was already as wanted.
+- Legacy auto-roll used a wrong roll type for Transmog when the button was not found.
+- Crafting Orders filter and quick-create waited for Blizzard addons that do not exist.
 - Removed leftovers for Blizzard addons that no longer exist (Talking Head, Character panel).
 
 ---
