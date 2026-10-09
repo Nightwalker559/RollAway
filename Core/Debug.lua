@@ -558,16 +558,33 @@ local function KeyFromName(name)
     return key ~= "" and key or "unknown"
 end
 
--- Group Finder activity of a Mythic+ dungeon: its ID is the lfgID of Data/Dungeons.lua.
-local function FindMythicPlusActivity(mapID)
-    if not (C_LFGList and C_LFGList.GetAvailableActivities) then return nil end
-    -- Recommended + NotRecommended, PvE, CurrentSeason: together every dungeon activity
-    for _, filter in ipairs({ 3, 4, 7, 64 }) do
-        for _, activityID in ipairs(C_LFGList.GetAvailableActivities(GROUP_FINDER_CATEGORY_ID_DUNGEONS, 0, filter) or {}) do
-            local info = C_LFGList.GetActivityInfoTable(activityID)
-            if info and info.isMythicPlusActivity and info.mapID == mapID then return activityID end
+-- Group Finder activities of the Mythic+ dungeons: map ID -> activity ID (the
+-- lfgID of Data/Dungeons.lua). Every dungeon sits in its own activity group, so
+-- the groups are listed first (the way Blizzard's own Group Finder does it),
+-- for the current season, the rest of the expansion and everything else.
+local function CollectMythicPlusActivities()
+    local filters = {
+        Enum.LFGListFilter.CurrentSeason + Enum.LFGListFilter.PvE,
+        Enum.LFGListFilter.CurrentExpansion + Enum.LFGListFilter.NotCurrentSeason + Enum.LFGListFilter.PvE,
+        Enum.LFGListFilter.PvE,
+        Enum.LFGListFilter.Recommended + Enum.LFGListFilter.NotRecommended,
+    }
+    local byMap = {}
+    for _, filter in ipairs(filters) do
+        local groups = { 0 }
+        for _, groupID in ipairs(C_LFGList.GetAvailableActivityGroups(GROUP_FINDER_CATEGORY_ID_DUNGEONS, filter) or {}) do
+            groups[#groups + 1] = groupID
+        end
+        for _, groupID in ipairs(groups) do
+            for _, activityID in ipairs(C_LFGList.GetAvailableActivities(GROUP_FINDER_CATEGORY_ID_DUNGEONS, groupID, filter) or {}) do
+                local info = C_LFGList.GetActivityInfoTable(activityID)
+                if info and info.isMythicPlusActivity and info.mapID and not byMap[info.mapID] then
+                    byMap[info.mapID] = activityID
+                end
+            end
         end
     end
+    return byMap
 end
 
 local function DumpSeasonData()
@@ -600,12 +617,23 @@ local function DumpSeasonData()
         pool[#pool + 1] = { name = name or "?", cmID = cmID, mapID = mapID }
     end
     table.sort(pool, function(a, b) return a.name < b.name end)
+    local activityOf = CollectMythicPlusActivities()
     Log("[Season] Paste into Data/Dungeons.lua as RA.DUNGEONS[" .. nextSeason .. "] (pool of " .. #pool
         .. "; set key, portalSpellID and check lfgID):")
     for _, d in ipairs(pool) do
         Log(string.format('    { key = "%s", mapID = %s, cmID = %s, lfgID = %s, portalSpellID = 0, expansion = "%s" }, -- %s',
-            KeyFromName(d.name), tostring(d.mapID), d.cmID, tostring(FindMythicPlusActivity(d.mapID) or "?"),
+            KeyFromName(d.name), tostring(d.mapID), d.cmID, tostring(activityOf[d.mapID] or "?"),
             expansionOf[d.mapID] or "?", d.name))
+    end
+
+    local missing = false
+    for _, d in ipairs(pool) do if not activityOf[d.mapID] then missing = true end end
+    if missing then
+        local seen = {}
+        for mapID, activityID in pairs(activityOf) do seen[#seen + 1] = string.format("%s=map %s", activityID, mapID) end
+        table.sort(seen)
+        Log("[Season] lfgID missing for some dungeons; Mythic+ activities the Group Finder lists (activity=map):",
+            #seen > 0 and table.concat(seen, ", ") or "none")
     end
 
     -- raid bosses of the season's raids that the addon does not know yet
