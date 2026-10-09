@@ -83,6 +83,7 @@ for _, b in ipairs(SEASON1_LEGACY_RAIDS) do LEGACY_ENCOUNTER_MAP[b.encounterID] 
 RA.DUNGEON_MAP          = DUNGEON_MAP
 RA.DELVE_MAP            = DELVE_MAP
 RA.RAID_ENCOUNTER_MAP   = RAID_ENCOUNTER_MAP
+RA.LEGACY_ENCOUNTER_MAP = LEGACY_ENCOUNTER_MAP
 
 ------------------------------------------------------------------------
 -- Raid difficulty bucket map – groups the various difficultyIDs seen

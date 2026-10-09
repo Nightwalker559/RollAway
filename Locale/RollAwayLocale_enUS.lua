@@ -84,6 +84,8 @@ L["cmd_rawraids_info"]        = "Encounter Journal tiers and their raids into th
 L["cmd_rawraids_done"]        = "Raid tiers written to the debug log (/rawlog)."
 L["cmd_rawdungeons_info"]     = "Encounter Journal tiers, dungeons and the Mythic+ pool into the log"
 L["cmd_rawdungeons_done"]     = "Dungeon tiers written to the debug log (/rawlog)."
+L["cmd_rawbosses_info"]       = "[tier|all]: raid bosses with their encounter IDs into the log"
+L["cmd_rawbosses_done"]       = "Raid bosses written to the debug log (/rawlog)."
 L["cmd_rawcharbtn_info"]      = "State of the Character panel buttons into the log"
 L["cmd_rawchonkyoffset_info"] = "<pixels>: live-tune the button offset next to Chonky Character Sheet"
 L["cmd_rawtanktest_info"]     = "Tank marker test mode on / off"
@@ -132,7 +134,7 @@ L["dev_tool_charbtn"]         = "Character panel buttons"
 L["dev_tool_chonky_hint"]     = "Chonky button offset: /rawchonkyoffset <pixels> (see Commands)."
 L["dev_commands_public"]      = "Everyone"
 L["dev_commands_dev"]         = "Developer characters"
-L["dev_commands_note"]        = "Most developer commands need debug mode on; /rawlog, /rawcharbtn, /rawraids and /rawdungeons work without it."
+L["dev_commands_note"]        = "Most developer commands need debug mode on; /rawlog, /rawcharbtn, /rawraids, /rawdungeons and /rawbosses work without it."
 
 
 -- QoL

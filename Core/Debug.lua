@@ -177,7 +177,7 @@ end
 -- In the order of the Developer panel. The label is the locale key
 -- "dev_filter_<key>"; a line that matches nothing is "other".
 RA.DEBUG_CATEGORIES = {
-    { key = "zone",     prefixes = { "Instance:", "[Season]", "[Raids]", "[Dungeons]", "--- GetInstanceInfo", "  ", "->", "----" } },
+    { key = "zone",     prefixes = { "Instance:", "[Season]", "[Raids]", "[Dungeons]", "[Bosses]", "--- GetInstanceInfo", "  ", "->", "----" } },
     { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "ENCOUNTER_END", "Watchdog",
                                      "ResetState", "FullReset", "Close timer", "Starting close",
                                      "Hiding loot history", "Entering combat" } },
@@ -494,6 +494,50 @@ local function DumpJournalTiers(isRaid)
     end
 end
 
+-- /rawbosses [tier|all]: the bosses of every raid of one Encounter Journal tier
+-- (default: the last one = current season) with the DungeonEncounterID that
+-- ENCOUNTER_END reports - the ID Data/Raids.lua and Data/LegacyRaids.lua use.
+-- Bosses the addon already knows are marked with their key. These IDs live in
+-- the game's data, not in Blizzard's UI source. The journal's selected tier
+-- and raid are put back afterwards.
+local function DumpRaidBosses(arg)
+    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
+    local numTiers = EJ_GetNumTiers()
+    local first, last = numTiers, numTiers
+    if arg == "all" then
+        first = 1
+    elseif tonumber(arg) then
+        first, last = tonumber(arg), tonumber(arg)
+    end
+    local previousTier = EJ_GetCurrentTier()
+    local previousInstance = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+    for tier = first, last do
+        EJ_SelectTier(tier)
+        Log("[Bosses] tier", tier, tostring((EJ_GetTierInfo(tier))))
+        local raidIndex = 1
+        while true do
+            local journalID, raidName, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(raidIndex, true)
+            if not journalID then break end
+            EJ_SelectInstance(journalID)
+            local bosses, bossIndex = {}, 1
+            while true do
+                local bossName, _, journalBossID = EJ_GetEncounterInfoByIndex(bossIndex)
+                if not bossName then break end
+                local encounterID = select(7, EJ_GetEncounterInfo(journalBossID))
+                local known = encounterID and (RA.RAID_ENCOUNTER_MAP[encounterID] or RA.LEGACY_ENCOUNTER_MAP[encounterID])
+                bosses[#bosses + 1] = string.format("%s = %s%s", bossName, tostring(encounterID),
+                    known and (" (" .. tostring(known) .. ")") or " (NEW)")
+                bossIndex = bossIndex + 1
+            end
+            Log(string.format("[Bosses] %s [map %s]: %s", raidName, tostring(mapID),
+                #bosses > 0 and table.concat(bosses, "; ") or "-"))
+            raidIndex = raidIndex + 1
+        end
+    end
+    if previousTier then EJ_SelectTier(previousTier) end
+    if previousInstance and previousInstance ~= 0 then EJ_SelectInstance(previousInstance) end
+end
+
 local function RegisterSlashCommands()
     -- Dev/tester characters only.
     if not RA.DEV_CHARS[UnitName("player")] then return end
@@ -519,6 +563,12 @@ local function RegisterSlashCommands()
     RegisterDevCommand("RAWRAIDS", function()
         local ok, err = pcall(DumpJournalTiers, true)
         RA.Print(ok and RA.RA_L["cmd_rawraids_done"] or ("/rawraids: " .. tostring(err)))
+    end, true)
+
+    -- /rawbosses [tier|all] → raid bosses with their encounter IDs into the log
+    RegisterDevCommand("RAWBOSSES", function(msg)
+        local ok, err = pcall(DumpRaidBosses, strtrim(msg or ""):lower())
+        RA.Print(ok and RA.RA_L["cmd_rawbosses_done"] or ("/rawbosses: " .. tostring(err)))
     end, true)
 
     -- /rawdungeons → Encounter Journal tiers, dungeons and the Mythic+ pool into the log

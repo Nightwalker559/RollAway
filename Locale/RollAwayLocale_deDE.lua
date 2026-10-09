@@ -85,6 +85,8 @@ L["cmd_rawraids_info"]        = "Encounter-Journal-Tiers und ihre Raids ins Log"
 L["cmd_rawraids_done"]        = "Raid-Tiers ins Debug-Log geschrieben (/rawlog)."
 L["cmd_rawdungeons_info"]     = "Encounter-Journal-Tiers, Dungeons und M+-Pool ins Log"
 L["cmd_rawdungeons_done"]     = "Dungeon-Tiers ins Debug-Log geschrieben (/rawlog)."
+L["cmd_rawbosses_info"]       = "[Tier|all]: Raid-Bosse mit Encounter-IDs ins Log"
+L["cmd_rawbosses_done"]       = "Raid-Bosse ins Debug-Log geschrieben (/rawlog)."
 L["cmd_rawcharbtn_info"]      = "Zustand der Charakterfenster-Buttons ins Log schreiben"
 L["cmd_rawchonkyoffset_info"] = "<Pixel>: Button-Abstand neben Chonky Character Sheet live einstellen"
 L["cmd_rawtanktest_info"]     = "Tank-Marker-Testmodus an / aus"
@@ -133,7 +135,7 @@ L["dev_tool_charbtn"]         = "Charakterfenster-Buttons"
 L["dev_tool_chonky_hint"]     = "Chonky-Button-Abstand: /rawchonkyoffset <Pixel> (siehe Befehle)."
 L["dev_commands_public"]      = "Für alle"
 L["dev_commands_dev"]         = "Entwickler-Charaktere"
-L["dev_commands_note"]        = "Die meisten Entwickler-Befehle brauchen den Debug-Modus; /rawlog, /rawcharbtn, /rawraids und /rawdungeons gehen auch ohne."
+L["dev_commands_note"]        = "Die meisten Entwickler-Befehle brauchen den Debug-Modus; /rawlog, /rawcharbtn, /rawraids, /rawdungeons und /rawbosses gehen auch ohne."
 
 
 -- QoL
