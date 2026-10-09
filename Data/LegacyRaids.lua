@@ -2,6 +2,8 @@
 -- Legacy raid boss definitions (Dragonflight + The War Within), used for
 -- account-wide old-content farming. Not season-indexed - append new tiers
 -- here once they become "legacy" (i.e. superseded by a new expansion/tier).
+-- At the end: RA.IsCurrentSeasonRaid, which asks the game for the running
+-- season's raids and uses the legacy list only as fallback.
 
 _G["RollAway"] = _G["RollAway"] or {}
 local RA = _G["RollAway"]

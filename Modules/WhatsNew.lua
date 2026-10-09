@@ -27,6 +27,11 @@ local FEATURES = {
         description = RA_L["whatsnew_info_desc"],
         location    = RA_L["whatsnew_info_location"],
     },
+    {
+        title       = RA_L["whatsnew_log_title"],
+        description = RA_L["whatsnew_log_desc"],
+        location    = RA_L["whatsnew_log_location"],
+    },
 }
 
 -- ============================================================
