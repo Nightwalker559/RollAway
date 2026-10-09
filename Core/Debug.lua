@@ -538,6 +538,119 @@ local function DumpRaidBosses(arg)
     if previousInstance and previousInstance ~= 0 then EJ_SelectInstance(previousInstance) end
 end
 
+-- /rawseason: ready-to-paste Lua for the running season, read from the game:
+--   * RA.DUNGEONS[n] entries (Data/Dungeons.lua) for the Mythic+ pool: mapID and
+--     cmID from the pool, lfgID from the Group Finder, expansion from the journal
+--   * RA.RAIDS[n] entries (Data/Raids.lua) for the bosses of the season's raids
+--     that the addon does not know yet
+-- Left to fill in by hand: the key (a guess from the name - rename it to the
+-- English name), portalSpellID (no API for it) and the locale texts.
+local EXPANSION_KEYS = { "classic", "tbc", "wrath", "cataclysm", "mop", "wod", "legion", "bfa",
+                         "shadowlands", "dragonflight", "tww", "midnight" }
+local ACCENTS = { ["ä"] = "ae", ["ö"] = "oe", ["ü"] = "ue", ["ß"] = "ss", ["é"] = "e", ["è"] = "e",
+                  ["ê"] = "e", ["à"] = "a", ["â"] = "a", ["ô"] = "o", ["û"] = "u", ["ç"] = "c", ["ñ"] = "n" }
+
+-- "Altar der Fänge" -> "altar_der_faenge"
+local function KeyFromName(name)
+    local key = tostring(name):lower()
+    for from, to in pairs(ACCENTS) do key = key:gsub(from, to) end
+    key = key:gsub("[^%w]+", "_"):gsub("^_+", ""):gsub("_+$", "")
+    return key ~= "" and key or "unknown"
+end
+
+-- Group Finder activity of a Mythic+ dungeon: its ID is the lfgID of Data/Dungeons.lua.
+local function FindMythicPlusActivity(mapID)
+    if not (C_LFGList and C_LFGList.GetAvailableActivities) then return nil end
+    -- Recommended + NotRecommended, PvE, CurrentSeason: together every dungeon activity
+    for _, filter in ipairs({ 3, 4, 7, 64 }) do
+        for _, activityID in ipairs(C_LFGList.GetAvailableActivities(GROUP_FINDER_CATEGORY_ID_DUNGEONS, 0, filter) or {}) do
+            local info = C_LFGList.GetActivityInfoTable(activityID)
+            if info and info.isMythicPlusActivity and info.mapID == mapID then return activityID end
+        end
+    end
+end
+
+local function DumpSeasonData()
+    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
+    local numTiers = EJ_GetNumTiers()
+    local maxExpansionTier = math.min(numTiers, (LE_EXPANSION_LEVEL_CURRENT or (numTiers - 2)) + 1)
+    local previousTier = EJ_GetCurrentTier()
+    local previousInstance = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+
+    -- highest expansion tier that lists each dungeon (a revived old dungeon
+    -- counts for the expansion it is revived in)
+    local expansionOf = {}
+    for tier = 1, maxExpansionTier do
+        EJ_SelectTier(tier)
+        local index = 1
+        while true do
+            local journalID, _, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, false)
+            if not journalID then break end
+            if mapID then expansionOf[mapID] = EXPANSION_KEYS[tier] or "?" end
+            index = index + 1
+        end
+    end
+
+    local nextSeason = 1
+    for season in pairs(RA.DUNGEONS) do nextSeason = math.max(nextSeason, season + 1) end
+
+    local pool = {}
+    for _, cmID in ipairs(C_ChallengeMode.GetMapTable() or {}) do
+        local name, _, _, _, _, mapID = C_ChallengeMode.GetMapUIInfo(cmID)
+        pool[#pool + 1] = { name = name or "?", cmID = cmID, mapID = mapID }
+    end
+    table.sort(pool, function(a, b) return a.name < b.name end)
+    Log("[Season] Paste into Data/Dungeons.lua as RA.DUNGEONS[" .. nextSeason .. "] (pool of " .. #pool
+        .. "; set key, portalSpellID and check lfgID):")
+    for _, d in ipairs(pool) do
+        Log(string.format('    { key = "%s", mapID = %s, cmID = %s, lfgID = %s, portalSpellID = 0, expansion = "%s" }, -- %s',
+            KeyFromName(d.name), tostring(d.mapID), d.cmID, tostring(FindMythicPlusActivity(d.mapID) or "?"),
+            expansionOf[d.mapID] or "?", d.name))
+    end
+
+    -- raid bosses of the season's raids that the addon does not know yet
+    EJ_SelectTier(numTiers)
+    Log("[Season] Raid bosses unknown to the addon in the current season (Data/Raids.lua, RA.RAIDS[n]; skip world bosses):")
+    local raidIndex, unknown = 1, 0
+    while true do
+        local journalID, raidName, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(raidIndex, true)
+        if not journalID then break end
+        EJ_SelectInstance(journalID)
+        local lines, known, bossIndex = {}, 0, 1
+        while true do
+            local bossName, _, journalBossID = EJ_GetEncounterInfoByIndex(bossIndex)
+            if not bossName then break end
+            local encounterID = select(7, EJ_GetEncounterInfo(journalBossID))
+            if encounterID and (RA.RAID_ENCOUNTER_MAP[encounterID] or RA.LEGACY_ENCOUNTER_MAP[encounterID]) then
+                known = known + 1
+            elseif encounterID then
+                lines[#lines + 1] = string.format('    { key = "%s", encounterID = %s, raid = "%s" }, -- %s',
+                    KeyFromName(bossName), tostring(encounterID), KeyFromName(raidName), bossName)
+            end
+            bossIndex = bossIndex + 1
+        end
+        Log(string.format("[Season] -- %s (mapID %s): %d unknown, %d known", raidName, tostring(mapID), #lines, known))
+        for _, line in ipairs(lines) do Log(line) end
+        unknown = unknown + #lines
+        raidIndex = raidIndex + 1
+    end
+
+    if previousTier then EJ_SelectTier(previousTier) end
+    if previousInstance and previousInstance ~= 0 then EJ_SelectInstance(previousInstance) end
+
+    -- Delves are not in the journal: they can only be read by standing in one
+    RA.UpdateInstanceCache()
+    if RA.cachedInstanceType == "scenario" and RA.cachedInstanceID ~= 0 then
+        local name = GetInstanceInfo()
+        local known = RA.DELVE_MAP[RA.cachedInstanceID]
+        Log(string.format('[Season] Delve you are in (Data/Delves.lua): { key = "%s", mapID = %s }, -- %s%s',
+            KeyFromName(name), RA.cachedInstanceID, tostring(name),
+            known and (" (already known as " .. known .. ")") or " (NEW)"))
+    else
+        Log("[Season] Delves: enter a delve and run /rawseason again to get its line for Data/Delves.lua.")
+    end
+end
+
 local function RegisterSlashCommands()
     -- Dev/tester characters only.
     if not RA.DEV_CHARS[UnitName("player")] then return end
@@ -563,6 +676,12 @@ local function RegisterSlashCommands()
     RegisterDevCommand("RAWRAIDS", function()
         local ok, err = pcall(DumpJournalTiers, true)
         RA.Print(ok and RA.RA_L["cmd_rawraids_done"] or ("/rawraids: " .. tostring(err)))
+    end, true)
+
+    -- /rawseason → paste-ready Lua for the running season's dungeons and raid bosses
+    RegisterDevCommand("RAWSEASON", function()
+        local ok, err = pcall(DumpSeasonData)
+        RA.Print(ok and RA.RA_L["cmd_rawseason_done"] or ("/rawseason: " .. tostring(err)))
     end, true)
 
     -- /rawbosses [tier|all] → raid bosses with their encounter IDs into the log
