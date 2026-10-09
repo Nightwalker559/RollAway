@@ -638,17 +638,6 @@ local function DumpSeasonData()
     if previousTier then EJ_SelectTier(previousTier) end
     if previousInstance and previousInstance ~= 0 then EJ_SelectInstance(previousInstance) end
 
-    -- Delves are not in the journal: they can only be read by standing in one
-    RA.UpdateInstanceCache()
-    if RA.cachedInstanceType == "scenario" and RA.cachedInstanceID ~= 0 then
-        local name = GetInstanceInfo()
-        local known = RA.DELVE_MAP[RA.cachedInstanceID]
-        Log(string.format('[Season] Delve you are in (Data/Delves.lua): { key = "%s", mapID = %s }, -- %s%s',
-            KeyFromName(name), RA.cachedInstanceID, tostring(name),
-            known and (" (already known as " .. known .. ")") or " (NEW)"))
-    else
-        Log("[Season] Delves: enter a delve and run /rawseason again to get its line for Data/Delves.lua.")
-    end
 end
 
 local function RegisterSlashCommands()
