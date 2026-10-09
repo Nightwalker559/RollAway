@@ -1,11 +1,9 @@
 -- RollAway - QoL.lua
--- Quality of Life features: Ready Check / durability reminders, Auction House
--- and Crafting Orders expansion filter, Great Vault currency display, and
--- Blizzard UI clean-ups (world map activity tracker, crafting output log,
--- red error text, Talking Head, Boss Banner, Bonus Objective Banner, Event
--- Toasts). Quest automation lives in Modules\Quests.lua.
--- The instance join reminder lives in Modules\JoinReminder.lua, the Character
--- panel buttons in Modules\CharFrameButtons.lua.
+-- Quality of life: ready check / durability reminders, Auction House and Crafting
+-- Orders expansion filter, Great Vault currency, and Blizzard UI hiding (map
+-- overlays, crafting output log, error text, Talking Head, boss banner, toasts,
+-- alerts). Quests: Quests.lua; join reminder: JoinReminder.lua; Character
+-- panel buttons: CharFrameButtons.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -21,24 +19,15 @@ local DURA_THRESHOLD = 0.30  -- 30%
 
 local talentFrame, talentTimer  -- QoL toast (RA.CreateToastFrame), created on first show
 
--- "<Spec> – <loadout name>", or just "<Spec>" for the starter build / no
--- saved loadout. Three sources, in the same priority order Blizzard's own
--- Talent UI uses (see PlayerSpellsFrame.TalentsFrame.LoadSystem):
--- 1) the Talent frame's own dropdown selection - only populated once that
---    frame has been created (i.e. Talents UI opened this session)
--- 2) GetLastSelectedSavedConfigID - only set once a loadout has been
---    (re)selected via that dropdown this session; nil otherwise, which is
---    the common case and why relying on it alone showed no name at all
--- 3) GetActiveConfigID - always available but named after the spec itself,
---    not the loadout (filtered out below via the loadoutName ~= specName
---    check, so it never produces the "Spec – Spec" duplicate)
+-- "<Spec> – <loadout name>", or just "<Spec>" (starter build / no saved loadout).
+-- Sources in the order of Blizzard's Talent UI:
+-- 1) the Talent frame's dropdown selection (only once that frame exists)
+-- 2) GetLastSelectedSavedConfigID (only after a loadout was selected this session)
+-- 3) GetActiveConfigID (always there, but named like the spec - filtered below)
 local function GetActiveTalentLabel()
     local specIndex = C_SpecializationInfo.GetSpecialization()
     if not specIndex then return nil end
-    -- NOTE: must NOT write "specIndex and C_SpecializationInfo.GetSpecializationInfo(...)"
-    -- here - Lua's `and`/`or` truncate a multi-return to a single value, so a
-    -- guard like that silently drops every return after the first (this is
-    -- exactly what caused specID to come through but specName to stay nil).
+    -- No "x and F(...)" here: it would cut the multiple return values to one.
     local specID, specName = C_SpecializationInfo.GetSpecializationInfo(specIndex)
     if not specName then return nil end
 
@@ -134,18 +123,14 @@ RA.CheckDurability    = CheckDurability
 RA.ShowTalentReminder = ShowTalentReminder
 
 ------------------------------------------------------------------------
--- Auction House – Current Expansion Only filter
--- 12.1+: Blizzard persists this filter across AH sessions, but only once it
--- has been set active at least once (won't turn itself on from scratch).
--- We still check/re-apply on every AH open so it (a) gets activated the
--- first time and (b) gets restored if it was turned off since.
+-- Auction House – "Current Expansion Only" filter. Blizzard keeps it between sessions
+-- once it was set; we apply it on every AH open (first time, and after it was turned off).
 ------------------------------------------------------------------------
 
 local AH_FILTER_CEO = Enum.AuctionHouseFilter and Enum.AuctionHouseFilter.CurrentExpansionOnly
 
--- 12.1.0 moved AH filter state out of SearchBar.FilterButton and into this global
--- saved table. "Clear Filters" replaces the whole table, so resolve it fresh on
--- every use instead of caching a reference.
+-- The AH filter state is the global g_auctionHouseFilters ("Clear Filters" replaces
+-- the table, so it is looked up on every use).
 local function GetAuctionHouseFilters()
     return g_auctionHouseFilters and g_auctionHouseFilters.filters
 end
@@ -160,7 +145,7 @@ local function SetAHExpansionFilter()
 
     local filters = GetAuctionHouseFilters()
     if filters then
-        if filters[AH_FILTER_CEO] then return end  -- already set, avoid duplicate apply/log
+        if filters[AH_FILTER_CEO] then return end  -- already set
         filters[AH_FILTER_CEO] = true
         DBG("[QoL] AH expansion filter applied")
     end
@@ -178,7 +163,7 @@ local function SetCraftingOrderExpansionFilter()
                and co.BrowseOrders.SearchBar.FilterDropdown
     if not fd or not fd.filters then return end
 
-    if fd.filters[AH_FILTER_CEO] then return end -- already set, avoid duplicate apply/log (Show hook + PLAYER_INTERACTION_MANAGER_FRAME_SHOW both fire)
+    if fd.filters[AH_FILTER_CEO] then return end -- already set (Show hook and interaction event both fire)
     fd.filters[AH_FILTER_CEO] = true
     if fd.UpdateSelections then fd:UpdateSelections() end
     if fd.Update then fd:Update() end
@@ -191,7 +176,7 @@ local function InitAHFilter()
     f:RegisterEvent("AUCTION_HOUSE_SHOW")
     f:SetScript("OnEvent", function()
         C_Timer.After(0.2, SetAHExpansionFilter)
-        -- Hook SetDisplayMode once when AH opens (catches tab switches e.g. Auctionator → Blizzard)
+        -- SetDisplayMode hook (tab switches, e.g. Auctionator → Blizzard)
         if AuctionHouseFrame and not AuctionHouseFrame.RA_displayModeHooked then
             hooksecurefunc(AuctionHouseFrame, "SetDisplayMode", function()
                 C_Timer.After(0.1, SetAHExpansionFilter)
@@ -212,7 +197,7 @@ local function InitAHFilter()
         return true
     end
 
-    -- PLAYER_INTERACTION_MANAGER_FRAME_SHOW catches NPC crafting board opens
+    -- NPC crafting boards
     local coEventFrame = CreateFrame("Frame")
     coEventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
     coEventFrame:SetScript("OnEvent", function()
@@ -246,7 +231,7 @@ local function UpdateVaultCurrency()
     if not vaultCurrencyFrame then
         vaultCurrencyFrame = CreateFrame("Frame", "RollAwayVaultCurrencyFrame", WeeklyRewardsFrame)
         vaultCurrencyFrame:SetSize(240, 24)
-        -- ElvUI: bottom right / Default UI: top right
+        -- ElvUI: bottom right, default UI: top right
         if ElvUI then
             vaultCurrencyFrame:SetPoint("BOTTOMRIGHT", WeeklyRewardsFrame, "BOTTOMRIGHT", 40, 20)
         else
@@ -261,7 +246,7 @@ local function UpdateVaultCurrency()
         local text = vaultCurrencyFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalOutline")
         text:SetPoint("LEFT", icon, "RIGHT", 4, 0)
         text:SetJustifyH("LEFT")
-        -- Use ElvUI general font if available
+        -- ElvUI font if available
         local fontPath = RA.GetQoLFont()
         text:SetFont(fontPath, 12, "OUTLINE")
         vaultCurrencyFrame.text = text
@@ -270,7 +255,7 @@ local function UpdateVaultCurrency()
     local qty    = info.quantity or 0
     local maxQty = info.maxQuantity or 0
     local earned = info.totalEarned or info.quantityEarnedThisWeek or 0
-    -- Fallback: if earned not yet updated by API but quantity exists
+    -- Fallback while the earned value is not updated yet
     if earned == 0 and qty > 0 then earned = qty end
     local iconID = info.iconFileID
 
@@ -294,7 +279,7 @@ local function UpdateVaultCurrency()
 end
 
 local function InitVaultCurrency()
-    -- Show and SetShown can both fire for one open; coalesce into one update.
+    -- Show and SetShown can both fire for one open: one update.
     local updateQueued = false
     local function QueueVaultCurrencyUpdate()
         if updateQueued then return end
@@ -311,7 +296,7 @@ local function InitVaultCurrency()
         hooksecurefunc(WeeklyRewardsFrame, "SetShown", function(_, shown)
             if shown then QueueVaultCurrencyUpdate() end
         end)
-        -- Apply immediately if frame is already shown
+        -- Already shown
         if WeeklyRewardsFrame:IsShown() then
             UpdateVaultCurrency()
         end
@@ -320,24 +305,18 @@ local function InitVaultCurrency()
     end
 
     if not HookVaultFrame() then
-        -- Frame not loaded yet, wait for Blizzard_WeeklyRewards
+        -- Wait for Blizzard_WeeklyRewards
         RA.WaitForAddon("Blizzard_WeeklyRewards", HookVaultFrame)
     end
 end
 
 ------------------------------------------------------------------------
--- World Map: hide the tracked-faction activity button, the bounty board and the
--- threat eye (bottom-left)
--- Blizzard creates them once as overlay frames of WorldMapFrame:
---   WorldMapActivityTrackerTemplate - a Button with a BountyDropdown
---   WorldMapBountyBoardTemplate     - a Frame with a BountyName
---   WorldMapThreatFrameTemplate     - a Frame with an Eye
--- and re-shows them in their own Refresh() on every map change /
--- QUEST_LOG_UPDATE. We find them in WorldMapFrame.overlayFrames and hide them
--- again right after each Refresh() (same frame, so no flash). Hidden, the
--- coordinates panel next to them moves to the next neighbour or back to its
--- normal spot (WorldMapCoordsPanelMixin:PostRefresh). Turning the option off
--- needs no restore: Blizzard shows them again on the next refresh.
+-- World Map: hide the faction activity button, the bounty board and the threat eye.
+-- Blizzard creates them once as overlay frames of WorldMapFrame (tracker: a Button
+-- with BountyDropdown; board: a Frame with BountyName; eye: a Frame with Eye) and
+-- re-shows them in their Refresh(). They are found in WorldMapFrame.overlayFrames
+-- and hidden again right after each Refresh() (no flash); the coordinates panel
+-- moves along. Turning the option off needs no restore.
 ------------------------------------------------------------------------
 
 local mapOverlays          -- the overlay frames found (any of them may be missing)
@@ -348,8 +327,7 @@ local function FindMapOverlays()
     local found = {}
     for _, frame in ipairs(WorldMapFrame and WorldMapFrame.overlayFrames or {}) do
         if frame.Refresh and frame.IsObjectType then
-            -- Tracker and board share the bounty methods, so tell all three apart
-            -- by their children.
+            -- Tracker and board share methods: tell them apart by their children.
             if frame.BountyDropdown and frame:IsObjectType("Button") then
                 found[#found + 1] = frame
             elseif frame.BountyName and frame.CalculateNumActivitiesForSelectedBountyByMap then
@@ -363,7 +341,7 @@ local function FindMapOverlays()
     return found
 end
 
-local loggedMapOverlays = {}  -- Blizzard re-shows them on every refresh; log the first hide only
+local loggedMapOverlays = {}  -- log the first hide only
 
 local function MapOverlayLabel(frame)
     return frame.BountyDropdown and "activity tracker" or frame.BountyName and "bounty board" or "threat eye"
@@ -380,7 +358,7 @@ local function HideMapOverlay(frame)
 end
 
 function RA.ApplyMapActivityTrackerFeature()
-    -- Nothing to do (and nothing to hook) while the option is off and never was on.
+    -- Nothing to hook while the option is off and never was on.
     if not mapOverlaysHooked and not (RollAwayDB and RollAwayDB.hideMapActivityTracker) then return end
 
     local overlays = FindMapOverlays()
@@ -399,19 +377,11 @@ function RA.ApplyMapActivityTrackerFeature()
 end
 
 ------------------------------------------------------------------------
--- Professions: hide "Crafting Output Log" popup (Handwerksergebnisse)
--- ProfessionsCraftingOutputLogMixin:FinalizeResultData() is the function
--- Blizzard calls after every craft to populate + open this panel (via
--- ScrollingFlatPanelMixin:Open() -> Show()). We hook it directly and hide
--- the panel again immediately afterwards. Confirmed against Blizzard's
--- source (Blizzard_Professions/Blizzard_ProfessionsCraftingOutputLog.lua)
--- and matches the approach used by the "Profession Shopping List" addon.
---
--- Blizzard uses two separate instances of this same mixin/template:
---   - ProfessionsFrame.CraftingPage.CraftingOutputLog   (own crafting)
---   - ProfessionsFrame.OrdersPage.OrderView.CraftingOutputLog (crafting orders)
--- hooksecurefunc(obj, "Method") only hooks that specific object, so both
--- need their own hook even though they share the same mixin function.
+-- Professions: hide the "Crafting Output Log" popup. Blizzard fills and opens it
+-- through ProfessionsCraftingOutputLogMixin:FinalizeResultData() after every craft;
+-- we hook that and hide the panel again. There are two instances (own crafting:
+-- CraftingPage.CraftingOutputLog, orders: OrdersPage.OrderView.CraftingOutputLog);
+-- hooksecurefunc(obj, ...) is per object, so each gets its own hook.
 ------------------------------------------------------------------------
 
 local hookedOutputLogs = {}
@@ -436,15 +406,14 @@ function RA.ApplyCraftingOutputLogFeature()
     local pf = ProfessionsFrame
     if not pf then return end
     ApplyToOutputLog(pf.CraftingPage and pf.CraftingPage.CraftingOutputLog)
-    -- Crafting orders (Handwerksaufträge) use a separate frame instance.
+    -- Crafting orders: separate instance.
     ApplyToOutputLog(pf.OrdersPage and pf.OrdersPage.OrderView and pf.OrdersPage.OrderView.CraftingOutputLog)
 end
 
 local function InitCraftingOutputLogHide()
     local function HookProfessionsFrame()
         RA.ApplyCraftingOutputLogFeature()
-        -- CraftingOutputLog (either instance) is created lazily on first
-        -- use, so retry on every relevant OnShow in case it didn't exist yet.
+        -- The output logs are created lazily: retry on every relevant OnShow.
         ProfessionsFrame:HookScript("OnShow", RA.ApplyCraftingOutputLogFeature)
         if ProfessionsFrame.OrdersPage then
             ProfessionsFrame.OrdersPage:HookScript("OnShow", RA.ApplyCraftingOutputLogFeature)
@@ -463,28 +432,20 @@ local function InitCraftingOutputLogHide()
 end
 
 ------------------------------------------------------------------------
--- Hide the red error text in the middle of the screen
--- Blizzard's UIErrorsFrame draws the text from its own OnEvent handler. We
--- wrap that handler once: unimportant UI_ERROR_MESSAGEs are swallowed, the
--- rest (and every other event) goes to Blizzard's handler unchanged. The
--- option is checked on every message, so it works without /reload.
--- Deliberately NOT done by unregistering the event: BigWigs (after boss
--- fights) and ElvUI (after combat) re-register it on UIErrorsFrame and the
--- errors would pop up again.
+-- Hide the red error text in the middle of the screen. UIErrorsFrame's OnEvent
+-- handler is wrapped once: unimportant UI_ERROR_MESSAGEs are swallowed, everything
+-- else goes to Blizzard's handler. The option is checked per message (no /reload).
+-- Not done by unregistering the event: BigWigs and ElvUI re-register it.
 ------------------------------------------------------------------------
 
--- Errors that stay visible: the ones that are the only hint why a deliberate
--- action did nothing. Everything else (spell, resource, range and target
--- errors) is hidden. Names of Blizzard's localized global strings, so this
--- works in every client language; a name missing in the current client is
--- skipped. Full list of messages: https://warcraft.wiki.gg/wiki/Event:UI_ERROR_MESSAGE
+-- Errors that stay visible: the only hint why a deliberate action did nothing.
+-- Everything else (spell, resource, range, target) is hidden. Names of Blizzard's
+-- localized global strings, so it works in every client language.
 local KEPT_ERRORS = {
-    -- No room / not enough money ("can't carry any more of these items",
-    -- ERR_ITEM_MAX_COUNT, is no hint worth keeping: hidden)
+    -- No room / not enough money
     "ERR_INV_FULL", "ERR_BANK_FULL", "ERR_QUEST_LOG_FULL",
     "ERR_NOT_ENOUGH_MONEY",
-    -- Loot ("can't loot that item now" and "still being rolled for" are no
-    -- hints worth keeping: hidden)
+    -- Loot
     "ERR_LOOT_CANT_LOOT_THAT",
     -- Quest turn-in refused (relevant for the quest automation)
     "ERR_QUEST_MUST_CHOOSE", "ERR_QUEST_FAILED_MISSING_ITEMS",
@@ -507,16 +468,14 @@ local KEPT_ERRORS = {
     "SPELL_FAILED_TARGET_NO_POCKETS", "ERR_ALREADY_PICKPOCKETED",
 }
 
--- Kept errors whose text contains a variable part (a name, time or number as
--- %s / %d placeholder), so they cannot be compared as a whole.
+-- Kept errors with a variable part (%s / %d), matched by pattern.
 local KEPT_ERROR_TEMPLATES = {
     "ERR_QUEST_FAILED_BAG_FULL_S", "ERR_QUEST_FAILED_MAX_COUNT_S",
     "ERR_PARTY_LFG_BOOT_COOLDOWN_S", "ERR_PARTY_LFG_BOOT_NOT_ELIGIBLE_S",
     "ERR_PARTY_LFG_BOOT_INPATIENT_TIMER_S",
 }
 
--- Turns a global string with %s / %d (or positional %1$s) placeholders into a
--- Lua pattern that matches the finished message.
+-- Global string with %s / %d placeholders -> Lua pattern.
 local function TemplateToPattern(template)
     local escaped = template:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
     escaped = escaped:gsub("%%%%%d+%%%$[sd]", ".+"):gsub("%%%%[sd]", ".+")
@@ -542,8 +501,7 @@ local function IsKeptError(message)
     return false
 end
 
--- true if this error text should be swallowed. Messages we are not allowed
--- to inspect are never hidden.
+-- Should this error be swallowed? Messages we cannot inspect never are.
 local function IsHiddenError(message)
     if not RA.IsAccessible(message) then return false end
     if type(message) ~= "string" then return false end
@@ -552,7 +510,7 @@ end
 
 function RA.ApplyHideErrorsFeature()
     if errorHandlerWrapped or not UIErrorsFrame then return end
-    -- Stays untouched until the option is switched on the first time.
+    -- Untouched until the option is switched on once.
     if not (RollAwayDB and RollAwayDB.hideErrorMessages) then return end
 
     local blizzardHandler = UIErrorsFrame:GetScript("OnEvent")
@@ -565,7 +523,7 @@ function RA.ApplyHideErrorsFeature()
             if event == "UI_ERROR_MESSAGE" and IsHiddenError((select(2, ...))) then
                 return
             end
-            -- Yellow info text (quest progress etc.): sub-option of this feature
+            -- Yellow info text (quest progress): sub-option
             if event == "UI_INFO_MESSAGE" and db.hideInfoMessages then
                 return
             end
@@ -576,11 +534,9 @@ function RA.ApplyHideErrorsFeature()
 end
 
 ------------------------------------------------------------------------
--- Hide Talking Head, Boss Banner and Event Toasts
--- Each of these Blizzard frames is driven by a game event. While its option
--- is on we take that event away from the frame, and give it back when the
--- option is turned off - the frame's own code is never replaced or hooked,
--- and no /reload is needed.
+-- Hide Talking Head, boss banner, event toasts and alerts: each Blizzard frame is
+-- driven by game events; while its option is on the events are taken from the
+-- frame and given back when it is off (no hooks, no /reload).
 ------------------------------------------------------------------------
 
 local takenEvents = {}  -- [frame] = { [event] = true }: events we unregistered
@@ -607,17 +563,11 @@ function RA.ApplyHideBossBannerFeature()
         RollAwayDB and RollAwayDB.hideBossBanner)
 end
 
--- Bonus objective / world quest banner ("Bonus Objective" with gold lines).
--- It belongs to the event toasts option: both are announcements at the top of
--- the screen. Blizzard's ObjectiveTrackerTopBannerFrame is started by
--- TopBannerManager_Show -> PlayBanner and is not driven by a frame event, so
--- there is no event to take away, and its animations drive the alpha of the
--- frame and its textures themselves (setting the alpha is not enough). So the
--- banner is allowed to run - it ends on its own and tells the objective
--- tracker, which only then lays out the new quest - but its textures and
--- texts are hidden. Blizzard never shows or hides those regions itself.
--- No Blizzard function is called from here, which keeps the objective tracker
--- and world map code free of our taint. The banner's sound still plays.
+-- Bonus objective banner (part of the event toasts option). It is started by
+-- TopBannerManager_Show -> PlayBanner, not by an event, and its animations drive
+-- the alpha themselves. So it runs normally (it tells the objective tracker when
+-- done) and only its regions are hidden; no Blizzard function is called (no taint).
+-- The sound still plays.
 local bonusBannerHooked = false
 local hiddenBannerRegions = {}  -- [region] = true: regions we hid
 
@@ -651,19 +601,15 @@ local function ApplyBonusBannerHiding(on)
     SetBonusBannerHidden(on)
 end
 
--- Event toasts at the top of the screen (new content unlocked, etc.) and the
--- bonus objective banner
+-- Event toasts at the top of the screen and the bonus objective banner
 function RA.ApplyHideEventToastsFeature()
     local on = RollAwayDB and RollAwayDB.hideEventToasts and true or false
     SetFrameEventsTaken(EventToastManagerFrame, { "DISPLAY_EVENT_TOASTS" }, on)
     ApplyBonusBannerHiding(on)
 end
 
--- Alert pop-ups ("You received: ...", achievements, new
--- mounts / pets / toys, dungeon rewards, ...). All of them are fed by game
--- events that Blizzard's AlertFrame listens to; the listed events are taken
--- away from it while the option is on. PET_BATTLE_CLOSE stays: it only lets
--- the frame show alerts that were held back during a pet battle.
+-- Alert pop-ups (loot, achievements, new mounts / pets / toys, ...): the events
+-- AlertFrame listens to. PET_BATTLE_CLOSE stays (releases alerts held during pet battles).
 local ALERT_EVENTS = {
     "ACHIEVEMENT_EARNED", "CRITERIA_EARNED", "LFG_COMPLETION_REWARD",
     "SCENARIO_COMPLETED", "LOOT_ITEM_ROLL_WON", "SHOW_LOOT_TOAST",
@@ -686,8 +632,7 @@ function RA.ApplyHideAlertsFeature()
     SetFrameEventsTaken(AlertFrame, ALERT_EVENTS, RollAwayDB and RollAwayDB.hideAlerts)
 end
 
--- Talking Head. TalkingHeadFrame is part of Blizzard_FrameXML (always loaded),
--- so its request event can be taken before the first line of a session.
+-- Talking Head (TalkingHeadFrame is in Blizzard_FrameXML, always loaded).
 function RA.ApplyHideTalkingHeadFeature()
     SetFrameEventsTaken(TalkingHeadFrame, { "TALKINGHEAD_REQUESTED" },
         RollAwayDB and RollAwayDB.hideTalkingHead)
@@ -698,7 +643,7 @@ end
 ------------------------------------------------------------------------
 
 function RA.InitQoL()
-    -- Ready Check
+    -- Ready check
     local f = CreateFrame("Frame")
     f:RegisterEvent("READY_CHECK")
     f:SetScript("OnEvent", ShowTalentReminder)
@@ -709,25 +654,16 @@ function RA.InitQoL()
     d:RegisterEvent("PLAYER_ENTERING_WORLD")
     d:SetScript("OnEvent", function() CheckDurability() end)
 
-    -- AH Current Expansion Only filter
+    -- AH filter
     InitAHFilter()
 
-    -- Great Vault currency display
     InitVaultCurrency()
-
-    -- Instance join reminder / keystone companion addon
     RA.InitJoinReminder()
-
-    -- Omniumfoliant / Great Vault Character panel buttons
     RA.InitCharacterFrameButtons()
-
-    -- World Map: hide tracked-faction activity button
     RA.ApplyMapActivityTrackerFeature()
-
-    -- Professions: hide "Crafting Output Log" popup
     InitCraftingOutputLogHide()
 
-    -- Red error text filter, Talking Head, Boss Banner, Event Toasts
+    -- Error text, Talking Head, boss banner, event toasts, alerts
     RA.ApplyHideErrorsFeature()
     RA.ApplyHideTalkingHeadFeature()
     RA.ApplyHideBossBannerFeature()

@@ -1,21 +1,18 @@
 -- RollAway - JoinReminder.lua
--- Group Finder (LFG) join detection: shows the instance name when you join
--- an M+/raid group (RollAwayDB.instanceJoinReminder), and either hands off
--- to the Teleport Reminder (Modules\TeleportReminder.lua) or auto-opens a
--- keystone companion addon - BigWigs Keystones or Details! Keystones,
--- mutually exclusive via RollAwayDB.joinReminderKeyAddon.
+-- Group Finder join detection: shows the instance name when you join an M+/raid
+-- group and either hands off to the Teleport Reminder (TeleportReminder.lua) or
+-- opens a keystone companion addon (BigWigs or Details! Keystones, one of them,
+-- RollAwayDB.joinReminderKeyAddon).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
 ------------------------------------------------------------------------
--- Keystone companion addon – BigWigs Keystones or Details! Keystones.
--- Calls SlashCmdList directly (not typed text) to avoid triggering other addons.
+-- Keystone companion addon (BigWigs / Details!). Calls SlashCmdList directly, not typed text.
 ------------------------------------------------------------------------
 
--- Availability checks, exposed via RA so Options can grey out the
--- corresponding checkbox when the addon isn't installed/loaded.
+-- Availability, exposed so Options can grey out the checkbox.
 local function IsBigWigsKeyAvailable()
     return _G["BigWigsLoader"] ~= nil and SlashCmdList["key"] ~= nil
 end
@@ -26,8 +23,7 @@ local function IsDetailsKeyAvailable()
 end
 RA.IsDetailsKeyAvailable = IsDetailsKeyAvailable
 
--- Returns "bigwigs" / "details" if the selected companion addon is loaded
--- and its toggle command is available, otherwise nil.
+-- "bigwigs" / "details" if the selected companion addon is available, else nil.
 local function GetActiveKeyAddon()
     local choice = RollAwayDB and RollAwayDB.joinReminderKeyAddon
     if choice == "bigwigs" and IsBigWigsKeyAvailable() then return "bigwigs" end
@@ -35,12 +31,8 @@ local function GetActiveKeyAddon()
     return nil
 end
 
--- Opens the selected companion addon's keystone frame. Idempotent (no-op if
--- already open) for "details" - important since the trigger can fire while
--- the frame is already open from something outside our own bookkeeping.
--- BigWigs only exposes a toggle command with no reliable way to check its
--- frame's shown state, so it's called unconditionally there - same caveat
--- applies to it, unavoidable for now.
+-- Opens the companion addon's keystone frame. No-op if already open for Details!;
+-- BigWigs only has a toggle command (state unknown), so it is called unconditionally.
 local function OpenKeyAddon()
     local which = GetActiveKeyAddon()
     if which == "bigwigs" then
@@ -58,7 +50,7 @@ local function OpenKeyAddon()
     return false
 end
 
--- Closes it - idempotent counterpart to OpenKeyAddon (same BigWigs caveat).
+-- Counterpart to OpenKeyAddon (same BigWigs caveat).
 local function CloseKeyAddon()
     local which = GetActiveKeyAddon()
     if which == "bigwigs" then
@@ -77,41 +69,47 @@ local function CloseKeyAddon()
 end
 
 ------------------------------------------------------------------------
--- Keystone companion addon – safety-close timer.
--- Whenever we auto-open BigWigs/Details Keystones for the player, it stays
--- open until either they cast a known M+ portal spell (closes immediately)
--- or a 20s safety timer runs out (closes automatically either way).
+-- Companion addon safety-close: an addon we opened stays open until a known M+
+-- portal is cast (closes at once) or a 20s timer runs out.
 ------------------------------------------------------------------------
 
-local keyAddonReminderOpen = false -- true while we're holding it open
+local portalWatcher = CreateFrame("Frame")  -- listens for portal casts only while the addon is held open
+local keyAddonReminderOpen = false           -- true while we hold it open
 
--- Pending 20s safety-close timer (Start()/Stop() handle).
+local function SetKeyAddonHeld(held)
+    keyAddonReminderOpen = held
+    if held then
+        portalWatcher:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    else
+        portalWatcher:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    end
+end
+
 local keyAddonSafetyTimer = RA.CreateOneShotTimer(20, function()
     if keyAddonReminderOpen then
         DBG("[QoL] Safety timer expired – closing keystone companion addon")
-        keyAddonReminderOpen = false
+        SetKeyAddonHeld(false)
         CloseKeyAddon()
     end
 end)
 
--- Closes the keystone companion addon if we're the ones holding it open,
--- and cancels any pending safety timer. Called on timeout or portal cast.
+-- Closes the companion addon if we hold it open and stops the timer (timeout, portal cast).
 local function CloseKeyAddonReminder()
     keyAddonSafetyTimer.Stop()
     if keyAddonReminderOpen then
-        keyAddonReminderOpen = false
+        SetKeyAddonHeld(false)
         DBG("[QoL] Closing keystone companion addon")
         CloseKeyAddon()
     end
 end
 
--- Starts (or restarts) the 20s safety-close timer.
+-- Starts (or restarts) the 20s timer.
 local function StartKeyAddonSafetyTimer()
-    keyAddonReminderOpen = true
+    SetKeyAddonHeld(true)
     keyAddonSafetyTimer.Start()
 end
 
--- Checks if spellID is one of the current season's M+ portal spells.
+-- Is spellID one of the current season's M+ portal spells?
 local function IsKnownPortalSpell(spellID)
     if not RA.IsAccessible(spellID) then return false end
     for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
@@ -120,11 +118,7 @@ local function IsKnownPortalSpell(spellID)
     return false
 end
 
--- Closes early the moment the player actually casts a portal, regardless of
--- whether it was clicked in BigWigs/Details, RollAway's own teleport
--- reminder, the spellbook, or a macro.
-local portalWatcher = CreateFrame("Frame")
-portalWatcher:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+-- Closes early when the player casts a portal, however it was started.
 portalWatcher:SetScript("OnEvent", function(_, _, _, _, spellID)
     if keyAddonReminderOpen and IsKnownPortalSpell(spellID) then
         DBG("[QoL] Portal cast detected – closing keystone companion addon early")
@@ -136,13 +130,12 @@ end)
 -- Instance Join reminder – shows instance name when joining a group
 ------------------------------------------------------------------------
 
-local joinFrame, joinHideTimer   -- QoL toast (RA.CreateToastFrame), created on first show
-local keyAddonOpenedByCreation      = false -- shared: own listing active (M+ or raid)
-local keyAddonOpenedByCreationMplus = false -- true only when own M+ listing opened the companion addon
+local joinFrame, joinHideTimer   -- QoL toast, created on first show
+local keyAddonOpenedByCreation      = false -- own listing active (M+ or raid)
+local keyAddonOpenedByCreationMplus = false -- own M+ listing opened the companion addon
 
--- Party groups: the hide timer only starts once the group is full (5), with
--- a 30s fallback if it never fills. One wait at a time - a newer reminder
--- supersedes an older pending one.
+-- Party groups: the hide timer starts once the group is full (5), or after 30s.
+-- One wait at a time; a newer reminder replaces an older one.
 local pendingHideStart              -- fn to run when the wait is over
 local FinishGroupWait
 local groupWaitFallback = RA.CreateOneShotTimer(30, function()
@@ -151,7 +144,7 @@ local groupWaitFallback = RA.CreateOneShotTimer(30, function()
 end)
 local groupWaitFrame = CreateFrame("Frame")
 groupWaitFrame:SetScript("OnEvent", function()
-    -- Small delay so WoW has time to update the roster count
+    -- Let the roster count update first
     C_Timer.After(0.3, function()
         if pendingHideStart and GetNumGroupMembers() >= 5 then FinishGroupWait() end
     end)
@@ -172,7 +165,7 @@ end
 local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
     if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
     if not instanceName or instanceName == "" then return end
-    -- Don't show reminder if we are the group leader (own listing creation)
+    -- Not for the leader's own listing
     if keyAddonOpenedByCreation then
         DBG("[QoL] Join reminder skipped – own listing active")
         return
@@ -190,17 +183,14 @@ local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
     joinFrame.text:SetText("|cffFFFFFF" .. RA.FormatInstanceWithKey(instanceName, keyLevel) .. "|r")
     joinFrame:Show()
 
-    -- Auto-open companion addon for party only (no keystone teleports in raid);
-    -- skip if already opened by listing creation.
+    -- Companion addon: party only (no keystone teleports in raids), not if the listing opened it.
     local keyAddonOpened = false
     if not IsInRaid() and not keyAddonOpenedByCreation and GetActiveKeyAddon() then
         keyAddonOpened = true
         C_Timer.After(0.3, OpenKeyAddon)
     end
 
-    -- Hides the join text banner after 6s. The keystone companion addon (if
-    -- opened) is handed off to the 20s safety timer instead, so it stays
-    -- open independently until a portal is cast or it times out.
+    -- Hides the banner after 6s; the companion addon (if opened) goes to the 20s timer.
     local function StartHideTimer()
         joinHideTimer.Start()
         if keyAddonOpened then
@@ -209,8 +199,7 @@ local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
         end
     end
 
-    -- Raids: start immediately. Party: wait for full group (5). forceTimer
-    -- (test mode) skips the group check.
+    -- Raids: at once. Party: wait for a full group. forceTimer (test) skips the check.
     if forceTimer or IsInRaid() or GetNumGroupMembers() >= 5 then
         DBG("[QoL] Timer starting immediately (force: "..tostring(forceTimer)..
             " / raid: "..tostring(IsInRaid()).." / full: "..tostring(GetNumGroupMembers() >= 5)..")")
@@ -224,8 +213,7 @@ local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
 end
 RA.ShowJoinReminder = ShowJoinReminder
 
--- Finds the current-season dungeon entry (Data\Dungeons.lua) matching an
--- LFG activity ID. activityID == dungeon.lfgID (see LFGQuickCreate.lua).
+-- Current-season dungeon entry for an LFG activity ID (activityID == dungeon.lfgID).
 local function GetDungeonEntryByLfgID(activityID)
     for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
         if d.lfgID == activityID then return d end
@@ -233,11 +221,8 @@ local function GetDungeonEntryByLfgID(activityID)
     return nil
 end
 
--- Resolve name/isMythicPlus/dungeon from an LFG activity ID. Returns nil if
--- the activity is not a Mythic+ dungeon or current raid. For M+ dungeons the
--- name comes from our own locale table (RA_L), not the Blizzard client
--- string, so it always matches the addon's own language setting instead of
--- the game client's.
+-- name, isMythicPlus, dungeon for an LFG activity ID; nil if it is neither an M+
+-- dungeon nor a current raid. M+ names come from RA_L (the addon's language).
 local function GetNameFromActivityID(activityID)
     local act = activityID and C_LFGList.GetActivityInfoTable(activityID)
     if not act then return nil end
@@ -252,17 +237,14 @@ local function GetNameFromActivityID(activityID)
         if dungeon then
             return RA_L["dungeon_"..dungeon.key], true, dungeon
         end
-        -- Fallback for a M+ activity outside the tracked season pool
-        -- (shouldn't normally happen) - use the Blizzard string as-is.
+        -- M+ activity outside the season pool: Blizzard's name.
         return blizzardName, true, nil
     end
     return blizzardName, false, nil
 end
 
--- The API has no keystone level for a listing, so read it from the title or
--- comment the group leader wrote ("+14", "M+14", "+14 Altar ..."). info is a
--- search result / active entry table. Returns a number or nil (not written,
--- or the text is not readable - 12.x secret strings).
+-- The API has no keystone level for a listing: read it from the title or comment
+-- ("+14", "M+14"). nil if not written or not readable (secret strings).
 local function ParseKeyLevel(info)
     if not info then return nil end
     for _, field in ipairs({ "name", "comment" }) do
@@ -275,10 +257,8 @@ local function ParseKeyLevel(info)
     return nil
 end
 
--- Routes to the teleport reminder for Mythic+ when selected, otherwise the
--- default instance-name join reminder. Raids always use the default one -
--- BigWigs/Details/teleport portals don't apply to raid teleports.
--- keyLevel only applies to Mythic+ (nil for raids).
+-- Teleport reminder for M+ when selected, else the instance-name reminder (raids
+-- always that one). keyLevel is for M+ only.
 local function DispatchJoinReminder(name, isMythicPlus, dungeon, keyLevel)
     if not isMythicPlus then keyLevel = nil end
     if isMythicPlus and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
@@ -289,21 +269,13 @@ local function DispatchJoinReminder(name, isMythicPlus, dungeon, keyLevel)
 end
 
 ------------------------------------------------------------------------
--- Group Finder (LFG) join detection.
---
--- Two ways to end up in an LFG-sourced M+/raid group, both handled below:
+-- Group Finder join detection. Two ways into an LFG group:
 --  1. You post your own listing (LFG_LIST_ACTIVE_ENTRY_UPDATE).
---  2. You apply to someone else's listing, or you're simply a party member
---     of whoever applied (their application is a party-wide event - every
---     member's client receives LFG_LIST_APPLICATION_STATUS_UPDATED for it,
---     not just the one who clicked "Apply"). See applicationDungeons below.
---
--- Once in the group, C_LFGList.GetActiveEntryInfo() also reflects the
--- group's listing for every member while it's still active/recruiting -
--- not just for whoever created it - so GROUP_ROSTER_UPDATE alone should
--- resolve it. In practice that resolution can race with the roster/LFG
--- state actually being ready, so a short poll (see below) re-checks it
--- every few seconds as a safety net until it succeeds.
+--  2. You apply to a listing, or you are in the party of whoever applied
+--     (LFG_LIST_APPLICATION_STATUS_UPDATED and LFG_LIST_JOINED_GROUP reach every member).
+-- In the group, C_LFGList.GetActiveEntryInfo() also shows the group's listing for
+-- every member; GROUP_ROSTER_UPDATE can come before it is readable, so a poll
+-- (3s) runs while a group is unresolved.
 ------------------------------------------------------------------------
 
 local POLL_INTERVAL = 3
@@ -315,19 +287,16 @@ function RA.InitJoinReminder()
     f:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
     f:RegisterEvent("LFG_LIST_JOINED_GROUP")
 
-    -- Per-group state, all reset together on ungroup (see ResetGroupState).
-    local resolvedEntryID   = nil   -- activityID we've already shown/dispatched for
-    -- searchResultID -> { name, isMythicPlus, dungeon } (or false for
-    -- "resolved, not M+/raid"), filled as soon as an application's
-    -- activityIDs can be read (as early as "applied"/"invited"), so
-    -- "inviteaccepted" never has to re-resolve from a possibly-already-purged
-    -- browse cache entry.
+    -- Per-group state, reset together on ungroup (ResetGroupState).
+    local resolvedEntryID   = nil   -- activityID already shown/dispatched
+    -- searchResultID -> { name, isMythicPlus, dungeon } (false = not M+/raid), filled
+    -- as early as the application is readable: the browse cache can be purged by
+    -- "inviteaccepted".
     local applicationDungeons = {}
-    -- true once an application-accepted join was handled: the listing update
-    -- that follows (also fired for members) isn't one of our own creations.
+    -- A join through an application was handled: the listing update that follows
+    -- is not one of our own listings.
     local joinedViaApplication = false
-    -- searchResultIDs whose join was already announced (the status update and
-    -- LFG_LIST_JOINED_GROUP can both report the same join).
+    -- Joins already announced (status update and LFG_LIST_JOINED_GROUP report the same).
     local announcedJoins = {}
     local pollTicker
 
@@ -343,8 +312,7 @@ function RA.InitJoinReminder()
         StopPoll()
     end
 
-    -- Reads the activity of a search result once and remembers it in
-    -- applicationDungeons (false = resolved, but not M+/raid).
+    -- Reads the activity of a search result once into applicationDungeons.
     local function ResolveApplication(searchResultID, status)
         if applicationDungeons[searchResultID] ~= nil then return end
         local resultInfo = C_LFGList.GetSearchResultInfo(searchResultID)
@@ -361,7 +329,7 @@ function RA.InitJoinReminder()
         end
     end
 
-    -- Announces a join through an application (once per searchResultID).
+    -- Announces a join through an application, once per searchResultID.
     local function AnnounceApplicationJoin(searchResultID)
         if announcedJoins[searchResultID] then return end
         local resolved = applicationDungeons[searchResultID]
@@ -371,17 +339,15 @@ function RA.InitJoinReminder()
             return
         end
         announcedJoins[searchResultID] = true
-        resolvedEntryID = true -- suppress TryResolveAndShow/poll for this join
+        resolvedEntryID = true -- no TryResolveAndShow/poll for this join
         joinedViaApplication = true
         StopPoll()
         DispatchJoinReminder(resolved.name, resolved.isMythicPlus, resolved.dungeon, resolved.keyLevel)
     end
 
-    -- Tries to resolve + show from the group's current LFG listing
-    -- (GetActiveEntryInfo works for any member while a listing is active,
-    -- not just whoever created it). Manually-formed groups with no LFG
-    -- listing at all get no reminder - Group Finder M+ only, by design.
-    -- Called from GROUP_ROSTER_UPDATE and the poll ticker.
+    -- Resolves and shows from the group's current listing (any member can read it).
+    -- Groups without a Group Finder listing get no reminder, by design. Called from
+    -- GROUP_ROSTER_UPDATE and the poll; the poll runs until resolved or ungrouped.
     local function TryResolveAndShow()
         if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
         if not IsInGroup() then
@@ -390,7 +356,7 @@ function RA.InitJoinReminder()
         end
         if resolvedEntryID then StopPoll(); return end -- already shown for this group
 
-        -- Not resolved yet: keep checking until the listing becomes readable.
+        -- Not resolved yet: keep checking.
         if not pollTicker then pollTicker = C_Timer.NewTicker(POLL_INTERVAL, TryResolveAndShow) end
 
         local entryInfo = C_LFGList.GetActiveEntryInfo()
@@ -405,27 +371,17 @@ function RA.InitJoinReminder()
         end
     end
 
-    -- Safety-net poll: GROUP_ROSTER_UPDATE can fire before the LFG listing
-    -- state is actually queryable yet (a member added to an already-active
-    -- listing doesn't get a creation event of its own to react to). Started by
-    -- TryResolveAndShow() while a group is unresolved, stopped once it is
-    -- resolved or the group is left.
-
     f:SetScript("OnEvent", function(_, event, searchResultID, newStatus)
         if event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
             DBG("[QoL] LFG_LIST_APPLICATION_STATUS_UPDATED: searchResultID=", searchResultID, "status=", newStatus)
-            -- Resolve as early as possible (applied/invited), not just at
-            -- inviteaccepted - the search-result cache backing
-            -- GetSearchResultInfo can already be gone by then, especially
-            -- for a party member who never personally browsed/applied.
+            -- Resolve early (applied/invited), not only at inviteaccepted.
             ResolveApplication(searchResultID, newStatus)
 
             if newStatus ~= "inviteaccepted" then return end
             AnnounceApplicationJoin(searchResultID)
 
         elseif event == "LFG_LIST_JOINED_GROUP" then
-            -- Blizzard's own "you joined this group" signal, also for members who
-            -- did not apply themselves (their leader did).
+            -- Blizzard's "you joined this group" signal, also for members whose leader applied.
             if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
             DBG("[QoL] LFG_LIST_JOINED_GROUP: searchResultID=", searchResultID)
             ResolveApplication(searchResultID, "joined")
@@ -443,41 +399,37 @@ function RA.InitJoinReminder()
                     DBG("[QoL] Listing update ignored – joined via application, not own listing")
                     return
                 end
-                -- Only a leader (or someone alone) can own a listing. A plain
-                -- member sees the group's listing too, e.g. when it is re-posted.
+                -- Only a leader (or someone alone) owns a listing; members see it too.
                 if IsInGroup() and not UnitIsGroupLeader("player") then
                     DBG("[QoL] Listing update ignored – member of someone else's group")
                     return
                 end
-                -- Own listing created or updated (M+ or raid)
+                -- Own listing created or updated
                 local name, isMythicPlus, dungeon = GetNameFromActivityID(activityID)
                 if isMythicPlus == nil then return end  -- neither M+ nor current raid
                 if keyAddonOpenedByCreation then return end  -- already open
                 keyAddonOpenedByCreation = true
 
-                -- Teleport reminder takes priority for M+ when selected -
-                -- doesn't use the companion-addon open/close bookkeeping
-                -- below since it has no auto-close timer.
+                -- Teleport reminder first (no companion addon bookkeeping, no timer).
                 if isMythicPlus and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
                     DBG("[QoL] Own M+ listing created – showing teleport reminder:", name or "nil")
                     RA.ShowTeleportReminder(name, dungeon, ParseKeyLevel(entryInfo))
                     return
                 end
 
-                -- Only open the companion addon for M+ (raids have no keystone teleports)
+                -- Companion addon: M+ only
                 if isMythicPlus and GetActiveKeyAddon() then
                     DBG("[QoL] Own M+ listing created – opening keystone companion addon")
                     keyAddonOpenedByCreationMplus = true
                     OpenKeyAddon()
                 end
             else
-                -- Listing removed (cancelled or group full). joinedViaApplication
-                -- stays set until you leave the group: the group's listing can
-                -- come back (re-posted) and is still not one of ours.
+                -- Listing removed (cancelled or full). joinedViaApplication stays until
+                -- you leave: a re-posted listing is still not ours.
                 if not keyAddonOpenedByCreation then return end
                 keyAddonOpenedByCreation = false
                 keyAddonSafetyTimer.Stop()
-                -- Only toggle the companion addon if it was opened by M+ creation
+                -- Only if the M+ creation opened it
                 if keyAddonOpenedByCreationMplus then
                     keyAddonOpenedByCreationMplus = false
                     if GetNumGroupMembers() >= 5 then

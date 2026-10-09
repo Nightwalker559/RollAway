@@ -10,9 +10,7 @@ local DBG = RA.DBG
 local ROLL_NEED, ROLL_GREED, ROLL_TRANSMOG = 1, 2, 4
 local ROLL_KEY = { [ROLL_NEED] = "need", [ROLL_GREED] = "greed", [ROLL_TRANSMOG] = "transmog" }
 
-------------------------------------------------------------------------
--- Execute legacy roll on a given rollID
-------------------------------------------------------------------------
+-- Legacy roll for a rollID
 
 local function ExecuteLegacyRoll(rollID)
     if not RollAwayDB or not RollAwayDB.legacy then return end
@@ -21,7 +19,7 @@ local function ExecuteLegacyRoll(rollID)
         return
     end
 
-    -- Nothing chosen = leave the roll to the player (passing is its own choice).
+    -- Nothing chosen: left to the player.
     local db = RollAwayDB
     if not (db.legacyPass or db.legacyNeed or db.legacyGreed or db.legacyTransmog) then
         DBG("[Legacy] No roll type selected – leaving the roll alone")
@@ -40,8 +38,7 @@ local function ExecuteLegacyRoll(rollID)
         "| canGreed:", tostring(canGreed),
         "| canTransmog:", tostring(canTransmog))
 
-    -- Pass overrides the rest; otherwise Need > Greed > Transmog, and Pass when
-    -- none of the chosen types is available for this item.
+    -- Pass overrides; else Need > Greed > Transmog, Pass if none is available.
     local actualRoll = 0
     if db.legacyPass then
         DBG("[Legacy] Passing (Pass selected)")
@@ -57,8 +54,7 @@ local function ExecuteLegacyRoll(rollID)
 
     DBG("[Legacy] RollOnLoot rollID:", rollID, "| roll:", actualRoll)
 
-    -- BoP items ask for a confirmation after the roll (CONFIRM_LOOT_ROLL);
-    -- armed first so the event cannot be missed.
+    -- BoP items ask for a confirmation after the roll: armed first.
     if actualRoll ~= 0 then RA.ArmRollConfirm(rollID) end
 
     -- Click the real button (native or ElvUI roll frame) when there is one.
@@ -74,7 +70,7 @@ local function ExecuteLegacyRoll(rollID)
         end
     end
 
-    -- Fallback: RollOnLoot API if no roll frame/button found or roll is Pass.
+    -- Fallback: RollOnLoot when there is no button or it is a pass.
     if not clicked then
         DBG("[Legacy] Fallback RollOnLoot roll:", actualRoll)
         local ok, err = pcall(RollOnLoot, rollID, actualRoll)

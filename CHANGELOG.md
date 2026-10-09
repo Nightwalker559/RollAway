@@ -18,7 +18,7 @@
 - Vendor filter dims owned heirlooms; pets only once you own the maximum.
 - Paragon reminder also covers Major Factions that are not in the list.
 - Portal frame shows a newly learned teleport while it is open.
-- Group Finder quick-create and the join reminder use game events instead of timers.
+- Group Finder quick-create and the join reminder use game events instead of timers; the portal cast listener only runs while the keystone addon is held open.
 - Debug log: lines can no longer be overwritten while you select text; millisecond timestamps.
 
 ### Fixed

@@ -8,9 +8,7 @@ local RA = _G["RollAway"]
 
 RA.RAIDS = RA.RAIDS or {}
 
-------------------------------------------------------------------------
--- Season 1 raid boss definitions
-------------------------------------------------------------------------
+-- Season 1 raid bosses
 RA.RAIDS[1] = {
     { key = "imperator_averzian",    encounterID = 3176, raid = "voidspire"       },
     { key = "vorasius",              encounterID = 3177, raid = "voidspire"       },
@@ -24,9 +22,7 @@ RA.RAIDS[1] = {
     { key = "rotmire",               encounterID = 3159, raid = "sporefall"       }, -- Sporefall (12.0.7)
 }
 
-------------------------------------------------------------------------
--- Season 2 raid boss definitions (The Venomous Abyss, mapID 3004)
-------------------------------------------------------------------------
+-- Season 2 raid bosses (The Venomous Abyss, mapID 3004)
 RA.RAIDS[2] = {
     { key = "nekzali_the_soulcoiler", encounterID = 3470, raid = "venomous_abyss" },
     { key = "entombed_sentinels",     encounterID = 3445, raid = "venomous_abyss" },
@@ -38,18 +34,11 @@ RA.RAIDS[2] = {
     { key = "ulatek",                 encounterID = 3492, raid = "venomous_abyss" },
 }
 
-------------------------------------------------------------------------
--- Season 2 World Boss / Lair (moved from Data/WorldBosses.lua - now
--- treated as a regular raid boss, matched via the raid difficulty bucket
--- system instead of its own per-difficulty toggle).
-------------------------------------------------------------------------
+-- Season 2 lair (Tidebound Grotto, one boss), matched like a regular raid boss.
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
     { key = "nymrissa_wavecaller", encounterID = 3379, raid = "tidebound_grotto" }
 
-------------------------------------------------------------------------
--- The Unbinding of Kith'ix (12.1.5, PTR) – single-boss raid, mid-season
--- addition like Sporefall in S1. encounterID confirmed via DungeonEncounter.db2
--- (wago.tools, ID 3513). Kept as pendingTest until verified live in-game.
-------------------------------------------------------------------------
+-- The Unbinding of Kith'ix (12.1.5, PTR): single-boss mid-season raid, encounterID from
+-- DungeonEncounter.db2 (wago.tools); pendingTest until verified in the game.
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
     { key = "kithix", encounterID = 3513, raid = "unbinding_of_kithix", pendingTest = true }

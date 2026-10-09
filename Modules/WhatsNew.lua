@@ -4,13 +4,11 @@
 local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
--- Bump this whenever a new feature entry is added below.
+-- Bump with the entries below.
 local WHATS_NEW_VERSION = "3.1.2"
 
--- Each entry: { title, description, location } - all three pulled from
--- RA_L so this shows correctly in both enUS and deDE.
--- Only entries for the CURRENT version (WHATS_NEW_VERSION above) belong
--- here - clear this list out and replace it whenever that version bumps.
+-- Entry: { title, description, location }, all from RA_L (enUS + deDE). Only the
+-- CURRENT version's entries belong here; replace them when the version bumps.
 local FEATURES = {
     {
         title       = RA_L["whatsnew_pass_title"],
@@ -34,9 +32,7 @@ local FEATURES = {
     },
 }
 
--- ============================================================
 -- Frame
--- ============================================================
 
 local frame
 
@@ -49,7 +45,7 @@ local function CreateWhatsNewFrame()
 
     f.TitleText:SetText("RollAway - What's New  |cFFAA8830v" .. WHATS_NEW_VERSION .. "|r")
 
-    -- Plain ScrollFrame without template — no scrollbar widget, mousewheel only
+    -- Plain ScrollFrame: mouse wheel only
     local sf = CreateFrame("ScrollFrame", "RollAwayWhatsNewScroll", f)
     sf:SetPoint("TOPLEFT",     f, "TOPLEFT",      12, -32)
     sf:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT",  -12,  44)
@@ -60,8 +56,7 @@ local function CreateWhatsNewFrame()
         self:SetVerticalScroll(math.max(0, math.min(max, current - delta * 30)))
     end)
 
-    -- Content frame: fixed width, height grows with cards
-    -- Frame 440 - inset(~8 each side) - scrollbar(~20) - card margins = 380
+    -- Content: fixed width (440 - insets - scrollbar - margins = 380), height grows with the cards
     local CARD_W = 380
 
     local content = CreateFrame("Frame", nil, sf)
@@ -127,9 +122,7 @@ local function CreateWhatsNewFrame()
     return f
 end
 
--- ============================================================
 -- Public API
--- ============================================================
 
 function RA.ShowWhatsNew()
     if not frame then
@@ -138,9 +131,7 @@ function RA.ShowWhatsNew()
     frame:Show()
 end
 
--- ============================================================
 -- Init
--- ============================================================
 
 function RA.InitWhatsNew()
     local loginFrame = CreateFrame("Frame")

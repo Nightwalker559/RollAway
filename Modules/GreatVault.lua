@@ -7,9 +7,7 @@ local DBG  = RA.DBG
 
 local TIMER_DURATION = 30
 
-------------------------------------------------------------------------
--- Frame (mirrors Reminder.lua / Paragon.lua layout)
-------------------------------------------------------------------------
+-- Frame (like Reminder.lua / Paragon.lua)
 
 local vaultFrame
 
@@ -31,14 +29,12 @@ local function CreateVaultFrame()
     vaultFrame.msg = RA.CreatePopupBodyText(vaultFrame)
 end
 
-------------------------------------------------------------------------
 -- Logic
-------------------------------------------------------------------------
 
 function RA.ShowGreatVaultFrame()
     CreateVaultFrame()
 
-    -- Stacked in the shared popup order (Core/Helpers.lua), no overlap.
+    -- Stacked with the other popups.
     RA.StackPopupFrame(vaultFrame)
 
     vaultFrame.msg:SetText(RA_L["greatvault_alert_msg"])
@@ -46,15 +42,14 @@ function RA.ShowGreatVaultFrame()
     DBG("[GreatVault] Showing frame")
 end
 
--- Returns true if the player currently has an unclaimed Great Vault reward.
+-- Does the player have an unclaimed Great Vault reward?
 local function HasUnclaimedRewards()
     if not (C_WeeklyRewards and C_WeeklyRewards.HasAvailableRewards) then return false end
     local ok, result = pcall(C_WeeklyRewards.HasAvailableRewards)
     return ok and result or false
 end
 
--- Weekly reward period ID, used so the reminder only re-shows once per new
--- reset instead of every login within the same week.
+-- Weekly reward period ID: the reminder shows once per reset, not on every login.
 local function GetRewardPeriod()
     local remaining = C_DateAndTime.GetSecondsUntilWeeklyReset()
     if remaining then
@@ -65,7 +60,7 @@ end
 local function CheckAndShow()
     if not (RollAwayDB and RollAwayDB.greatVaultAlert) then return end
     if not RA.IsMaxLevel() then return end  -- no Great Vault rewards below max level
-    if RA.vaultAlertShownThisSession then return end  -- already shown/handled this session
+    if RA.vaultAlertShownThisSession then return end  -- already handled this session
     if not HasUnclaimedRewards() then return end
 
     local period = GetRewardPeriod()
@@ -76,7 +71,7 @@ local function CheckAndShow()
     RA.ShowGreatVaultFrame()
 end
 
--- Manual check: always runs regardless of the greatVaultAlert setting.
+-- Manual check, independent of the greatVaultAlert setting.
 local function ManualCheck()
     if HasUnclaimedRewards() then
         RA.ShowGreatVaultFrame()
@@ -85,9 +80,7 @@ local function ManualCheck()
     end
 end
 
-------------------------------------------------------------------------
 -- Initialization
-------------------------------------------------------------------------
 
 function RA.InitGreatVault()
     local f = CreateFrame("Frame")
@@ -96,24 +89,20 @@ function RA.InitGreatVault()
 
     f:SetScript("OnEvent", function(_, event, isInitialLogin)
         if event == "PLAYER_ENTERING_WORLD" then
-            -- Only fire on actual login, never on /reload or zoning.
+            -- Only on a real login.
             if not isInitialLogin then return end
 
-            -- Delay so weekly rewards data is populated before checking.
-            -- WEEKLY_REWARDS_UPDATE below acts as a retry if data still
-            -- isn't ready by then.
+            -- Wait for the weekly rewards data; WEEKLY_REWARDS_UPDATE below retries.
             C_Timer.After(3, CheckAndShow)
 
         elseif event == "WEEKLY_REWARDS_UPDATE" then
-            -- Kept registered for the whole session: retries the login check
-            -- if data wasn't ready yet, AND fires again when a reward is
-            -- claimed. CheckAndShow()'s session flag makes sure we only ever
-            -- actually pop the reminder once per session either way.
+            -- Retries the login check and fires on claims; the session flag in
+            -- CheckAndShow() shows the reminder once per session.
             CheckAndShow()
         end
     end)
 
-    -- /rawvault – manual check, available to all users
+    -- /rawvault: manual check, for everyone
     SLASH_RAWGREATVAULT1 = "/rawvault"
     SlashCmdList["RAWGREATVAULT"] = ManualCheck
 

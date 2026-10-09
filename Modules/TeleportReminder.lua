@@ -1,12 +1,8 @@
 -- RollAway - TeleportReminder.lua
--- Alternative to the default instance-join reminder: shows the Mythic+
--- Season 2 dungeon portal button for the dungeon you're actually queued
--- for (or all of them, if the specific dungeon can't be determined - e.g.
--- an M+ activity outside the tracked season pool). Selected via
--- RollAwayDB.joinReminderKeyAddon == "teleport" (JoinReminder.lua). Group
--- Finder (LFG) join only - manually formed groups get no reminder at all.
--- Stays open until a portal is clicked or the frame is manually closed -
--- no auto-hide timer.
+-- Alternative join reminder (RollAwayDB.joinReminderKeyAddon == "teleport", see
+-- JoinReminder.lua): the season's portal button for the dungeon you joined, or all of
+-- them when it is unknown. Group Finder joins only. Stays open until a portal is
+-- clicked or it is closed (no timer).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -15,17 +11,13 @@ local DBG  = RA.DBG
 local BUTTON_SIZE = 32
 local BUTTON_GAP  = 6
 
-------------------------------------------------------------------------
 -- State
-------------------------------------------------------------------------
 
 local reminderFrame
-local portalButtons = {}  -- ordered array, one per RA.DUNGEONS[season] entry
+local portalButtons = {}  -- one per season dungeon
 local buttonByKey    = {} -- dungeon.key -> button
 
-------------------------------------------------------------------------
--- Frame creation (once, reused on every show)
-------------------------------------------------------------------------
+-- Frame creation (once)
 
 local function CreatePortalButtons(parent, dungeons)
     for i, dungeon in ipairs(dungeons) do
@@ -42,8 +34,7 @@ local function CreatePortalButtons(parent, dungeons)
             GameTooltip:Show()
         end)
 
-        -- Manual close on use - the reminder's whole purpose is fulfilled
-        -- once a portal has been taken.
+        -- Closes once a portal is used.
         btn:HookScript("OnClick", function() RA.SafeSetShown(reminderFrame, false) end)
 
         RA.SafeSetShown(btn, false)
@@ -63,10 +54,7 @@ local function CreateReminderFrame()
     RA.MakeDraggable(reminderFrame)
     RA.SafeSetShown(reminderFrame, false)
 
-    -- Deliberately NOT added to UISpecialFrames: Esc is used constantly
-    -- while playing (canceling casts, closing other windows, etc.) and
-    -- was closing this reminder unintentionally. Closing it now requires
-    -- the explicit X button, a portal click, or /reload.
+    -- Not in UISpecialFrames: Esc closed it by accident. X button, portal click or /reload close it.
     RA.ApplyPopupBackdrop(reminderFrame)
 
     local closeBtn = CreateFrame("Button", "RollAwayTeleportReminderClose", reminderFrame, "UIPanelCloseButton")
@@ -84,22 +72,17 @@ local function CreateReminderFrame()
 
     CreatePortalButtons(reminderFrame, RA.DUNGEONS[RA.ACTIVE_SEASON] or {})
 
-    -- Combat → hide. GROUP_LEFT → hide (stale reminder for a group we've
-    -- since left). Deliberately NOT GROUP_JOINED - that event fires at the
-    -- exact moment we join the very group this reminder is being shown
-    -- for, which used to hide it again immediately after RA.ShowTeleportReminder()
-    -- displayed it.
+    -- Combat and GROUP_LEFT hide it. Not GROUP_JOINED: it fires when we join the very
+    -- group the reminder is for.
     reminderFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     reminderFrame:RegisterEvent("GROUP_LEFT")
     reminderFrame:SetScript("OnEvent", function(self, event)
-        -- (RA.SafeSetShown also registers PLAYER_REGEN_ENABLED on this frame)
+        -- (RA.SafeSetShown also uses PLAYER_REGEN_ENABLED here)
         if event == "PLAYER_REGEN_DISABLED" then
             RA.SafeSetShown(self, false)
         elseif event == "GROUP_LEFT" then
-            -- Accepting an LFG invite while already in a party (e.g. a
-            -- 3-man applying together) leaves the old party: GROUP_LEFT can
-            -- arrive right AFTER the reminder for the new group was shown,
-            -- followed by GROUP_JOINED. Only hide if we ended up ungrouped.
+            -- Accepting an LFG invite from a party leaves the old party: GROUP_LEFT can
+            -- come after the new group's reminder. Hide only if we ended up ungrouped.
             C_Timer.After(1, function()
                 if not IsInGroup() then
                     DBG("Teleport reminder hidden - left group")
@@ -110,10 +93,7 @@ local function CreateReminderFrame()
     end)
 end
 
-------------------------------------------------------------------------
--- Layout: shows only the given buttons, centered in a row, and updates
--- their locked/cooldown state.
-------------------------------------------------------------------------
+-- Layout: only the given buttons, centered in a row, with locked/cooldown state.
 
 local function LayoutAndUpdate(visibleButtons)
     local count      = #visibleButtons
@@ -132,20 +112,14 @@ local function LayoutAndUpdate(visibleButtons)
     end
 end
 
-------------------------------------------------------------------------
 -- Show reminder
-------------------------------------------------------------------------
-
--- instanceName: localized dungeon name (or nil for a generic message).
--- dungeon: matched entry from RA.DUNGEONS[RA.ACTIVE_SEASON] - when given,
--- only that dungeon's portal is shown; when nil (dungeon not resolved,
--- e.g. an M+ activity outside the tracked season pool), all portals are
--- shown so the correct one can still be picked manually.
--- keyLevel: listed keystone level (number) or nil - shown as "+N" after the name.
+-- instanceName: localized dungeon name (nil = generic message).
+-- dungeon: season entry; only its portal is shown, nil shows all portals.
+-- keyLevel: listed key level or nil, shown as "+N".
 function RA.ShowTeleportReminder(instanceName, dungeon, keyLevel)
     if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
     if RollAwayDB.joinReminderKeyAddon ~= "teleport" then return end
-    -- The portal buttons are secure frames: no re-layout in combat.
+    -- Secure buttons: no re-layout in combat.
     if InCombatLockdown() then
         DBG("Teleport reminder skipped - in combat")
         return
@@ -155,8 +129,7 @@ function RA.ShowTeleportReminder(instanceName, dungeon, keyLevel)
 
     local dungeonButton = dungeon and buttonByKey[dungeon.key]
 
-    -- Specific dungeon known and its portal already on cooldown (i.e. we
-    -- already used it) - don't pop the reminder back up for the same key.
+    -- Dungeon known and its portal on cooldown (already used): no reminder again.
     if dungeonButton and RA.IsPortalOnCooldown(dungeonButton.spellID) then
         DBG("Teleport reminder skipped - portal on cooldown:", dungeon.key)
         return

@@ -1,6 +1,6 @@
 -- RollAway - LFGQuickCreate.lua
--- Dungeon quick-select buttons in the Group Finder (Mythic+).
--- Dungeon data (cmID, lfgID) is read from RA.DUNGEONS[RA.ACTIVE_SEASON] (Data/Dungeons.lua).
+-- Dungeon quick-select buttons in the Group Finder (Mythic+); dungeon data (cmID,
+-- lfgID) from RA.DUNGEONS[RA.ACTIVE_SEASON].
 
 local RA  = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -14,21 +14,14 @@ local buttons      = {}
 local container    = nil
 local updateTicker = nil
 
-------------------------------------------------------------------------
--- Display name of a dungeon: the button's tooltip text, and the sort key so
--- display order always matches what's actually shown.
-------------------------------------------------------------------------
+-- Display name of a dungeon: tooltip text and sort key.
 local function DungeonSortLabel(d)
     local actInfo = C_LFGList and C_LFGList.GetActivityInfoTable(d.lfgID)
     local full = actInfo and actInfo.fullName
     return (full and full ~= "") and full or d.key
 end
 
-------------------------------------------------------------------------
--- Filters to dungeons active this season via GetMapTable(); falls back
--- to the full list if the active set is empty. Result is sorted
--- alphabetically by display name.
-------------------------------------------------------------------------
+-- The season's dungeons via GetMapTable() (full list if that is empty), sorted by name.
 local function ActiveDungeons()
     local source = RA.DUNGEONS[RA.ACTIVE_SEASON]
     if not C_ChallengeMode then return RA.SortByLabel(source, DungeonSortLabel) end
@@ -48,10 +41,7 @@ local function ActiveDungeons()
     return RA.SortByLabel(#out > 0 and out or source, DungeonSortLabel)
 end
 
-------------------------------------------------------------------------
--- Returns the playstyle currently set in the EC frame, falling back to
--- the addon's saved default when the frame value is unset.
-------------------------------------------------------------------------
+-- Playstyle set in the EC frame, else the saved default.
 local function CurrentPlaystyle()
     local ec = LFGListFrame and LFGListFrame.EntryCreation
     if ec and type(ec.generalPlaystyle) == "number" and ec.generalPlaystyle > 0 then
@@ -60,10 +50,7 @@ local function CurrentPlaystyle()
     return (RollAwayDB and RollAwayDB.lfgDefaultPlaystyle) or 0
 end
 
-------------------------------------------------------------------------
--- Updates the keystone glow on each button to highlight the dungeon
--- matching the player's currently owned keystone.
-------------------------------------------------------------------------
+-- Keystone glow on the button of the dungeon the player's keystone belongs to.
 local function RefreshGlow()
     local ownLfgID, ownLevel = RA.GetOwnedKeystone()
     for i = 1, #buttons do
@@ -77,10 +64,8 @@ local function RefreshGlow()
     end
 end
 
-------------------------------------------------------------------------
--- Saves original EC layout, then pushes labels down for the button row.
--- Offsets empirically measured for the Midnight 12.0.5 EC layout.
-------------------------------------------------------------------------
+-- Saves the original EC layout and pushes the labels down for the button row
+-- (offsets measured for the Midnight 12.0.5 layout).
 local origLayout = {}
 
 local function SaveLayout(ec)
@@ -126,9 +111,7 @@ local function PopLayout(ec)
     end
 end
 
-------------------------------------------------------------------------
--- Shows the container when the Dungeons category (2) is active.
-------------------------------------------------------------------------
+-- Shows the container while the Dungeons category (2) is active.
 local function SyncVisibility()
     if not container then return end
     if not (RollAwayDB and RollAwayDB.lfgQuickCreate) then
@@ -139,24 +122,15 @@ local function SyncVisibility()
     container:SetShown(cs ~= nil and cs.selectedCategory == 2)
 end
 
-------------------------------------------------------------------------
--- Applies the saved default playstyle to the EC frame on every open.
--- The player can still change it manually in the EC form afterwards.
-------------------------------------------------------------------------
+-- Saved default playstyle on every open; the player can still change it.
 local function ApplyDefaultPlaystyle(ec)
     if not RollAwayDB then return end
     local ps = RollAwayDB.lfgDefaultPlaystyle
     if not ps or ps == 0 then return end
-    -- Only set the plain data field. Do NOT call dd:SetSelectedValue()/
-    -- GenerateMenu(): that routes into Blizzard's OnPlayStyleSelectedInternal
-    -- -> SetTitleFromActivityInfo -> protected SetEntryTitle(). Calling it from
-    -- insecure code (no hardware event) doesn't just fail once - it taints the
-    -- EntryCreation frame/dropdown, and that taint persists until /reload,
-    -- causing ADDON_ACTION_BLOCKED later even on genuine hardware-event clicks
-    -- (e.g. "Edit" in the Application Viewer). The dropdown label simply won't
-    -- reflect the default visually; our own CreateListing() call and Blizzard's
-    -- native "List Group" both read ec.generalPlaystyle directly, so behavior
-    -- is unaffected.
+    -- Plain data field only. dd:SetSelectedValue()/GenerateMenu() would reach the
+    -- protected SetEntryTitle() from insecure code and taint the EntryCreation frame
+    -- until /reload (ADDON_ACTION_BLOCKED, e.g. on "Edit"). The label does not show the
+    -- default; CreateListing() and "List Group" read ec.generalPlaystyle anyway.
     ec.generalPlaystyle = ps
     DBG("[LFGQuickCreate] Playstyle set:", ps)
     if LFGListEntryCreation_UpdateValidState then
@@ -165,12 +139,8 @@ local function ApplyDefaultPlaystyle(ec)
     end
 end
 
-------------------------------------------------------------------------
--- Switches the EC frame's selected difficulty to Mythic+ (Blizzard defaults
--- to plain Mythic), for the currently selected dungeon. Runs when the form
--- opens and after another dungeon was picked - never after a manual
--- difficulty pick, so choosing Normal/Heroic/Mythic still works.
-------------------------------------------------------------------------
+-- Selects Mythic+ (Blizzard defaults to Mythic) for the selected dungeon: when the form
+-- opens and after another dungeon was picked, never after a manual difficulty pick.
 local function ApplyMythicPlus(ec)
     if not (RollAwayDB and RollAwayDB.lfgAutoMythicPlus) then return end
     if ec.selectedCategory ~= 2 or not ec.selectedActivity then return end
@@ -181,10 +151,8 @@ local function ApplyMythicPlus(ec)
     for _, activityID in ipairs(C_LFGList.GetAvailableActivities(ec.selectedCategory, ec.selectedGroup, ec.selectedFilters) or {}) do
         local info = C_LFGList.GetActivityInfoTable(activityID)
         if info and info.isMythicPlusActivity then
-            -- Plain data field only, for the same taint reason as the
-            -- default playstyle above (no dropdown API calls). The dropdown
-            -- label may keep showing "Mythic", but Blizzard's List Group
-            -- button reads ec.selectedActivity.
+            -- Plain data field only (taint, see playstyle above); the label may keep
+            -- showing "Mythic", "List Group" reads ec.selectedActivity.
             ec.selectedActivity = activityID
             DBG("[LFGQuickCreate] Difficulty set to Mythic+, activityID:", activityID)
             if LFGListEntryCreation_UpdateValidState then
@@ -195,9 +163,7 @@ local function ApplyMythicPlus(ec)
     end
 end
 
-------------------------------------------------------------------------
--- Creates a single dungeon icon button.
-------------------------------------------------------------------------
+-- One dungeon icon button.
 local function MakeButton(parent, dungeon, index)
     local _, _, _, iconTex = C_ChallengeMode.GetMapUIInfo(dungeon.cmID)
     local label = DungeonSortLabel(dungeon)
@@ -250,9 +216,8 @@ local function MakeButton(parent, dungeon, index)
             return
         end
         DBG("[LFGQuickCreate] Click:", self._label, "lfgID:", self._lfgID)
-        -- C_LFGList.CreateListing() must be called directly from the hardware
-        -- event. Routing through LFGListEntryCreation_ListGroup() introduces
-        -- taint and causes ADDON_ACTION_BLOCKED.
+        -- CreateListing() directly from the click: via LFGListEntryCreation_ListGroup()
+        -- it taints (ADDON_ACTION_BLOCKED).
         C_LFGList.CreateListing({
             activityIDs           = { self._lfgID },
             questID               = nil,
@@ -270,9 +235,7 @@ local function MakeButton(parent, dungeon, index)
     return btn
 end
 
-------------------------------------------------------------------------
--- One-time initialization, deferred until Blizzard_GroupFinder is ready.
-------------------------------------------------------------------------
+-- One-time initialization, once Blizzard_GroupFinder is ready.
 local seasonWait  -- frame that waits for the season data (created when needed)
 
 local function Init()
@@ -281,12 +244,11 @@ local function Init()
     local ec = LFGListFrame and LFGListFrame.EntryCreation
     if not ec then return end
 
-    -- GetCurrentSeason() returns -1 until RequestMapInfo resolves.
+    -- GetCurrentSeason() is -1 until RequestMapInfo is answered.
     if not C_MythicPlus then return end
     C_MythicPlus.RequestMapInfo()
     if C_MythicPlus.GetCurrentSeason() == -1 then
-        -- CHALLENGE_MODE_MAPS_UPDATE is the answer to RequestMapInfo; the
-        -- timer only covers an answer that never comes.
+        -- CHALLENGE_MODE_MAPS_UPDATE answers RequestMapInfo; the timer covers no answer.
         if not seasonWait then
             seasonWait = CreateFrame("Frame")
             seasonWait:SetScript("OnEvent", function(self)
@@ -317,8 +279,7 @@ local function Init()
         buttons[#buttons + 1] = MakeButton(container, d, i)
     end
 
-    -- After a dropdown closes: re-sync the button row; when it was a
-    -- dungeon/category pick (not the difficulty dropdown), Mythic+ again.
+    -- After a dropdown closes: re-sync the row; after a dungeon/category pick, Mythic+ again.
     local function HookDD(dd, isDifficultyDropdown)
         if not dd then return end
         dd:HookScript("OnHide", function()
@@ -334,8 +295,7 @@ local function Init()
         HookDD(ec.CategoryDropdown)
     end
 
-    -- Applies the current options to the entry-creation frame - on every open,
-    -- and once right away if it is already open.
+    -- Applies the options to the entry-creation frame on every open (and now if open).
     local function OnEntryCreationShown()
         if RollAwayDB and RollAwayDB.lfgQuickCreate then
             PushLayout(ec)
@@ -348,7 +308,7 @@ local function Init()
             PopLayout(ec)
             container:Hide()
         end
-        -- Apply default playstyle / Mythic+ independently of the dungeon buttons.
+        -- Playstyle / Mythic+ independent of the dungeon buttons.
         C_Timer.After(0.05, function()
             if not ec:IsShown() then return end
             if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then ApplyDefaultPlaystyle(ec) end
@@ -364,12 +324,10 @@ local function Init()
     if ec:IsShown() then OnEntryCreationShown() end
 end
 
-------------------------------------------------------------------------
--- Public init – called from Core/Core.lua on ADDON_LOADED.
-------------------------------------------------------------------------
+-- Public init, called from Core.lua on ADDON_LOADED.
 function RA.InitLFGQuickCreate()
-    -- The Group Finder (Blizzard_GroupFinder) loads at startup, so waiting for
-    -- the first loading screen is enough; Init itself waits for the season data.
+    -- Blizzard_GroupFinder loads at startup: the first loading screen is enough;
+    -- Init waits for the season data itself.
     local f = CreateFrame("Frame")
     f:RegisterEvent("PLAYER_ENTERING_WORLD")
 

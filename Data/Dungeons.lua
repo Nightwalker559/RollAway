@@ -7,12 +7,8 @@ local RA = _G["RollAway"]
 
 RA.DUNGEONS = RA.DUNGEONS or {}
 
-------------------------------------------------------------------------
--- Season 1 dungeon definitions
--- portalSpellID: M+20 achievement teleport spell (same mechanic as
--- Season 2, see Modules\TeleportReminder.lua). Kept for the "all learned
--- dungeon teleports" overview even after the season rotates out.
-------------------------------------------------------------------------
+-- Season 1 dungeons. portalSpellID: the M+20 achievement teleport (also for the "all
+-- learned teleports" overview after the season rotates out).
 RA.DUNGEONS[1] = {
     { key = "windrunner_spire",    mapID = 2805, cmID = 557, lfgID = 1542, portalSpellID = 1254400, expansion = "midnight" },
     { key = "maisara_caverns",     mapID = 2874, cmID = 560, lfgID = 1764, portalSpellID = 1254559, expansion = "midnight" },
@@ -24,12 +20,8 @@ RA.DUNGEONS[1] = {
     { key = "pit_of_saron",        mapID = 658,  cmID = 556, lfgID = 1770, portalSpellID = 1254555, expansion = "wrath"    }, -- revived Wrath dungeon, new S1 achievement
 }
 
-------------------------------------------------------------------------
--- Season 2 dungeon definitions (12.1)
--- portalSpellID: Mythic+20 achievement teleport spell (used by the
--- teleport reminder in Modules\TeleportReminder.lua). Only known to
--- players who have timed a +20 in that dungeon this season.
-------------------------------------------------------------------------
+-- Season 2 dungeons (12.1). portalSpellID: the M+20 achievement teleport (TeleportReminder);
+-- only known to players who timed a +20 there this season.
 RA.DUNGEONS[2] = {
     { key = "altar_of_fangs",       mapID = 2993, cmID = 588, lfgID = 1933, portalSpellID = 1286812, expansion = "midnight" },
     { key = "kings_rest",           mapID = 1762, cmID = 249, lfgID = 514,  portalSpellID = 1286831, expansion = "bfa"      }, -- revived BfA dungeon, new S2 achievement

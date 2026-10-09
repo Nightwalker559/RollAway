@@ -1,16 +1,11 @@
 -- RollAway - Quests.lua
--- Automatic quest handling when talking to an NPC: picks quests from the
--- gossip / quest-greeting list, accepts them (regular / daily / weekly can be
--- switched separately) and turns in finished ones.
---
--- Safety rules:
---   * Turn-in never happens for quests that ask for gold or currency.
---   * Turn-in only completes quests with at most one reward to choose from.
---   * An optional modifier key either pauses the automation while held (default)
---     or is required to run it ("questRequireModifier").
--- Settings: RollAwayDB.questAcceptRegular / questAcceptDaily / questAcceptWeekly /
--- questAutoTurnIn / questRequireModifier / questModifierKey
--- Events are only registered while at least one option is on.
+-- Quest automation at NPCs: picks quests from the gossip / greeting list, accepts them
+-- (regular / daily / weekly separately) and turns in finished ones.
+-- Safety: no turn-in for quests that ask for gold or currency, and only with at most
+-- one reward to choose. A modifier key pauses the automation while held (default) or
+-- is required to run it (questRequireModifier).
+-- Settings: questAcceptRegular / questAcceptDaily / questAcceptWeekly / questAutoTurnIn /
+-- questRequireModifier / questModifierKey. Events only while an option is on.
 
 local RA  = _G["RollAway"]
 local DBG = RA.DBG
@@ -25,13 +20,9 @@ local MODIFIER_DOWN = {
 
 local questFrame
 
-------------------------------------------------------------------------
 -- Rules
-------------------------------------------------------------------------
 
--- Is the automation allowed right now? Compares the modifier key state with
--- the "require modifier" setting: not required -> must NOT be held (held =
--- pause); required -> must be held.
+-- Allowed right now? Modifier not required: must NOT be held (pause); required: must be held.
 local function AutomationActive()
     local db = RollAwayDB
     if not db then return false end
@@ -46,18 +37,14 @@ local function CanAcceptFrequency(frequency)
     return db.questAcceptRegular
 end
 
--- Gold or currency the quest would take from you. Only meaningful in the
--- progress step (QUEST_PROGRESS): that is where Blizzard lists what the quest
--- asks for; on the reward page the same calls would count the rewards.
+-- Gold or currency the quest would take. Only valid in QUEST_PROGRESS (on the reward
+-- page the same calls count the rewards).
 local function TurnInCostsSomething()
     if (GetQuestMoneyToGet() or 0) > 0 then return true end
     return (GetNumQuestCurrencies and GetNumQuestCurrencies() or 0) > 0
 end
 
-------------------------------------------------------------------------
--- NPC dialogs: pick the next quest from the list. One quest per event -
--- the quest dialog and then the list reopen, which repeats the pick.
-------------------------------------------------------------------------
+-- NPC dialogs: pick the next quest from the list, one per event (the list reopens).
 
 local function PickFromGossip()
     local db = RollAwayDB
@@ -96,9 +83,7 @@ local function PickFromGreeting()
     end
 end
 
-------------------------------------------------------------------------
 -- Quest dialog steps
-------------------------------------------------------------------------
 
 local handlers = {
     GOSSIP_SHOW     = PickFromGossip,
@@ -106,8 +91,7 @@ local handlers = {
 }
 
 function handlers.QUEST_DETAIL()
-    -- QuestIsDaily / QuestIsWeekly do not appear in Blizzard's own UI code, so
-    -- a client without them must not break the automation (counts as regular).
+    -- Blizzard's UI code does not use QuestIsDaily/Weekly: without them it counts as regular.
     local frequency = Frequency.Default
     if QuestIsDaily and QuestIsDaily() then
         frequency = Frequency.Daily
@@ -117,14 +101,14 @@ function handlers.QUEST_DETAIL()
     if not CanAcceptFrequency(frequency) then return end
 
     if QuestGetAutoAccept() then
-        -- Blizzard already put it in the log, only the notice is open.
+        -- Already in the log, only the notice is open.
         CloseQuest()
     else
         AcceptQuest()
     end
 end
 
--- Quests that ask for confirmation first (e.g. a shared escort quest)
+-- Quests that ask for confirmation first (e.g. a shared escort)
 function handlers.QUEST_ACCEPT_CONFIRM()
     if not RollAwayDB.questAcceptRegular then return end
     ConfirmAcceptQuest()
@@ -146,9 +130,7 @@ function handlers.QUEST_COMPLETE()
     end
 end
 
-------------------------------------------------------------------------
 -- Event registration
-------------------------------------------------------------------------
 
 local function SetRegistered(event, on)
     if on then
@@ -158,8 +140,7 @@ local function SetRegistered(event, on)
     end
 end
 
--- Registers only the events the current settings need. Called at load and
--- whenever an option changes.
+-- Only the events the settings need; at load and on option change.
 function RA.ApplyQuestAutomation()
     if not questFrame then return end
     local db = RollAwayDB

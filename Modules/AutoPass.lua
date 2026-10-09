@@ -1,6 +1,5 @@
 -- RollAway - AutoPass.lua
--- Bonus Roll auto-pass for dungeons, delves, raids (per-boss or whole
--- difficulty bucket), and Prey.
+-- Bonus roll auto-pass: dungeons, delves, raids (per boss or whole difficulty) and Prey.
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
@@ -10,17 +9,14 @@ local DELVE_MAP          = RA.DELVE_MAP
 local RAID_ENCOUNTER_MAP = RA.RAID_ENCOUNTER_MAP
 local RAID_DIFFICULTY_BUCKET = RA.RAID_DIFFICULTY_BUCKET
 
--- Difficulty IDs of old raids (10/25 player, LFR). Only used by the developer
--- test switch RA.devTest.oldRaidAutoPass, to try the auto-pass in e.g. MoP.
+-- Difficulty IDs of old raids; only for the developer switch RA.devTest.oldRaidAutoPass.
 local OLD_RAID_DIFFICULTY_BUCKET = {
     [3] = "normal", [4] = "normal",   -- 10 / 25 player
     [5] = "heroic", [6] = "heroic",   -- 10 / 25 player heroic
     [7] = "lfr",
 }
 
-------------------------------------------------------------------------
 -- Instance matching helpers
-------------------------------------------------------------------------
 
 local function GetCurrentDungeonKey()
     if RA.cachedInstanceID == 0 then return nil end
@@ -32,28 +28,26 @@ local function GetCurrentDelveKey()
     return DELVE_MAP[RA.cachedInstanceID]
 end
 
--- Boss of the raid bonus roll: the one Blizzard names for the open prompt
--- (RA.bonusRollEncounterID), else the last kill seen via ENCOUNTER_END.
+-- Boss of the raid bonus roll: the open prompt's (RA.bonusRollEncounterID), else the
+-- last kill seen via ENCOUNTER_END.
 local function GetCurrentRaidBossKey()
     local encounterID = RA.bonusRollEncounterID or RA.lastEncounterID
     if encounterID == 0 then return nil end
     return RAID_ENCOUNTER_MAP[encounterID]
 end
 
--- World map (uiMapID) of every Midnight zone. Prey auto-pass only counts
--- there; add the new zone's map here with each patch (12.1: Coiled Isle).
+-- uiMapID of every Midnight zone (Prey auto-pass counts only there); add new zones per patch.
 local MIDNIGHT_ZONE_MAPS = {
-    -- 12.0: Silvermoon City, Eversong Woods, Voidstorm, Harandar,
-    -- Isle of Quel'Danas, Zul'Aman (2479 / 2480: second maps of Voidstorm / Harandar)
+    -- 12.0: Silvermoon City, Eversong Woods, Voidstorm, Harandar, Isle of Quel'Danas,
+    -- Zul'Aman (2479 / 2480: second maps of Voidstorm / Harandar)
     [2393] = true, [2395] = true, [2405] = true, [2479] = true,
     [2413] = true, [2480] = true, [2424] = true, [2437] = true,
     -- 12.1
     [2512] = true,  -- The Coiled Isle
 }
 
--- Is the player in a Midnight zone? A map is Midnight when it or one of its
--- parent maps is in the list (covers sub-zones). Returns true / false, and
--- the player's map ID; nil when the map is not known (e.g. while loading).
+-- In a Midnight zone (the map or a parent map is listed)? Returns true/false and the map
+-- ID; nil while the map is unknown.
 function RA.IsInMidnightZone()
     local playerMap = C_Map.GetBestMapForUnit("player")
     local mapID, hops = playerMap, 0
@@ -67,9 +61,7 @@ function RA.IsInMidnightZone()
     return false, playerMap
 end
 
--- Continent map (uiMapID) -> expansion index (EXPANSION_NAMEn): only for the
--- debug log's "Zone: Name (Expansion)". Midnight zones are recognised by
--- RA.IsInMidnightZone, the Eastern Kingdoms / Kalimdor count as Classic.
+-- Continent uiMapID -> expansion index (EXPANSION_NAMEn), for the debug log only.
 local CONTINENT_EXPANSION = {
     [12] = 0, [13] = 0,                  -- Kalimdor, Eastern Kingdoms
     [101] = 1,                           -- Outland
@@ -85,8 +77,7 @@ local CONTINENT_EXPANSION = {
     [2537] = 11,                         -- Quel'Thalas (Midnight), also where the map is not a zone yet
 }
 
--- "Zone name (Expansion)" of the player's current map for the debug log; the
--- expansion is left out when it is not known.
+-- "Zone name (Expansion)" for the debug log.
 function RA.GetZoneLabel()
     local mapID = C_Map.GetBestMapForUnit("player")
     if not mapID then return "?" end
@@ -112,15 +103,10 @@ function RA.GetZoneLabel()
     return expansion and string.format("%s (%s)", name, expansion) or name
 end
 
-------------------------------------------------------------------------
--- Auto-pass matching logic – pure/read-only. Shared by TryAutoPass (which
--- acts on the result) and Core/Core.lua's zone-change debug summary (which only
--- previews it). Keeping this in one place means the debug preview can
--- never drift out of sync with what actually gets auto-passed.
-------------------------------------------------------------------------
+-- Auto-pass matching, read-only: used by TryAutoPass and by Core's zone summary, so the
+-- preview cannot drift from what is passed.
 
--- Difficulty bucket (normal / heroic / mythic / lfr) of the current raid; old
--- raids only with the developer test switch.
+-- Difficulty bucket of the current raid (old raids only with the developer switch).
 local function GetRaidDifficultyBucket()
     return RAID_DIFFICULTY_BUCKET[RA.cachedDiffID]
         or (RA.devTest.oldRaidAutoPass and OLD_RAID_DIFFICULTY_BUCKET[RA.cachedDiffID])
@@ -130,24 +116,21 @@ local function ComputeAutoPassState()
     if not RollAwayDB or not RollAwayDBChar then return false end
     if not RA.BONUS_ROLLS_ENABLED then return false end
 
-    -- 1. Dungeon (party, matched by mapID) - either the specific dungeon is
-    -- checked, OR the "auto-pass all dungeons" master switch is on.
+    -- 1. Dungeon (by mapID): the dungeon is checked or "all dungeons" is on.
     local key = GetCurrentDungeonKey()
     if key and (RollAwayDBChar.dungeons[key] or RollAwayDBChar.dungeons_s2[key]
                 or RollAwayDBChar.dungeonAutoPassAll) then
         return true, RollAwayDBChar.dungeonAutoPassAll and "dungeon_all" or ("dungeon:" .. key)
     end
 
-    -- 2. Delve (scenario, matched by mapID) - either the specific delve is
-    -- checked, OR the "auto-pass all delves" master switch is on.
+    -- 2. Delve (by mapID): the delve is checked or "all delves" is on.
     key = GetCurrentDelveKey()
     if key and (RollAwayDBChar.delves[key] or RollAwayDBChar.delves_s2[key]
                 or RollAwayDBChar.delveAutoPassAll) then
         return true, RollAwayDBChar.delveAutoPassAll and "delve_all" or ("delve:" .. key)
     end
 
-    -- 3. Raid boss (matched by lastEncounterID from ENCOUNTER_END) - either
-    -- the specific boss is checked, OR the whole difficulty bucket is.
+    -- 3. Raid boss: the boss is checked or the whole difficulty is.
     key = GetCurrentRaidBossKey()
     if key and RollAwayDBChar.raids[key] then
         return true, "raid:" .. key
@@ -158,8 +141,7 @@ local function ComputeAutoPassState()
         end
     end
 
-    -- 4. Prey (open world - a BonusRollFrame outside an instance, in a
-    -- Midnight zone only; an unknown map (nil) keeps the old behaviour)
+    -- 4. Prey (open world, Midnight zones only; an unknown map counts as Midnight)
     if RA.cachedInstanceType == "none" and RollAwayDBChar.prey
        and RA.IsInMidnightZone() ~= false then
         return true, "prey"
@@ -169,9 +151,7 @@ local function ComputeAutoPassState()
 end
 RA.ComputeAutoPassState = ComputeAutoPassState
 
-------------------------------------------------------------------------
--- Auto-pass main function
-------------------------------------------------------------------------
+-- Auto-pass
 
 local function TryAutoPass()
     if not RollAwayDB or not RollAwayDBChar then return end
@@ -207,9 +187,8 @@ local function TryAutoPass()
     if promptFrame.PassButton and promptFrame.PassButton:IsVisible() then
         DBG("[AutoPass] v Clicking PassButton!")
         promptFrame.PassButton:Click()
-        -- The server needs a moment to answer the pass before Blizzard closes the
-        -- prompt; keep it from flashing up meanwhile (Blizzard resets the alpha
-        -- itself when the next bonus roll starts).
+        -- The server answers the pass a moment later: keep the prompt from flashing up
+        -- meanwhile (Blizzard resets the alpha with the next bonus roll).
         promptFrame:SetAlpha(0)
     else
         DBG("[AutoPass] x PassButton not visible")
@@ -218,13 +197,10 @@ end
 
 RA.TryAutoPass = TryAutoPass
 
-------------------------------------------------------------------------
--- Initialization – called from Core/Core.lua ADDON_LOADED
-------------------------------------------------------------------------
+-- Initialization (Core.lua, ADDON_LOADED)
 
--- DungeonEncounterID (the key of RAID_ENCOUNTER_MAP) of the boss the open
--- bonus roll belongs to. Blizzard stores the Encounter Journal ID of that
--- boss on BonusRollFrame; nil when it has none.
+-- DungeonEncounterID (key of RAID_ENCOUNTER_MAP) of the open bonus roll's boss, from the
+-- Encounter Journal ID Blizzard keeps on BonusRollFrame; nil when there is none.
 local function GetBonusRollEncounterID()
     local journalEncounterID = BonusRollFrame and BonusRollFrame.encounterID
     if not journalEncounterID or journalEncounterID == 0 then return nil end
@@ -237,8 +213,7 @@ function RA.InitAutoPass()
         DBG("WARNING: BonusRollFrame not found – hook not set")
         return
     end
-    -- Runs after Blizzard has fully set the prompt up (SPELL_CONFIRMATION_PROMPT),
-    -- so one frame later the Pass button is ready to click.
+    -- After Blizzard has set the prompt up; one frame later the Pass button is ready.
     hooksecurefunc("BonusRollFrame_StartBonusRoll", function(spellID)
         DBG("[AutoPass] BonusRollFrame_StartBonusRoll | spellID:", spellID)
         RA.bonusRollEncounterID = GetBonusRollEncounterID()

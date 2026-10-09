@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsQoL.lua
--- Builds the "QoL" settings subcategory (Character / Filter / Hide / LFG / Logs /
--- Misc / Quests / Reminder via left nav) - called once from RA.InitOptions() in Options/Options.lua.
+-- The "QoL" settings subcategory (left nav: Character / Filter / Hide / LFG / Logs / Misc /
+-- Quests / Reminder), built once from RA.InitOptions().
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -15,19 +15,13 @@ local MakeSkinnedButton = UI.MakeSkinnedButton
 local QOL_CONTENT_W = UI.QOL_CONTENT_W
 local QOL_INFO_W    = UI.QOL_INFO_W
 
-------------------------------------------------------------------------
--- Subcategory: QoL  (Character / Filter / Hide / LFG / Logs / Misc / Quests /
--- Reminder via left nav, sorted alphabetically by the shown label)
---
--- category:        the main RollAway Settings category (from InitOptions)
--- S:                ElvUI Skins module, or nil
--- classColor:       player class color, for ElvUI tab highlighting
-------------------------------------------------------------------------
+-- category: the main RollAway category; S: ElvUI Skins module or nil; classColor: for the
+-- ElvUI tab highlight. The nav is sorted by the shown label.
 function RA.BuildQoLOptions(category, S, classColor)
     local qolPanel = CreateFrame("Frame")
     Settings.RegisterCanvasLayoutSubcategory(category, qolPanel, RA_L["qol_section_title"])
 
-    -- Fixed header (not part of the scrolling content)
+    -- Fixed header
     local qolTitle = qolPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     qolTitle:SetPoint("TOPLEFT", qolPanel, "TOPLEFT", 0, -10)
     qolTitle:SetText(RA_L["qol_panel_title"])
@@ -39,9 +33,8 @@ function RA.BuildQoLOptions(category, S, classColor)
     qolHeaderLine:SetPoint("TOPLEFT", qolPanelInfo, "BOTTOMLEFT", 0, -10)
     qolHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    -- Left nav, sorted alphabetically by the label shown (so the order follows
-    -- the client language). The Character tab only holds max-level features,
-    -- so it does not exist below max level.
+    -- Left nav sorted by the shown label (follows the client language); no Character
+    -- tab below max level.
     local QOL_NAV_W = 130
     local isMaxLevel = RA.IsMaxLevel()
 
@@ -81,7 +74,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         qolNavButtons[key] = btn
     end
 
-    -- Own ScrollFrame per category (see UI.MakeCategoryPage).
+    -- A ScrollFrame per category (UI.MakeCategoryPage).
     local function CreateQolCategoryPanel(key, name)
         return UI.MakeCategoryPage(qolPanel, qolHeaderLine, QOL_NAV_W, "RollAwayQol", name, qolCatPanels, key, S)
     end
@@ -96,13 +89,12 @@ function RA.BuildQoLOptions(category, S, classColor)
     local reminder  = CreateQolCategoryPanel("reminder", "Reminder")
 
     -- ── Category: Misc ────────────────────────────────────────────────
-    -- Catch-all for settings that don't fit the other categories.
 
     local _, qolAutoAcceptInfo = MakeToggle(misc, nil, 0, -8, {
         label = RA_L["qol_autoaccept_label"], info = RA_L["qol_autoaccept_info"], dbKey = "autoAcceptInvite",
     })
 
-    -- Auto Repair (dropdown: None / Player / Guild)
+    -- Auto repair (dropdown: none / player / guild)
     local qolAutoRepairLabel = misc:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     qolAutoRepairLabel:SetPoint("TOPLEFT", qolAutoAcceptInfo, "BOTTOMLEFT", -20, -14)
     qolAutoRepairLabel:SetText(RA_L["qol_autorepair_label"])
@@ -120,8 +112,8 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     local qolAutoRepairInfo = MakeInfoText(misc, autoRepairDD.frame, 20, -6, QOL_INFO_W, RA_L["qol_autorepair_info"])
 
-    -- Tank marker offer (popup with a secure Mark button, see TankMarker.lua)
-    local UpdateTankIconState  -- forward-declared: needs the dropdown created below
+    -- Tank marker offer (TankMarker.lua)
+    local UpdateTankIconState  -- needs the dropdown created below
     local _, qolTankMarkInfo = MakeToggle(misc, qolAutoRepairInfo, -20, -14, {
         label = RA_L["qol_tankmark_label"], info = RA_L["qol_tankmark_info"],
         dbKey = "tankMarkEnabled",
@@ -147,7 +139,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         RollAwayDB.tankMarkIcon = value
     end)
 
-    -- Marker choice only matters while the option is on.
+    -- The marker choice matters only while the option is on.
     UpdateTankIconState = function(enabled)
         local shade = enabled and 1 or 0.5
         qolTankIconLabel:SetTextColor(shade, shade, shade, 1)
@@ -156,7 +148,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     UpdateTankIconState(RollAwayDB.tankMarkEnabled)
 
     -- ── Category: Quests ───────────────────────────────────────────────
-    -- Every change re-registers only the events the settings still need.
+    -- Every change registers only the events still needed.
 
     local qolQuestAcceptLabel = quests:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     qolQuestAcceptLabel:SetPoint("TOPLEFT", quests, "TOPLEFT", 0, -8)
@@ -204,8 +196,7 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     -- ── Category: Reminder (alphabetical by label) ──────────────────────
 
-    -- Great Vault notification (hidden below max level, the next toggle then
-    -- moves up into its place)
+    -- Great Vault notification (hidden below max level; the next toggle moves up)
     local qolVaultAlertCB, qolVaultAlertInfo = MakeToggle(reminder, nil, 0, -8, {
         label = RA_L["greatvault_alert_label"], info = RA_L["greatvault_alert_info"], dbKey = "greatVaultAlert",
     })
@@ -216,7 +207,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         paragonAnchor, paragonX, paragonY = nil, 0, -8
     end
 
-    -- Paragon bag notification
+    -- Paragon notification
     local _, qolParagonInfo = MakeToggle(reminder, paragonAnchor, paragonX, paragonY, {
         label = RA_L["paragon_alert_label"], info = RA_L["paragon_alert_info"], dbKey = "paragonAlert",
     })
@@ -238,15 +229,14 @@ function RA.BuildQoLOptions(category, S, classColor)
         label = RA_L["qol_join_reminder_label"], info = RA_L["qol_join_reminder_info"], dbKey = "instanceJoinReminder",
     })
 
-    -- Sub-option: keystone companion addon (BigWigs / Details! / RollAway
-    -- Teleport reminder — mutually exclusive)
+    -- Sub-option: keystone companion addon (BigWigs / Details! / Teleport reminder, one of them)
     local qolKeyAddonLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     qolKeyAddonLabel:SetPoint("TOPLEFT", qolJoinInfo, "BOTTOMLEFT", 0, -10)
     qolKeyAddonLabel:SetWidth(QOL_INFO_W)  -- wraps instead of running off the panel
     qolKeyAddonLabel:SetJustifyH("LEFT")
     qolKeyAddonLabel:SetText(RA_L["qol_join_keyaddon_label"])
 
-    -- One per line: side by side the three did not fit the panel width.
+    -- One per line (three side by side do not fit).
     local cbBigWigs = MakeCB(reminder, RA_L["qol_join_keyaddon_bigwigs"], nil, nil)
     cbBigWigs.frame:SetPoint("TOPLEFT", qolKeyAddonLabel, "BOTTOMLEFT", 0, -6)
 
@@ -258,14 +248,9 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, QOL_INFO_W, RA_L["qol_join_keyaddon_info"])
 
-    -- Re-syncs checkbox state from saved DB + live addon detection. Does NOT
-    -- clear the saved choice when the addon isn't detected right now - BigWigs'
-    -- Keystones sub-module (SlashCmdList["key"]) often isn't registered yet at
-    -- options-open time (e.g. right after login), which used to wipe the saved
-    -- setting back to "none" on every panel open even though the addon was
-    -- actually installed. The checkbox just greys out until it's detected;
-    -- the saved value (and GetActiveKeyAddon's own live check) stays intact.
-    -- The teleport reminder is always available (no external addon needed).
+    -- Checkbox state from the saved choice + live addon detection. An addon not detected
+    -- yet (BigWigs' "key" command is often not registered right after login) does not
+    -- clear the saved choice: the box just greys out. The teleport reminder is always available.
     local function RefreshKeyAddonCheckboxes()
         cbBigWigs:SetValue(RollAwayDB.joinReminderKeyAddon == "bigwigs")
         cbDetails:SetValue(RollAwayDB.joinReminderKeyAddon == "details")
@@ -275,7 +260,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         cbDetails:SetDisabled(not RA.IsDetailsKeyAvailable())
     end
 
-    -- Each checkbox sets its own choice, or "none" when unchecked.
+    -- Each checkbox sets its choice, "none" when unchecked.
     for choice, cb in pairs({ bigwigs = cbBigWigs, details = cbDetails, teleport = cbTeleport }) do
         cb:SetCallback("OnValueChanged", function(_, _, value)
             RollAwayDB.joinReminderKeyAddon = value and choice or "none"
@@ -285,11 +270,11 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     RefreshKeyAddonCheckboxes()
 
-    -- Re-check on every panel open, since addon load order isn't guaranteed.
+    -- Re-check on every open (addon load order).
     qolPanel:HookScript("OnShow", RefreshKeyAddonCheckboxes)
 
-    -- Ready Check talent reminder (last alphabetically: "Show talent reminder...")
-    local qolShowSpecCB  -- forward-declared, referenced in the toggle's callback below
+    -- Ready check talent reminder
+    local qolShowSpecCB  -- referenced in the toggle's callback below
     local _, qolInfo = MakeToggle(reminder, qolKeyAddonInfo, -20, -20, {
         label = RA_L["qol_readycheck_label"], info = RA_L["qol_readycheck_info"], dbKey = "readyCheckReminder",
         onChange = function(checked)
@@ -303,8 +288,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     qolShowSpecCB.frame:SetPoint("TOPLEFT", qolInfo, "BOTTOMLEFT", 20, -10)
     qolShowSpecCB:SetDisabled(not RollAwayDB.readyCheckReminder)
 
-    -- Lock reminder position: applies to the Check Talents / Durability /
-    -- Join reminder toasts.
+    -- Lock position: Check Talents / Durability / Join reminder toasts.
     local qolLockCB = MakeCB(reminder, RA_L["qol_lock_position_label"], RollAwayDB.qolReminderLockPosition, function(checked)
         RollAwayDB.qolReminderLockPosition = checked
     end)
@@ -315,10 +299,9 @@ function RA.BuildQoLOptions(category, S, classColor)
     qolResetPosBtn:SetScript("OnClick", RA.ResetToastPositions)
 
     -- ── Toggle chains (Character / Filter / Hide) ─────────────────────────
-    -- A category stacks its toggles top to bottom: each new one hangs below
-    -- the last *visible* one, so an option that is hidden (e.g. below max
-    -- level) leaves no gap. chain.Add(opts, visible) returns the checkbox;
-    -- chain.Anchor() is the last visible description, for a widget below.
+    -- Toggles stack top to bottom, each below the last visible one (no gap for a hidden
+    -- option). chain.Add(opts, visible) returns the checkbox; chain.Anchor() is the last
+    -- visible description.
     local function NewToggleChain(panel)
         local anchor, x, y = nil, 0, -8
         local chain = {}
@@ -333,8 +316,8 @@ function RA.BuildQoLOptions(category, S, classColor)
             return cb, info
         end
         function chain.Anchor() return anchor end
-        -- Indented sub-checkbox under the toggle just added; the toggles that
-        -- follow hang below it. Disabled while the parent (parentKey) is off.
+        -- Indented sub-checkbox under the toggle just added (next toggles hang below it);
+        -- disabled while the parent (parentKey) is off.
         function chain.AddSub(opts, parentKey)
             local sub = MakeCB(panel, opts.label, RollAwayDB[opts.dbKey], function(checked)
                 RollAwayDB[opts.dbKey] = checked
@@ -348,18 +331,18 @@ function RA.BuildQoLOptions(category, S, classColor)
         return chain
     end
 
-    -- ── Category: Character (max level only) ────────────────────────────
+    -- ── Category: Character (max level) ─────────────────────────────────
     if character then
         local charChain = NewToggleChain(character)
 
-        -- Omniumfoliant: hide minimap icon, show button on Character Frame.
+        -- Omniumfoliant: minimap icon hidden, button on the Character panel
         charChain.Add({
             label = RA_L["qol_omniumfoliant_label"], info = RA_L["qol_omniumfoliant_info"],
             dbKey = "hideOmniumfoliantMinimap",
             onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
         })
 
-        -- Great Vault button on Character Frame
+        -- Great Vault button on the Character panel
         charChain.Add({
             label = RA_L["qol_vault_button_label"], info = RA_L["qol_vault_button_info"],
             dbKey = "vaultButtonCharFrame",
@@ -373,21 +356,20 @@ function RA.BuildQoLOptions(category, S, classColor)
         }, RA.BONUS_ROLLS_ENABLED and true or false)
     end
 
-    -- ── Category: Filter (narrows what lists show) ───────────────────────
+    -- ── Category: Filter ─────────────────────────────────────────────────
     local filterChain = NewToggleChain(filter)
 
     filterChain.Add({
         label = RA_L["qol_expansion_filter_label"], info = RA_L["qol_expansion_filter_info"], dbKey = "expansionFilterAH",
     })
 
-    -- Vendor Filter Light: dim already-known/maxed vendor items (applies the
-    -- dim, or resets it when turned off)
+    -- Vendor filter: dims known items (reset when turned off)
     filterChain.Add({
         label = RA_L["qol_vendor_filter_label"], info = RA_L["qol_vendor_filter_info"],
         dbKey = "vendorFilterEnabled", onChange = RA.ApplyVendorFilterFeature,
     })
 
-    -- Alpha slider (only meaningful together with the toggle above)
+    -- Alpha slider (only with the toggle above)
     MakeValueSlider(filter, filterChain.Anchor(), -20, -12, {
         min = 10, max = 100, step = 5, value = math.floor(RollAwayDB.vendorFilterAlpha * 100 + 0.5),
         formatLabel = function(v) return string.format("%s  %d%%", RA_L["qol_vendor_filter_alpha_label"], v) end,
@@ -397,10 +379,10 @@ function RA.BuildQoLOptions(category, S, classColor)
         end,
     })
 
-    -- ── Category: Hide (switches off Blizzard UI elements) ───────────────
+    -- ── Category: Hide (Blizzard UI elements) ───────────────────────────
     local hideChain = NewToggleChain(hide)
 
-    -- Red error text in the middle of the screen
+    -- Red error text
     local infoMsgCB  -- sub-option, switched with the toggle below
     hideChain.Add({
         label = RA_L["qol_hide_errors_label"], info = RA_L["qol_hide_errors_info"],
@@ -413,37 +395,37 @@ function RA.BuildQoLOptions(category, S, classColor)
     infoMsgCB = hideChain.AddSub({ label = RA_L["qol_hide_infomsg_label"], dbKey = "hideInfoMessages" },
         "hideErrorMessages")
 
-    -- Talking Head (voiced dialog box at the top of the screen)
+    -- Talking Head
     hideChain.Add({
         label = RA_L["qol_hide_talkinghead_label"], info = RA_L["qol_hide_talkinghead_info"],
         dbKey = "hideTalkingHead", onChange = RA.ApplyHideTalkingHeadFeature,
     })
 
-    -- Boss banner after a boss kill
+    -- Boss banner
     hideChain.Add({
         label = RA_L["qol_hide_bossbanner_label"], info = RA_L["qol_hide_bossbanner_info"],
         dbKey = "hideBossBanner", onChange = RA.ApplyHideBossBannerFeature,
     })
 
-    -- Event toasts at the top of the screen
+    -- Event toasts
     hideChain.Add({
         label = RA_L["qol_hide_eventtoasts_label"], info = RA_L["qol_hide_eventtoasts_info"],
         dbKey = "hideEventToasts", onChange = RA.ApplyHideEventToastsFeature,
     })
 
-    -- Alert pop-ups (loot, achievements, new mounts / pets / toys, ...)
+    -- Alert pop-ups
     hideChain.Add({
         label = RA_L["qol_hide_alerts_label"], info = RA_L["qol_hide_alerts_info"],
         dbKey = "hideAlerts", onChange = RA.ApplyHideAlertsFeature,
     })
 
-    -- World Map: hide tracked-faction activity button (experimental)
+    -- World Map: faction button, bounty board, eye
     hideChain.Add({
         label = RA_L["qol_map_activity_label"], info = RA_L["qol_map_activity_info"],
         dbKey = "hideMapActivityTracker", onChange = RA.ApplyMapActivityTrackerFeature,
     })
 
-    -- Professions: hide "Crafting Output Log" popup
+    -- Crafting output log
     hideChain.Add({
         label = RA_L["qol_crafting_output_log_label"], info = RA_L["qol_crafting_output_log_info"],
         dbKey = "hideCraftingOutputLog", onChange = RA.ApplyCraftingOutputLogFeature,
@@ -463,7 +445,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         label = RA_L["qol_log_enable_label"], info = RA_L["qol_log_enable_info"], dbKey = "autoLogEnabled",
         onChange = UpdateLogSubCBsState,
     })
-    -- Compact zone checkbox list (no per-item info text, mirrors MRT's layout)
+    -- Compact zone checkbox list (MRT layout, no info texts)
     local LOG_ZONE_DEFS = {
         { dbKey = "autoLogScenario",      labelKey = "qol_log_scenario_label"     },
         { dbKey = "autoLogMythicDungeon", labelKey = "qol_log_dungeon_label"      },
@@ -481,23 +463,21 @@ function RA.BuildQoLOptions(category, S, classColor)
         local cb = MakeCB(logs, RA_L[def.labelKey], RollAwayDB[dbKey], function(checked)
             RollAwayDB[dbKey] = checked
         end)
-        -- Every item after the first chains checkbox->checkbox directly,
-        -- already at x=0, so no further horizontal offset.
+        -- Each later item chains checkbox to checkbox (already at x=0).
         cb.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", logZoneOffsetX, -10)
         logZoneOffsetX = 0
         logZoneAnchor = cb.frame
         table.insert(logSubCBs, cb)
     end
 
-    -- Chat notification toggle (own line, separated from the zone list)
+    -- Chat notification (own line)
     local qolLogChatCB = MakeCB(logs, RA_L["qol_log_chatnotify_label"], RollAwayDB.autoLogChatNotify, function(checked)
         RollAwayDB.autoLogChatNotify = checked
     end, nil, QOL_CONTENT_W)
     qolLogChatCB.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", 0, -16)
     table.insert(logSubCBs, qolLogChatCB)
 
-    -- Advanced Combat Logging reminder popup toggle - independent of the
-    -- master toggle above, so it still works for players who log manually.
+    -- Advanced Combat Logging reminder: independent of the master toggle (manual loggers).
     local qolLogAdvReminderCB = MakeCB(logs, RA_L["qol_log_advlog_reminder_label"], RollAwayDB.advLogReminderEnabled, function(checked)
         RollAwayDB.advLogReminderEnabled = checked
     end, nil, QOL_CONTENT_W)
@@ -505,21 +485,21 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     UpdateLogSubCBsState()
 
-    -- ── Category: LFG (alphabetical by label) ─────────────────────────────
+    -- ── Category: LFG ────────────────────────────────────────────────────
 
-    -- Auto-apply playstyle checkbox
-    local UpdatePSState  -- forward-declared: needs the dropdown created below
+    -- Auto playstyle
+    local UpdatePSState  -- needs the dropdown created below
     local _, lfgqcAutoPSInfo = MakeToggle(lfg, nil, 0, -8, {
         label = RA_L["qol_lfgqc_autops_label"], info = RA_L["qol_lfgqc_autops_info"], dbKey = "lfgAutoPlaystyle",
         onChange = function(checked) UpdatePSState(checked) end,
     })
 
-    -- Default playstyle label (indented, sub-option of autops checkbox)
+    -- Default playstyle label (sub-option)
     local lfgqcPSLabel = lfg:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     lfgqcPSLabel:SetPoint("TOPLEFT", lfgqcAutoPSInfo, "BOTTOMLEFT", 0, -12)
     lfgqcPSLabel:SetText(RA_L["qol_lfgqc_playstyle_label"])
 
-    -- Default playstyle dropdown (AceGUI, native ElvUI skin)
+    -- Default playstyle dropdown
     local psDD = MakeDropdown(lfg, lfgqcPSLabel, 0, -4, 230) -- "Beförderung angeboten" needs room
     psDD:SetList({
         [0] = RA_L["qol_lfgqc_ps_none"],
@@ -533,7 +513,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         RollAwayDB.lfgDefaultPlaystyle = value
     end)
 
-    -- Enable/disable label and dropdown based on checkbox state
+    -- Label and dropdown follow the checkbox
     UpdatePSState = function(enabled)
         if enabled then
             lfgqcPSLabel:SetTextColor(1, 1, 1, 1)
@@ -544,17 +524,17 @@ function RA.BuildQoLOptions(category, S, classColor)
     end
     UpdatePSState(RollAwayDB.lfgAutoPlaystyle)
 
-    -- Preselect the Mythic+ difficulty in the Group Finder's create form
+    -- Mythic+ difficulty preselected in the create form
     local _, lfgqcMPlusInfo = MakeToggle(lfg, psDD.frame, -20, -14, {
         label = RA_L["qol_lfgqc_automplus_label"], info = RA_L["qol_lfgqc_automplus_info"], dbKey = "lfgAutoMythicPlus",
     })
 
-    -- Enable checkbox (last alphabetically: "Show dungeon quick-create...")
+    -- Enable checkbox
     MakeToggle(lfg, lfgqcMPlusInfo, -20, -12, {
         label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
     })
 
-    -- Default category on open (the first one in the nav)
+    -- Default category on open (first in the nav)
     ShowQolCategory(qolNavDefs[1].key)
 
     return qolPanel

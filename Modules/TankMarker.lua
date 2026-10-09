@@ -1,35 +1,26 @@
 -- RollAway - TankMarker.lua
--- Offers to put a raid marker (default: square) on the group's tank. Since
--- 12.0 SetRaidTarget is protected: addon code cannot call it, only a secure
--- button running the "/tm" macro command can. A secure button needs a real
--- click, so the addon shows a small popup with a "Mark" button instead of
--- marking by itself.
+-- Offers to put a raid marker (default: square) on the group's tank. Since 12.0
+-- SetRaidTarget is protected: only a secure button running the "/tm" macro can set
+-- it, and it needs a real click, so a small popup with a "Mark" button is shown.
+-- (Clicking the button from code does not work: RunMacroText is blocked.)
 --
--- Settings: RollAwayDB.tankMarkEnabled / tankMarkIcon (1-8)
--- Only 5-man groups; the popup shows once per tank and marker per dungeon
--- visit, only in a Mythic dungeon of the current season (RA.ACTIVE_SEASON),
--- and never once a Mythic+ key is running (it belongs to entering); an open
--- popup closes when the key starts. Nothing is offered for a tank that already
--- carries a marker, and an open popup closes as soon as the tank gets one (set
--- by another player too) - detected through RAID_TARGET_UPDATE, so it needs no
--- addon messages and also works when the other player does not have RollAway.
+-- Settings: RollAwayDB.tankMarkEnabled / tankMarkIcon (1-8).
+-- Only 5-man groups, once per tank and marker per dungeon visit, only in a Mythic
+-- dungeon of the current season, never once a key is running (the popup closes when
+-- it starts). Nothing is offered for a tank that already has a marker, and the popup
+-- closes when the tank gets one (also set by others): RAID_TARGET_UPDATE, no addon
+-- messages needed.
 --
--- /rawtank       shows the popup right now, in any place (everyone)
--- /rawtank test  dev chars only: toggles a test mode until /reload. Works solo
---                (your own spec role counts as tank) and writes to the debug
---                log why the popup did or did not show, and whether the
---                marker changed after the click (RAID_TARGET_UPDATE).
---
--- Tried and ruled out: clicking the button from code (Button:Click) to mark
--- without a popup. The click is insecure, so RunMacroText is blocked with
--- ADDON_ACTION_FORBIDDEN; only a real click works.
+-- /rawtank       shows the popup now, anywhere
+-- /rawtank test  dev chars: test mode until /reload; works solo (your spec role counts)
+--                and logs why the popup did or did not show and whether the marker changed
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
 local TIMER_DURATION = 20
-local CHECK_DELAY     = 1.5  -- roles / roster settle a moment after the event
+local CHECK_DELAY     = 1.5  -- roles / roster settle after the event
 local RECHECK_DELAY   = 3
 local MAX_RECHECKS    = 60   -- 3 minutes of waiting for the instance data / the tank
 
@@ -55,17 +46,14 @@ end
 -- Popup with the secure "Mark" button
 ------------------------------------------------------------------------
 
--- Marker onto the unit. Setting a marker the unit already has would take it
--- off again (SetRaidTarget toggles), and in an instance the current marker
--- cannot be read (secret value) - so the macro clears first (0), then sets:
--- the result is the same marker whatever was there before.
+-- Marker onto the unit. SetRaidTarget toggles and the current marker is a secret value
+-- in instances, so the macro clears (0) first, then sets.
 local function MacroFor(unit, icon)
     return ("/tm [@%s] 0\n/tm [@%s] %d"):format(unit, unit, icon)
 end
 
--- Does the unit carry a marker (whoever set it, whichever one)? In an instance
--- the number is a secret value, but "no marker" reads as a plain nil - so
--- anything but nil counts as marked. false when the value cannot be read.
+-- Does the unit carry any marker? In instances the number is secret but "none" is
+-- nil, so anything but nil counts as marked.
 local function HasMarker(unit)
     local ok, index = pcall(GetRaidTargetIndex, unit)
     if not ok then return false end
@@ -73,9 +61,7 @@ local function HasMarker(unit)
     return index ~= nil
 end
 
--- What the group's markers look like right now, for the test log. In an
--- instance a marker's number is a secret value, but "no marker" reads as a
--- plain nil (seen in the log) - so: "none", "set" (hidden) or the number.
+-- The group's markers for the test log: "none", "set" (hidden) or the number.
 local function MarkerSummary()
     local parts = {}
     local units = { "player" }
@@ -95,15 +81,13 @@ local function MarkerSummary()
     return table.concat(parts, " ")
 end
 
--- After the click (test mode only). The proof that the marker arrived is the
--- RAID_TARGET_UPDATE line from the event frame below.
+-- After the click (test mode); the proof is the RAID_TARGET_UPDATE line below.
 local function LogClick(unit, icon)
     TestSay(("Click received: group %s, macro %q"):format(
         tostring(IsInGroup()), (MacroFor(unit, icon):gsub("\n", " | "))))
 end
 
--- The popup holds a secure button: hiding it in combat is a protected action,
--- so it is closed through RA.SafeSetShown (deferred until combat ends).
+-- The popup holds a secure button: closed through RA.SafeSetShown (deferred in combat).
 local function ClosePopup(frame)
     RA.SafeSetShown(frame, false)
 end
@@ -127,10 +111,8 @@ local function CreateMarkFrame()
     markFrame.msg = RA.CreatePopupBodyText(markFrame)
     markFrame.okayBtn:SetText(NO)  -- it is a yes/no question here: "Mark" or "No"
 
-    -- The macro runs on the click itself; PostClick only closes the popup.
-    -- Registered for both phases: a secure button only fires in the one that
-    -- matches the "ActionButtonUseKeyDown" CVar (so it still runs once), and
-    -- an up-only button never fires when that CVar is on.
+    -- The macro runs on the click; PostClick closes the popup. Registered for both
+    -- phases: the button only fires in the one matching "ActionButtonUseKeyDown".
     local btn = CreateFrame("Button", "RollAwayTankMarkBtn", markFrame, "UIPanelButtonTemplate,SecureActionButtonTemplate")
     btn:SetSize(100, 22)
     btn:SetPoint("RIGHT", markFrame.okayBtn, "LEFT", -6, 0)
@@ -138,7 +120,7 @@ local function CreateMarkFrame()
     btn:RegisterForClicks("AnyUp", "AnyDown")
     btn:SetAttribute("type", "macro")
     btn:SetScript("PostClick", function(_, _, down)
-        -- Only the phase that ran the macro closes the popup.
+        -- Only the phase that ran the macro closes.
         if (down and true or false) ~= (GetCVarBool("ActionButtonUseKeyDown") and true or false) then return end
         if testMode then LogClick(markFrame.unit, markFrame.icon) end
         ClosePopup(markFrame)
@@ -146,8 +128,7 @@ local function CreateMarkFrame()
     if RA.SkinPopupButton then RA.SkinPopupButton(btn) end
     markFrame.markBtn = btn
 
-    -- Closes on a pull, when the group is left (same as the other popups) and
-    -- when the key starts: the offer belongs to entering the dungeon.
+    -- Closes on a pull, on leaving the group and when the key starts.
     markFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     markFrame:RegisterEvent("GROUP_LEFT")
     markFrame:RegisterEvent("CHALLENGE_MODE_START")
@@ -160,7 +141,7 @@ end
 
 local function ShowMarkFrame(unit, icon)
     CreateMarkFrame()
-    -- Attributes of a secure button can only change out of combat.
+    -- Secure attributes only change out of combat.
     if InCombatLockdown() then return end
 
     markFrame.unit, markFrame.icon = unit, icon
@@ -175,7 +156,7 @@ end
 -- Logic
 ------------------------------------------------------------------------
 
--- Your own role: solo (or without a group role) the spec decides.
+-- Your own role: without a group role the spec decides.
 local function GetRole(unit)
     local role = UnitGroupRolesAssigned(unit)
     if role == "NONE" and unit == "player" then
@@ -193,15 +174,14 @@ local function FindTank()
     end
 end
 
--- Only a Mythic dungeon of the current season gets the offer. Returns why
--- not (for the test log), or nil when it fits; the second result is true when
--- the instance data has not settled yet (look again shortly).
+-- Only a Mythic dungeon of the current season gets the offer. Returns why not (test
+-- log) or nil; the second result is true while the instance data has not settled.
 local function NotWorthMarking()
-    RA.UpdateInstanceCache()  -- right now, not the copy from the last zone event
+    RA.UpdateInstanceCache()  -- current, not the last zone event's copy
     if RA.cachedInstanceType ~= "party" then
         return "Not in a dungeon (instance type: " .. tostring(RA.cachedInstanceType) .. ")."
     end
-    -- Just after the loading screen the difficulty still reads 0 for a moment.
+    -- Right after the loading screen the difficulty reads 0.
     if RA.cachedDiffID == 0 then
         return "Dungeon difficulty not known yet.", true
     end
@@ -214,8 +194,7 @@ local function NotWorthMarking()
     return "Not a dungeon of the current season (instance " .. tostring(RA.cachedInstanceID) .. ")."
 end
 
--- manual = true (/rawtank): ignores the setting, the instance check and the
--- "already offered" memory, and logs why nothing is shown (debug log).
+-- manual = true (/rawtank): ignores the setting, the instance check and the memory.
 local function Check(manual)
     local db = RollAwayDB
     if not db or not (manual or testMode or db.tankMarkEnabled) then return end
@@ -230,7 +209,7 @@ local function Check(manual)
     if not grouped and not (manual or testMode) then return end
 
     if not manual then
-        -- The offer belongs to entering the dungeon, not to the key start.
+        -- The offer belongs to entering, not to the key start.
         if C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive() then
             return Skip("A Mythic+ key is running.")
         end
@@ -247,11 +226,10 @@ local function Check(manual)
     local unit = FindTank()
     if not unit then return Skip("No tank found in the group.") end
 
-    -- Somebody (another player, or you earlier) already marked the tank.
+    -- The tank is already marked.
     if not manual and HasMarker(unit) then return Skip("The tank already has a marker.") end
 
-    -- The tank must be here too: still outside, offline or far away means
-    -- the marker cannot be set (yet). Look again shortly, a while at most.
+    -- The tank must be here: outside, offline or far away cannot be marked (yet); look again.
     local connected, visible = UnitIsConnected(unit), UnitIsVisible(unit)
     if not (connected and visible) then
         if not manual and rechecks < MAX_RECHECKS then
@@ -284,14 +262,11 @@ function ScheduleCheck(delay)
     end)
 end
 
--- Registers events only while the option (or the test mode) is on. Called at
--- load and whenever the option changes.
+-- Events only while the option (or test mode) is on; at load and on option change.
 function RA.ApplyTankMarker()
     if not eventFrame then return end
     local on = testMode or (RollAwayDB and RollAwayDB.tankMarkEnabled)
-    -- RAID_TARGET_UPDATE fires whenever any marker changes: it closes the popup
-    -- once the tank has been marked (by anyone, no addon messages needed) and
-    -- feeds the test log.
+    -- RAID_TARGET_UPDATE: closes the popup once the tank is marked; feeds the test log.
     for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED", "RAID_TARGET_UPDATE" }) do
         if on then
             eventFrame:RegisterEvent(event)
@@ -303,7 +278,7 @@ function RA.ApplyTankMarker()
     if on then ScheduleCheck() end
 end
 
--- Test mode (dev chars; see the header): also used by the Developer settings.
+-- Test mode (dev chars), also used by the Developer settings.
 function RA.IsTankMarkerTest()
     return testMode and true or false
 end
@@ -335,8 +310,7 @@ function RA.InitTankMarker()
                 ClosePopup(markFrame)
             end
         else
-            -- Outside an instance = the last visit is over: the next dungeon
-            -- (even with the same group) gets its own offer.
+            -- Outside an instance: the next dungeon gets its own offer.
             if event == "PLAYER_ENTERING_WORLD" and not IsInInstance() then lastOffer = nil end
             rechecks = 0
             ScheduleCheck()

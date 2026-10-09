@@ -7,9 +7,7 @@ local RA = _G["RollAway"]
 
 RA.DELVES = RA.DELVES or {}
 
-------------------------------------------------------------------------
--- Season 1 delve definitions
-------------------------------------------------------------------------
+-- Season 1 delves
 RA.DELVES[1] = {
     { key = "academic_unrest",       mapID = 2933 },
     { key = "shadow_enclave",        mapID = 2952 },
@@ -24,9 +22,7 @@ RA.DELVES[1] = {
     { key = "the_darkway",           mapID = 3003 },
 }
 
-------------------------------------------------------------------------
--- Season 2 delve definitions (12.1)
-------------------------------------------------------------------------
+-- Season 2 delves (12.1)
 RA.DELVES[2] = {
     { key = "ring_of_glory",    mapID = 3077 },
     { key = "gnarldor_isle",    mapID = 3038 },

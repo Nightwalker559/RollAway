@@ -1,23 +1,14 @@
 -- RollAway - RollConfirm.lua
--- Optional "are you sure?" confirmation popups before rolling Need, Greed,
--- Transmog or Pass on group loot. Global: applies to any loot roll frame
--- (current-tier and legacy raids/dungeons alike), independent of the
--- season/boss tracking data. Each roll type is toggled independently.
---
--- Implementation note: on confirm, we click the real roll button (native
--- or ElvUI-skinned) instead of calling RollOnLoot ourselves. Blizzard's
--- Transmog button shares rollType 2 with Greed but may run additional
--- internal logic on click (e.g. for BoP confirmation), so replicating the
--- exact click - same as AutoRoll.lua already does for legacy auto-rolling -
--- is more reliable than guessing the RollOnLoot arguments.
+-- Optional "are you sure?" popups before rolling Need, Greed, Transmog or Pass on group
+-- loot, for any roll frame; each type is toggled separately. On confirm the real roll
+-- button (native or ElvUI) is clicked, not RollOnLoot (the Transmog button may run
+-- extra logic), as in AutoRoll.lua.
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
 local RA_L = RA.RA_L
 
-------------------------------------------------------------------------
--- Confirmation popup (shared by all roll types)
-------------------------------------------------------------------------
+-- Confirmation popup (all roll types)
 RA.RegisterPopup("ROLLAWAY_CONFIRM_ROLL", {
     text         = RA_L["confirm_roll_popup"],
     button1      = YES,
@@ -25,23 +16,17 @@ RA.RegisterPopup("ROLLAWAY_CONFIRM_ROLL", {
     OnAccept     = function(_, data)
         if not (data and data.btn) then return end
 
-        -- BoP items (most Transmog rolls) fire CONFIRM_LOOT_ROLL after the
-        -- roll and need an explicit ConfirmLootRoll to actually complete it;
-        -- armed first so the event cannot be missed.
+        -- BoP items (most Transmog rolls) need ConfirmLootRoll after the roll: armed first.
         RA.ArmRollConfirm(data.rollID)
 
-        -- Click the real button - reuses whatever internal logic
-        -- Blizzard/ElvUI runs on that click (same approach as AutoRoll).
+        -- The real button, with whatever logic Blizzard/ElvUI runs on it.
         local ok, err = pcall(data.btn.Click, data.btn)
         if not ok then DBG("[RollConfirm] Button click failed:", err) end
     end,
     showAlert    = true,
 })
 
-------------------------------------------------------------------------
--- Click-catcher overlays, tracked per roll type so Options can toggle
--- each type independently.
-------------------------------------------------------------------------
+-- Click-catcher overlays per roll type (Options toggles them).
 local overlaysByType = {}
 for _, rollDef in ipairs(RA.ROLL_BUTTONS) do overlaysByType[rollDef.dbKey] = {} end
 
@@ -84,16 +69,14 @@ local function BuildOverlays()
     DBG("[RollConfirm] Overlays built")
 end
 
--- Toggled live from Options when a setting changes.
+-- Toggled live from Options.
 function RA.SetRollConfirmEnabled(dbKey, enabled)
     for _, overlay in ipairs(overlaysByType[dbKey] or {}) do
         overlay:EnableMouse(enabled)
     end
 end
 
-------------------------------------------------------------------------
--- Init - called from Core/Core.lua on ADDON_LOADED
-------------------------------------------------------------------------
+-- Init (Core.lua, ADDON_LOADED)
 function RA.InitRollConfirm()
     -- Blizzard's roll frames exist already; ElvUI builds its own a moment later.
     BuildOverlays()

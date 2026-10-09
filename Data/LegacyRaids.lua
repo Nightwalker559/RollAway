@@ -1,16 +1,12 @@
 -- RollAway - Data/LegacyRaids.lua
--- Legacy raid boss definitions (Dragonflight + The War Within), used for
--- account-wide old-content farming. Not season-indexed - append new tiers
--- here once they become "legacy" (i.e. superseded by a new expansion/tier).
--- At the end: RA.IsCurrentSeasonRaid, which asks the game for the running
--- season's raids and uses the legacy list only as fallback.
+-- Legacy raid bosses (Dragonflight + The War Within) for old-content farming; append a
+-- tier once it is superseded. At the end: RA.IsCurrentSeasonRaid, which asks the game
+-- for the running season's raids and uses the legacy list as fallback.
 
 _G["RollAway"] = _G["RollAway"] or {}
 local RA = _G["RollAway"]
 
--- Instance (map) ID of every legacy raid -> its raid key. A raid whose ID is
--- not listed here counts as a current-season raid. Append new tiers together
--- with their bosses below.
+-- Instance (map) ID of every legacy raid -> raid key; unlisted raids count as current.
 RA.LEGACY_RAID_INSTANCES = {
     [2522] = "vault_of_incarnates",
     [2569] = "aberrus",
@@ -79,17 +75,13 @@ RA.LEGACY_RAIDS = {
     { key = "dimensius",            encounterID = 3135, raid = "manaforge_omega"        },
 }
 
-------------------------------------------------------------------------
--- Current season from the game itself: the Encounter Journal's last tier is
--- "Current Season" and lists exactly the raids / dungeons of the running
--- season (instance = the map ID that GetInstanceInfo returns as instanceID).
--- No list to maintain; the legacy list above is the fallback while the
--- journal gives nothing.
-------------------------------------------------------------------------
+-- Current season from the game: the Encounter Journal's last tier ("Current Season")
+-- lists the running season's raids and dungeons by map ID (= instanceID of
+-- GetInstanceInfo). Nothing to maintain; the legacy list is the fallback.
 local seasonInstances = {}  -- [isRaid] = { [mapID] = true }, filled once the journal answers
 
--- Set of map IDs of the current season's raids (isRaid) or dungeons, or nil
--- while the journal has no data. The journal's selected tier is put back.
+-- Map IDs of the current season's raids (isRaid) or dungeons; nil while the journal has no
+-- data. The journal's selected tier is put back.
 function RA.GetCurrentSeasonInstances(isRaid)
     isRaid = isRaid and true or false
     if seasonInstances[isRaid] then return seasonInstances[isRaid] end
@@ -116,8 +108,7 @@ function RA.GetCurrentSeasonInstances(isRaid)
     return nil
 end
 
--- Is this raid part of the current season? Falls back to "not on the legacy
--- list" while the journal has no data.
+-- Is this raid in the current season? Without journal data: not on the legacy list.
 function RA.IsCurrentSeasonRaid(instanceID)
     local set = RA.GetCurrentSeasonInstances(true)
     if set then return set[instanceID] == true end

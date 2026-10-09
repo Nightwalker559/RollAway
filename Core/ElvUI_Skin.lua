@@ -20,9 +20,7 @@ local function Handle(method, obj)
     if obj and S[method] then S[method](S, obj) end
 end
 
-------------------------------------------------------------------------
 -- Tab styling (used by Options)
-------------------------------------------------------------------------
 
 -- ElvUI backdrop/border colors
 local function GetElvUIColors()
@@ -56,8 +54,7 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     btn:SetPushedTexture("")
     btn:SetDisabledTexture("")
 
-    -- Idle tabs get a background a shade lighter than the panel behind them
-    -- so they read as distinct buttons at rest, not just on hover/active.
+    -- Idle tabs: a shade lighter than the panel, so they read as buttons.
     local function ResetBackdrop()
         local bg, bd = GetElvUIColors()
         local idleBg = {
@@ -71,14 +68,11 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     ResetBackdrop()
 
     local function ApplyActive()
-        -- Disabled tabs (season tabs while debug mode is off - see
-        -- OptionsHelpers.lua MakeSeasonTabs) never get the active tint/
-        -- border since they're not actually selectable, but they still
-        -- show which season is current via the gold text.
+        -- Disabled tabs (season tabs without debug mode, MakeSeasonTabs) get no active
+        -- tint/border; the gold text still marks the current season.
         if btn.IsEnabled and not btn:IsEnabled() then
             ResetBackdrop()
-        -- Always tinted while active, not only on hover; hover (below) then
-        -- brightens it further via full-alpha classColor.
+        -- Tinted while active; hover brightens it (full-alpha classColor).
         elseif classColor then
             SetBackdropColors(btn,
                 { classColor.r, classColor.g, classColor.b, btn:IsMouseOver() and 1 or 0.35 },
@@ -97,9 +91,7 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     btn.RA_ApplyActive   = ApplyActive
     btn.RA_ApplyInactive = ApplyInactive
 
-    -- Re-applies the correct style for the tab's current active/inactive
-    -- state - used after Enable()/Disable() toggles (debug checkbox) where
-    -- nothing else would trigger a redraw until the next hover.
+    -- Re-applies the style for the current state (after Enable()/Disable(), no hover redraw).
     btn.RA_Refresh = function()
         if tabPanels[key] and tabPanels[key]:IsShown() then
             ApplyActive()
@@ -124,17 +116,12 @@ function RA.ElvSkinTab(btn, tabPanels, key, classColor)
     end)
 end
 
-------------------------------------------------------------------------
--- Skin popup frames built on RA.CreatePopupFrame (Reminder, Paragon,
--- GreatVault, AdvLog). Called directly from CreatePopupFrame right after
--- construction, so no per-module Show hook is needed.
-------------------------------------------------------------------------
+-- Skin for popups built on RA.CreatePopupFrame, called right after construction.
 
 function RA.SkinPopupFrame(frame)
     if not SkinsEnabled() then return end
     Handle("HandleFrame", frame)
-    -- ElvUI's backdrop child can sit above our directly-parented icon
-    -- texture; force the icon's holder frame above it explicitly.
+    -- ElvUI's backdrop child can cover the icon: raise its holder.
     if frame.iconHolder then
         frame.iconHolder:SetFrameLevel(frame:GetFrameLevel() + 10)
         if frame.icon then frame.icon:Show() end
@@ -146,19 +133,13 @@ function RA.SkinPopupFrame(frame)
     Handle("HandleButton", frame.okayBtn)
 end
 
--- For any extra button a caller adds to a popup frame after CreatePopupFrame
--- already returned (e.g. Reminder.lua's "Options" button) - same skin, on
--- demand, called right where the button is created.
+-- Same skin for a button added to a popup after CreatePopupFrame (e.g. Reminder's "Options").
 function RA.SkinPopupButton(btn)
     if SkinsEnabled() then Handle("HandleButton", btn) end
 end
 
-------------------------------------------------------------------------
--- Dropdown lists (RA.OptionsUI.MakeDropdown). ElvUI skins the dropdown box
--- and the list frame, but not the entries: they keep Blizzard's gold tick
--- and yellow quest highlight. Entries get a flat gold square and a soft
--- white hover, like ElvUI's checkboxes.
-------------------------------------------------------------------------
+-- Dropdown lists (RA.OptionsUI.MakeDropdown): ElvUI skins the box and the list but not the
+-- entries (Blizzard's gold tick and yellow highlight): flat gold square, soft white hover.
 
 local function SkinDropdownItem(item)
     if item.RA_ElvSkinned then return end
@@ -187,11 +168,7 @@ function RA.SkinDropdownList(dd)
     hooksecurefunc(dd.pullout, "AddItem", function(_, item) SkinDropdownItem(item) end)
 end
 
-------------------------------------------------------------------------
--- Frames created lazily on first show/use. Each is skinned once, by the
--- hook registered below (SkinOnShow) right after the function that creates
--- or shows it.
-------------------------------------------------------------------------
+-- Lazily created frames: skinned once by a hook right after the function that creates them.
 
 -- Runs skin(frame) once for the global frame `name`, if it exists yet.
 local function SkinOnce(name, skin)
@@ -221,22 +198,17 @@ local function SkinPortalOverviewFrame(f)
         tabs[i] = _G[f:GetName().."Tab"..i]
         Handle("HandleTab", tabs[i])
     end
-    -- S:HandleTab only reskins the button (flat backdrop instead of the
-    -- Blizzard tab texture); it doesn't touch anchoring. Re-anchor here so
-    -- the ElvUI-skinned tabs sit correctly - ElvUI insets the tab backdrop
-    -- by 5px on Retail (10px on other clients), so tabs need a matching
-    -- negative gap to butt up against each other instead of the wider
-    -- Blizzard-style gap set in PortalOverview.lua.
+    -- S:HandleTab does not touch anchoring: ElvUI insets the tab backdrop by 5px, so tabs
+    -- need a matching negative gap instead of PortalOverview.lua's wider one.
     local offset = E.Retail and -5 or -19
     for i = 2, #tabs do
         tabs[i]:ClearAllPoints()
         tabs[i]:SetPoint("TOPLEFT", tabs[i - 1], "TOPRIGHT", offset, 0)
     end
-    -- Scrollbar is force-hidden in PortalOverview.lua (mouse-wheel scroll
-    -- only), so there's nothing to skin there.
+    -- The scrollbar is hidden in PortalOverview.lua: nothing to skin.
 end
 
--- Dev-only debug log window (/rawlog)
+-- Debug log window (/rawlog)
 local function SkinDebugLogFrame(f)
     Handle("HandleFrame", f)
     Handle("HandleScrollBar", _G["RollAwayDebugLogScrollScrollBar"])
@@ -249,21 +221,16 @@ end
 -- Omniumfoliant / Great Vault CharacterFrame buttons
 local function SkinCharFrameButton(btn)
     Handle("HandleButton", btn)
-    -- HandleButton alone doesn't strip the manually-set Quickslot textures;
-    -- clear them so ElvUI's backdrop/border shows instead of the default one.
+    -- HandleButton keeps the Quickslot textures: clear them so ElvUI's border shows.
     btn:SetNormalTexture("")
     btn:SetPushedTexture("")
     btn:SetHighlightTexture("")
 end
 
-------------------------------------------------------------------------
--- Checkboxes/sliders keep ElvUI's native AceGUI styling (no color forcing).
--- Reminder/Paragon/GreatVault/AdvLog are skinned inside RA.CreatePopupFrame;
--- the frames below have a different shape, so each gets a hook.
-------------------------------------------------------------------------
+-- Checkboxes/sliders keep ElvUI's AceGUI styling. The popups are skinned in
+-- RA.CreatePopupFrame; the frames below have a different shape and get a hook.
 
--- Hooks RA[funcName] (called through the RA table by its owner) to skin the
--- frame it creates/shows, once, after each call.
+-- Hooks RA[funcName] to skin the frame it creates/shows, once.
 local function SkinOnShow(funcName, frameName, skin)
     hooksecurefunc(RA, funcName, function()
         if SkinsEnabled() then SkinOnce(frameName, skin) end
@@ -273,12 +240,10 @@ end
 SkinOnShow("ShowTeleportReminder", "RollAwayTeleportReminderFrame", SkinTeleportReminderFrame)
 SkinOnShow("ShowWhatsNew",         "RollAwayWhatsNewFrame",         SkinWhatsNewFrame)
 SkinOnShow("ShowPortalOverview",   "RollAwayPortalOverviewFrame",   SkinPortalOverviewFrame)
--- AppendDebugLog fires on every log line; SkinOnce keeps it cheap after the
--- first (lazy-created) call.
+-- AppendDebugLog fires on every line; SkinOnce keeps it cheap.
 SkinOnShow("AppendDebugLog",       "RollAwayDebugLogFrame",         SkinDebugLogFrame)
 
--- Buttons are lazy-created by CharFrameButtons.lua; skinned-once guard avoids
--- re-skinning on every refresh.
+-- CharFrameButtons creates the buttons lazily; skinned once, not on every refresh.
 hooksecurefunc(RA, "RefreshCharFrameButtons", function()
     if SkinsEnabled() then
         SkinOnce("RollAwayOmniumfoliantButton", SkinCharFrameButton)

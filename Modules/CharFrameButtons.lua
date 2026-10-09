@@ -1,16 +1,10 @@
 -- RollAway - Modules/CharFrameButtons.lua
--- Omniumfoliant and Great Vault buttons in the bottom-right corner of the
--- Character panel (Stats view only).
---
--- Design: one idempotent RA.RefreshCharFrameButtons() decides, from current
--- state only, whether each button should be shown, and applies it. It is
--- called from a few event triggers (see InitCharacterFrameButtons) - no
--- timers, no watchdog, no cached "which tab is active" flags.
---
--- Compat:
---   - ElvUI: Core/ElvUI_Skin.lua skins the buttons after each refresh.
---   - Chonky Character Sheet: only CharacterFrameBg is pushed out, so the
---     buttons anchor to it and the Stats-only restriction is skipped.
+-- Omniumfoliant and Great Vault buttons in the bottom-right corner of the Character
+-- panel (Stats view only). One idempotent RA.RefreshCharFrameButtons() decides from
+-- the current state which buttons show; it is called from a few events (no timers,
+-- no cached flags).
+-- ElvUI: ElvUI_Skin.lua skins the buttons after each refresh. Chonky Character Sheet:
+-- the buttons anchor to CharacterFrameBg and the Stats-only rule is skipped.
 
 local RA       = _G["RollAway"]
 local RA_L     = RA.RA_L
@@ -25,9 +19,7 @@ local chonkyXOffsetBonus = -260
 
 local buttons = {}  -- [key] = button, created lazily
 
-------------------------------------------------------------------------
 -- State helpers
-------------------------------------------------------------------------
 
 local function IsChonkyLoaded()
     return C_AddOns.IsAddOnLoaded("ChonkyCharacterSheet")
@@ -35,18 +27,14 @@ end
 
 local IsMaxLevel = RA.IsMaxLevel
 
--- Titles / Equipment Manager are sub-views of the Character tab and use the
--- same corner, so the buttons only show while the Stats pane is visible
--- (Blizzard: GetPaperDollSideBarFrame(1) == CharacterStatsPane). Chonky moves
--- those panes elsewhere, so it is exempt.
+-- Titles / Equipment Manager use the same corner: buttons only while the Stats pane
+-- is visible (Chonky moves the panes elsewhere, so it is exempt).
 local function IsStatsViewShown()
     if IsChonkyLoaded() then return true end
     return CharacterStatsPane ~= nil and CharacterStatsPane:IsShown()
 end
 
-------------------------------------------------------------------------
 -- Button factory
-------------------------------------------------------------------------
 
 local function PlaceButton(btn, xOffset)
     local anchor = CharacterFrame
@@ -79,10 +67,8 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnEnter", onEnter)
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Diagnostics: OnHide also fires for brief hide/show cycles while
-    -- Blizzard opens the panel, so only report a hide we did not do ourselves
-    -- (RA_ownHide unset) that is still in effect shortly after while the
-    -- button should be visible.
+    -- Diagnostics: only a hide we did not do ourselves that is still in effect
+    -- shortly after (OnHide also fires in brief cycles while Blizzard opens the panel).
     btn:HookScript("OnHide", function(self)
         if self.RA_ownHide then return end
         if not (RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly)) then return end
@@ -98,9 +84,7 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     return btn
 end
 
-------------------------------------------------------------------------
 -- Omniumfoliant: hide the minimap icon, offer a Character panel button
-------------------------------------------------------------------------
 
 local function GetOmniMinimapButton()
     return _G["ExpansionLandingPageMinimapButton"]
@@ -110,15 +94,13 @@ local function OmniActive()
     return RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap and IsMaxLevel()
 end
 
--- Should the Blizzard minimap icon be hidden? Below max level the
--- Omniumfoliant is of no use (its tooltip even errors), so it stays hidden
--- then whatever the option says; at max level the option decides.
+-- Hide the Blizzard minimap icon? Below max level it is useless (its tooltip errors),
+-- so always; at max level the option decides.
 local function OmniMinimapHidden()
     return not IsMaxLevel() or (RollAwayDB and RollAwayDB.hideOmniumfoliantMinimap) and true or false
 end
 
--- Hooks the Blizzard minimap button once: keeps it hidden while
--- OmniMinimapHidden() says so and guards its tooltip (errors below max level).
+-- Hooks the Blizzard minimap button once: hidden while OmniMinimapHidden(), tooltip guarded.
 local function SetupOmniMinimapButton()
     local mm = GetOmniMinimapButton()
     if not mm then return nil end
@@ -144,7 +126,7 @@ local function CreateOmniButton()
             local mm = GetOmniMinimapButton()
             if mm then mm:Click() end
         end,
-        -- Reuse Blizzard's own (localized) tooltip, just re-anchor it.
+        -- Blizzard's own tooltip, re-anchored.
         function(self)
             local mm = GetOmniMinimapButton()
             local onEnter = mm and mm:GetScript("OnEnter")
@@ -160,9 +142,7 @@ local function CreateOmniButton()
         end)
 end
 
-------------------------------------------------------------------------
--- Great Vault: opens WeeklyRewardsFrame directly
-------------------------------------------------------------------------
+-- Great Vault: opens WeeklyRewardsFrame
 
 local function VaultActive()
     return RollAwayDB and RollAwayDB.vaultButtonCharFrame and IsMaxLevel()
@@ -184,12 +164,9 @@ local function CreateVaultButton()
         end)
 end
 
-------------------------------------------------------------------------
 -- Refresh
-------------------------------------------------------------------------
 
--- key, X offset from the corner (vault sits left of the Omnium slot),
--- creator, and whether the feature is enabled.
+-- key, X offset from the corner (vault left of the Omnium slot), creator, enabled?
 local DEFS = {
     { key = "omni",  x = -8,  create = CreateOmniButton,  active = OmniActive  },
     { key = "vault", x = -36, create = CreateVaultButton, active = VaultActive },
@@ -197,9 +174,7 @@ local DEFS = {
 
 local lastState = {}  -- [key] = last logged "shown" / "hidden (reason)"
 
--- Logs only when a button's state actually changes, with the reason and the
--- trigger, so a vanishing button leaves a trace in the debug log (even with
--- the log window closed - it keeps collecting).
+-- Logs only state changes, with reason and trigger (a vanishing button leaves a trace).
 local function LogState(key, wanted, featureOn, statsView, source, btn)
     local state
     if wanted then
@@ -218,8 +193,7 @@ local function LogState(key, wanted, featureOn, statsView, source, btn)
 end
 
 local function Apply(source)
-    -- Minimap icon: only hidden by us while OmniMinimapHidden(); never
-    -- force-shown otherwise (Blizzard controls default visibility).
+    -- Minimap icon: hidden by us while OmniMinimapHidden(), never force-shown.
     local mm = SetupOmniMinimapButton()
     if mm then
         if OmniMinimapHidden() then
@@ -253,10 +227,9 @@ local function Apply(source)
     end
 end
 
--- Single source of truth: sets every button (and the minimap icon) to match
--- current options/level/view. Safe to call any time, any number of times.
--- `source` is only for the log. Errors are caught and logged (never lost,
--- never propagated into Blizzard's OnShow chain).
+-- Sets every button (and the minimap icon) to match options/level/view; safe to call
+-- any time. `source` is for the log. Errors are caught and logged, never passed on to
+-- Blizzard's OnShow chain.
 function RA.RefreshCharFrameButtons(source)
     local ok, err = pcall(Apply, source)
     if not ok then
@@ -264,9 +237,7 @@ function RA.RefreshCharFrameButtons(source)
     end
 end
 
--- Dev helper for /rawcharbtn: one line per button with everything that can
--- make a button invisible (shown/visible flags, alpha, parent, strata, size,
--- anchor, on-screen rect).
+-- /rawcharbtn: one line per button with everything that can hide it.
 function RA.DescribeCharFrameButtons()
     local out = {}
     for _, def in ipairs(DEFS) do
@@ -287,26 +258,22 @@ function RA.DescribeCharFrameButtons()
     return out
 end
 
--- Dev helper for /rawchonkyoffset.
+-- /rawchonkyoffset
 function RA.SetChonkyOffset(n)
     chonkyXOffsetBonus = tonumber(n) or chonkyXOffsetBonus
     RA.RefreshCharFrameButtons("chonky offset")
     return chonkyXOffsetBonus
 end
 
-------------------------------------------------------------------------
--- Init: wire the refresh to every event that can change its inputs
-------------------------------------------------------------------------
+-- Init: the refresh runs on every event that can change its inputs
 
 local paperDollHooked = false
 
--- The Character panel belongs to Blizzard_UIPanels_Game (always loaded), so
--- its frames exist when RollAway starts.
+-- The Character panel (Blizzard_UIPanels_Game) is always loaded.
 local function HookPaperDoll()
     if paperDollHooked or not (PaperDollFrame and CharacterStatsPane) then return end
     paperDollHooked = true
-    -- Panel opened, and Stats pane shown/hidden (view switch by click, addon
-    -- or reopen) - the pane's own visibility is what the gate reads.
+    -- Panel opened, Stats pane shown/hidden.
     PaperDollFrame:HookScript("OnShow", function() RA.RefreshCharFrameButtons("PaperDollFrame OnShow") end)
     CharacterStatsPane:HookScript("OnShow", function() RA.RefreshCharFrameButtons("StatsPane OnShow") end)
     CharacterStatsPane:HookScript("OnHide", function() RA.RefreshCharFrameButtons("StatsPane OnHide") end)
@@ -322,9 +289,8 @@ function RA.InitCharacterFrameButtons()
     f:RegisterEvent("PLAYER_LEVEL_UP")
     f:SetScript("OnEvent", function(_, event)
         HookPaperDoll()
-        -- UnitLevel can be stale in the same frame as PLAYER_LEVEL_UP, and
-        -- Blizzard's own frame setup runs after loading screens, so let it
-        -- settle first.
+        -- UnitLevel can be stale on PLAYER_LEVEL_UP, and Blizzard's frame setup follows
+        -- loading screens: let it settle.
         C_Timer.After(0.5, function() RA.RefreshCharFrameButtons(event) end)
     end)
 end

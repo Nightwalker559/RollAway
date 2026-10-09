@@ -1,29 +1,23 @@
 -- RollAway - Options/OptionsHelpers.lua
--- Shared UI builder helpers used by Options/Options.lua, Options/OptionsQoL.lua and
--- Options/OptionsProfile.lua.
+-- Shared UI builders for Options, OptionsQoL, OptionsDev and OptionsProfile.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
--- Resolved once at file load (Libs load before Options per the .toc; the
--- AceGUI-3.0 checkbox/dropdown/slider widgets are bundled with the addon).
+-- Resolved at file load (Libs load first; the AceGUI widgets are bundled).
 local AceGUI = LibStub("AceGUI-3.0")
 
-------------------------------------------------------------------------
--- Grid layout constants (shared across all tabs)
-------------------------------------------------------------------------
+-- Grid layout constants (all tabs)
 local ENTRY_W = 255
 local ENTRY_H = 26
 local COL_GAP = 24
 local ROW_GAP = 6
 
--- Tab label colors (active / inactive), also used by Core/ElvUI_Skin.lua.
+-- Tab label colors (active / inactive), also used by ElvUI_Skin.lua.
 local GOLD = { r = 0.85, g = 0.73, b = 0.25 }
 local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
 
-------------------------------------------------------------------------
 -- UI helpers
-------------------------------------------------------------------------
 
 local function MakeSectionHeader(parent, anchorFrame, anchorOffsetY, text)
     local lbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -37,11 +31,8 @@ local function MakeSectionHeader(parent, anchorFrame, anchorOffsetY, text)
     return lbl, line
 end
 
--- Creates a self-contained AceGUI checkbox (own textures per instance, no
--- ElvUI template-skin dependency). Caller positions it via cb.frame:SetPoint().
--- Full single-line width of `text` in the font `fs` currently uses. A label's
--- own GetStringWidth is cut by the checkbox's width and by ElvUI re-fonting
--- the widget after creation, which made long labels end in "...".
+-- Full single-line width of `text` in the font `fs` uses (a label's own GetStringWidth is
+-- cut by the checkbox width and ElvUI's re-fonting: long labels ended in "...").
 local widthProbe
 local function MeasureLabelWidth(fs, text)
     widthProbe = widthProbe or UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -55,22 +46,21 @@ local CB_BOX_WIDTH  = 24  -- checkbox graphic left of the label
 local CB_SLACK      = 16  -- breathing room after the label
 local CB_LINE_H     = 14
 
--- Sizes the checkbox to its label: as wide as the label needs, up to
--- widthOverride / maxWidth; a longer label wraps onto more lines (frame and
--- label grow with it, so anything anchored below moves down).
+-- Sizes the checkbox to its label (up to widthOverride / maxWidth); a longer label wraps
+-- onto more lines (frame and label grow, so what hangs below moves down).
 local function SetCBLines(cb, lines)
     local text = cb.text
     text:SetWordWrap(true)
     text:ClearAllPoints()
     if lines > 1 then
-        -- Top-anchored so the first line stays beside the checkbox.
+        -- Top-anchored: the first line stays beside the box.
         text:SetPoint("TOPLEFT", cb.checkbg, "TOPRIGHT", 0, -4)
         text:SetPoint("TOPRIGHT", cb.frame, "TOPRIGHT", 0, -4)
         text:SetJustifyV("TOP")
         text:SetHeight(lines * CB_LINE_H)
         cb.frame:SetHeight(lines * CB_LINE_H + 8)
     else
-        -- Same anchors AceGUI's CheckBox uses.
+        -- AceGUI's CheckBox anchors.
         text:SetPoint("LEFT", cb.checkbg, "RIGHT")
         text:SetPoint("RIGHT")
         text:SetJustifyV("MIDDLE")
@@ -88,10 +78,8 @@ local function FitCB(cb, label, widthOverride, maxWidth)
     SetCBLines(cb, lines)
 end
 
--- Safety net for the estimate above: if the label still renders cut off
--- ("..."), give it another line, up to 4. Checked a few frames in a row (the
--- text only re-lays out on the next frame) and again whenever the checkbox
--- is shown, since hidden tabs do not lay out their text.
+-- Safety net for the estimate: a label still cut off ("...") gets another line (max 4);
+-- checked a few frames in a row and on every show (hidden tabs do not lay out).
 local function GrowCBIfTruncated(cb, tries)
     if not cb.text:IsVisible() then return end
     if cb.text:IsTruncated() and (cb.raLines or 1) < 4 then
@@ -102,7 +90,8 @@ local function GrowCBIfTruncated(cb, tries)
     end
 end
 
--- widthOverride: fixed width; otherwise sized to the label, at most
+-- Self-contained AceGUI checkbox (own textures, no ElvUI template dependency); the caller
+-- positions cb.frame. widthOverride: fixed width, else sized to the label, at most
 -- maxWidth (default 520, the General tab's room).
 local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     local cb = AceGUI:Create("CheckBox")
@@ -110,7 +99,7 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     cb:SetValue(checked)
     maxWidth = maxWidth or 520
     FitCB(cb, label, widthOverride, maxWidth)
-    -- Again once ElvUI has skinned the new widget (may change its font).
+    -- Again after ElvUI skinned it (font change).
     RunNextFrame(function()
         FitCB(cb, label, widthOverride, maxWidth)
         RunNextFrame(function() GrowCBIfTruncated(cb, 3) end)
@@ -124,15 +113,13 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     cb.frame:HookScript("OnShow", function()
         RunNextFrame(function() GrowCBIfTruncated(cb, 3) end)
     end)
-    -- AceGUI nudges the label's anchor on press and does not restore it.
+    -- AceGUI moves the label anchor on press and does not restore it.
     cb.frame:HookScript("OnMouseUp", function() SetCBLines(cb, cb.raLines or 1) end)
     return cb
 end
 
--- Gray descriptive text below a checkbox/dropdown/label - the addon's most
--- common options-panel element (~20 uses). Anchor, offsets and width are
--- passed through as-is (they vary per call site), so this only removes the
--- 5 repeated font/color/justify lines, never changes actual layout.
+-- Gray description text below a checkbox/dropdown/label; anchor, offsets and width
+-- are passed through.
 local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
     local info = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     info:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
@@ -143,19 +130,15 @@ local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
     return info
 end
 
--- Width of a QoL category's scrolling content: the room between the left nav
--- and the scrollbar. Descriptions sit 20 px indented below their checkbox.
+-- Width of a QoL category's content (between nav and scrollbar); descriptions are indented 20.
 local QOL_CONTENT_W = 470
 local QOL_INFO_W    = QOL_CONTENT_W - 20
 
--- Checkbox bound to the boolean RollAwayDB[opts.dbKey], with its gray
--- description (opts.info) indented below it. The checkbox is placed
--- (xOffset, yOffset) below `anchor`, or at (xOffset, yOffset) from the
--- parent's top-left when anchor is nil. opts.onChange(checked) runs after
--- the setting is saved; opts.width overrides the checkbox width and
--- opts.infoWidth (default QOL_INFO_W) the description's; without opts.width the
--- checkbox grows with its label up to opts.maxWidth (default QOL_CONTENT_W, the QoL
--- panels' room) and wraps beyond that. Returns checkbox, info.
+-- Checkbox bound to RollAwayDB[opts.dbKey] with its gray description (opts.info) below.
+-- Placed (xOffset, yOffset) below `anchor` (nil: from the parent's top-left).
+-- opts.onChange(checked) runs after saving; opts.width / opts.infoWidth set the widths,
+-- else the box grows with its label up to opts.maxWidth (default QOL_CONTENT_W) and wraps.
+-- Returns checkbox, info.
 local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     local cb = MakeCB(parent, opts.label, RollAwayDB[opts.dbKey], function(checked)
         RollAwayDB[opts.dbKey] = checked
@@ -170,11 +153,8 @@ local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     return cb, info
 end
 
--- Shell for an AceGUI Dropdown widget: create, blank label (the real label
--- is always a separate FontString placed above it), width, and position.
--- SetList/SetValue/SetCallback are left to the caller - some dropdowns fill
--- those in immediately, others (e.g. the profile switcher) refresh them
--- later from a separate function, so there's no one shape to share there.
+-- AceGUI Dropdown shell: blank label (the real one is a FontString above), width,
+-- position. SetList/SetValue/SetCallback are left to the caller.
 local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
     local dd = AceGUI:Create("Dropdown")
     dd:SetLabel("")
@@ -187,18 +167,15 @@ local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
     return dd
 end
 
--- AceGUI's layout pass calls Show() on a Slider's numeric editbox; hook
--- OnShow to keep it hidden (RollAway shows only the slider + its own value
--- label instead, not Ace's editbox).
+-- AceGUI shows a Slider's numeric editbox on layout: kept hidden (slider + own value label).
 local function HideSliderEditbox(slider)
     if not slider.editbox then return end
     slider.editbox:SetScript("OnShow", function(self) self:Hide() end)
     RunNextFrame(function() if slider.editbox then slider.editbox:Hide() end end)
 end
 
--- AceGUI slider whose current value is part of its label, placed
--- (xOffset, yOffset) below `anchor`. opts: min, max, step, value,
--- formatLabel(value) -> label text, onChange(value) with the rounded value.
+-- AceGUI slider with its value in the label, (xOffset, yOffset) below `anchor`. opts: min, max,
+-- step, value, formatLabel(value) -> text, onChange(rounded value).
 local function MakeValueSlider(parent, anchor, xOffset, yOffset, opts)
     local slider = AceGUI:Create("Slider")
     slider:SetLabel(opts.formatLabel(opts.value))
@@ -218,14 +195,12 @@ local function MakeValueSlider(parent, anchor, xOffset, yOffset, opts)
     return slider
 end
 
--- Creates a UIPanelButtonTemplate button and, if ElvUI's Skins module is
--- available, applies its HandleButton skin. HandleButton alone doesn't strip
--- the template's native textures, so the red/gray Blizzard look would still
--- show through underneath ElvUI's backdrop - clear those too.
+-- UIPanelButtonTemplate button, with ElvUI's HandleButton skin when available (its native
+-- textures are cleared too, they would show through).
 local function MakeSkinnedButton(parent, label, width, S)
     local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     btn:SetText(label)
-    -- Never narrower than the label needs (longer in German than in English).
+    -- At least as wide as the label (German is longer).
     btn:SetSize(math.max(width or 110, btn:GetTextWidth() + 24), 22)
     if S and S.HandleButton then
         S:HandleButton(btn)
@@ -237,10 +212,8 @@ local function MakeSkinnedButton(parent, label, width, S)
     return btn
 end
 
--- Blizzard OptionsSliderTemplate slider (label-less: the caller shows a live
--- value label above it instead) with optional min/max footer labels. Hides
--- the template's own text/low/high labels and wires OnValueChanged. Returns
--- slider, minLabel, maxLabel (the latter two nil if opts.minText wasn't given).
+-- OptionsSliderTemplate slider without label (the caller shows a live value label) and
+-- optional min/max footers. Returns slider, minLabel, maxLabel (nil without opts.minText).
 local function MakeTemplateSlider(parent, globalName, anchor, opts)
     local slider = CreateFrame("Slider", globalName, parent, "OptionsSliderTemplate")
     slider:SetWidth(opts.width or 200)
@@ -278,9 +251,8 @@ local function MakeHintText(parent, anchorLine, text)
     return hint
 end
 
--- Wires an AceGUI-free scroll bar (UIPanelScrollFrameTemplate) so the bar
--- shows only when there is something to scroll (never with forceHide), and
--- skins it if ElvUI's Skins module (S) is given.
+-- Scroll bar (UIPanelScrollFrameTemplate) shown only when there is something to scroll
+-- (never with forceHide); skinned with ElvUI's Skins module (S) if given.
 local function SetupScrollBar(scroll, bar, S, forceHide)
     if not bar then return end
     scroll:SetScript("OnScrollRangeChanged", function(_, _, yRange)
@@ -310,10 +282,8 @@ local function SetupScrollBar(scroll, bar, S, forceHide)
     if forceHide then bar:Hide() end
 end
 
--- Lays a row of tab buttons out left-to-right, `gap` apart, closing the gaps
--- left by hidden ones. placeFirst(btn) anchors the first visible button;
--- placeHidden(btn), if given, anchors hidden ones (so they have a valid
--- anchor when they are shown again).
+-- Tab buttons left to right, `gap` apart, closing gaps of hidden ones. placeFirst(btn)
+-- anchors the first visible one; placeHidden(btn), if given, hidden ones (valid anchor).
 local function ReflowTabRow(order, gap, placeFirst, placeHidden)
     local prevVisible = nil
     for _, btn in ipairs(order) do
@@ -331,9 +301,8 @@ local function ReflowTabRow(order, gap, placeFirst, placeHidden)
     end
 end
 
--- Gold label for the active tab, gray for the others. ElvUI-skinned buttons
--- (RA.ElvSkinTab) supply their own RA_ApplyActive/RA_ApplyInactive, which
--- restyle the backdrop as well.
+-- Gold label for the active tab, gray for the others (ElvUI-skinned buttons restyle the
+-- backdrop too, via RA_ApplyActive/RA_ApplyInactive).
 local function SetTabButtonActive(btn, active)
     if active and btn.RA_ApplyActive then
         btn.RA_ApplyActive()
@@ -346,9 +315,8 @@ local function SetTabButtonActive(btn, active)
     end
 end
 
--- Returns a function(key) that shows panels[key] (hiding the other panels)
--- and styles buttons[key] as the active tab. Both tables may still be
--- filled in after this call - they are only read when a tab is selected.
+-- function(key) that shows panels[key] (hiding the others) and styles buttons[key] as
+-- active. Both tables may be filled later; they are read on selection.
 local function MakeTabSelector(panels, buttons)
     return function(key)
         for k, panel in pairs(panels) do panel:SetShown(k == key) end
@@ -356,11 +324,8 @@ local function MakeTabSelector(panels, buttons)
     end
 end
 
--- Lays out a row of checkboxes side by side below anchorFrame. Returns the
--- row's own invisible container frame (full width), suitable as a wide
--- anchor for whatever comes next (e.g. MakeSeasonTabs), plus a list of the
--- individual AceGUI checkbox widgets (for callers that need to e.g. disable
--- them as a group later).
+-- A row of checkboxes below anchorFrame. Returns the row's invisible full-width container
+-- (an anchor for what comes next, e.g. MakeSeasonTabs) and the AceGUI checkboxes.
 local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf, gap)
     gap = gap or 20
     local row = CreateFrame("Frame", nil, parent)
@@ -385,8 +350,7 @@ local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf
     return row, checkboxes
 end
 
--- Creates season sub-tabs inside a parent panel, anchored below anchorFrame.
--- Returns: panels table (panels[key] = contentFrame), tabRowFrame
+-- Season sub-tabs in a parent panel below anchorFrame. Returns panels[key] = contentFrame, tabRowFrame.
 local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
     local TAB_H   = 22
     local TAB_GAP = 4
@@ -396,10 +360,10 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
 
     local classColor = S and (RAID_CLASS_COLORS and RAID_CLASS_COLORS[select(2, UnitClass("player"))])
 
-    -- devOnly season tabs (S1/S3) gate on debug mode; checkbox is already dev-only.
+    -- devOnly season tabs (S1/S3) need debug mode.
     local devDebugActive = RollAwayDB and RollAwayDB.debug
 
-    -- Tab row frame
+    -- Tab row
     local tabRow = CreateFrame("Frame", nil, parent)
     tabRow:SetPoint("TOPLEFT",  anchorFrame, "BOTTOMLEFT",  0, -10)
     tabRow:SetPoint("TOPRIGHT", anchorFrame, "BOTTOMRIGHT", 0, -10)
@@ -407,7 +371,7 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
 
     local ShowSeason = MakeTabSelector(panels, buttons)
 
-    -- Re-anchors visible tabs left-to-right, closing gaps from hidden ones.
+    -- Re-anchors the visible tabs without gaps.
     local function ReflowTabButtons()
         ReflowTabRow(buttonOrder, TAB_GAP, function(btn)
             btn:SetPoint("LEFT", tabRow, "LEFT", 0, 0)
@@ -423,26 +387,25 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
         btn:SetSize(100, TAB_H)
         btn:SetText(s.label)
 
-        -- OnClick must be set BEFORE ElvSkinTab so ElvUI's HandleButton doesn't clobber it
+        -- OnClick before ElvSkinTab (HandleButton would overwrite it)
         btn:SetScript("OnClick", function() ShowSeason(key) end)
         buttons[key] = btn
         buttonOrder[#buttonOrder + 1] = btn
 
-        -- Apply ElvUI skin or default styling
+        -- ElvUI skin or default style
         if S and RA.ElvSkinTab then
             RA.ElvSkinTab(btn, panels, key, classColor)
         end
 
-        -- Hide season sub-tabs when Bonus Rolls are disabled
+        -- No season sub-tabs without bonus rolls
         if not RA.BONUS_ROLLS_ENABLED then btn:Hide() end
 
-        -- Track season tab buttons so the debug checkbox can enable/disable all.
+        -- Tracked so the debug checkbox can enable/disable all.
         RA.SeasonTabButtons = RA.SeasonTabButtons or {}
         table.insert(RA.SeasonTabButtons, btn)
         if devDebugActive then btn:Enable() else btn:Disable() end
 
-        -- Hide devOnly season sub-tabs (e.g. legacy S1 / unreleased S3)
-        -- unless this is a dev/tester char with debug mode enabled.
+        -- devOnly sub-tabs (legacy S1 / unreleased S3) only for dev characters with debug mode.
         if s.devOnly then
             devOnlyKeys[key] = true
             if not devDebugActive then btn:Hide() end
@@ -451,7 +414,7 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
         end
         if s.default then defaultKey = key end
 
-        -- Content panel
+        -- Content
         local panel = CreateFrame("Frame", nil, tabRow)
         panel:SetPoint("TOPLEFT",  tabRow, "BOTTOMLEFT",  0, -10)
         panel:SetPoint("TOPRIGHT", tabRow, "BOTTOMRIGHT", 0, -10)
@@ -463,12 +426,11 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
 
     ReflowTabButtons()
 
-    -- Register so the debug checkbox can re-flow every season tab row
-    -- (Dungeons + Raids) after toggling S1/S3 visibility.
+    -- Registered so the debug checkbox can re-flow the rows (Dungeons + Raids).
     RA.SeasonTabReflows = RA.SeasonTabReflows or {}
     table.insert(RA.SeasonTabReflows, ReflowTabButtons)
 
-    -- Fall back to default season if debug turns off while on a devOnly tab.
+    -- Default season if debug turns off on a devOnly tab.
     local function EnsureValidSeasonSelected()
         if RollAwayDB and RollAwayDB.debug then return end
         for k, panel in pairs(panels) do
@@ -482,18 +444,16 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
     RA.SeasonTabDebugChecks = RA.SeasonTabDebugChecks or {}
     table.insert(RA.SeasonTabDebugChecks, EnsureValidSeasonSelected)
 
-    -- Show default
+    -- Default season
     if defaultKey then ShowSeason(defaultKey) end
 
     return panels, tabRow
 end
 
--- Creates entry `i` (1-based) of a two-column checkbox grid: even entries
--- start a new row below the previous row's left entry (or below
--- firstAnchor, firstOffsetY for the very first row), odd ones sit to the
--- right of theirs. `leftEntries[row]` (0-based) collects each row's left
--- entry - the caller reads leftEntries[math.floor((n - 1) / 2)] afterwards
--- to anchor whatever comes next below the grid.
+-- Entry `i` (1-based) of a two-column checkbox grid: even entries start a row below the
+-- previous left entry (the first below firstAnchor, firstOffsetY), odd ones sit right of
+-- theirs. `leftEntries[row]` (0-based) collects the left entries; the caller anchors what
+-- follows to leftEntries[math.floor((n - 1) / 2)].
 local function CreateGridEntry(parent, i, leftEntries, firstAnchor, firstOffsetY)
     local col = (i - 1) % 2
     local row = math.floor((i - 1) / 2)
@@ -510,7 +470,7 @@ local function CreateGridEntry(parent, i, leftEntries, firstAnchor, firstOffsetY
     return entry
 end
 
--- Places a checkbox inside a grid entry, bound to dbTable[key].
+-- Checkbox inside a grid entry, bound to dbTable[key].
 local function MakeGridCheckbox(entry, label, dbTable, key)
     local cb = MakeCB(entry, label, dbTable[key], function(checked)
         dbTable[key] = checked
@@ -529,9 +489,8 @@ local function MakeCheckboxGrid(parent, anchorFrame, anchorOffsetY, items, dbTab
     return leftEntries, checkboxes
 end
 
--- Renders a vertical stack of grouped boss-checkbox sections (section
--- header + 2-column checkbox grid per raid) below anchorFrame, flowing
--- downward. Sections with zero bosses are skipped entirely.
+-- Stack of boss checkbox sections (header + 2-column grid per raid) below anchorFrame;
+-- empty sections are skipped.
 -- sections: { { key = "voidspire", bosses = { {key=..}, ... } }, ... }
 -- labelSuffixes: optional { [sectionKey] = "|cff888888(12.0.7)|r", ... }
 local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, labelSuffixes)
@@ -565,18 +524,14 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
     return prevAnchor, prevOffsetY
 end
 
-------------------------------------------------------------------------
--- One page of a left-nav settings panel (QoL, Developer): a scrolling area
--- next to the nav buttons. Its content height hugs the lowest element once
--- laid out (so the scrollbar only exists where something is cut off); it is
--- measured on every show, since a hidden page has no layout and the
--- checkboxes settle their final height a few frames after creation.
---   panel, headerLine - the settings panel and the line under its header
---   navWidth          - width of the nav buttons on the left
---   prefix, name      - global names: <prefix><name>Scroll (+ "ScrollBar")
---   pages, key        - the pages table of the nav; the page is stored there
--- Returns the scroll child to hang the page's content on.
-------------------------------------------------------------------------
+-- One page of a left-nav settings panel (QoL, Developer): a scrolling area next to the
+-- nav. Its height hugs the lowest element, measured on every show (a hidden page has no
+-- layout; checkboxes settle a few frames after creation).
+--   panel, headerLine  the panel and the line under its header
+--   navWidth           width of the nav buttons
+--   prefix, name       global names: <prefix><name>Scroll (+ "ScrollBar")
+--   pages, key         the nav's pages table; the page is stored there
+-- Returns the scroll child for the page's content.
 local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages, key, S)
     local function FitContentHeight(content)
         local top = content:GetTop()
@@ -617,10 +572,7 @@ local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages
     return content
 end
 
-------------------------------------------------------------------------
--- Public exports - consumed by Options/Options.lua, Options/OptionsQoL.lua,
--- Options/OptionsDev.lua and Options/OptionsProfile.lua
-------------------------------------------------------------------------
+-- Public exports (Options, OptionsQoL, OptionsDev, OptionsProfile)
 RA.OptionsUI = {
     MakeCategoryPage  = MakeCategoryPage,
     ENTRY_W           = ENTRY_W,

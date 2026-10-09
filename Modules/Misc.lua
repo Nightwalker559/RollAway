@@ -1,23 +1,14 @@
 -- RollAway - Misc.lua
--- Catch-all module for standalone features shown under the "Misc" settings
--- tab (Options\OptionsQoL.lua) - anything too small or too unrelated to the
--- other categories (Character/Filter/Hide/LFG/Logs/Quests/Reminder) to warrant its own file.
---
--- Auto-accept invites from guild/friends: accepts group invites from guild
--- members, friends, and Battle.net friends.
--- Setting: RollAwayDB.autoAcceptInvite
---
--- Auto Repair: repairs at any merchant, using player or guild funds.
--- Setting: RollAwayDB.autoRepairMode ("none" | "player" | "guild")
+-- Small standalone features of the "Misc" settings tab:
+-- Auto-accept invites from guild members, friends and Battle.net friends (autoAcceptInvite).
+-- Auto repair at any merchant with player or guild funds (autoRepairMode: none/player/guild).
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
 local RA_L = RA.RA_L
 
--- IsGuildMember(unit) takes a unit token ("target", "party1", ...), not a
--- GUID - there is no direct GUID-based guild check, so match against the
--- roster instead. C_GuildInfo.GuildRoster() requests a fresh roster (async,
--- GUILD_ROSTER_UPDATE); harmless to call even if one is already in flight.
+-- IsGuildMember takes a unit token, not a GUID: match against the roster instead
+-- (C_GuildInfo.GuildRoster() requests a fresh one, async).
 local function IsGuildMemberGUID(guid)
     if not IsInGuild() then return false end
     if C_GuildInfo and C_GuildInfo.GuildRoster then C_GuildInfo.GuildRoster() end
@@ -34,9 +25,7 @@ local function IsKnownInviter(inviterGUID)
         or IsGuildMemberGUID(inviterGUID)
 end
 
--- STATICPOPUP_NUMDIALOGS was removed in patch 11.2 (no numbered-loop
--- iteration anymore). StaticPopup_Visible(which) + StaticPopup_Hide(which)
--- doesn't need it - finds the dialog by its StaticPopupDialogs key directly.
+-- Finds the invite popup by its StaticPopupDialogs key (no numbered dialogs since 11.2).
 local function HidePartyInvitePopup()
     for _, which in ipairs({ "PARTY_INVITE", "PARTY_INVITE_XREALM" }) do
         local popupName, popup = StaticPopup_Visible(which)
@@ -51,8 +40,7 @@ local autoAcceptFrame = CreateFrame("Frame")
 autoAcceptFrame:RegisterEvent("PARTY_INVITE_REQUEST")
 autoAcceptFrame:SetScript("OnEvent", function(_, _, _, _, _, _, _, _, inviterGUID)
     if not RollAwayDB or not RollAwayDB.autoAcceptInvite then return end
-    -- Don't auto-accept while already grouped or queued - avoid
-    -- interfering with an active LFG/premade group flow.
+    -- Not while grouped or queued (would disturb an LFG/premade group).
     if IsInGroup() or (QueueStatusMinimapButton and QueueStatusMinimapButton:IsShown()) then return end
     if not IsKnownInviter(inviterGUID) then return end
 
@@ -61,9 +49,7 @@ autoAcceptFrame:SetScript("OnEvent", function(_, _, _, _, _, _, _, _, inviterGUI
     DBG("[Misc] Auto-accepted invite from guild/friend")
 end)
 
-------------------------------------------------------------------------
--- Auto Repair
-------------------------------------------------------------------------
+-- Auto repair
 
 local function TryAutoRepair()
     local mode = RollAwayDB and RollAwayDB.autoRepairMode
@@ -83,7 +69,7 @@ local function TryAutoRepair()
             DBG("[Misc] Auto-repaired via guild funds:", cost)
             return
         end
-        -- Guild funds insufficient - fall through to player funds below.
+        -- Guild funds not enough: player funds below.
     end
 
     if GetMoney() >= cost then

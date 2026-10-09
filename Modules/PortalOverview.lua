@@ -1,17 +1,9 @@
 -- RollAway - Modules/PortalOverview.lua
--- RollAway's own portal frame - an alternative to BigWigs/Details Keystones
--- for players who don't run either. Purely manual, opened via /rat - no
--- automatic trigger (the join reminder in Modules\TeleportReminder.lua
--- handles Group Finder (LFG) joins instead, which can resolve the exact
--- dungeon via the LFG activity ID).
---
--- Two tabs:
---   1) Current season  - RA.DUNGEONS[RA.ACTIVE_SEASON], same layout/locked
---      state as the join reminder.
---   2) All dungeons     - every dungeon teleport the player has ever
---      learned (RA.DUNGEONS[*] + Data\LegacyDungeonTeleports.lua),
---      grouped by expansion; unlearned ones and empty categories are
---      hidden entirely.
+-- RollAway's own portal frame, an alternative to BigWigs/Details Keystones. Manual
+-- only (/rat); Group Finder joins are handled by TeleportReminder.lua.
+-- Tabs: 1) current season (RA.DUNGEONS[RA.ACTIVE_SEASON]), same look as the join
+-- reminder; 2) all learned dungeon teleports (RA.DUNGEONS[*] + LegacyDungeonTeleports),
+-- grouped by expansion, unlearned ones and empty groups hidden.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -24,37 +16,27 @@ local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
 
 local FRAME_WIDTH   = 260
-local FRAME_HEIGHT  = 260  -- fixed - content scrolls instead of growing the frame
-local CONTENT_WIDTH = FRAME_WIDTH - 20 -- minus margins; scrollbar is hidden, not reserved
+local FRAME_HEIGHT  = 260  -- fixed, content scrolls
+local CONTENT_WIDTH = FRAME_WIDTH - 20 -- minus margins (the scrollbar is hidden)
 
--- Display order for tab 2's category headers - newest expansion first.
+-- Tab 2 header order, newest first.
 local CATEGORY_ORDER = {
     "midnight", "tww", "dragonflight", "shadowlands", "bfa", "legion",
     "wod", "mop", "cataclysm", "wrath", "tbc",
 }
 
-------------------------------------------------------------------------
 -- State
-------------------------------------------------------------------------
 
 local overviewFrame
 local activeTab   = 1
-local portalPool  = {}   -- reusable icon-button pool
-local headerPool  = {}   -- reusable category-header pool
-local usedButtons = 0    -- pool slots handed out during the current layout pass
+local portalPool  = {}   -- icon button pool
+local headerPool  = {}   -- category header pool
+local usedButtons = 0    -- pool slots used in the current layout pass
 
-------------------------------------------------------------------------
 -- Data sources
-------------------------------------------------------------------------
 
--- Appends one entry per dungeon that has a teleport spell to `list`, tagged
--- with an `expansion` key for category grouping. Both RA.DUNGEONS and
--- Data\LegacyDungeonTeleports.lua carry their own `expansion` field per
--- dungeon - several current-season dungeons are revived older-expansion
--- instances (e.g. Pit of Saron = Wrath, Algeth'ar Academy = Dragonflight)
--- and are tagged accordingly, not lumped into "midnight" just because
--- they're in this season's pool. Skips entries with no portalSpellID
--- (faction-specific ones resolved to 0, or season entries not yet filled in).
+-- Appends one entry per dungeon with a teleport spell to `list`, tagged with its own
+-- `expansion` (revived old dungeons keep theirs). Skips entries without portalSpellID.
 local function CollectEntries(list, dungeons, defaultExpansion)
     for _, d in ipairs(dungeons) do
         if d.portalSpellID and d.portalSpellID ~= 0 then
@@ -80,11 +62,8 @@ local function GetAllDungeonTeleports()
     return list
 end
 
--- Buckets a flat, already-known-filtered entry list into ordered
--- { expansion, entries } groups per CATEGORY_ORDER. Empty categories are
--- left out entirely. Entries within each group are sorted alphabetically
--- by localized name; the group order itself (newest expansion first)
--- is untouched.
+-- Buckets known entries into { expansion, entries } groups in CATEGORY_ORDER (empty
+-- ones left out), sorted by localized name within each group.
 local function GroupByExpansion(entries)
     local buckets = {}
     for _, e in ipairs(entries) do
@@ -100,9 +79,7 @@ local function GroupByExpansion(entries)
     return groups
 end
 
-------------------------------------------------------------------------
 -- Pools
-------------------------------------------------------------------------
 
 local function AcquireButton(i, parent)
     local btn = portalPool[i]
@@ -110,10 +87,8 @@ local function AcquireButton(i, parent)
 
     btn = RA.CreatePortalButton("RollAwayPortalOverviewButton"..i, parent, BUTTON_SIZE)
 
-    -- Gold overlay shown when this dungeon's keystone is currently in the
-    -- player's bags - same look as the Quick Select glow in
-    -- Modules\LFGQuickCreate.lua (a plain tinted color texture over the
-    -- icon, not a separate border ring).
+    -- Gold overlay while this dungeon's keystone is in the bags (same as the
+    -- Quick Select glow in LFGQuickCreate.lua).
     local keyBorder = btn:CreateTexture(nil, "OVERLAY", nil, 1)
     keyBorder:SetAllPoints()
     keyBorder:SetColorTexture(1, 0.82, 0, 0.38)
@@ -126,10 +101,8 @@ local function AcquireButton(i, parent)
         GameTooltip:Show()
     end)
 
-    -- Close the whole overview after using a teleport - these all share the
-    -- same cooldown category, so nothing else here is usable right after.
-    -- PostClick runs after the secure spell-cast click, so plain Lua (and
-    -- RA.SafeSetShown's combat handling) is safe here.
+    -- Close after using a teleport (they share one cooldown). PostClick runs after
+    -- the secure click, so plain Lua is safe.
     btn:HookScript("PostClick", function()
         RA.HidePortalOverview()
     end)
@@ -147,9 +120,7 @@ local function AcquireHeader(i, parent)
     return fs
 end
 
-------------------------------------------------------------------------
 -- Frame creation
-------------------------------------------------------------------------
 
 local function SelectTab(index)
     activeTab = index
@@ -188,9 +159,8 @@ local function CreateOverviewFrame()
     titleText:SetPoint("TOP", overviewFrame, "TOP", 0, -10)
     titleText:SetText("|cffD4AF37"..RA_L["portal_overview_title"].."|r")
 
-    -- Tabs (standard Blizzard tab template - PanelTemplates_* handles the
-    -- active/inactive textures). Button names must follow
-    -- "<frameName>Tab<index>" for PanelTemplates_UpdateTabs to find them.
+    -- Tabs (Blizzard tab template; names must be "<frameName>Tab<index>" for
+    -- PanelTemplates_UpdateTabs).
     local frameName = overviewFrame:GetName()
     local tabLabels = {
         RA_L["portal_overview_tab_season"],
@@ -213,16 +183,13 @@ local function CreateOverviewFrame()
     end
     PanelTemplates_SetTab(overviewFrame, 1)
 
-    -- Scrollable content area - the frame itself stays a fixed size;
-    -- everything (icons, expansion headers) is anchored inside `content`,
-    -- which grows to fit and scrolls when it exceeds the visible area.
+    -- Scrollable content: icons and headers are anchored inside `content`, which grows
+    -- to fit.
     local scrollFrame = CreateFrame("ScrollFrame", frameName.."ScrollFrame", overviewFrame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", overviewFrame, "TOPLEFT", 10, -30)
     scrollFrame:SetPoint("BOTTOMRIGHT", overviewFrame, "BOTTOMRIGHT", -10, 12)
 
-    -- Scrolling still works via mouse wheel (below); the visual scrollbar
-    -- just eats width we'd rather give to the icons. Force it hidden even
-    -- though the template shows/hides it automatically on its own.
+    -- Mouse wheel scrolls; the scrollbar is forced hidden (the width goes to the icons).
     local scrollBar = _G[scrollFrame:GetName().."ScrollBar"]
     if scrollBar then
         scrollBar:Hide()
@@ -241,15 +208,14 @@ local function CreateOverviewFrame()
         self:SetVerticalScroll(newScroll)
     end)
 
-    -- Empty-state text (tab 2 with nothing learned yet)
+    -- Tab 2 with nothing learned
     overviewFrame.emptyText = overviewFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     overviewFrame.emptyText:SetPoint("CENTER", overviewFrame, "CENTER", -10, -10)
     overviewFrame.emptyText:SetText(RA_L["portal_overview_empty"])
     overviewFrame.emptyText:Hide()
 
-    -- Bag changes (keystone highlight) and newly learned teleports (the spell
-    -- book changed) only matter while the frame is open. OnShow also covers a
-    -- Show deferred until after combat.
+    -- Bag changes (keystone highlight) and new teleports (SPELLS_CHANGED) only matter
+    -- while open; OnShow also covers a Show deferred until after combat.
     overviewFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     overviewFrame:SetScript("OnShow", function(self)
         self:RegisterEvent("BAG_UPDATE_DELAYED")
@@ -269,9 +235,7 @@ local function CreateOverviewFrame()
     end)
 end
 
-------------------------------------------------------------------------
 -- Layout
-------------------------------------------------------------------------
 
 local function HideAllButtons()
     usedButtons = 0
@@ -304,10 +268,8 @@ local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
     RA.SafeSetShown(btn, true)
 end
 
--- Places `entries` as icon rows of BUTTONS_PER_ROW (the last row centered
--- too), the first row's top edge at y (offset from the content top).
--- allKnown: every entry is a learned spell (tab 2 pre-filters), otherwise
--- each one is checked against the spellbook. Returns the height used.
+-- Places `entries` as icon rows of BUTTONS_PER_ROW (last row centered), first row at y.
+-- allKnown: all entries are learned spells (tab 2), else each is checked. Returns the height.
 local function PlaceRows(entries, y, ownedLfgID, allKnown)
     for i, entry in ipairs(entries) do
         usedButtons = usedButtons + 1
@@ -325,13 +287,11 @@ local function PlaceRows(entries, y, ownedLfgID, allKnown)
     return math.ceil(#entries / BUTTONS_PER_ROW) * ROW_STEP
 end
 
--- Flat mode (tab 1): one season header, then all entries.
+-- Tab 1: one season header, then all entries.
 local function LayoutFlatButtons(entries)
     HideAllButtons()
 
-    -- Season header, same style/height as tab 2's expansion headers (reuses
-    -- the same header pool slot 1) so button rows start at the identical Y
-    -- offset in both tabs - no visual jump when switching tabs.
+    -- Same style and pool slot as tab 2's headers: rows start at the same Y in both tabs.
     PlaceHeader(1, 0, string.format(RA_L["portal_overview_current_season"] or "Season %d", RA.ACTIVE_SEASON))
 
     if #entries == 0 then
@@ -345,9 +305,7 @@ local function LayoutFlatButtons(entries)
     overviewFrame.content:SetHeight(HEADER_HEIGHT + usedHeight)
 end
 
--- Grouped mode (tab 2): one left-aligned header per expansion, its portals
--- wrapped into rows underneath. Entries here are already filtered to known
--- spells only, so every button shown is fully lit.
+-- Tab 2: one header per expansion, its portals in rows below (known spells only).
 local function LayoutGroupedButtons(groups)
     HideAllButtons()
 
@@ -370,14 +328,11 @@ local function LayoutGroupedButtons(groups)
     overviewFrame.content:SetHeight(-y)
 end
 
-------------------------------------------------------------------------
 -- Public API
-------------------------------------------------------------------------
 
 function RA.RefreshPortalOverview()
     if not overviewFrame or not overviewFrame:IsShown() then return end
-    -- The portal buttons are secure frames: no re-layout in combat. A Show
-    -- deferred until combat ends refreshes itself via OnShow.
+    -- Secure buttons: no re-layout in combat (a deferred Show refreshes via OnShow).
     if InCombatLockdown() then return end
 
     if activeTab == 1 then
@@ -411,9 +366,7 @@ function RA.TogglePortalOverview()
     end
 end
 
-------------------------------------------------------------------------
--- Slash command - manual open/close, independent of group state.
-------------------------------------------------------------------------
+-- /rat: open/close
 
 SLASH_ROLLAWAYPORTALS1 = "/rat"
 SlashCmdList["ROLLAWAYPORTALS"] = function()

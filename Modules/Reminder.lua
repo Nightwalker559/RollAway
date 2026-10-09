@@ -9,8 +9,7 @@ local DUNGEON_MAP = RA.DUNGEON_MAP
 
 local VOIDCORE_COST = { dungeons = 1, raids = 2 }
 
--- Raid instance mapIDs (= instanceID from GetInstanceInfo) that qualify for the
--- reminder, mapped to the raid key used in Data\Raids.lua.
+-- Raid mapIDs (instanceID of GetInstanceInfo) that get the reminder -> raid key of Data/Raids.lua.
 local REMINDER_RAID_MAP_IDS = {
     [2912] = "voidspire",        -- The Voidspire (S1)
     [2939] = "dreamrift",        -- The Dreamrift (S1)
@@ -21,23 +20,18 @@ local REMINDER_RAID_MAP_IDS = {
 
 local TIMER_DURATION = 20
 
-------------------------------------------------------------------------
 -- State
-------------------------------------------------------------------------
 
 local reminderFrame
-local currentTabKey  -- stored so OnClick closure is created only once
+local currentTabKey  -- the OnClick closure is created once
 
-------------------------------------------------------------------------
--- Auto-pass status for the current instance - what this character has set,
--- so a forgotten checkbox (or one carried over from another setup) is seen
--- before the first boss. Mirrors the matching in Modules\AutoPass.lua.
-------------------------------------------------------------------------
+-- Auto-pass status for the current instance: what this character has set, so a
+-- forgotten checkbox is seen before the first boss. Mirrors AutoPass.lua.
 
 local COLOR_ACTIVE = "|cffff5050"
 local COLOR_NONE   = "|cff00cc00"
 
--- Returns the status text and whether any auto-pass is active here.
+-- The status text and whether any auto-pass is active here.
 local function BuildAutoPassStatus(tabKey, instanceID)
     local char = RollAwayDBChar
     if not char then return nil, false end
@@ -57,8 +51,7 @@ local function BuildAutoPassStatus(tabKey, instanceID)
             lines[#lines + 1] = COLOR_ACTIVE
                 .. string.format(RA_L["reminder_ap_difficulty"], RA_L["raid_diff_" .. bucket]) .. "|r"
         end
-        -- Individually checked bosses of this raid (redundant when the whole
-        -- difficulty is already on).
+        -- Checked bosses of this raid (redundant when the whole difficulty is on).
         if not diffActive then
             local raidKey, names = REMINDER_RAID_MAP_IDS[instanceID], {}
             for _, bosses in pairs(RA.RAIDS) do
@@ -81,9 +74,7 @@ local function BuildAutoPassStatus(tabKey, instanceID)
     return table.concat(lines, "\n"), true
 end
 
-------------------------------------------------------------------------
--- Frame creation (once, reused on every show)
-------------------------------------------------------------------------
+-- Frame creation (once)
 
 local function CreateReminderFrame()
     if reminderFrame then return end
@@ -96,12 +87,11 @@ local function CreateReminderFrame()
         yOffset  = -180,
         duration = TIMER_DURATION,
         fitHeight = function(self)
-            -- Warning-only popup: just the status text as the message.
+            -- Warning only: just the status text.
             if self.warnOnly then
                 return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 8
             end
-            -- message + separator(1+20) + currency line + status (+6 gap)
-            -- + gap before the button
+            -- message + separator (1+20) + currency line + status (+6) + gap before the button
             local statusH = self.status:GetText() ~= "" and (6 + self.status:GetStringHeight()) or 0
             return RA.POPUP_CHROME_HEIGHT + self.msg:GetStringHeight() + 21
                 + self.currency:GetStringHeight() + statusH + 8
@@ -124,13 +114,13 @@ local function CreateReminderFrame()
     reminderFrame.currency:SetPoint("TOPRIGHT", reminderFrame.sep, "BOTTOMRIGHT", 0, -10)
     reminderFrame.currency:SetJustifyH("LEFT")
 
-    -- Auto-pass status line(s) (see BuildAutoPassStatus)
+    -- Auto-pass status (BuildAutoPassStatus)
     reminderFrame.status = reminderFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     reminderFrame.status:SetPoint("TOPLEFT",  reminderFrame.currency, "BOTTOMLEFT",  0, -6)
     reminderFrame.status:SetPoint("TOPRIGHT", reminderFrame.currency, "BOTTOMRIGHT", 0, -6)
     reminderFrame.status:SetJustifyH("LEFT")
 
-    -- Open options button (left of the factory's Okay button)
+    -- Options button (left of Okay)
     reminderFrame.btn = CreateFrame("Button", "RollAwayReminderBtn", reminderFrame, "UIPanelButtonTemplate")
     reminderFrame.btn:SetSize(130, 22)
     reminderFrame.btn:SetPoint("RIGHT", reminderFrame.okayBtn, "LEFT", -6, 0)
@@ -145,22 +135,15 @@ local function CreateReminderFrame()
     RA.SetupInstanceReminderLifecycle(reminderFrame, "lastReminderInstID")
 end
 
-------------------------------------------------------------------------
--- Show reminder for current content
-------------------------------------------------------------------------
-
--- Shown when "showReminder" is on, or - independent of it - when the
--- "autoPassWarning" safety net is on and an auto-pass is active for this
--- instance (so a forgotten checkbox does not cost a bonus roll).
+-- Show reminder for the current content: with "showReminder", or with the
+-- "autoPassWarning" safety net while an auto-pass is active here.
 function RA.ShowReminder()
     if not RollAwayDB or not RollAwayDBChar then return end
 
     local instanceType = RA.cachedInstanceType
     local instanceID   = RA.cachedInstanceID
 
-    -- Outside dungeon/raid content: hide, and forget the "already shown"
-    -- mark so the next entry (even into the same instance, with the same
-    -- group) shows the reminder again.
+    -- Outside dungeon/raid content: hide and forget the "shown" mark.
     if not (instanceType == "party" or instanceType == "raid") then
         RollAwayDBChar.lastReminderInstID = nil
         if reminderFrame and reminderFrame:IsShown() then reminderFrame:Hide() end
@@ -170,14 +153,13 @@ function RA.ShowReminder()
     if not (RollAwayDB.showReminder or RollAwayDB.autoPassWarning) then return end
     if not RA.BONUS_ROLLS_ENABLED then return end
 
-    -- Only show once per instance visit (kept through /reload; cleared on
-    -- login, group leave and when leaving the instance)
+    -- Once per instance visit (kept through /reload; cleared on login, group leave, leaving)
     if RollAwayDBChar.lastReminderInstID == instanceID then return end
 
     local tabKey, msgKey
 
     if instanceType == "party" and DUNGEON_MAP[instanceID] then
-        -- Dungeons: Mythic and Mythic+ only – use cached diffID
+        -- Dungeons: Mythic and Mythic+ only (cached diffID)
         if not RA.MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] then
             DBG("Reminder: dungeon not Mythic (diffID:", RA.cachedDiffID, ") – skipping")
             return
@@ -192,7 +174,7 @@ function RA.ShowReminder()
 
     if not tabKey then return end
 
-    -- Skip if player has no Voidcores
+    -- No Voidcores: nothing to say
     local voidcoreInfo = C_CurrencyInfo.GetCurrencyInfo(RA.VOIDCORE_CURRENCY_ID)
     local voidcoreQty  = voidcoreInfo and voidcoreInfo.quantity or 0
     if voidcoreQty == 0 then
@@ -208,8 +190,7 @@ function RA.ShowReminder()
 
     local rollsPossible = math.floor(voidcoreQty / VOIDCORE_COST[tabKey])
     local rollColor     = rollsPossible > 1 and "|cff00cc00" or "|cffffff00"
-    -- A warning is pointless when no roll can happen anyway (e.g. 1 Voidcore
-    -- in a raid, which costs 2).
+    -- No warning when no roll is possible (e.g. 1 Voidcore in a raid, which costs 2).
     if not RollAwayDB.showReminder and rollsPossible < 1 then return end
 
     RollAwayDBChar.lastReminderInstID = instanceID
@@ -218,17 +199,14 @@ function RA.ShowReminder()
 
     CreateReminderFrame()
 
-    -- Stacked in the shared popup order (Core/Helpers.lua), so the
-    -- notifications never overlap.
+    -- Stacked with the other popups.
     RA.StackPopupFrame(reminderFrame)
 
-    -- Update content (no new closures created here)
+    -- Update content
     currentTabKey = tabKey
     reminderFrame.btn:SetText(RA_L["reminder_btn_"..tabKey])
 
-    -- Only the safety-net warning is on (not the general reminder): the popup
-    -- is just the "auto-pass ACTIVE" text, without the generic hint and the
-    -- Voidcore line.
+    -- Only the safety-net warning: just the "auto-pass ACTIVE" text.
     local warnOnly = not RollAwayDB.showReminder
     reminderFrame.warnOnly = warnOnly
     reminderFrame.sep:SetShown(not warnOnly)
@@ -245,8 +223,7 @@ function RA.ShowReminder()
             voidcoreQty,
             rollColor .. rollsPossible .. "|r",
             rollsPossible == 1 and RA_L["reminder_roll_singular"] or RA_L["reminder_roll_plural"]))
-        -- The red / green auto-pass status line belongs to the warning
-        -- option; with it off this is the plain reminder.
+        -- The red/green status line belongs to the warning option.
         reminderFrame.status:SetText(RollAwayDB.autoPassWarning and statusText or "")
     end
 

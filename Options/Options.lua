@@ -1,10 +1,7 @@
 -- RollAway - Options/Options.lua
--- Settings UI. Builds the main "RollAway" Settings category: header, tabs
--- (General / Dungeons / Raids / Delves / Prey / Legacy), and wires up the
--- QoL and Profile subcategories built in Options/OptionsQoL.lua and
--- Options/OptionsProfile.lua.
--- Shared widget builders (MakeCB, MakeSeasonTabs, etc.) live in
--- Options/OptionsHelpers.lua, loaded before this file per the .toc.
+-- Settings UI: the main "RollAway" category (header, tabs General / Dungeons / Raids /
+-- Delves / Prey / Legacy) and the QoL, Profile and Developer subcategories
+-- (OptionsQoL / OptionsProfile / OptionsDev). Shared widget builders: OptionsHelpers.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -17,7 +14,7 @@ local SEASON2_DELVES       = RA.DELVES[2]
 local SEASON1_RAIDS        = RA.RAIDS[1]
 local SEASON2_RAIDS        = RA.RAIDS[2]
 
--- Shared helpers/constants from Options/OptionsHelpers.lua
+-- Shared helpers/constants (OptionsHelpers.lua)
 local UI                = RA.OptionsUI
 local ENTRY_W            = UI.ENTRY_W
 local COL_GAP            = UI.COL_GAP
@@ -41,8 +38,7 @@ local RAID_DIFF_ITEMS = {
     { key = "mythic", label = RA_L["raid_diff_mythic"] },
 }
 
--- Season sub-tabs shared by the Dungeons and Raids tabs. Seasons other than
--- the active one are dev-only (visible with debug mode on).
+-- Season sub-tabs of the Dungeons and Raids tabs; other seasons are dev-only (debug mode).
 local function SeasonTabDefs()
     return {
         { key = "s1", label = RA_L["season1_title"], devOnly = (RA.ACTIVE_SEASON ~= 1), default = (RA.ACTIVE_SEASON == 1) },
@@ -51,7 +47,7 @@ local function SeasonTabDefs()
     }
 end
 
--- Invisible 1x1 frame at a season panel's top-left, to hang its content off.
+-- Invisible 1x1 frame at a season panel's top-left.
 local function MakeSeasonAnchor(seasonPanel)
     local anchor = CreateFrame("Frame", nil, seasonPanel)
     anchor:SetSize(1, 1)
@@ -66,15 +62,13 @@ local function MakeComingSoonLabel(seasonPanel)
     label:SetText(RA_L["season_coming_soon"])
 end
 
--- `list` sorted alphabetically by the localized name (current client
--- locale) RA_L[keyPrefix..entry.key], not by insertion order in Data\.
+-- `list` sorted by the localized name RA_L[keyPrefix..entry.key].
 local function SortedByName(list, keyPrefix)
     return RA.SortByLabel(list, function(e) return RA_L[keyPrefix..e.key] or e.key end)
 end
 
--- Debug mode was switched (checkbox in the Developer settings, which can be
--- open while the main options exist): the dev-only tabs and season sub-tabs
--- of the main panel show / hide at once, no reload.
+-- Debug mode was switched (Developer settings): dev-only tabs and season sub-tabs show
+-- or hide at once.
 function RA.OnDebugModeChanged(checked)
     for _, b in ipairs(RA.DevOnlyTabButtons or {}) do
         b:SetShown(checked)
@@ -87,9 +81,7 @@ function RA.OnDebugModeChanged(checked)
     for _, check in ipairs(RA.SeasonTabDebugChecks or {}) do check() end
 end
 
-------------------------------------------------------------------------
--- Main init function – called from Core/Core.lua ADDON_LOADED
-------------------------------------------------------------------------
+-- Main init (Core.lua, ADDON_LOADED)
 
 function RA.InitOptions()
     local S    = ElvUI and unpack(ElvUI):GetModule("Skins", true)
@@ -98,7 +90,7 @@ function RA.InitOptions()
     local category = Settings.RegisterCanvasLayoutCategory(panel, RA_L["addon_title"])
     local RA_CategoryID = category:GetID()
 
-    -- /raw, /rollaway → open the options (queued until combat ends)
+    -- /raw, /rollaway → options (queued in combat)
     SLASH_ROLLAWAY1 = "/raw"
     SLASH_ROLLAWAY2 = "/rollaway"
     SlashCmdList["ROLLAWAY"] = function()
@@ -143,30 +135,24 @@ function RA.InitOptions()
         tabPanels[def.key] = p
     end
 
-    -- Class color for ElvUI tab highlight
+    -- Class color (ElvUI tab highlight)
     local classColor
     if S then
         local _, className = UnitClass("player")
         classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[className]
     end
 
-    -- Bonus Roll tabs: hidden when Bonus Rolls are disabled for the current
-    -- season, or when the current character is below max level (Bonus Rolls
-    -- only exist at max level, so the auto-pass config is meaningless
-    -- otherwise). Dev/test characters only bypass the level check with
-    -- debug mode on - otherwise they're gated like everyone else. Since the
-    -- debug checkbox is toggled live (no reload), these tabs are wired into
-    -- the same DevOnlyTabButtons/SeasonTabReflows registries the season
-    -- sub-tabs (OptionsHelpers.lua MakeSeasonTabs) use for their own
-    -- debug-gated tabs, so toggling debug updates them immediately too.
+    -- Bonus roll tabs: hidden without bonus rolls this season or below max level (dev
+    -- characters bypass the level check only with debug mode on). Registered in
+    -- DevOnlyTabButtons/SeasonTabReflows (like the season sub-tabs), so toggling debug
+    -- updates them at once.
     local BONUS_ROLL_TABS = { dungeons = true, raids = true, delves = true, prey = true }
     local isDevChar = RA.DEV_CHARS[UnitName("player")]
     local devOverride = isDevChar and RollAwayDB.debug
     local isMaxLevel = RA.IsMaxLevel()
     local belowMaxLevel = not devOverride and not isMaxLevel
-    -- Only a dev char who is currently below max level needs live debug
-    -- toggling; a dev char at max level always sees the tabs regardless of
-    -- debug, so it must never be forced hidden by SetShown(RollAwayDB.debug).
+    -- Only a dev char below max level follows debug live; at max level the tabs are always
+    -- shown (never forced hidden by SetShown(RollAwayDB.debug)).
     local devLiveGate = isDevChar and RA.BONUS_ROLLS_ENABLED and not isMaxLevel
 
     -- Tab buttons
@@ -179,7 +165,7 @@ function RA.InitOptions()
         btn:SetText(def.label)
         tabButtonOrder[#tabButtonOrder + 1] = btn
 
-        -- Hide bonus roll tabs when disabled or below max level
+        -- Bonus roll tabs: disabled or below max level
         local hidden = BONUS_ROLL_TABS[key] and (not RA.BONUS_ROLLS_ENABLED or belowMaxLevel)
         if hidden then btn:Hide() end
 
@@ -196,9 +182,7 @@ function RA.InitOptions()
         end
     end
 
-    -- Re-anchors visible top-level tabs left-to-right, closing gaps from
-    -- hidden ones. Re-run after the debug checkbox shows/hides dev-gated
-    -- tabs so the row doesn't leave a blank gap or overlap.
+    -- Re-anchors the visible tabs left to right (no gaps); re-run when debug shows/hides tabs.
     local function PlaceTopTab(btn)
         btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
     end
@@ -210,9 +194,7 @@ function RA.InitOptions()
     RA.SeasonTabReflows = RA.SeasonTabReflows or {}
     table.insert(RA.SeasonTabReflows, ReflowTopTabButtons)
 
-    -- Falls back to the General tab if debug turns off while a now-hidden
-    -- bonus-roll tab is active (mirrors EnsureValidSeasonSelected in
-    -- OptionsHelpers.lua).
+    -- General tab if debug turns off while a now hidden bonus roll tab is active.
     local function EnsureValidTopTabSelected()
         if not devLiveGate then return end
         if RollAwayDB.debug then return end
@@ -226,9 +208,7 @@ function RA.InitOptions()
     RA.SeasonTabDebugChecks = RA.SeasonTabDebugChecks or {}
     table.insert(RA.SeasonTabDebugChecks, EnsureValidTopTabSelected)
 
-    ------------------------------------------------------------
-    -- Tab: General – wrapped in a ScrollFrame so content never clips
-    ------------------------------------------------------------
+    -- Tab: General (in a ScrollFrame)
     local genScroll = CreateFrame("ScrollFrame", "RollAwayGenScroll", tabPanels["general"], "UIPanelScrollFrameTemplate")
     genScroll:SetPoint("TOPLEFT",     tabPanels["general"], "TOPLEFT",     0,   0)
     genScroll:SetPoint("BOTTOMRIGHT", tabPanels["general"], "BOTTOMRIGHT", -26, 0)
@@ -241,19 +221,16 @@ function RA.InitOptions()
     local scrollBar = _G["RollAwayGenScrollScrollBar"]
     UI.SetupScrollBar(genScroll, scrollBar, S, false)
 
-    -- Visibility section header
+    -- Visibility section
     local visMainLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     visMainLabel:SetPoint("TOPLEFT", 0, -10)
     visMainLabel:SetText(RA_L["visibility_section_title"])
 
     local visMainInfo = MakeInfoText(gen, visMainLabel, 0, -6, 560, RA_L["visibility_info"])
 
-    -- Master switch: disables the entire auto-close/auto-hide feature for
-    -- the Group Loot History frame (delay timer, safety-timeout watchdog,
-    -- hide-in-raid), so it behaves like plain default WoW - always shown,
-    -- closed only manually. Placed above the sliders it controls; the actual
-    -- enable/disable function is wired up further below once the sliders and
-    -- hideRow checkboxes it touches exist (forward-declared here).
+    -- Master switch: turns the Group Loot History auto-close/auto-hide off (timer,
+    -- watchdog, hide-in-raid): plain default WoW. Wired up below, once the controls it
+    -- touches exist.
     local SetLootFrameFeatureEnabled
 
     local cbFrameFeatureDisable = MakeCB(gen, RA_L["lootframe_feature_disable_label"], RollAwayDB.lootFrameAutoCloseDisabled, function(checked)
@@ -262,7 +239,7 @@ function RA.InitOptions()
     end)
     cbFrameFeatureDisable.frame:SetPoint("TOPLEFT", visMainInfo, "BOTTOMLEFT", 0, -14)
 
-    -- Row 1: Delay (left) + Safety timeout (right)
+    -- Row 1: delay (left), safety timeout (right)
     local delayLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     delayLabel:SetPoint("TOPLEFT", cbFrameFeatureDisable.frame, "BOTTOMLEFT", 0, -14)
     delayLabel:SetText(RA_L["delay_section_title"])
@@ -299,7 +276,7 @@ function RA.InitOptions()
         end,
     })
 
-    -- Row 2: hide the Group Loot History frame, per raid difficulty.
+    -- Row 2: hide the loot history per raid difficulty
     local hideLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", 0, -20)
     hideLabel:SetText(RA_L["hide_in_raid_label"])
@@ -312,17 +289,14 @@ function RA.InitOptions()
             RollAwayDB.hideInRaidBuckets[k] = checked
         end)
 
-    -- Legacy raids (Dragonflight / The War Within): their own switch, apart
-    -- from the per-difficulty boxes above, which only count for current raids.
+    -- Legacy raids: their own switch (the boxes above are for current raids).
     local cbHideLegacy = MakeCB(gen, RA_L["hide_in_legacy_label"], RollAwayDB.hideInLegacyRaids, function(checked)
         RollAwayDB.hideInLegacyRaids = checked
     end)
     cbHideLegacy.frame:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
     local hideLegacyInfo = MakeInfoText(gen, cbHideLegacy.frame, 20, -6, 460, RA_L["hide_in_legacy_info"])
 
-    -- Now that the sliders and hideRow checkboxes exist, wire up the actual
-    -- enable/disable logic for the master switch above and apply its
-    -- initial state.
+    -- Master switch logic and initial state.
     SetLootFrameFeatureEnabled = function(enabled)
         local alpha = enabled and 1 or 0.4
         if enabled then slider:Enable() else slider:Disable() end
@@ -339,17 +313,14 @@ function RA.InitOptions()
     end
     SetLootFrameFeatureEnabled(not RollAwayDB.lootFrameAutoCloseDisabled)
 
-    -- Bonus Roll reminder (own section: this popup is specifically the
-    -- auto-pass reminder shown when entering a Mythic dungeon/raid).
+    -- Bonus roll reminder (own section: shown when entering a Mythic dungeon/raid).
     local reminderSectionLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     reminderSectionLabel:SetPoint("TOPLEFT", hideLegacyInfo, "BOTTOMLEFT", -20, -16)
     reminderSectionLabel:SetText(RA_L["bonusroll_reminder_section_title"])
 
     local cbReminder = MakeCB(gen, RA_L["reminder_label"], RollAwayDB.showReminder, function(checked)
         RollAwayDB.showReminder = checked
-        -- Otherwise an already-shown reminder stays stuck open until manually
-        -- closed - ShowReminder() only re-checks this flag on the next zone
-        -- change, which may not come for a while.
+        -- Else a shown reminder stays open (ShowReminder re-checks on the next zone change).
         if not checked then
             local frame = _G["RollAwayReminderFrame"]
             if frame and frame:IsShown() then frame:Hide() end
@@ -359,17 +330,14 @@ function RA.InitOptions()
 
     local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, 480, RA_L["reminder_info"])
 
-    -- Safety net: warn on entering content where an auto-pass is active,
-    -- even with the general reminder above switched off.
+    -- Safety net: warns when entering content with an active auto-pass.
     local cbWarn = MakeCB(gen, RA_L["autopass_warning_label"], RollAwayDB.autoPassWarning, function(checked)
         RollAwayDB.autoPassWarning = checked
     end)
     cbWarn.frame:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -10)
     local warnInfo = MakeInfoText(gen, cbWarn.frame, 20, -6, 480, RA_L["autopass_warning_info"])
 
-    -- Hide reminder option when Bonus Rolls are disabled, or below max level
-    -- (Bonus Roll reminder is meaningless before max level; same gating as
-    -- the Dungeons/Raids/Delves/Prey tabs above).
+    -- Hidden without bonus rolls or below max level (like the tabs above).
     local showBonusRollReminder = RA.BONUS_ROLLS_ENABLED and not belowMaxLevel
     if not showBonusRollReminder then
         reminderSectionLabel:Hide()
@@ -381,10 +349,8 @@ function RA.InitOptions()
 
     -- Row 3: Legacy
     local legacyLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    -- warnInfo and hideLegacyInfo (the last element above when the Bonus Roll
-    -- reminder is hidden) are indented +20 from the outer margin, so -20 undoes
-    -- that indent back to the margin. The label must hang below hideLegacyInfo,
-    -- not below hideRow, or it lands on top of the legacy-hide checkbox.
+    -- warnInfo / hideLegacyInfo are indented 20: -20 returns to the margin. The label hangs
+    -- below hideLegacyInfo (below hideRow it would cover the legacy-hide checkbox).
     if showBonusRollReminder then
         legacyLabel:SetPoint("TOPLEFT", warnInfo, "BOTTOMLEFT", -20, -14)
     else
@@ -392,18 +358,13 @@ function RA.InitOptions()
     end
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
-    -- onChange is wired further below (cbLegacy:SetCallback) instead of here,
-    -- once legacyTabBtn exists - AceGUI's OnValueChanged is a single slot, so
-    -- passing one here too would just be silently overwritten and never run.
+    -- onChange is set below (cbLegacy:SetCallback) once legacyTabBtn exists; AceGUI has a single
+    -- OnValueChanged slot, one given here would be overwritten.
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
 
-    -- (The Developer section lives in its own subcategory now, see
-    -- Options/OptionsDev.lua.)
 
-    -- Dynamically size the scroll child to hug the last General-tab element,
-    -- instead of a fixed oversized height. Deferred one frame so GetTop/GetBottom
-    -- reflect actual layout (incl. wrapped multi-line text).
+    -- Scroll child height = last General element, one frame later (GetTop/GetBottom need the layout).
     local lastGenElement = cbLegacy.frame
     local function UpdateGenScrollHeight()
         local top, bottom = gen:GetTop(), lastGenElement:GetBottom()
@@ -411,15 +372,13 @@ function RA.InitOptions()
             local contentHeight = (top - bottom) + 20 -- bottom padding
             gen:SetHeight(math.max(contentHeight, genScroll:GetHeight()))
         end
-        -- Explicitly re-check scrollbar visibility instead of relying solely
-        -- on the engine's OnScrollRangeChanged timing.
+        -- Re-check the scrollbar (OnScrollRangeChanged timing).
         if scrollBar then
             scrollBar:SetShown((genScroll:GetVerticalScrollRange() or 0) > 1)
         end
     end
-    -- Again later and on every show: the checkboxes settle their final height
-    -- (wrapped labels) a few frames after creation, and a hidden tab has no
-    -- layout yet.
+    -- Again later and on every show: checkboxes settle (wrapped labels) after a few frames; a
+    -- hidden tab has no layout.
     RunNextFrame(UpdateGenScrollHeight)
     C_Timer.After(0.3, UpdateGenScrollHeight)
     genScroll:HookScript("OnShow", function()
@@ -427,15 +386,12 @@ function RA.InitOptions()
         C_Timer.After(0.3, UpdateGenScrollHeight)
     end)
 
-    ------------------------------------------------------------
     -- Tab: Dungeons
-    ------------------------------------------------------------
     local dng = tabPanels["dungeons"]
     local dngHint = MakeHintText(dng, dng, RA_L["season1_hint"])
     dngHint:SetPoint("TOPLEFT", dng, "TOPLEFT", 0, -10)
 
-    -- Forward-declared so the master checkbox's onChange (below) can lock/unlock
-    -- them once they exist; MakeCheckboxGrid fills these same tables further down.
+    -- Forward-declared: the master checkbox locks/unlocks them; MakeCheckboxGrid fills them.
     local dngS1Checkboxes = {}
     local dngS2Checkboxes = {}
     local function ApplyDungeonAllLock()
@@ -444,16 +400,14 @@ function RA.InitOptions()
         for _, cb in ipairs(dngS2Checkboxes) do cb:SetDisabled(locked) end
     end
 
-    -- Auto-pass ALL dungeons (any season) - OR'd together with the
-    -- per-dungeon checkboxes below, same pattern as the raid difficulty switch.
+    -- All dungeons (any season): OR with the per-dungeon boxes, like the raid difficulty switch.
     local dngAllCB = MakeCB(dng, RA_L["dungeon_autopass_all_label"], RollAwayDBChar.dungeonAutoPassAll, function(checked)
         RollAwayDBChar.dungeonAutoPassAll = checked
         ApplyDungeonAllLock()
     end)
     dngAllCB.frame:SetPoint("TOPLEFT", dngHint, "BOTTOMLEFT", 0, -10)
 
-    -- Full-width anchor for the season tab row - MUST be wide (560), since
-    -- MakeSeasonTabs derives the content panels' width from this frame.
+    -- Full-width (560) anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local dngSeasonAnchor = CreateFrame("Frame", nil, dng)
     dngSeasonAnchor:SetPoint("TOPLEFT", dngAllCB.frame, "BOTTOMLEFT", 0, 0)
     dngSeasonAnchor:SetSize(560, 1)
@@ -473,15 +427,12 @@ function RA.InitOptions()
 
     MakeComingSoonLabel(dngSeasons["s3"])
 
-    ------------------------------------------------------------
     -- Tab: Delves
-    ------------------------------------------------------------
     local dlv = tabPanels["delves"]
     local dlvHint = MakeHintText(dlv, dlv, RA_L["season1_delve_hint"])
     dlvHint:SetPoint("TOPLEFT", dlv, "TOPLEFT", 0, -10)
 
-    -- Auto-pass ALL delves (any season) - OR'd together with the
-    -- per-delve checkboxes below, same pattern as the dungeons tab.
+    -- All delves (any season): OR with the per-delve boxes.
     local dlvAllCheckboxes = {}
     local function ApplyDelveAllLock()
         local locked = RollAwayDBChar.delveAutoPassAll
@@ -494,8 +445,7 @@ function RA.InitOptions()
     end)
     dlvAllCB.frame:SetPoint("TOPLEFT", dlvHint, "BOTTOMLEFT", 0, -10)
 
-    -- Single page, grouped by patch version instead of separate tabs.
-    -- 12.1 (Season 2) delves stay hidden until RA.ACTIVE_SEASON reaches 2.
+    -- One page grouped by patch; 12.1 (Season 2) delves stay hidden until RA.ACTIVE_SEASON is 2.
     local dlvSections = {
         { titleKey = "patch_12_0", items = SortedByName(SEASON1_DELVES, "delve_"), dbTable = RollAwayDBChar.delves },
     }
@@ -548,15 +498,12 @@ function RA.InitOptions()
     end
     ApplyDelveAllLock()
 
-    ------------------------------------------------------------
     -- Tab: Raids
-    ------------------------------------------------------------
     local raidPanel = tabPanels["raids"]
     local raidHint = MakeHintText(raidPanel, raidPanel, RA_L["raid_hint"])
     raidHint:SetPoint("TOPLEFT", raidPanel, "TOPLEFT", 0, -10)
 
-    -- Roll confirmation popups. Global - not tied to season/boss data,
-    -- applies to any loot roll (current-tier and legacy raids alike).
+    -- Roll confirmation popups (any loot roll, not tied to season data).
     local rollConfirmLabel = raidPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     rollConfirmLabel:SetPoint("TOPLEFT", raidHint, "BOTTOMLEFT", 0, -12)
     rollConfirmLabel:SetText(RA_L["confirm_roll_title"])
@@ -574,8 +521,7 @@ function RA.InitOptions()
         RA.SetRollConfirmEnabled(k, checked)
     end)
 
-    -- Auto-pass by whole raid difficulty (applies across all seasons/bosses,
-    -- OR'd together with the per-boss checkboxes below).
+    -- Auto-pass by raid difficulty (all seasons/bosses, OR with the per-boss boxes).
     local raidDiffLabel = raidPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     raidDiffLabel:SetPoint("TOPLEFT", rollConfirmRow, "BOTTOMLEFT", 0, -12)
     raidDiffLabel:SetText(RA_L["raid_diff_autopass_title"])
@@ -588,16 +534,14 @@ function RA.InitOptions()
             RollAwayDBChar.raidAutoPassDifficulty[k] = checked
         end)
 
-    -- Full-width anchor for the season tab row - MUST be wide (560), since
-    -- MakeSeasonTabs derives the content panels' width from this frame.
+    -- Full-width (560) anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local raidSeasonAnchor = CreateFrame("Frame", nil, raidPanel)
     raidSeasonAnchor:SetPoint("TOPLEFT", raidDiffRow, "BOTTOMLEFT", 0, 0)
     raidSeasonAnchor:SetSize(560, 1)
 
     local raidSeasons = MakeSeasonTabs(S, raidPanel, raidSeasonAnchor, SeasonTabDefs())
 
-    -- Groups raid bosses into the raid sections of `sections` (matched by
-    -- boss.raid == section.key), preserving the section order.
+    -- Groups bosses into `sections` (boss.raid == section.key), in section order.
     local function FillRaidSections(sections, bosses)
         for _, b in ipairs(bosses) do
             for _, s in ipairs(sections) do
@@ -618,13 +562,11 @@ function RA.InitOptions()
     MakeBossSectionGrid(raidSeasons["s1"], MakeSeasonAnchor(raidSeasons["s1"]), raidSections, RollAwayDBChar.raids,
         { sporefall = "|cff888888(12.0.7)|r" })
 
-    -- Season 2 content (The Venomous Abyss + Tidebound Grotto Lair, grouped
-    -- by raid like Season 1, since S2 now spans more than one raid).
+    -- Season 2 (The Venomous Abyss + Tidebound Grotto, grouped by raid like Season 1).
     local raidS2MainSections = FillRaidSections({
         { key = "venomous_abyss", bosses = {} },
     }, SEASON2_RAIDS)
-    -- Tidebound Grotto and Kith'ix are both single-boss side content; render
-    -- them side by side (left/right column) instead of stacked full-width.
+    -- Tidebound Grotto and Kith'ix are single-boss side content: side by side.
     local raidS2PairSections = FillRaidSections({
         { key = "tidebound_grotto",    bosses = {} },
         { key = "unbinding_of_kithix", bosses = {} },
@@ -649,9 +591,7 @@ function RA.InitOptions()
 
     MakeComingSoonLabel(raidSeasons["s3"])
 
-    ------------------------------------------------------------
     -- Tab: Prey
-    ------------------------------------------------------------
     local preyPanel = tabPanels["prey"]
     local preyLabel = preyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     preyLabel:SetPoint("TOPLEFT", preyPanel, "TOPLEFT", 0, -10)
@@ -663,9 +603,7 @@ function RA.InitOptions()
     end)
     preyCB.frame:SetPoint("TOPLEFT", preyHint, "BOTTOMLEFT", 0, -14)
 
-    ------------------------------------------------------------
-    -- Tab: Legacy Raids
-    ------------------------------------------------------------
+    -- Tab: Legacy raids
     local legacyPanel = tabPanels["legacy"]
     local _, legacyLine = MakeSectionHeader(legacyPanel, legacyPanel, -10, RA_L["legacy_tab_title"])
     local legacyHint = MakeHintText(legacyPanel, legacyLine, RA_L["legacy_tab_hint"])
@@ -694,8 +632,7 @@ function RA.InitOptions()
     legacyRollLabel:SetPoint("TOPLEFT", legacyAccountWideCB.frame, "BOTTOMLEFT", 0, -14)
     legacyRollLabel:SetText(RA_L["legacy_roll_label"])
 
-    -- Need / Greed / Transmog form the fallback chain; Pass replaces it, so the
-    -- other three are greyed out while Pass is on.
+    -- Need / Greed / Transmog are the fallback chain; Pass replaces it (the others grey out).
     local rollDefs = {
         { dbKey = "legacyNeed",     labelKey = "legacy_roll_need"     },
         { dbKey = "legacyGreed",    labelKey = "legacy_roll_greed"    },
@@ -730,9 +667,8 @@ function RA.InitOptions()
     legacyRaidLine:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -44)
     legacyRaidLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    -- One expansion column: header at (xOffset) below the line, its raids'
-    -- checkboxes stacked underneath. Each is bound to the (character- or
-    -- account-wide) legacy raid table active at click time.
+    -- One expansion column: header, then its raids' checkboxes, bound to the legacy raid table
+    -- active at click time (character or account-wide).
     local function MakeLegacyRaidColumn(xOffset, headerKey, raids)
         local header = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         header:SetPoint("TOPLEFT", legacyRaidLine, "BOTTOMLEFT", xOffset, -14)
@@ -761,7 +697,7 @@ function RA.InitOptions()
         { key = "manaforge_omega",      label = "legacy_raid_manaforge_omega"      },
     })
 
-    -- Legacy tab button: only visible when Legacy is enabled
+    -- Legacy tab: only while Legacy is enabled
     local legacyTabBtn = tabButtons["legacy"]
     legacyTabBtn:SetShown(RollAwayDB.legacy == true)
 
@@ -773,7 +709,7 @@ function RA.InitOptions()
         end
     end)
 
-    -- Expose OpenOptionsTab so Reminder.lua can open a specific tab
+    -- OpenOptionsTab, for Reminder.lua
     function RA.OpenOptionsTab(key)
         RA.RunProtectedOrQueue(function()
             Settings.OpenToCategory(RA_CategoryID)
@@ -781,12 +717,8 @@ function RA.InitOptions()
         end)
     end
 
-    ------------------------------------------------------------
-    -- Subcategories: QoL (left nav with Character / Filter / Hide / LFG /
-    -- Logs / Misc / Quests / Reminder, Options/OptionsQoL.lua), Profile
-    -- (Options/OptionsProfile.lua) and, on dev characters only, Developer
-    -- (Logging / Tests / Tools / Commands, Options/OptionsDev.lua).
-    ------------------------------------------------------------
+    -- Subcategories: QoL (OptionsQoL.lua), Profile (OptionsProfile.lua), Developer (dev
+    -- characters, OptionsDev.lua)
     RA.BuildQoLOptions(category, S, classColor)
     RA.BuildProfileOptions(category, S)
     if isDevChar then RA.BuildDevOptions(category, S, classColor) end

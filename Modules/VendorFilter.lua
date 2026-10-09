@@ -1,18 +1,14 @@
 -- RollAway - VendorFilter.lua
--- QoL: "Vendor Filter Light" - passively dims merchant items the player
--- already knows/owns (recipes, toys, mounts, pets (all copies), heirlooms, housing decor, and any
--- item whose appearance is already collected). No dropdown/category UI by
--- design - just toggle + alpha,
--- configurable in Options > QoL > Filter.
+-- "Vendor Filter Light": dims merchant items the player already owns (recipes, toys,
+-- mounts, heirlooms, housing decor, pets at the maximum, items whose appearance is
+-- collected). Toggle + alpha in Options > QoL > Filter.
 
 local RA  = _G["RollAway"]
 local DBG = RA.DBG
 
 local DEFAULT_ALPHA = RA.defaults.profile.vendorFilterAlpha
 
-------------------------------------------------------------------------
--- Per-category "already known/maxed" checks
-------------------------------------------------------------------------
+-- Per-category "already known" checks
 
 local function IsRecipeKnownViaSpellCheck(itemID)
     local ok, _, spellID = pcall(C_Item.GetItemSpell, itemID)
@@ -27,12 +23,8 @@ local function IsRecipeKnownViaSpellCheck(itemID)
     return okKnown and known or false
 end
 
--- Hidden scanning tooltip, created lazily. Reading the merchant tooltip is
--- the most reliable way to detect an already-known recipe: Blizzard itself
--- replaces the profession/skill requirement line with the localized
--- "Already Known" string the moment a recipe is learned, regardless of
--- which internal system (classic spellbook vs. newer TradeSkillUI-tracked
--- profession recipes) actually tracks that recipe's known-state.
+-- Hidden scan tooltip (lazy). The merchant tooltip is the most reliable recipe check:
+-- Blizzard shows the localized "Already Known" line once a recipe is learned.
 local scanTooltip
 local function GetScanTooltip()
     if not scanTooltip then
@@ -67,16 +59,11 @@ local function IsRecipeKnownViaTooltip(index)
 end
 
 local function IsRecipeKnown(itemID, index)
-    -- Cheap item-class check first (no tooltip scan) - skips the scan below
-    -- entirely for items that obviously aren't recipes (arrows, reagents,
-    -- mounts, toys, etc.). MerchantFrame_UpdateMerchantInfo can fire many
-    -- times in quick succession per vendor page, once per item.
+    -- Item class first (no tooltip scan for non-recipes): the update fires often.
     local classID = select(6, C_Item.GetItemInfoInstant(itemID))
     if classID ~= Enum.ItemClass.Recipe then return false end
 
-    -- Tooltip scan first (matches Blizzard's own "Already Known" indicator
-    -- exactly); falls back to the spellID/TradeSkillUI check if the tooltip
-    -- couldn't be scanned for some reason.
+    -- Tooltip scan first; spell/TradeSkillUI check as fallback.
     if IsRecipeKnownViaTooltip(index) then return true end
     return IsRecipeKnownViaSpellCheck(itemID)
 end
@@ -96,8 +83,7 @@ end
 
 local function IsPetKnown(itemID)
     if not (C_PetJournal and C_PetJournal.GetPetInfoByItemID) then return false end
-    -- name, icon, petType, creatureID, sourceText, description, isWild,
-    -- canBattle, isTradeable, isUnique, obtainable, displayID, speciesID
+    -- 13th return value = speciesID
     local speciesID = select(13, C_PetJournal.GetPetInfoByItemID(itemID))
     if not speciesID then return false end
     -- Battle pets can be owned several times: only "maxed" counts as known.
@@ -105,26 +91,21 @@ local function IsPetKnown(itemID)
     return (numCollected or 0) > 0 and (numCollected or 0) >= (limit or 1)
 end
 
--- Heirlooms: Blizzard greys out an owned one on its own; dim it like the rest.
+-- Heirlooms (Blizzard greys out an owned one itself; dim it like the rest).
 local function IsHeirloomKnown(itemID)
     if not (C_Heirloom and C_Heirloom.IsItemHeirloom and C_Heirloom.IsItemHeirloom(itemID)) then return false end
     return C_Heirloom.PlayerHasHeirloom(itemID) and true or false
 end
 
--- Any item whose appearance is already collected - regular armor as well as
--- Tabards and Illusions; all of them resolve via itemID here.
+-- Any item whose appearance is collected (armor, tabards, illusions).
 local function IsTransmogKnown(itemID)
     if not (C_TransmogCollection and C_TransmogCollection.PlayerHasTransmog) then return false end
     local ok, known = pcall(C_TransmogCollection.PlayerHasTransmog, itemID)
     return ok and known or false
 end
 
--- Housing decor: matches Blizzard's own "already known" checkmark on the
--- vendor icon (info.totalNumStored > 0 = already own at least one copy of
--- this catalog entry). There is no per-entry "max owned" concept in this
--- API - GetDecorMaxOwnedCount() is a global storage-chest cap, not tied to
--- an individual item - so we don't try to gate on that; matching Blizzard's
--- own checkmark is the correct signal here.
+-- Housing decor: Blizzard's own "known" checkmark (totalNumStored > 0); the API has
+-- no per-item maximum.
 local function IsHousingDecorKnown(itemID)
     if not (C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem) then return false end
     local ok, info = pcall(C_HousingCatalog.GetCatalogEntryInfoByItem, itemID)
@@ -144,23 +125,15 @@ local function IsMerchantItemKnown(itemID, index)
     return false
 end
 
-------------------------------------------------------------------------
 -- Applying the dim to merchant buttons
-------------------------------------------------------------------------
 
--- Debug-log dedup: MerchantFrame_UpdateMerchantInfo can fire many times in
--- quick succession while item data streams in (Blizzard re-runs it as each
--- item's data finishes loading), producing dozens of identical DBG lines
--- per vendor open. Only log when a button's result actually changed.
+-- Log only when a button's result changed (the update fires many times while item
+-- data streams in).
 local lastDebugState = {}
 
 local function ApplyVendorFilterButton(button, itemButton)
-    -- The merchant index lives on the child "...ItemButton" (set by
-    -- Blizzard's own UpdateMerchantItemButton code), not on the row
-    -- container itself - reading it from there is robust regardless of how
-    -- many item slots the current frame/skin displays per page (ElvUI,
-    -- wider frames, etc.), unlike recomputing it from a fixed
-    -- items-per-page constant.
+    -- The merchant index is the ID of the child "...ItemButton" (robust for any
+    -- slots-per-page, ElvUI included).
     local index = itemButton and itemButton:GetID()
     local name  = button:GetName()
 
@@ -187,10 +160,7 @@ local function ApplyVendorFilterButton(button, itemButton)
     end
 end
 
--- Discovers every currently-existing MerchantItemN row (and its ItemButton
--- child), however many there are - the 12.1 merchant frame can show a
--- variable number of slots per page depending on frame width/skin, so we
--- don't assume a fixed count.
+-- Every existing MerchantItemN row and its ItemButton (the count varies with frame/skin).
 local function ForEachMerchantButton(callback)
     local i = 1
     local button = _G["MerchantItem"..i]
@@ -201,8 +171,7 @@ local function ForEachMerchantButton(callback)
     end
 end
 
--- Resets all merchant item buttons back to full opacity (option turned off,
--- or the merchant window closes).
+-- All merchant buttons back to full opacity (option off, window closed).
 function RA.ResetVendorFilterButtons()
     ForEachMerchantButton(function(button) button:SetAlpha(1) end)
     wipe(lastDebugState)
@@ -217,9 +186,7 @@ function RA.ApplyVendorFilterFeature()
 
     ForEachMerchantButton(ApplyVendorFilterButton)
 
-    -- Blizzard assigns some slots' IDs (observed: 11/12) one frame later
-    -- than the rest during MerchantFrame_UpdateMerchantInfo, so a second
-    -- deferred pass catches any button that still read index 0 just now.
+    -- Blizzard sets some slot IDs one frame later: a second pass catches buttons that read 0.
     RunNextFrame(function()
         if MerchantFrame and MerchantFrame:IsShown() and RollAwayDB and RollAwayDB.vendorFilterEnabled then
             ForEachMerchantButton(ApplyVendorFilterButton)
@@ -227,9 +194,7 @@ function RA.ApplyVendorFilterFeature()
     end)
 end
 
-------------------------------------------------------------------------
 -- Initialization
-------------------------------------------------------------------------
 
 function RA.InitVendorFilter()
     -- Central refresh point Blizzard calls on open, page change, and buy.

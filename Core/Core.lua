@@ -41,10 +41,7 @@ local function DBG(...)
 end
 RA.DBG = DBG
 
--- Separate, quieter channel: gated on its own "errors only" checkbox instead
--- of the full "debug" flag, so a dev char can catch rare self-heal errors
--- (e.g. CharFrameButtons.lua's refresh errors) without wading through the full
--- verbose debug log for everything else.
+-- Errors-only channel: own checkbox, always unfiltered.
 local function DBGError(...)
     if RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly) and DEV_CHARS[UnitName("player")] then
         if RA.AppendDebugLogUnfiltered then RA.AppendDebugLogUnfiltered(...) end
@@ -53,7 +50,7 @@ end
 RA.DBGError = DBGError
 
 ------------------------------------------------------------------------
--- Content data now lives in Data/*.lua (see .toc). Add seasons there.
+-- Content data lives in Data/*.lua.
 ------------------------------------------------------------------------
 local SEASON1_DUNGEONS      = RA.DUNGEONS[1]
 local SEASON2_DUNGEONS      = RA.DUNGEONS[2]
@@ -64,7 +61,7 @@ local SEASON2_RAIDS         = RA.RAIDS[2]
 local SEASON1_LEGACY_RAIDS  = RA.LEGACY_RAIDS
 
 ------------------------------------------------------------------------
--- Lookup maps – O(1) matching, built once at load time
+-- Lookup maps, built once at load
 ------------------------------------------------------------------------
 local DUNGEON_MAP         = {}
 local DUNGEON_ENTRY_MAP   = {}  -- mapID -> full dungeon entry (for cmID/lfgID lookup)
@@ -86,10 +83,7 @@ RA.RAID_ENCOUNTER_MAP   = RAID_ENCOUNTER_MAP
 RA.LEGACY_ENCOUNTER_MAP = LEGACY_ENCOUNTER_MAP
 
 ------------------------------------------------------------------------
--- Raid difficulty bucket map – groups the various difficultyIDs seen
--- across normal raids and raid-instance Lairs/World Bosses into 4 UI
--- buckets. 233 (Mythic Flex) folds into "mythic", 250 (World) folds into
--- "lfr" - both driven by cachedDiffID at ENCOUNTER_END/zone change.
+-- Raid difficultyID -> UI bucket (lfr / normal / heroic / mythic).
 ------------------------------------------------------------------------
 RA.RAID_DIFFICULTY_BUCKET = {
     [14]  = "normal",
@@ -123,14 +117,10 @@ RA.activeRolls           = {}
 RA.rollTimers            = {}
 
 ------------------------------------------------------------------------
--- Saved variable defaults
---
--- 3.0.1+: settings are managed by AceDB-3.0 (RollAwayDBAccount), which is
--- character-specific by default (one profile per character, switchable).
--- RA.defaults.profile  -> per-character settings (was flat RollAwayDB pre-3.0.1)
--- RA.defaults.global   -> true account-wide settings, shared by all profiles
--- RA.defaultsChar       -> unchanged: SavedVariablesPerCharacter, always
---                          strictly per-character, never part of a profile.
+-- Saved variable defaults (AceDB-3.0, RollAwayDBAccount)
+--   profile   per-profile settings (one profile per character by default)
+--   global    account-wide settings, shared by all profiles
+--   defaultsChar  SavedVariablesPerCharacter, never part of a profile
 ------------------------------------------------------------------------
 RA.defaults = {
     profile = {
@@ -199,8 +189,7 @@ RA.defaults = {
         confirmRoll         = { need = false, greed = false, transmog = false, pass = false },
     },
     global = {
-        -- The one setting that stays account-wide on purpose: whether legacy
-        -- raid roll selections are shared across all characters/profiles.
+        -- Legacy raid roll selections shared across all characters.
         legacyAccountWide = false,
         legacy_raids      = {},
     },
@@ -229,16 +218,11 @@ end
 RA.GetLegacyRaidsDB = GetLegacyRaidsDB
 
 ------------------------------------------------------------------------
--- Profile migration (3.0.1): pre-3.0.1 RollAwayDB was a single flat,
--- account-wide table. 3.0.1 switches to AceDB-3.0 profiles, character-
--- specific by default, so every character now starts on a blank Default
--- profile. On each character's first login after the update we offer to
--- carry the old (already-customized) values over instead, or start that
--- character fresh on defaults - see RA_L["profile_migration_popup_text"].
+-- Profile migration: before 3.0.1 RollAwayDB was one flat account-wide table.
+-- Each character is offered once to take those values over or start fresh.
 ------------------------------------------------------------------------
 function RA.RunProfileMigration(legacyFlatSV)
-    -- The two settings that moved to RA.db.global are applied once ever,
-    -- account-wide, regardless of what each character chooses below.
+    -- Settings that moved to RA.db.global are taken over once, account-wide.
     if legacyFlatSV and not RA.db.global.legacyMigrated then
         if legacyFlatSV.legacyAccountWide ~= nil then
             RA.db.global.legacyAccountWide = legacyFlatSV.legacyAccountWide
@@ -253,9 +237,7 @@ function RA.RunProfileMigration(legacyFlatSV)
     if RollAwayDBChar.profileMigrationAsked then return end
     RollAwayDBChar.profileMigrationAsked = true
 
-    -- Cache the first flat snapshot seen account-wide, so alts logging in
-    -- later still get the same offer even though the per-character
-    -- RollAwayDB alias has since moved on to point at their own profile.
+    -- Keep the first flat snapshot so alts get the same offer later.
     if legacyFlatSV and next(legacyFlatSV) then
         RA.db.global.legacyMigrationSnapshot = RA.db.global.legacyMigrationSnapshot or RA.DeepCopy(legacyFlatSV)
     end
@@ -276,20 +258,15 @@ function RA.RunProfileMigration(legacyFlatSV)
         end,
         hideOnEscape  = false,
     })
-    -- Shown a few seconds after ADDON_LOADED instead of immediately: a
-    -- StaticPopup this early in the login sequence, before Blizzard's own
-    -- UI (guild frame included) has finished initializing, is a plausible
-    -- contributor to ADDON_ACTION_FORBIDDEN/IsUserOAuthed reports seen only
-    -- on a character's very first login. Cheap to try, can't make things
-    -- worse either way.
+    -- Shown a few seconds late: a popup this early in the login sequence may
+    -- cause ADDON_ACTION_FORBIDDEN reports on a first login.
     C_Timer.After(3, function()
         StaticPopup_Show("ROLLAWAY_PROFILE_MIGRATION")
     end)
 end
 
 ------------------------------------------------------------------------
--- Instance cache, loot-history handling and the main event handler.
--- Generic popup/timer/table utilities live in Helpers.lua (loaded next).
+-- Instance cache, loot history handling and the main event handler.
 ------------------------------------------------------------------------
 
 local function UpdateInstanceCache()
@@ -300,10 +277,8 @@ local function UpdateInstanceCache()
 end
 RA.UpdateInstanceCache = UpdateInstanceCache
 
--- Season data check (developer aid): compares the Mythic+ pool the game reports
--- with RA.DUNGEONS and flags a stale RA.ACTIVE_SEASON or a dungeon missing in
--- Data/Dungeons.lua in the error log. Needs the map info the game sends after
--- C_MythicPlus.RequestMapInfo() (CHALLENGE_MODE_MAPS_UPDATE); runs once.
+-- Season check (developer aid, error log): compares the game's Mythic+ pool
+-- with RA.DUNGEONS. Runs once, when the map info (CHALLENGE_MODE_MAPS_UPDATE) is in.
 local seasonChecked = false
 
 local function CheckSeasonData()
@@ -342,9 +317,7 @@ local function CheckSeasonData()
     end
 end
 
--- Compact, single-line zone-change summary: instance identity + matched
--- dungeon/delve + whether auto-pass would currently trigger. Replaces the
--- old multi-line dump for normal use (raw field dump moved to /rawdump).
+-- One-line zone-change summary: instance, matched dungeon/delve, auto-pass state.
 local function LogInstanceSummary()
     if not RollAwayDB or not RollAwayDB.debug then return end
     local ok, instName = pcall(GetInstanceInfo)
@@ -367,8 +340,7 @@ local function LogInstanceSummary()
     end
     local passLabel = shouldPass and ("yes (" .. tostring(reason) .. ")") or "no"
 
-    -- Open world: also show the zone (with expansion), the world map and
-    -- whether it counts as Midnight (Prey auto-pass only applies there).
+    -- Open world: zone, map and whether it counts as Midnight (Prey auto-pass).
     local mapLabel = ""
     if RA.cachedInstanceType == "none" and RA.IsInMidnightZone and RA.GetZoneLabel then
         local midnight, mapID = RA.IsInMidnightZone()
@@ -381,8 +353,7 @@ local function LogInstanceSummary()
 end
 RA.LogInstanceSummary = LogInstanceSummary
 
--- Raw GetInstanceInfo field dump – manual use only via /rawdump. The
--- matched-content + auto-pass summary lives in LogInstanceSummary above.
+-- Raw GetInstanceInfo dump (/rawdump).
 local function DebugInstanceDump()
     if not RollAwayDB or not RollAwayDB.debug then return end
     local ok, instName, instType, diffID, diffName, maxPlayers, dynDiff, isDynamic, instanceID, groupSize, lfgID = pcall(GetInstanceInfo)
@@ -421,15 +392,10 @@ local function CountActiveRolls()
     return n
 end
 
--- Deferred by one frame (RunNextFrame) so our Hide() call runs on a fresh,
--- untainted execution stack instead of directly inside whatever event handler
--- (START_LOOT_ROLL, ENCOUNTER_END, etc.) triggered it. Calling Hide() on
--- GroupLootHistoryFrame synchronously from insecure code taints that frame's
--- execution context, which later surfaces as unrelated "secret number value"
--- arithmetic errors in Blizzard's own tooltip/layout code (GetUnscaledFrameRect,
--- GameTooltip_InsertFrame) when the player hovers a loot history row.
--- Transparency only (SetAlpha runs no Blizzard script, so it is safe to call
--- right away, unlike Hide()). Covers Blizzard's frame and ElvUI's.
+-- Hide() on GroupLootHistoryFrame runs one frame later (RunNextFrame): called
+-- straight from an event handler it taints the frame and later causes "secret
+-- number" errors in Blizzard's tooltip code. SetAlpha is safe to call at once.
+-- Covers Blizzard's frame and ElvUI's.
 local function SetHistoryAlpha(alpha)
     if GroupLootHistoryFrame then GroupLootHistoryFrame:SetAlpha(alpha) end
     local elvFrame = RA.ElvLootModule and RA.ElvLootModule.GroupLootHistoryFrame
@@ -458,8 +424,7 @@ local function HideHistoryFrame()
     RunNextFrame(DoHideHistoryFrame)
 end
 
--- For frames that must never be seen (hide-in-raid): Hide() has to wait a
--- frame, so make the frame see-through at once - no flash in between.
+-- Frames that must never be seen (hide-in-raid): transparent at once, Hide() a frame later.
 local function HideHistoryFrameAtOnce()
     SetHistoryAlpha(0)
     HideHistoryFrame()
@@ -491,12 +456,8 @@ local function ResetState(reason)
     RA.bonusRollEncounterID = nil
 end
 
--- Debug-log section divider: a call more than 3s after the previous one
--- starts a new section. Time-gap based rather than tied to a fixed event
--- name, since e.g. Delves only fire ZONE_CHANGED_NEW_AREA and never
--- PLAYER_ENTERING_WORLD, while a normal instance entry fires both ~1s
--- apart and should stay one section. Called from zone-change and
--- group-leave/join handling (see Core.lua and Debug.lua's event logger).
+-- Debug log divider: a call more than 3s after the previous one starts a new
+-- section (time-based, since delves fire only ZONE_CHANGED_NEW_AREA).
 local function NoteDebugLogSectionEvent()
     local now = GetTime()
     if RA.AppendDebugLogSeparator and (not RA.lastZoneEventTime or (now - RA.lastZoneEventTime) > 3) then
@@ -511,7 +472,7 @@ local function FullReset(reason)
     DBG("FullReset:", reason)
     ResetState(reason)
     RA.lastLegacyEncounterID = 0
-    -- Clear reminder state so the next raid/dungeon entry shows the reminder again.
+    -- The next raid/dungeon entry shows the reminders again.
     if RollAwayDBChar then
         RollAwayDBChar.lastReminderInstID = nil
         RollAwayDBChar.lastAdvLogReminderInstID = nil
@@ -523,8 +484,7 @@ end
 local function ShouldHideInInstance()
     if not RollAwayDB or RollAwayDB.lootFrameAutoCloseDisabled then return false end
     if RA.cachedInstanceType ~= "raid" then return false end
-    -- Legacy raids have their own switch, whatever the difficulty; the
-    -- per-difficulty boxes below are for current-season raids only.
+    -- Legacy raids have their own switch; the difficulty boxes are for current raids.
     if RA.LEGACY_RAID_INSTANCES[RA.cachedInstanceID] then
         return RollAwayDB.hideInLegacyRaids == true
     end
@@ -559,7 +519,7 @@ local function TryStartCloseTimer()
     RA.closeTimer = timer
 end
 
--- Called once after all rolls complete to decide whether to start close timer.
+-- After a roll ends: start the close timer unless the frame is meant to stay hidden.
 local function CheckAndClose()
     if not HasActiveRolls() and not ShouldHideInInstance() then
         TryStartCloseTimer()
@@ -584,10 +544,8 @@ local function FillMissing(tbl, entries, keyField)
     end
 end
 
--- Per-character selections (SavedVariablesPerCharacter): fills in defaults,
--- replaces any key that has the wrong type, and adds an entry (default off)
--- for every dungeon/delve/boss. Also re-run after a profile reset wipes the
--- table (Options\OptionsProfile.lua), so nothing sees it half-empty.
+-- Per-character selections: defaults, wrong types replaced, an entry (off) for
+-- every dungeon/delve/boss. Also run after a profile reset.
 function RA.InitCharDB()
     RollAwayDBChar = RollAwayDBChar or {}
     for k, v in pairs(RA.defaultsChar) do
@@ -605,8 +563,7 @@ function RA.InitCharDB()
     FillMissing(RollAwayDBChar.raids,        SEASON1_RAIDS,    "key")
     FillMissing(RollAwayDBChar.raids,        SEASON2_RAIDS,    "key")
     FillMissing(RollAwayDBChar.legacy_raids, SEASON1_LEGACY_RAIDS, "raid")
-    -- Account-wide (true global) mirror of legacy_raids, used when
-    -- RA.db.global.legacyAccountWide is enabled.
+    -- Account-wide mirror, used with legacyAccountWide.
     FillMissing(RA.db.global.legacy_raids,   SEASON1_LEGACY_RAIDS, "raid")
 
     -- Delves removed from the game pool stay disabled.
@@ -643,15 +600,12 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
 
-        -- Watchdog: force-closes frame if LOOT_ROLLS_COMPLETE never fires cleanly.
-        -- Skipped entirely if the whole auto-close feature is disabled in Options.
+        -- Watchdog: force-closes the frame if the roll never ends cleanly.
         if not RA.rollTimers[arg1] and not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
             local wdID = arg1
             RA.rollTimers[wdID] = C_Timer.NewTimer(RollAwayDB.rollTimeout, function()
                 RA.rollTimers[wdID] = nil
-                -- Only a roll that is still open at this point is a stuck one. A roll
-                -- that already finished must not close a history frame the player
-                -- may have opened since.
+                -- Only a still-open roll is a stuck one.
                 if not RA.activeRolls[wdID] then return end
                 DBG("Watchdog expired for rollID", wdID)
                 RA.activeRolls[wdID] = nil
@@ -677,13 +631,12 @@ f:SetScript("OnEvent", function(_, event, ...)
     elseif event == "LOOT_ROLLS_COMPLETE" then
         DBG("LOOT_ROLLS_COMPLETE lootHandle:", arg1, "| active before:", CountActiveRolls())
 
-        -- Remove the completed roll and its watchdog (matched by its lootHandle,
-        -- or by rollID in case the game reports that).
+        -- Completed roll, matched by lootHandle (or rollID).
         for rollID, lootHandle in pairs(RA.activeRolls) do
             if rollID == arg1 or lootHandle == arg1 then ForgetRoll(rollID, "completed") end
         end
 
-        -- Clean up stale rolls the game no longer knows (concurrent rolls only).
+        -- Rolls the game no longer knows.
         for rollID in pairs(RA.activeRolls) do
             if not select(2, GetLootRollItemInfo(rollID)) then ForgetRoll(rollID, "stale (game no longer knows it)") end
         end
@@ -694,9 +647,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         CheckSeasonData()
 
     elseif event == "CANCEL_LOOT_ROLL" then
-        -- Blizzard closes the roll frame on this event; the roll is over.
-        -- Only rolls RollAway tracks count, so the history frame is left alone
-        -- when it was opened by hand.
+        -- Only tracked rolls count: a history frame opened by hand stays.
         if RA.activeRolls[arg1] then
             DBG("CANCEL_LOOT_ROLL rollID:", arg1)
             ForgetRoll(arg1, "cancelled")
@@ -727,13 +678,8 @@ f:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "PLAYER_REGEN_DISABLED" then
         ResetState("PLAYER_REGEN_DISABLED")
-        -- Nobody wants a loot popup blocking the screen mid-fight - hide it
-        -- the instant combat starts, even with rolls still pending (only
-        -- RollAway's own history window closes; Blizzard's roll popups are
-        -- unaffected and still usable). Independent of ShouldHideInInstance,
-        -- which is a separate, narrower "never show at all in this raid
-        -- difficulty" preference - this applies everywhere, unless the whole
-        -- auto-close/auto-hide feature is disabled via its master switch.
+        -- Combat hides the loot history everywhere (roll popups stay usable),
+        -- unless auto-close is off.
         if not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
             if HistoryFrameShown() then DBG("Entering combat – hiding loot history frame") end
             HideHistoryFrame()
@@ -753,23 +699,16 @@ f:SetScript("OnEvent", function(_, event, ...)
         if not seasonChecked and C_MythicPlus then C_MythicPlus.RequestMapInfo() end
         ResetState(event)
         RA.lastLegacyEncounterID = 0
-        -- "Shown once per instance" marks (per character, so a shared profile
-        -- cannot suppress another character's reminder): cleared on group
-        -- leave, on a fresh login, and whenever the reminders see that we are
-        -- outside instanced content (Reminder.lua / Logs.lua). A /reload
-        -- inside an instance keeps them, so it does not pop up again.
+        -- "Shown once per instance" marks: cleared on a fresh login (not on /reload),
+        -- on group leave and when the reminders see no instance.
         if arg1 and RollAwayDBChar then  -- arg1 = isInitialLogin
             RollAwayDBChar.lastReminderInstID = nil
             RollAwayDBChar.lastAdvLogReminderInstID = nil
         end
         LogInstanceSummary()
         if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
-        -- PLAYER_ENTERING_WORLD and ZONE_CHANGED_NEW_AREA both fire for a
-        -- single actual zone change; cancel any pending timer from the
-        -- other one so ShowReminder only runs once, not twice ~1s apart.
-        -- A token guard backs up the cancel call: cancelling a timer that
-        -- is already about to fire can still let its callback through, so
-        -- the callback also checks it's still the most recent request.
+        -- Both events fire for one zone change: the newest request wins (token),
+        -- so ShowReminder runs once.
         if RA.reminderShowTimer then RA.SafeCancelTimer(RA.reminderShowTimer) end
         RA.reminderShowToken = (RA.reminderShowToken or 0) + 1
         local myReminderToken = RA.reminderShowToken
@@ -778,31 +717,25 @@ f:SetScript("OnEvent", function(_, event, ...)
             if RA.reminderShowToken ~= myReminderToken then return end  -- superseded
             if RA.ShowReminder then RA.ShowReminder() end
         end
-        -- Show right away (the instance cache was just refreshed), then once
-        -- more shortly after as a safety recheck: GetInstanceInfo() and the
-        -- Voidcore currency can still be stale on the very first event after
-        -- a fast zone / login. ShowReminder is idempotent per instance.
+        -- Now, and again after 1.5s: instance info and the Voidcore currency can be
+        -- stale right after a fast zone / login. ShowReminder is idempotent.
         if RA.ShowReminder then RA.ShowReminder() end
         RA.reminderShowTimer = C_Timer.NewTimer(1.5, FireReminder)
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then
 
-        -- Capture the pre-3.0.1 flat, account-wide RollAwayDB *before* AceDB
-        -- touches anything. Nil on a fresh install / already-migrated account.
+        -- The pre-3.0.1 flat RollAwayDB, captured before AceDB touches it.
         local legacyFlatSV = _G.RollAwayDB
 
         if legacyFlatSV then
-            -- Historical migrations, run once on the raw flat snapshot so a
-            -- user jumping straight from a much older version still lands on
-            -- correct values if they choose "keep old settings" below.
-
-            -- Migration (pre-2.6.3): joinReminderBigWigs (boolean) -> joinReminderKeyAddon (string).
+            -- Old migrations on the flat snapshot (for users updating from far back).
+            -- pre-2.6.3: joinReminderBigWigs (boolean) -> joinReminderKeyAddon (string)
             if legacyFlatSV.joinReminderKeyAddon == nil and legacyFlatSV.joinReminderBigWigs ~= nil then
                 legacyFlatSV.joinReminderKeyAddon = legacyFlatSV.joinReminderBigWigs and "bigwigs" or "none"
             end
             legacyFlatSV.joinReminderBigWigs = nil
 
-            -- Migration (pre-2.9.0): hideInRaid (single bool) -> hideInRaidBuckets (per-difficulty).
+            -- pre-2.9.0: hideInRaid (bool) -> hideInRaidBuckets (per difficulty)
             if legacyFlatSV.hideInRaidBuckets == nil and legacyFlatSV.hideInRaid ~= nil then
                 local v = legacyFlatSV.hideInRaid
                 legacyFlatSV.hideInRaidBuckets = { lfr = v, normal = v, heroic = v, mythic = v }
@@ -810,17 +743,11 @@ f:SetScript("OnEvent", function(_, event, ...)
             legacyFlatSV.hideInRaid = nil
         end
 
-        -- AceDB-3.0: RollAwayDBAccount holds one profile per character (by
-        -- default) plus a "global" namespace for the one setting that must
-        -- stay truly account-wide (legacyAccountWide / its shared table).
-        -- No 3rd arg: each character gets its own default profile (e.g. the
-        -- ElvUI-style "Name - Realm"). Passing "true" here would instead give
-        -- everyone a single shared "Default" profile - not what we want.
+        -- No 3rd argument: every character gets its own default profile
+        -- ("true" would share one "Default" profile).
         RA.db = LibStub("AceDB-3.0"):New("RollAwayDBAccount", RA.defaults)
 
-        -- Backward-compat alias: every other module still reads/writes
-        -- "RollAwayDB.foo" directly. Point that name at the active profile
-        -- and keep it in sync whenever the profile is switched/copied/reset.
+        -- RollAwayDB is an alias of the active profile, kept in sync on profile changes.
         local function SyncCompatAlias()
             RollAwayDB = RA.db.profile
         end
@@ -831,7 +758,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         RA.InitCharDB()
 
-        -- One-time-per-character migration popup from the pre-3.0.1 flat DB.
+        -- One-time migration offer per character.
         RA.RunProfileMigration(legacyFlatSV)
 
         if ElvUI then

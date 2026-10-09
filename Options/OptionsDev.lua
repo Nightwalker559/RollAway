@@ -1,8 +1,7 @@
 -- RollAway - Options/OptionsDev.lua
--- Builds the "Developer" settings subcategory (Logging / Tests / Tools /
--- Commands via left nav) - only for developer characters (RA.DEV_CHARS).
--- Called once from RA.InitOptions() in Options/Options.lua. The buttons run
--- the same dev commands as the slash commands (RA.RunDevCommand, Core/Debug.lua).
+-- The "Developer" subcategory (left nav: Logging / Tests / Tools / Commands), for developer
+-- characters only (RA.DEV_CHARS), built once from RA.InitOptions(). The buttons run the dev
+-- commands (RA.RunDevCommand, Debug.lua).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -16,8 +15,7 @@ local QOL_INFO_W    = UI.QOL_INFO_W
 
 local NAV_W = 130
 
--- Everyone's commands and the developer commands, for the Commands page:
--- { command text, locale key of the description }.
+-- Commands for the Commands page: { command text, locale key of the description }.
 local PUBLIC_COMMANDS = {
     { "/raw  /rollaway", "cmd_raw_info"       },
     { "/rat",            "cmd_rat_info"       },
@@ -42,7 +40,7 @@ local DEV_COMMANDS = {
     { "/rawtank test",     "cmd_rawtanktest_info"    },
 }
 
--- Text block "command  description" per line, commands in white.
+-- Text block: "command  description" per line, commands in white.
 local function CommandLines(list)
     local lines = {}
     for i, entry in ipairs(list) do
@@ -67,7 +65,7 @@ function RA.BuildDevOptions(category, S, classColor)
     headerLine:SetPoint("TOPLEFT", panelInfo, "BOTTOMLEFT", 0, -10)
     headerLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    -- Left nav in working order (not alphabetical).
+    -- Left nav in working order.
     local navDefs = {
         { key = "log",      label = RA_L["dev_nav_log"]      },
         { key = "tests",    label = RA_L["dev_nav_tests"]    },
@@ -96,7 +94,7 @@ function RA.BuildDevOptions(category, S, classColor)
         navButtons[key] = btn
     end
 
-    -- Own scroll frame per category (see UI.MakeCategoryPage).
+    -- A scroll frame per category (UI.MakeCategoryPage).
     local function CreateCategoryPanel(key, name)
         return UI.MakeCategoryPage(panel, headerLine, NAV_W, "RollAwayDev", name, catPanels, key, S)
     end
@@ -106,9 +104,8 @@ function RA.BuildDevOptions(category, S, classColor)
     local toolsPage    = CreateCategoryPanel("tools",    "Tools")
     local commandsPage = CreateCategoryPanel("commands", "Commands")
 
-    -- Buttons that run a dev command: greyed out while the command is not
-    -- usable (most need debug mode on). Refreshed when the panel opens and
-    -- when debug mode is switched.
+    -- Dev command buttons: greyed out while unusable (most need debug mode); refreshed on
+    -- open and when debug mode changes.
     local actionButtons = {}
     local function RefreshActionButtons()
         for _, entry in ipairs(actionButtons) do
@@ -116,9 +113,8 @@ function RA.BuildDevOptions(category, S, classColor)
         end
     end
 
-    -- A button for a dev command with its description (and slash command)
-    -- below. anchor = what it hangs below (nil: top of the page).
-    -- Returns the description text, as the anchor for the next entry.
+    -- A dev command button with its description (and slash command) below; anchor = what it
+    -- hangs below (nil: page top). Returns the description as the next anchor.
     local function AddAction(page, anchor, x, y, command, labelKey, slash)
         local btn = MakeSkinnedButton(page, RA_L[labelKey], 200, S)
         if anchor then
@@ -134,9 +130,7 @@ function RA.BuildDevOptions(category, S, classColor)
             "|cffFFFFFF" .. slash .. "|r  " .. RA_L[infoKey])
     end
 
-    ------------------------------------------------------------------
     -- Logging: debug mode, errors only, log window
-    ------------------------------------------------------------------
     local _, debugInfo = MakeToggle(logPage, nil, 0, -8, {
         label = RA_L["debug_label"], info = RA_L["dev_debug_info"], dbKey = "debug",
         onChange = function(checked)
@@ -167,8 +161,7 @@ function RA.BuildDevOptions(category, S, classColor)
 
     local logHint = MakeInfoText(logPage, openBtn, 0, -6, QOL_INFO_W, RA_L["dev_log_hint"])
 
-    -- Log filter: which kinds of lines the debug log shows (RA.DEBUG_CATEGORIES,
-    -- Core/Debug.lua). Two columns of checkboxes plus All / None.
+    -- Log filter (RA.DEBUG_CATEGORIES): two columns of checkboxes plus All / None.
     local filterHeader = logPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     filterHeader:SetPoint("TOPLEFT", logHint, "BOTTOMLEFT", 0, -18)
     filterHeader:SetText(RA_L["dev_filter_title"])
@@ -197,9 +190,7 @@ function RA.BuildDevOptions(category, S, classColor)
     allBtn:SetScript("OnClick", function() SetAllFilters(true) end)
     noneBtn:SetScript("OnClick", function() SetAllFilters(false) end)
 
-    ------------------------------------------------------------------
     -- Tests: popups and automation, tank marker test mode
-    ------------------------------------------------------------------
     local testsAnchor
     local testActions = {
         { "RAWTEST",     "dev_test_autopass", "/rawtest"     },
@@ -218,17 +209,14 @@ function RA.BuildDevOptions(category, S, classColor)
     tankTestCB.frame:SetPoint("TOPLEFT", testsAnchor, "BOTTOMLEFT", 0, -22)
     local tankTestInfo = MakeInfoText(testsPage, tankTestCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_tank_test_info"])
 
-    -- Session-only switch (RA.devTest): try the bonus roll auto-pass in old content,
-    -- e.g. MoP raids.
+    -- Session-only switch (RA.devTest): bonus roll auto-pass in old content (e.g. MoP).
     local oldRaidCB = MakeCB(testsPage, RA_L["dev_oldraid_test_label"], RA.devTest.oldRaidAutoPass, function(checked)
         RA.devTest.oldRaidAutoPass = checked
     end)
     oldRaidCB.frame:SetPoint("TOPLEFT", tankTestInfo, "BOTTOMLEFT", -20, -22)
     MakeInfoText(testsPage, oldRaidCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_oldraid_test_info"])
 
-    ------------------------------------------------------------------
     -- Tools: diagnostics into the log
-    ------------------------------------------------------------------
     local toolsAnchor
     local toolActions = {
         { "RAWDUMP",    "dev_tool_dump",    "/rawdump"    },
@@ -239,9 +227,7 @@ function RA.BuildDevOptions(category, S, classColor)
     end
     MakeInfoText(toolsPage, toolsAnchor, 0, -18, QOL_INFO_W, RA_L["dev_tool_chonky_hint"])
 
-    ------------------------------------------------------------------
-    -- Commands: reference list, grouped
-    ------------------------------------------------------------------
+    -- Commands: reference list
     local publicHeader = commandsPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     publicHeader:SetPoint("TOPLEFT", commandsPage, "TOPLEFT", 0, -8)
     publicHeader:SetText(RA_L["dev_commands_public"])
@@ -253,8 +239,8 @@ function RA.BuildDevOptions(category, S, classColor)
     local devList = MakeInfoText(commandsPage, devHeader, 0, -6, QOL_INFO_W, CommandLines(DEV_COMMANDS))
     MakeInfoText(commandsPage, devList, 0, -10, QOL_INFO_W, RA_L["dev_commands_note"])
 
-    -- The commands are registered after the options are built, and the tank
-    -- test mode can change by slash command: sync both on every open.
+    -- The commands are registered after the options and the tank test mode can change by
+    -- slash command: sync on every open.
     panel:HookScript("OnShow", function()
         RefreshActionButtons()
         tankTestCB:SetValue(RA.IsTankMarkerTest())

@@ -1,14 +1,9 @@
 -- RollAway - Options/OptionsProfile.lua
--- Builds the "Profile" settings subcategory: switch, create, copy-from,
--- delete and reset AceDB-3.0 profiles (RA.db). Called once from
--- RA.InitOptions() in Options/Options.lua.
---
--- Note: the rest of the Options UI (General/Dungeons/Raids/... tabs, QoL
--- subcategory) is built once at ADDON_LOADED with each widget's initial
--- value baked in from RollAwayDB at that moment. Switching/copying/
--- resetting a profile here changes the underlying data immediately, but
--- those other widgets won't visually refresh until a UI reload - hence
--- the reload prompt after any profile change below.
+-- The "Profile" settings subcategory: switch, create, copy, delete and reset AceDB-3.0
+-- profiles (RA.db). Built once from RA.InitOptions().
+-- The other options pages are built at ADDON_LOADED with the values of that moment: a
+-- profile change takes effect at once but they only refresh after a UI reload (hence the
+-- reload prompt).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -19,14 +14,9 @@ local MakeDropdown      = UI.MakeDropdown
 local MakeSkinnedButton = UI.MakeSkinnedButton
 local MakeHintText      = UI.MakeHintText
 
-------------------------------------------------------------------------
--- Profile import/export (AceDB profile settings only - Dungeons/Raids/
--- Delves/Prey live in RollAwayDBChar and change too often per-character
--- to be worth sharing this way).
---
--- Format: "RollAway1:" + Base64(CBOR(RA.db.profile)) via the native
--- C_EncodingUtil (available since 11.1.5, well below our min interface).
-------------------------------------------------------------------------
+-- Profile import/export (AceDB profile only; Dungeons/Raids/Delves/Prey are per
+-- character in RollAwayDBChar). Format: "RollAway1:" + Base64(CBOR(RA.db.profile)) via
+-- C_EncodingUtil.
 local PROFILE_EXPORT_PREFIX = "RollAway1:"
 
 local function EncodeProfile(profile)
@@ -49,11 +39,9 @@ local function DecodeProfile(text)
     return data
 end
 
--- Recursively copies only keys that exist in RA.defaults.profile, and only
--- when the imported value's type matches the default's - so a garbage or
--- hand-edited string can't smuggle in a bad type and break something else
--- that reads this profile later. Unknown keys are dropped, missing ones
--- fall back to the default.
+-- Copies only keys of RA.defaults.profile whose imported type matches the default (a
+-- garbage or edited string cannot smuggle in bad types). Unknown keys are dropped,
+-- missing ones get the default.
 local function ApplyImportedProfile(target, defaults, imported)
     for k, defaultVal in pairs(defaults) do
         if type(defaultVal) == "table" then
@@ -67,17 +55,11 @@ local function ApplyImportedProfile(target, defaults, imported)
     end
 end
 
-------------------------------------------------------------------------
--- StaticPopups (registered once at file load)
---
--- WoW 12.x (Midnight) rewrote StaticPopup on top of the new GameDialog
--- widget: self.editBox / self.button1 / self.data no longer exist on the
--- callback's "self". Use dialog:GetEditBox() / :GetButton1() / :GetButton2(),
--- and the popup's data argument comes in directly as the callback's 2nd
--- parameter instead of self.data.
-------------------------------------------------------------------------
+-- StaticPopups (registered once at file load). 12.x StaticPopup callbacks have no
+-- self.editBox / self.button1 / self.data: use dialog:GetEditBox() / :GetButton1() /
+-- :GetButton2(); the data comes as the 2nd parameter.
 
--- Edit box helpers shared by the popups below.
+-- Edit box helpers of the popups below.
 local function ClearAndFocusEditBox(dialog)
     local editBox = dialog:GetEditBox()
     editBox:SetText("")
@@ -134,10 +116,8 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
     button2      = CANCEL,
     OnAccept = function()
         RA.db:ResetProfile()
-        -- Dungeons/Raids/Delves/Prey selections live in RollAwayDBChar
-        -- (SavedVariablesPerCharacter), outside AceDB, so ResetProfile()
-        -- above never touches them. Reset it too (back to defaults right
-        -- away, so nothing reads it half-empty until the reload).
+        -- The Dungeons/Raids/Delves/Prey selections (RollAwayDBChar) are outside AceDB:
+        -- reset them too, at once.
         wipe(RollAwayDBChar)
         RA.InitCharDB()
         RA.PromptProfileReload()
@@ -159,8 +139,7 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_EXPORT", {
             editBox.raCopyCloseHooked = true
             editBox:HookScript("OnKeyDown", function(_, key)
                 if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) then
-                    -- Deferred: closing immediately on keydown pre-empted the
-                    -- native clipboard copy, so the string never got copied.
+                    -- Deferred: closing on keydown pre-empted the clipboard copy.
                     RunNextFrame(function() dialog:Hide() end)
                 end
             end)
@@ -220,16 +199,14 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RELOAD", {
     OnAccept = function() ReloadUI() end,
 })
 
--- Flags the settings UI as out of date (needs a /reload) and offers one.
+-- Marks the settings UI as out of date (/reload) and offers one.
 function RA.PromptProfileReload()
     RA.profileReloadPending = true
     RA.RefreshProfileOptions()
     StaticPopup_Show("ROLLAWAY_PROFILE_RELOAD")
 end
 
-------------------------------------------------------------------------
 -- Subcategory: Profile
-------------------------------------------------------------------------
 function RA.BuildProfileOptions(category, S)
     local panel = CreateFrame("Frame")
     Settings.RegisterCanvasLayoutSubcategory(category, panel, RA_L["profile_section_title"])
@@ -286,8 +263,7 @@ function RA.BuildProfileOptions(category, S)
 
     -- ── Data wiring ───────────────────────────────────────────────────
 
-    -- Rebuilds both dropdown lists/values from RA.db's current state.
-    -- Exposed so the popups above can trigger a refresh after a change.
+    -- Rebuilds both dropdowns from RA.db (also called by the popups after a change).
     local selectedOther
     local function Refresh()
         local current = RA.db:GetCurrentProfile()
@@ -322,10 +298,8 @@ function RA.BuildProfileOptions(category, S)
             if not selectedOther then selectedOther = otherOrder[1] end
             otherDD:SetValue(selectedOther)
         else
-            -- A genuinely empty list leaves the dropdown's pullout menu
-            -- permanently expanded (library/Blizzard menu-template quirk)
-            -- instead of rendering a normal closed box. Feed it one inert
-            -- placeholder entry instead, and disable the widget.
+            -- An empty list leaves the pullout permanently expanded (template quirk): one
+            -- inert placeholder entry and a disabled widget instead.
             selectedOther = nil
             otherDD:SetList({ [""] = RA_L["profile_none_available"] }, { "" })
             otherDD:SetValue("")
@@ -349,8 +323,7 @@ function RA.BuildProfileOptions(category, S)
     end)
 
     otherDD:SetCallback("OnValueChanged", function(_, _, value)
-        -- "" is the inert placeholder shown when no other profile exists
-        -- (widget stays disabled then), never a real profile name.
+        -- "" is the placeholder when no other profile exists, never a real name.
         selectedOther = (value ~= "" and value) or nil
     end)
 

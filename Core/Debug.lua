@@ -6,12 +6,9 @@ local RA   = _G["RollAway"]
 local DBG  = RA.DBG
 
 ------------------------------------------------------------------------
--- Debug log window – scrollable, copyable EditBox that replaces plain
--- chat spam for DBG() output. Created lazily and auto-shown the first
--- time a log line comes in while RollAwayDB.debug is on; closing it
--- manually is respected (won't force itself back open). Not line-capped
--- by design (dev-only, cleared on /reload, relog, or manual Clear) and never
--- overwritten (see logLines).
+-- Debug log window: scrollable, copyable EditBox for DBG() output. Created and
+-- shown on the first log line; closing it by hand is respected. Not line-capped
+-- (dev-only; cleared on /reload, relog or Clear).
 ------------------------------------------------------------------------
 
 local debugLogFrame
@@ -22,16 +19,12 @@ local debugLogTitle
 local LOG_TITLE        = "|cff33ff99RollAway|r Debug Log"
 local LOG_TITLE_PAUSED = LOG_TITLE .. " |cffff8800(paused while selecting - press Esc)|r"
 
--- The log itself lives in this table; the EditBox is only a view of it. Lines
--- used to be written straight into the EditBox (Insert), which replaces
--- whatever the player has selected in it - so selecting text to copy while new
--- lines came in overwrote parts of the log. Nothing here is ever modified or
--- dropped except by Clear.
+-- The log lives in this table; the EditBox is only a view of it (writing into
+-- the EditBox would overwrite the player's selection). Only Clear drops lines.
 local logLines = {}
 local viewRefreshQueued = false
 
--- Grows the EditBox to fit its text and pins the scroll to the bottom so
--- the newest line is always visible (EditBox has no built-in auto-scroll).
+-- Sizes the EditBox to its text and scrolls to the newest line.
 local function ScrollDebugLogToBottom()
     if not debugLogEditBox or not debugLogScrollFrame then return end
     local _, fontHeight = debugLogEditBox:GetFont()
@@ -43,9 +36,8 @@ local function ScrollDebugLogToBottom()
     debugLogScrollFrame:SetVerticalScroll(debugLogScrollFrame:GetVerticalScrollRange() or 0)
 end
 
--- Rewrites the EditBox from the log lines. Skipped while the box has keyboard
--- focus (the player is selecting or copying text): the lines stay in the table
--- and the view catches up when the focus is gone (OnEditFocusLost).
+-- Rewrites the EditBox from the log lines; skipped while it has focus (selecting
+-- or copying), the view catches up on OnEditFocusLost.
 local function RefreshLogView()
     viewRefreshQueued = false
     if not debugLogEditBox or debugLogEditBox:HasFocus() then return end
@@ -55,7 +47,7 @@ local function RefreshLogView()
     ScrollDebugLogToBottom()
 end
 
--- One refresh per frame, however many lines came in.
+-- One refresh per frame.
 local function QueueLogViewRefresh()
     if viewRefreshQueued then return end
     viewRefreshQueued = true
@@ -66,12 +58,11 @@ local function CreateDebugLogFrame()
     if debugLogFrame then return end
 
     local f = CreateFrame("Frame", "RollAwayDebugLogFrame", UIParent, "BackdropTemplate")
-    -- Size is remembered too (grip in the bottom right corner).
+    -- Size and position are remembered.
     local size = RollAwayDB.debugLogSize
     f:SetSize(size and size.w or 560, size and size.h or 360)
     f:SetResizable(true)
     f:SetResizeBounds(380, 200, 1400, 1000)
-    -- Position is remembered across /reload and relog (like the Portal Overview).
     local pos = RollAwayDB.debugLogPos
     if pos then
         f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
@@ -134,7 +125,7 @@ local function CreateDebugLogFrame()
     clearBtn:SetText("Clear")
     clearBtn:SetScript("OnClick", function() RA.ClearDebugLog() end)
 
-    -- Resize grip (bottom right corner): drag to change the window size.
+    -- Resize grip
     local grip = CreateFrame("Button", "RollAwayDebugLogResize", f)
     grip:SetSize(16, 16)
     grip:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -8, 8)
@@ -147,7 +138,7 @@ local function CreateDebugLogFrame()
         RollAwayDB.debugLogSize = { w = math.floor(f:GetWidth() + 0.5), h = math.floor(f:GetHeight() + 0.5) }
     end)
 
-    -- The text wraps to the new width and keeps the newest line in view.
+    -- Re-wrap on resize.
     f:SetScript("OnSizeChanged", function()
         editBox:SetWidth(scrollFrame:GetWidth())
         ScrollDebugLogToBottom()
@@ -160,25 +151,24 @@ local function CreateDebugLogFrame()
     f:Show()  -- auto-open on first log line
 end
 
--- Appends `text` as one line to the log.
+-- Appends one line.
 local function AppendLine(text)
     logLines[#logLines + 1] = text
     QueueLogViewRefresh()
 end
 
 ------------------------------------------------------------------------
--- Log filter. Every line belongs to a category: its "[Tag]" prefix or, for the
--- older untagged lines, a known start of text. Categories can be switched off
--- in the Developer panel (RollAwayDB.debugFilter[key] = false; missing = on).
--- Only the full debug log is filtered: lines of the errors-only channel, the
--- log window messages and tool output (RA.AppendDebugLogUnfiltered) always show.
+-- Log filter: a line's category is its "[Tag]" or a known start of text.
+-- Switched off in the Developer panel (RollAwayDB.debugFilter[key] = false).
+-- Only the full debug log is filtered; RA.AppendDebugLogUnfiltered (errors,
+-- window messages, tool output) always shows.
 ------------------------------------------------------------------------
 
--- In the order of the Developer panel. The label is the locale key
--- "dev_filter_<key>"; a line that matches nothing is "other".
+-- In Developer panel order (label: locale key "dev_filter_<key>"); no match = "other".
 RA.DEBUG_CATEGORIES = {
     { key = "zone",     prefixes = { "Instance:", "[Season]", "[Raids]", "[Dungeons]", "[Bosses]", "--- GetInstanceInfo", "  ", "->", "----" } },
-    { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "ENCOUNTER_END", "Watchdog",
+    { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "CANCEL_LOOT_ROLL",
+                                     "CANCEL_ALL_LOOT_ROLLS", "Roll finished", "ENCOUNTER_END", "Watchdog",
                                      "ResetState", "FullReset", "Close timer", "Starting close",
                                      "Hiding loot history", "Entering combat" } },
     { key = "autopass", prefixes = { "[AutoPass]", "AutoPass:", "BonusRollFrame", "WARNING: BonusRollFrame",
@@ -244,9 +234,7 @@ function RA.AppendDebugLogUnfiltered(...)
     bypassFilter = false
 end
 
--- Inserts a colored divider line to visually separate log sections (e.g.
--- one per instance/zone entry). No-op if the log doesn't exist yet or is
--- still empty, so a fresh log never opens with a leading divider.
+-- Divider line between log sections; not at the start of an empty log.
 local SEPARATOR_LINE = "|cff666666------------------------------------------------------------|r"
 
 function RA.AppendDebugLogSeparator()
@@ -254,18 +242,16 @@ function RA.AppendDebugLogSeparator()
     AppendLine(SEPARATOR_LINE)
 end
 
--- Opens the log window, or toggles it when it already exists (the /rawlog
--- behaviour). Still routes through AppendDebugLog so ElvUI_Skin.lua's skin
--- hook fires on a fresh window.
+-- /rawlog: opens the window or toggles it. Goes through AppendDebugLog so a fresh
+-- window gets the ElvUI skin.
 function RA.ToggleDebugLogWindow()
     local existed = debugLogFrame ~= nil
     RA.AppendDebugLogUnfiltered("Log window toggled")
-    -- Only flip visibility if the window already existed - a fresh window was
-    -- just auto-shown by AppendDebugLog, don't hide it again.
+    -- A fresh window was just shown by AppendDebugLog.
     if existed then debugLogFrame:SetShown(not debugLogFrame:IsShown()) end
 end
 
--- Back to the default size and the screen centre (also forgets the saved ones).
+-- Default size and centre; forgets the saved ones.
 function RA.ResetDebugLogWindow()
     RollAwayDB.debugLogSize = nil
     RollAwayDB.debugLogPos  = nil
@@ -293,8 +279,7 @@ end
 ------------------------------------------------------------------------
 
 local LOGGED_EVENTS = {
-    -- PLAYER_ENTERING_WORLD / ZONE_CHANGED_NEW_AREA intentionally excluded:
-    -- Core.lua's LogInstanceSummary() already covers zone changes in one line.
+    -- Zone changes are covered by LogInstanceSummary (Core.lua).
     "GROUP_LEFT",
     "GROUP_JOINED",
     "READY_CHECK",
@@ -306,10 +291,7 @@ local LOGGED_EVENTS = {
     "ENCOUNTER_END",
 }
 
--- These also mark the start of a new debug-log section (see
--- RA.NoteDebugLogSectionEvent in Core.lua) - group leave/join is as much
--- a context boundary as a zone change, and this event logger's handler
--- runs before Core.lua's own GROUP_LEFT reset logging.
+-- Events that also start a new log section (RA.NoteDebugLogSectionEvent).
 local SECTION_START_EVENTS = {
     GROUP_LEFT   = true,
     GROUP_JOINED = true,
@@ -354,8 +336,7 @@ local function RegisterDevCommand(name, handler, alwaysOn)
     RA.DevCommands[name] = { run = Run, alwaysOn = alwaysOn and true or false }
 end
 
--- Runs a registered dev command by name ("RAWTEST", ...), with the same
--- debug-mode check as typing it. Returns false when it is unknown.
+-- Runs a dev command by name with the same debug-mode check as typing it; false if unknown.
 function RA.RunDevCommand(name, msg)
     local command = RA.DevCommands[name]
     if not command then return false end
@@ -389,16 +370,14 @@ local function TestReminders()
     local savedID     = RA.cachedInstanceID
     local savedDiff   = RA.cachedDiffID
     local savedInstID = RollAwayDBChar.lastReminderInstID
-    -- Mythic raid (The Venomous Abyss) with the standalone auto-pass warning:
-    -- the general reminder is forced off and "Mythic" auto-pass forced on, so
-    -- the popup you see is the safety-net one (red status line).
+    -- Mythic raid (The Venomous Abyss), general reminder off, Mythic auto-pass on:
+    -- the popup shown is the auto-pass warning (red status line).
     RA.cachedInstanceType         = "raid"
     RA.cachedInstanceID           = 3004
     RA.cachedDiffID               = 16
     RollAwayDBChar.lastReminderInstID = nil
 
-    -- Pretend to own 3 Voidcores while the reminder decides what to show;
-    -- restored even if ShowReminder errors.
+    -- Pretend to own 3 Voidcores (restored even if ShowReminder errors).
     local origGetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
     C_CurrencyInfo.GetCurrencyInfo = function(id)
         if id == RA.VOIDCORE_CURRENCY_ID then return { quantity = 3 } end
@@ -442,17 +421,46 @@ local function TestQoLReminders()
     end)
 end
 
--- /rawraids and /rawdungeons: every Encounter Journal tier with its raids or
--- dungeons (name + map ID, the ID GetInstanceInfo returns as instanceID), to see
--- which tier counts as "current" and whether the addon's data agrees. The
--- journal's selected tier is put back afterwards.
+-- Encounter Journal dumps (/rawraids, /rawdungeons, /rawbosses, /rawseason).
+-- Reading the journal selects tiers and raids; the user's selection is put back.
+local function SaveJournalSelection()
+    local tier = EJ_GetCurrentTier()
+    local instance = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+    return function()
+        if tier then EJ_SelectTier(tier) end
+        if instance and instance ~= 0 then EJ_SelectInstance(instance) end
+    end
+end
+
+-- Bosses of a journal raid: { { name =, encounterID = }, ... }. The encounterID is
+-- the DungeonEncounterID that ENCOUNTER_END reports (Data/Raids.lua).
+local function JournalBosses(journalID)
+    EJ_SelectInstance(journalID)
+    local bosses, index = {}, 1
+    while true do
+        local name, _, journalBossID = EJ_GetEncounterInfoByIndex(index)
+        if not name then break end
+        bosses[#bosses + 1] = { name = name, encounterID = select(7, EJ_GetEncounterInfo(journalBossID)) }
+        index = index + 1
+    end
+    return bosses
+end
+
+-- The key the addon uses for a boss (current or legacy raid); nil when unknown.
+local function KnownBossKey(encounterID)
+    return encounterID and (RA.RAID_ENCOUNTER_MAP[encounterID] or RA.LEGACY_ENCOUNTER_MAP[encounterID])
+end
+
+-- /rawraids and /rawdungeons: every journal tier with its raids or dungeons (name +
+-- map ID = the instanceID of GetInstanceInfo), marking the current season and what
+-- the addon knows.
 local function DumpJournalTiers(isRaid)
     local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local tag = isRaid and "[Raids]" or "[Dungeons]"
     local here = RA.cachedInstanceID
     local current = RA.GetCurrentSeasonInstances(isRaid)
-    local previous = EJ_GetCurrentTier()
-    Log(tag, "Encounter Journal tiers:", EJ_GetNumTiers(), "| selected before:", previous,
+    local restore = SaveJournalSelection()
+    Log(tag, "Encounter Journal tiers:", EJ_GetNumTiers(), "| selected before:", EJ_GetCurrentTier(),
         "| you are in instance:", here, "| current season set:", current and "yes" or "empty")
     for tier = 1, EJ_GetNumTiers() do
         EJ_SelectTier(tier)
@@ -472,10 +480,9 @@ local function DumpJournalTiers(isRaid)
         Log(string.format("%s tier %d %s: %s", tag, tier, tostring((EJ_GetTierInfo(tier))),
             #entries > 0 and table.concat(entries, "; ") or "-"))
     end
-    if previous then EJ_SelectTier(previous) end
+    restore()
 
-    -- Dungeons: the Mythic+ pool the game reports, with the season it matches
-    -- in Data/Dungeons.lua (map ID and challenge mode ID).
+    -- Dungeons: the game's Mythic+ pool and the addon season each matches.
     if not isRaid and C_ChallengeMode then
         local pool = {}
         for _, cmID in ipairs(C_ChallengeMode.GetMapTable() or {}) do
@@ -494,12 +501,8 @@ local function DumpJournalTiers(isRaid)
     end
 end
 
--- /rawbosses [tier|all]: the bosses of every raid of one Encounter Journal tier
--- (default: the last one = current season) with the DungeonEncounterID that
--- ENCOUNTER_END reports - the ID Data/Raids.lua and Data/LegacyRaids.lua use.
--- Bosses the addon already knows are marked with their key. These IDs live in
--- the game's data, not in Blizzard's UI source. The journal's selected tier
--- and raid are put back afterwards.
+-- /rawbosses [tier|all]: the bosses of every raid of a journal tier (default: the
+-- last = current season) with their encounter IDs; known bosses show their key.
 local function DumpRaidBosses(arg)
     local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local numTiers = EJ_GetNumTiers()
@@ -509,8 +512,7 @@ local function DumpRaidBosses(arg)
     elseif tonumber(arg) then
         first, last = tonumber(arg), tonumber(arg)
     end
-    local previousTier = EJ_GetCurrentTier()
-    local previousInstance = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+    local restore = SaveJournalSelection()
     for tier = first, last do
         EJ_SelectTier(tier)
         Log("[Bosses] tier", tier, tostring((EJ_GetTierInfo(tier))))
@@ -518,33 +520,26 @@ local function DumpRaidBosses(arg)
         while true do
             local journalID, raidName, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(raidIndex, true)
             if not journalID then break end
-            EJ_SelectInstance(journalID)
-            local bosses, bossIndex = {}, 1
-            while true do
-                local bossName, _, journalBossID = EJ_GetEncounterInfoByIndex(bossIndex)
-                if not bossName then break end
-                local encounterID = select(7, EJ_GetEncounterInfo(journalBossID))
-                local known = encounterID and (RA.RAID_ENCOUNTER_MAP[encounterID] or RA.LEGACY_ENCOUNTER_MAP[encounterID])
-                bosses[#bosses + 1] = string.format("%s = %s%s", bossName, tostring(encounterID),
+            local bosses = {}
+            for _, boss in ipairs(JournalBosses(journalID)) do
+                local known = KnownBossKey(boss.encounterID)
+                bosses[#bosses + 1] = string.format("%s = %s%s", boss.name, tostring(boss.encounterID),
                     known and (" (" .. tostring(known) .. ")") or " (NEW)")
-                bossIndex = bossIndex + 1
             end
             Log(string.format("[Bosses] %s [map %s]: %s", raidName, tostring(mapID),
                 #bosses > 0 and table.concat(bosses, "; ") or "-"))
             raidIndex = raidIndex + 1
         end
     end
-    if previousTier then EJ_SelectTier(previousTier) end
-    if previousInstance and previousInstance ~= 0 then EJ_SelectInstance(previousInstance) end
+    restore()
 end
 
--- /rawseason: ready-to-paste Lua for the running season, read from the game:
---   * RA.DUNGEONS[n] entries (Data/Dungeons.lua) for the Mythic+ pool: mapID and
---     cmID from the pool, lfgID from the Group Finder, expansion from the journal
---   * RA.RAIDS[n] entries (Data/Raids.lua) for the bosses of the season's raids
---     that the addon does not know yet
--- Left to fill in by hand: the key (a guess from the name - rename it to the
--- English name), portalSpellID (no API for it) and the locale texts.
+-- /rawseason: paste-ready Lua for the running season, read from the game:
+--   * RA.DUNGEONS[n] entries (Data/Dungeons.lua) for the Mythic+ pool: mapID, cmID,
+--     lfgID (Group Finder) and expansion (journal)
+--   * RA.RAIDS[n] entries (Data/Raids.lua) for the season's bosses the addon does not know
+-- By hand: the key (rename the guess to the English name), portalSpellID (no API)
+-- and the locale texts.
 local EXPANSION_KEYS = { "classic", "tbc", "wrath", "cataclysm", "mop", "wod", "legion", "bfa",
                          "shadowlands", "dragonflight", "tww", "midnight" }
 local ACCENTS = { ["ä"] = "ae", ["ö"] = "oe", ["ü"] = "ue", ["ß"] = "ss", ["é"] = "e", ["è"] = "e",
@@ -558,10 +553,9 @@ local function KeyFromName(name)
     return key ~= "" and key or "unknown"
 end
 
--- Group Finder activities of the Mythic+ dungeons: map ID -> activity ID (the
--- lfgID of Data/Dungeons.lua). Every dungeon sits in its own activity group, so
--- the groups are listed first (the way Blizzard's own Group Finder does it),
--- for the current season, the rest of the expansion and everything else.
+-- Group Finder activities of the Mythic+ dungeons: map ID -> activity ID (= lfgID).
+-- Every dungeon has its own activity group, so the groups are listed first, as
+-- Blizzard's Group Finder does.
 local function CollectMythicPlusActivities()
     local filters = {
         Enum.LFGListFilter.CurrentSeason + Enum.LFGListFilter.PvE,
@@ -591,11 +585,10 @@ local function DumpSeasonData()
     local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local numTiers = EJ_GetNumTiers()
     local maxExpansionTier = math.min(numTiers, (LE_EXPANSION_LEVEL_CURRENT or (numTiers - 2)) + 1)
-    local previousTier = EJ_GetCurrentTier()
-    local previousInstance = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+    local restore = SaveJournalSelection()
 
-    -- highest expansion tier that lists each dungeon (a revived old dungeon
-    -- counts for the expansion it is revived in)
+    -- Highest expansion tier that lists each dungeon (a revived dungeon counts for
+    -- the expansion it is revived in).
     local expansionOf = {}
     for tier = 1, maxExpansionTier do
         EJ_SelectTier(tier)
@@ -636,36 +629,28 @@ local function DumpSeasonData()
             #seen > 0 and table.concat(seen, ", ") or "none")
     end
 
-    -- raid bosses of the season's raids that the addon does not know yet
+    -- Raid bosses of the season's raids that the addon does not know yet.
     EJ_SelectTier(numTiers)
     Log("[Season] Raid bosses unknown to the addon in the current season (Data/Raids.lua, RA.RAIDS[n]; skip world bosses):")
-    local raidIndex, unknown = 1, 0
+    local raidIndex = 1
     while true do
         local journalID, raidName, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(raidIndex, true)
         if not journalID then break end
-        EJ_SelectInstance(journalID)
-        local lines, known, bossIndex = {}, 0, 1
-        while true do
-            local bossName, _, journalBossID = EJ_GetEncounterInfoByIndex(bossIndex)
-            if not bossName then break end
-            local encounterID = select(7, EJ_GetEncounterInfo(journalBossID))
-            if encounterID and (RA.RAID_ENCOUNTER_MAP[encounterID] or RA.LEGACY_ENCOUNTER_MAP[encounterID]) then
+        local lines, known = {}, 0
+        for _, boss in ipairs(JournalBosses(journalID)) do
+            if KnownBossKey(boss.encounterID) then
                 known = known + 1
-            elseif encounterID then
+            elseif boss.encounterID then
                 lines[#lines + 1] = string.format('    { key = "%s", encounterID = %s, raid = "%s" }, -- %s',
-                    KeyFromName(bossName), tostring(encounterID), KeyFromName(raidName), bossName)
+                    KeyFromName(boss.name), tostring(boss.encounterID), KeyFromName(raidName), boss.name)
             end
-            bossIndex = bossIndex + 1
         end
         Log(string.format("[Season] -- %s (mapID %s): %d unknown, %d known", raidName, tostring(mapID), #lines, known))
         for _, line in ipairs(lines) do Log(line) end
-        unknown = unknown + #lines
         raidIndex = raidIndex + 1
     end
 
-    if previousTier then EJ_SelectTier(previousTier) end
-    if previousInstance and previousInstance ~= 0 then EJ_SelectInstance(previousInstance) end
-
+    restore()
 end
 
 local function RegisterSlashCommands()
@@ -680,8 +665,7 @@ local function RegisterSlashCommands()
         RA.TryAutoPass()
     end)
 
-    -- /rawdump → raw GetInstanceInfo field dump (manual, verbose - use when
-    -- the compact zone-change summary line isn't enough detail)
+    -- /rawdump → raw GetInstanceInfo field dump
     RegisterDevCommand("RAWDUMP", function()
         RA.UpdateInstanceCache()
         RA.DebugInstanceDump()
@@ -722,14 +706,10 @@ local function RegisterSlashCommands()
     RegisterDevCommand("RAWQOL", TestQoLReminders)
     RegisterDevCommand("RAWWHATS", function() RA.ShowWhatsNew() end)
 
-    -- /rawlog → open/toggle the debug log window (in case it was closed
-    -- manually). Works even while debug logging itself is off. Still routes
-    -- through AppendDebugLog so ElvUI_Skin.lua's skin hook still fires.
+    -- /rawlog → open/toggle the log window (works with debug logging off)
     RegisterDevCommand("RAWLOG", RA.ToggleDebugLogWindow, true)
 
-    -- /rawchonkyoffset <n> → live-tune the extra rightward nudge applied to
-    -- the Omnium/Vault CharacterFrame buttons when Chonky Character Sheet is
-    -- loaded. For finding the right value before hardcoding it.
+    -- /rawchonkyoffset <n> → live-tune the button offset next to Chonky Character Sheet
     RegisterDevCommand("RAWCHONKYOFFSET", function(msg)
         local n = tonumber(msg)
         if not n then
@@ -740,8 +720,7 @@ local function RegisterSlashCommands()
         DBG("Chonky button offset bonus set to "..tostring(applied)..". Reopen the Character panel if it doesn't move immediately.")
     end)
 
-    -- /rawcharbtn → dump the visibility state of the Omnium/Vault Character
-    -- panel buttons to the log (run it while they are missing).
+    -- /rawcharbtn → state of the Character panel buttons into the log
     RegisterDevCommand("RAWCHARBTN", function()
         for _, line in ipairs(RA.DescribeCharFrameButtons()) do
             RA.AppendDebugLogUnfiltered("[CharFrameButtons] " .. line)

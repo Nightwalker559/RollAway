@@ -1,12 +1,8 @@
 -- RollAway - Data/LegacyDungeonTeleports.lua
--- M+20 achievement teleport spells for dungeons outside the current and
--- previous season pool (RA.DUNGEONS). Not season-indexed - append new
--- entries here once a dungeon rotates out of RA.DUNGEONS. Used for the
--- "all learned dungeon teleports" overview, separate from the current-
--- season portal reminder in Modules\TeleportReminder.lua.
--- `expansion` groups entries into category headers in Modules\PortalOverview.lua.
--- Siege of Boralus / The MOTHERLODE!! have separate Horde/Alliance spell
--- IDs for the same dungeon; resolved once below via UnitFactionGroup().
+-- M+20 teleport spells of dungeons outside the season pools (RA.DUNGEONS), for the "all
+-- learned teleports" overview; append entries when a dungeon rotates out. `expansion`
+-- groups them in PortalOverview.lua. Siege of Boralus / The MOTHERLODE!! have separate
+-- Horde/Alliance spells, resolved below via UnitFactionGroup().
 
 _G["RollAway"] = _G["RollAway"] or {}
 local RA = _G["RollAway"]

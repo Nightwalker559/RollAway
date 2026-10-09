@@ -1,8 +1,6 @@
 -- RollAway - Core/Helpers.lua
--- Generic, reusable utility functions with no bootstrapping/domain-state
--- logic of their own - popup/toast frame factories, timers, portal buttons,
--- loot-roll button lookup, table/util helpers.
--- Loads right after Core/Core.lua so RA.DBG/RA.RA_L are already set.
+-- Shared helpers: popup/toast frame factories, timers, portal buttons, loot roll
+-- buttons and small utilities. Loads right after Core/Core.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -12,10 +10,7 @@ local DBG  = RA.DBG
 -- Generic utilities
 ------------------------------------------------------------------------
 
--- Waits for an on-demand Blizzard addon to finish loading, then runs fn()
--- once and stops listening. Use when a frame/API from that addon isn't
--- available yet (e.g. a "HookXFrame()" attempt returned false) and there's
--- no more specific event to hang the retry on.
+-- Runs fn() once, when the load-on-demand Blizzard addon has loaded.
 function RA.WaitForAddon(addonName, fn)
     local f = CreateFrame("Frame")
     f:RegisterEvent("ADDON_LOADED")
@@ -27,9 +22,7 @@ function RA.WaitForAddon(addonName, fn)
     end)
 end
 
--- Shared chat-print prefix for the small set of genuinely user-facing
--- messages (auto-repair cost, manual-check "none found", etc.) - distinct
--- from DBG()/DBGError(), which are dev-only and never print to chat.
+-- Chat print for the few user-facing messages (DBG is dev-only, never in chat).
 local function Print(msg)
     print("|cff33ff99RollAway:|r " .. msg)
 end
@@ -51,42 +44,32 @@ local function SafeCancelTimer(timer)
 end
 RA.SafeCancelTimer = SafeCancelTimer
 
--- 12.x "secret values": during combat/encounters some API results can't be
--- compared, indexed or concatenated by addon code (doing so is a Lua error).
--- False for such a value; true for everything else (also on clients without
--- the secret-value API).
+-- 12.x "secret values" cannot be compared or indexed by addon code: false for
+-- those, true for everything else.
 function RA.IsAccessible(value)
     return not canaccessvalue or canaccessvalue(value)
 end
 
--- Shared "is the player max level" check (vault currency display, Omnium/
--- Vault Character panel buttons, options gating).
+-- Is the player max level?
 function RA.IsMaxLevel()
     return UnitLevel("player") >= GetMaxPlayerLevel()
 end
 
--- Reminder text: instance name plus the listed keystone level ("+14", gold)
--- when one is known.
+-- Instance name plus the keystone level ("+14", gold) when known.
 function RA.FormatInstanceWithKey(name, keyLevel)
     if not keyLevel then return name end
     return name .. " |cffFFD100+" .. keyLevel .. "|r"
 end
 
--- The Mythic+ keystone currently in the player's bags, if any: activity ID
--- (matches a dungeon's lfgID) and keystone level.
+-- The keystone in the player's bags: activity ID (a dungeon's lfgID) and level.
 function RA.GetOwnedKeystone()
     if not C_LFGList then return nil, nil end
     local lfgID, _, level = C_LFGList.GetOwnedKeystoneActivityAndGroupAndLevel()
     return lfgID, level
 end
 
--- Returns a NEW array with the same elements as `list`, sorted by the
--- string labelFn(entry) returns - case-insensitive, plain byte order
--- (WoW's Lua sandbox has no locale-aware collation, so umlauts etc. sort
--- byte-wise; acceptable for short dungeon/addon-name lists). Does not
--- mutate `list`, so callers that need a stable index pairing with a
--- separate structure (e.g. a button pool built in the original order)
--- should sort before building that structure, not after.
+-- A new array sorted by labelFn(entry): case-insensitive, byte order (umlauts
+-- sort by byte). `list` is not changed.
 function RA.SortByLabel(list, labelFn)
     local sorted = {}
     for i = 1, #list do sorted[i] = list[i] end
@@ -96,9 +79,8 @@ function RA.SortByLabel(list, labelFn)
     return sorted
 end
 
--- Registers a StaticPopup with the defaults every RollAway dialog shares
--- (no timeout, usable while dead, closes on Escape, first free slot).
--- `def` overrides any of them.
+-- StaticPopup with RollAway's defaults (no timeout, usable while dead, Escape
+-- closes); `def` overrides them.
 function RA.RegisterPopup(name, def)
     if def.timeout == nil        then def.timeout        = 0    end
     if def.whileDead == nil      then def.whileDead      = true end
@@ -107,10 +89,8 @@ function RA.RegisterPopup(name, def)
     StaticPopupDialogs[name] = def
 end
 
--- Runs fn() immediately, unless we're in combat (protected/secure API calls
--- like Settings.OpenToCategory are blocked during combat lockdown). In that
--- case fn is queued and runs automatically on the next PLAYER_REGEN_ENABLED.
--- Only one action can be queued at a time; a newer call replaces the older one.
+-- Runs fn() now, or after combat (PLAYER_REGEN_ENABLED) when protected calls such
+-- as Settings.OpenToCategory are blocked. One queued action; a newer one replaces it.
 function RA.RunProtectedOrQueue(fn)
     if InCombatLockdown() then
         RA.pendingProtectedAction = fn
@@ -125,12 +105,8 @@ end
 -- Frame helpers
 ------------------------------------------------------------------------
 
--- Hiding/showing a frame that has SecureActionButtonTemplate descendants
--- (our portal buttons) is a protected action while in combat lockdown -
--- regardless of what triggers the call (event handler, OnClick, slash
--- command). Calling frame:Hide()/:Show() directly during combat throws
--- ADDON_ACTION_BLOCKED. Use this everywhere instead for such frames; if
--- called during combat it just defers the change until combat ends.
+-- Show/hide for frames with secure children (portal buttons): protected in combat
+-- (ADDON_ACTION_BLOCKED), so the change is deferred until combat ends.
 function RA.SafeSetShown(frame, shouldShow)
     if not frame then return end
     if not InCombatLockdown() then
@@ -161,10 +137,7 @@ function RA.MakeDraggable(frame)
     frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
 end
 
--- Same as RA.MakeDraggable, but respects RollAwayDB.qolReminderLockPosition -
--- checked live on every drag attempt, so toggling the "lock position" option
--- takes effect immediately with no per-frame bookkeeping. Used by the QoL
--- toast/join reminder popups, which the user can lock in place.
+-- Like MakeDraggable, but honors qolReminderLockPosition (checked on every drag).
 function RA.MakeLockableDraggable(frame)
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -176,7 +149,7 @@ function RA.MakeLockableDraggable(frame)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 end
 
--- Dark tooltip-style backdrop shared by all RollAway popup/portal frames.
+-- Backdrop shared by the popup/portal frames.
 local POPUP_BACKDROP = {
     bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -195,7 +168,7 @@ end
 -- Timers
 ------------------------------------------------------------------------
 
--- Countdown StatusBar for auto-hide popups. Returns { bar, barText, Start, Stop }.
+-- Countdown bar for auto-hide popups: { bar, barText, Start, Stop }.
 function RA.CreateTimerBar(parent, onExpire)
     local bar = CreateFrame("StatusBar", nil, parent)
     bar:SetPoint("BOTTOMLEFT",  parent, "BOTTOMLEFT",  8, 6)
@@ -248,7 +221,7 @@ function RA.CreateTimerBar(parent, onExpire)
     return { bar = bar, barText = barText, Start = Start, Stop = Stop }
 end
 
--- Simple Start()/Stop() one-shot timer for short-lived QoL popups.
+-- One-shot timer with Start()/Stop().
 function RA.CreateOneShotTimer(seconds, callback)
     local timer
 
@@ -269,44 +242,32 @@ function RA.CreateOneShotTimer(seconds, callback)
 end
 
 ------------------------------------------------------------------------
--- Shared popup-notification frame factory - Reminder.lua, Paragon.lua,
--- GreatVault.lua and Logs.lua (AdvLog) each show a small backdrop popup at
--- the top of the screen with the same chrome: draggable, ESC-closable, gold
--- "RollAway" title next to the addon icon, a countdown bar, and an "Okay"
--- button that hides the frame. This factory builds exactly that shared
--- chrome plus the OnShow/OnHide lifecycle (deferred height fit + countdown);
--- callers add their own content (message text, rows, extra buttons).
+-- Popup frame factory (Reminder, Paragon, Great Vault, Advanced Logging, Tank
+-- marker): draggable, ESC-closable, title with icon, countdown bar, Okay button.
+-- Callers add their own content.
 --
 -- opts:
---   name      - global frame name (also used for the ESC-close registration)
---   okayName  - global name for the "Okay" button
---   width, height - initial size; height doubles as the minimum height
---   yOffset   - initial TOP anchor Y offset below UIParent's TOP
---   duration  - countdown in seconds before the popup hides itself
---   fitHeight - optional function(frame) -> total desired height, evaluated
---               one frame after OnShow (once the content is laid out). The
---               popup is never made smaller than `height`.
---   hide      - optional function(frame) that closes the popup, used by the
---               Okay button and the countdown (default: frame:Hide()). A popup
---               with secure buttons needs RA.SafeSetShown(frame, false) here.
+--   name, okayName  global names of the frame and the Okay button (ElvUI_Skin.lua
+--                   looks them up)
+--   width, height   initial size; height is also the minimum
+--   yOffset         initial TOP offset
+--   duration        countdown in seconds
+--   fitHeight       optional function(frame) -> desired height, evaluated one frame
+--                   after OnShow (never below `height`)
+--   hide            optional function(frame) for Okay/countdown (default: Hide;
+--                   popups with secure buttons need RA.SafeSetShown(frame, false))
 --
--- Returns the frame with these extra fields already set up:
---   .iconHolder, .icon, .titleText - header chrome
---   .okayBtn                       - bottom-right button, closes the popup
---   .bar, .barText, .timer         - from RA.CreateTimerBar
--- Global frame/button names are kept explicit (not derived) so ElvUI_Skin.lua's
--- _G[...] lookups for these frames keep working unchanged.
+-- The frame gets .iconHolder, .icon, .titleText, .okayBtn, .bar, .barText, .timer.
 ------------------------------------------------------------------------
 
--- Fixed vertical space taken by header (icon/title) + footer (button, bar,
--- padding), for fitHeight callbacks: RA.POPUP_CHROME_HEIGHT + body height.
+-- Height of header + footer, for fitHeight: RA.POPUP_CHROME_HEIGHT + body height.
 RA.POPUP_CHROME_HEIGHT = 88
 
 function RA.CreatePopupFrame(opts)
     local frame = CreateFrame("Frame", opts.name, UIParent, "BackdropTemplate")
     frame:SetSize(opts.width, opts.height)
     frame:SetPoint("TOP", UIParent, "TOP", 0, opts.yOffset)
-    frame.defaultY = opts.yOffset  -- where RA.StackPopupFrame puts it when nothing is above it
+    frame.defaultY = opts.yOffset  -- used by RA.StackPopupFrame
     frame:SetFrameStrata("HIGH")
     frame:SetClampedToScreen(true)
     RA.MakeDraggable(frame)
@@ -317,7 +278,7 @@ function RA.CreatePopupFrame(opts)
 
     RA.ApplyPopupBackdrop(frame)
 
-    -- Own holder frame to stay above ElvUI's backdrop child after skinning.
+    -- Own holder, stays above ElvUI's backdrop child.
     local iconHolder = CreateFrame("Frame", nil, frame)
     iconHolder:SetSize(24, 24)
     iconHolder:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -10)
@@ -343,7 +304,7 @@ function RA.CreatePopupFrame(opts)
     okayBtn:SetScript("OnClick", function() hide(frame) end)
     frame.okayBtn = okayBtn
 
-    -- Countdown status bar, started/stopped by OnShow/OnHide below.
+    -- Countdown bar (OnShow/OnHide).
     local timer = RA.CreateTimerBar(frame, function() hide(frame) end)
     frame.bar     = timer.bar
     frame.barText = timer.barText
@@ -360,8 +321,7 @@ function RA.CreatePopupFrame(opts)
     end)
     frame:SetScript("OnHide", timer.Stop)
 
-    -- ElvUI skin (if loaded), applied once at creation - callers only run
-    -- this factory once per frame.
+    -- ElvUI skin, once at creation.
     if RA.SkinPopupFrame then RA.SkinPopupFrame(frame) end
 
     return frame
@@ -377,20 +337,15 @@ function RA.CreatePopupBodyText(frame)
     return text
 end
 
--- The popup notifications always sit in this order, top to bottom. A fixed
--- order is what keeps the anchors free of loops: a frame is only ever
--- anchored below one that comes earlier in the list.
+-- Popups sit in this order, top to bottom (a fixed order keeps anchors loop-free).
 local POPUP_STACK_ORDER = {
     "RollAwayReminderFrame", "RollAwayParagonFrame", "RollAwayGreatVaultFrame",
     "RollAwayAdvLogFrame", "RollAwayTankMarkFrame",
 }
 
--- Lays out `frame` (about to be shown) together with every popup that is
--- shown right now, in POPUP_STACK_ORDER: the first one at its own default TOP
--- position (opts.yOffset of CreatePopupFrame), each next one directly below
--- the previous. So any combination can be shown without overlapping, and a
--- new popup only has to be added to the list above. In combat only `frame`
--- is placed: popups with secure buttons must not be moved then.
+-- Stacks `frame` (about to be shown) and every shown popup in POPUP_STACK_ORDER:
+-- the first at its default position, each next directly below. In combat only
+-- `frame` is placed (secure popups must not be moved).
 function RA.StackPopupFrame(frame)
     local inCombat = InCombatLockdown()
     local above
@@ -411,15 +366,9 @@ function RA.StackPopupFrame(frame)
     end
 end
 
--- Wires the common "show once per instance" popup lifecycle (Reminder.lua's
--- Voidcore reminder, Logs.lua's Advanced Combat Logging reminder): hide on
--- pull (PLAYER_REGEN_DISABLED) and on GROUP_LEFT, and clear the dedup key on
--- GROUP_LEFT/GROUP_JOINED so the reminder can fire again for the next
--- instance.
--- GROUP_JOINED deliberately does NOT hide the frame: when queuing as a
--- partial group via the Dungeon Finder, Blizzard merges everyone into a new
--- group around the time you enter the instance, so it can fire right after
--- the reminder was shown - which is still valid for that instance.
+-- "Once per instance" popup lifecycle: hides on pull and GROUP_LEFT; the dedup key
+-- is cleared on GROUP_LEFT/GROUP_JOINED. GROUP_JOINED does not hide: a Dungeon
+-- Finder group is merged right around entering, and the reminder still applies.
 function RA.SetupInstanceReminderLifecycle(frame, dedupKey)
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
     frame:RegisterEvent("GROUP_LEFT")
@@ -435,10 +384,9 @@ function RA.SetupInstanceReminderLifecycle(frame, dedupKey)
 end
 
 ------------------------------------------------------------------------
--- QoL "toast" frames (Ready Check, Durability, Instance Join): centered,
--- draggable (lockable), text-only, auto-hidden by a 6s one-shot timer the
--- caller starts. Every toast is registered so the options' "reset position"
--- button can move them all back to their default spot.
+-- QoL toast frames (Ready Check, Durability, Instance Join): centered, draggable
+-- (lockable), text only, hidden by a 6s timer the caller starts. All are
+-- registered for the "reset position" button.
 ------------------------------------------------------------------------
 
 function RA.GetQoLFont()
@@ -475,8 +423,7 @@ function RA.CreateToastFrame(globalName, width, height, yOffset)
     return frame, timer
 end
 
--- Only touches toasts that were already created (lazily, on first show) -
--- uncreated ones are still at their default position.
+-- Only toasts created so far (lazily, on first show).
 function RA.ResetToastPositions()
     for _, frame in ipairs(toastFrames) do
         frame:ClearAllPoints()
@@ -485,12 +432,10 @@ function RA.ResetToastPositions()
 end
 
 ------------------------------------------------------------------------
--- Portal (dungeon teleport) buttons - shared by the Teleport Reminder and
--- the Portal Overview.
+-- Portal (dungeon teleport) buttons, shared by Teleport Reminder and Portal Overview.
 ------------------------------------------------------------------------
 
--- Ignore GetSpellCooldown durations at/below the GCD - those aren't a real
--- "on cooldown" state, just the brief global cooldown after any cast.
+-- Durations up to the GCD are no real cooldown.
 local PORTAL_COOLDOWN_THRESHOLD = 3
 
 -- startTime, duration of a real (non-GCD) cooldown on the spell, or nil.
@@ -506,8 +451,7 @@ function RA.IsPortalOnCooldown(spellID)
     return RA.GetPortalCooldown(spellID) ~= nil
 end
 
--- Secure spell button with icon, hover highlight and cooldown swirl. The
--- caller adds the tooltip and calls RA.SetPortalSpell().
+-- Secure spell button; the caller adds the tooltip and calls RA.SetPortalSpell().
 function RA.CreatePortalButton(globalName, parent, size)
     local btn = CreateFrame("Button", globalName, parent, "SecureActionButtonTemplate")
     btn:SetSize(size, size)
@@ -532,15 +476,14 @@ function RA.CreatePortalButton(globalName, parent, size)
     return btn
 end
 
--- SetAttribute is protected in combat - callers must not run this then.
+-- Not in combat (SetAttribute is protected).
 function RA.SetPortalSpell(btn, spellID)
     btn.spellID = spellID
     btn:SetAttribute("spell", spellID)
     btn.iconTexture:SetTexture(C_Spell.GetSpellTexture(spellID))
 end
 
--- Locked look (desaturated/dimmed) for unlearned portals, cooldown swirl for
--- learned ones that are really on cooldown.
+-- Unlearned portals look locked; learned ones show their cooldown.
 function RA.UpdatePortalButtonState(btn, isKnown, unknownAlpha)
     btn.iconTexture:SetDesaturated(not isKnown)
     btn:SetAlpha(isKnown and 1 or unknownAlpha)
@@ -555,10 +498,8 @@ function RA.UpdatePortalButtonState(btn, isKnown, unknownAlpha)
 end
 
 ------------------------------------------------------------------------
--- Loot roll buttons - shared by AutoRoll.lua and RollConfirm.lua. A roll is
--- shown either by Blizzard's GroupLootFrameN or, with ElvUI, by
--- ElvUI_LootRollFrameN (whose buttons have no fixed field names, only
--- localized global-name fragments).
+-- Loot roll buttons (AutoRoll, RollConfirm): Blizzard's GroupLootFrameN or, with
+-- ElvUI, ElvUI_LootRollFrameN (buttons found by name fragments).
 ------------------------------------------------------------------------
 
 -- dbKey, native button field, ElvUI button name fragments (localized).
@@ -574,8 +515,7 @@ for _, def in ipairs(RA.ROLL_BUTTONS) do NATIVE_FIELD_BY_KEY[def.dbKey] = def.na
 
 local elvRollButtons = {}  -- [frameIndex] = { need = btn, greed = btn, ... }
 
--- ElvUI_LootRollFrame<i>'s buttons keyed by dbKey (one pass over its children,
--- cached - they never change), or nil while that frame doesn't exist (yet).
+-- Buttons of ElvUI_LootRollFrame<i> by dbKey (cached), nil while it does not exist.
 function RA.GetElvRollButtons(i)
     if elvRollButtons[i] then return elvRollButtons[i] end
     local elvFrame = _G["ElvUI_LootRollFrame"..i]
@@ -601,8 +541,7 @@ function RA.GetElvRollButtons(i)
     return found
 end
 
--- The visible roll-frame button (native or ElvUI) of type dbKey for rollID,
--- or nil if that roll isn't shown / the button couldn't be found.
+-- The roll frame's button (native or ElvUI) of type dbKey for rollID, or nil.
 function RA.FindRollButton(rollID, dbKey)
     for i = 1, 5 do
         local nativeFrame = _G["GroupLootFrame"..i]
@@ -617,10 +556,8 @@ function RA.FindRollButton(rollID, dbKey)
     end
 end
 
--- Auto-confirms the bind-on-pickup prompt of a roll RollAway rolled itself.
--- Call RA.ArmRollConfirm(rollID) right before the roll; when the game asks for
--- the confirmation (CONFIRM_LOOT_ROLL) the roll is confirmed and Blizzard's
--- own popup for it is dropped. Rolls that were not armed are left alone.
+-- Confirms the bind-on-pickup prompt of a roll RollAway rolled itself: arm it
+-- right before rolling; other rolls are left alone.
 local armedRolls = {}
 
 function RA.ArmRollConfirm(rollID)
@@ -634,6 +571,6 @@ confirmFrame:SetScript("OnEvent", function(_, _, rollID, rollType)
     armedRolls[rollID] = nil
     DBG("[Roll] Confirming rollID:", rollID, "| rollType:", rollType)
     pcall(ConfirmLootRoll, rollID, rollType)
-    -- Blizzard's handler for the same event shows its popup; drop it once it exists.
+    -- Drop Blizzard's own popup for the same event.
     RunNextFrame(function() StaticPopup_Hide("CONFIRM_LOOT_ROLL", rollID) end)
 end)

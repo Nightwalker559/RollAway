@@ -1,5 +1,5 @@
 -- RollAway - Paragon.lua
--- Midnight paragon bag notification.
+-- Paragon bag reminder (Midnight).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -7,9 +7,7 @@ local DBG  = RA.DBG
 
 local TIMER_DURATION = 60
 
-------------------------------------------------------------------------
--- Midnight paragon quest table: questID -> locale key
-------------------------------------------------------------------------
+-- Paragon quests: questID -> locale key
 local PARAGON_QUESTS = {
     [94492] = "paragon_faction_slayers_duellum",
     [89032] = "paragon_faction_singularity",
@@ -20,21 +18,17 @@ local PARAGON_QUESTS = {
     [93798] = "paragon_faction_zuljarras_forces",
 }
 
-------------------------------------------------------------------------
--- Quests with a known turn-in NPC + zone (verified via Wowhead 12.0.7).
--- Text lives in locale files as paragon_npc_<questID> / paragon_zone_<questID>.
--- Static table since the live waypoint API only covers the tracked quest.
-------------------------------------------------------------------------
+-- Quests with a known turn-in NPC + zone (Wowhead 12.0.7); texts are paragon_npc_<questID>
+-- / paragon_zone_<questID>. Static: the waypoint API only covers the tracked quest.
 local PARAGON_LOCATION_QUESTS = {
     [94492] = true,
-    [89032] = true, -- Quest text says "Murik in Iskaara" (recycled DF text,
-                     -- Blizzard bug since 11.0.5); actual turn-in is Void
-                     -- Researcher Anomander at Howling Ridge in Voidstorm.
+    [89032] = true, -- quest text says "Murik in Iskaara" (Blizzard bug); real turn-in: Void
+                     -- Researcher Anomander, Howling Ridge, Voidstorm
     [93811] = true,
     [95391] = true,
     [89035] = true,
     [93566] = true,
-    -- [93798] Zul'jarra's Forces: turn-in NPC/zone not yet verified, omitted for now.
+    -- [93798] Zul'jarra's Forces: turn-in not verified, omitted.
 }
 
 local function GetQuestLocation(questID)
@@ -45,9 +39,7 @@ local function GetQuestLocation(questID)
     }
 end
 
-------------------------------------------------------------------------
 -- Frame
-------------------------------------------------------------------------
 
 local paragonFrame
 
@@ -66,20 +58,19 @@ local function CreateParagonFrame()
             local bottomY = lastRow and lastRow.content:GetBottom() or self.header:GetBottom()
             local topY = self:GetTop()
             local contentHeight = (topY and bottomY) and (topY - bottomY) or 80
-            -- contentHeight (top edge -> last row bottom) + gap + btn(22) + bar(8) + pad(18)
+            -- content height + gap + button (22) + bar (8) + padding (18)
             return contentHeight + 10 + 22 + 8 + 18
         end,
     })
 
-    -- Header (count line)
+    -- Count line
     paragonFrame.header = RA.CreatePopupBodyText(paragonFrame)
 
-    -- Row pool: bullet + content FontString, content anchored right after
-    -- the bullet so wrapped lines stay aligned under the entry text.
+    -- Row pool: bullet + content text (wrapped lines stay under the text).
     paragonFrame.rows = {}
 end
 
--- Returns the row for index, creating and anchoring it below the previous row on first use.
+-- The row for index, created and anchored below the previous one on first use.
 local function EnsureRow(index)
     local row = paragonFrame.rows[index]
     if row then return row end
@@ -99,8 +90,7 @@ local function EnsureRow(index)
         bullet:SetPoint("TOPLEFT", paragonFrame.header, "BOTTOMLEFT", 0, -6)
     else
         local prev = paragonFrame.rows[index - 1]
-        -- X must match the previous bullet (not its content, which starts
-        -- further right) — otherwise each row drifts further to the right.
+        -- X follows the previous bullet, not its content (rows would drift right).
         bullet:SetPoint("LEFT", prev.bullet, "LEFT", 0, 0)
         bullet:SetPoint("TOP",  prev.content, "BOTTOM", 0, -4)
     end
@@ -110,14 +100,10 @@ local function EnsureRow(index)
     return row
 end
 
-------------------------------------------------------------------------
 -- Logic
-------------------------------------------------------------------------
 
--- Pending paragon rewards: the listed quests (any faction) plus every Major
--- Faction of the current expansion that reports a pending paragon reward, so
--- a faction missing from the table above still gets announced (by the name
--- the game gives it).
+-- Pending paragon rewards: the listed quests plus every Major Faction of the current
+-- expansion with a pending reward (a missing faction is announced by the game's name).
 local function GetAvailableParagonQuests()
     local found, seen = {}, {}
     for questID, locKey in pairs(PARAGON_QUESTS) do
@@ -142,8 +128,7 @@ end
 function RA.ShowParagonFrame(quests)
     CreateParagonFrame()
 
-    -- Stacked in the shared popup order (Core/Helpers.lua), so the
-    -- notifications never overlap.
+    -- Stacked with the other popups.
     RA.StackPopupFrame(paragonFrame)
 
     local countKey = (#quests == 1) and "paragon_count_one" or "paragon_count_many"
@@ -161,7 +146,7 @@ function RA.ShowParagonFrame(quests)
         row.content:Show()
     end
 
-    -- Hide any leftover rows from a previous, longer list.
+    -- Hide rows left from a longer list.
     for i = #quests + 1, #paragonFrame.rows do
         paragonFrame.rows[i].bullet:Hide()
         paragonFrame.rows[i].content:Hide()
@@ -179,7 +164,7 @@ local function CheckAndShow()
     RA.ShowParagonFrame(quests)
 end
 
--- Manual check: always runs regardless of the paragonAlert setting.
+-- Manual check, independent of the paragonAlert setting.
 local function ManualCheck()
     local quests = GetAvailableParagonQuests()
     if #quests == 0 then
@@ -189,8 +174,7 @@ local function ManualCheck()
     RA.ShowParagonFrame(quests)
 end
 
--- Dev-only test (/rawreminder): shows the frame with fake names but real
--- questIDs, ignoring the paragonAlert setting.
+-- Dev test (/rawreminder): fake names, real questIDs.
 local function TestShow()
     RA.ShowParagonFrame({
         { name = RA_L["paragon_faction_silvermoon_court"], questID = 93811 },
@@ -199,9 +183,7 @@ local function TestShow()
 end
 RA.ParagonTestShow = TestShow
 
-------------------------------------------------------------------------
 -- Initialization
-------------------------------------------------------------------------
 
 function RA.InitParagon()
     local f = CreateFrame("Frame")
@@ -210,19 +192,17 @@ function RA.InitParagon()
 
     f:SetScript("OnEvent", function(_, event, arg1)
         if event == "PLAYER_ENTERING_WORLD" then
-            -- arg1 = isInitialLogin. Only fire on actual login, never on
-            -- /reload or zoning.
+            -- arg1 = isInitialLogin: only on a real login.
             if not arg1 then return end
 
-            -- Delay so the quest log is fully populated before scanning.
+            -- Wait for the quest log to fill.
             C_Timer.After(3, CheckAndShow)
 
         elseif event == "QUEST_ACCEPTED" then
             -- arg1 is the questID in modern WoW (Shadowlands+).
             if not (RollAwayDB and RollAwayDB.paragonAlert) then return end
-            -- Short delay so IsOnQuest() / hasRewardPending are reliable. Any
-            -- accepted quest may be a paragon reward of a faction that is not in
-            -- the table, so check for it there too (a few API calls).
+            -- Short delay so IsOnQuest() / hasRewardPending are reliable. Any quest may be the
+            -- reward of a faction missing in the table: check them all (a few calls).
             C_Timer.After(0.5, function()
                 local quests = GetAvailableParagonQuests()
                 for _, q in ipairs(quests) do
@@ -236,7 +216,7 @@ function RA.InitParagon()
         end
     end)
 
-    -- /rawparagon – manual check, available to all users
+    -- /rawparagon: manual check, for everyone
     SLASH_RAWPARAGON1 = "/rawparagon"
     SlashCmdList["RAWPARAGON"] = ManualCheck
 
