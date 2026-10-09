@@ -17,10 +17,11 @@ local RAID_LOG_OPTION = {
     [17] = "autoLogRaidLFR",
 }
 
--- "Current season raids only" is on and the player is in an old-tier raid
--- (one listed in Data/LegacyRaids.lua).
+-- "Current season raids only" is on and the player is in a raid that is not
+-- part of the running season (the game's own season list, see
+-- Data/LegacyRaids.lua).
 local function SkipLegacyRaid()
-    return RollAwayDB.autoLogRaidCurrentOnly == true and RA.LEGACY_RAID_INSTANCES[RA.cachedInstanceID] ~= nil
+    return RollAwayDB.autoLogRaidCurrentOnly == true and not RA.IsCurrentSeasonRaid(RA.cachedInstanceID)
 end
 
 ------------------------------------------------------------------------

@@ -76,3 +76,48 @@ RA.LEGACY_RAIDS = {
     { key = "nexus_king_salhadaar", encounterID = 3134, raid = "manaforge_omega"        },
     { key = "dimensius",            encounterID = 3135, raid = "manaforge_omega"        },
 }
+
+------------------------------------------------------------------------
+-- Current season from the game itself: the Encounter Journal's last tier is
+-- "Current Season" and lists exactly the raids / dungeons of the running
+-- season (instance = the map ID that GetInstanceInfo returns as instanceID).
+-- No list to maintain; the legacy list above is the fallback while the
+-- journal gives nothing.
+------------------------------------------------------------------------
+local seasonInstances = {}  -- [isRaid] = { [mapID] = true }, filled once the journal answers
+
+-- Set of map IDs of the current season's raids (isRaid) or dungeons, or nil
+-- while the journal has no data. The journal's selected tier is put back.
+function RA.GetCurrentSeasonInstances(isRaid)
+    isRaid = isRaid and true or false
+    if seasonInstances[isRaid] then return seasonInstances[isRaid] end
+    if not (EJ_GetNumTiers and EJ_SelectTier and EJ_GetInstanceByIndex) then return nil end
+
+    local lastTier = EJ_GetNumTiers()
+    if not lastTier or lastTier < 1 then return nil end
+    local previous = EJ_GetCurrentTier()
+    EJ_SelectTier(lastTier)
+
+    local set, index = {}, 1
+    while true do
+        local journalID, _, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, isRaid)
+        if not journalID then break end
+        if mapID then set[mapID] = true end
+        index = index + 1
+    end
+    if previous then EJ_SelectTier(previous) end
+
+    if next(set) then
+        seasonInstances[isRaid] = set
+        return set
+    end
+    return nil
+end
+
+-- Is this raid part of the current season? Falls back to "not on the legacy
+-- list" while the journal has no data.
+function RA.IsCurrentSeasonRaid(instanceID)
+    local set = RA.GetCurrentSeasonInstances(true)
+    if set then return set[instanceID] == true end
+    return RA.LEGACY_RAID_INSTANCES[instanceID] == nil
+end

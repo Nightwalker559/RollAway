@@ -177,7 +177,7 @@ end
 -- In the order of the Developer panel. The label is the locale key
 -- "dev_filter_<key>"; a line that matches nothing is "other".
 RA.DEBUG_CATEGORIES = {
-    { key = "zone",     prefixes = { "Instance:", "[Season]", "[Raids]", "--- GetInstanceInfo", "  ", "->", "----" } },
+    { key = "zone",     prefixes = { "Instance:", "[Season]", "[Raids]", "[Dungeons]", "--- GetInstanceInfo", "  ", "->", "----" } },
     { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "ENCOUNTER_END", "Watchdog",
                                      "ResetState", "FullReset", "Close timer", "Starting close",
                                      "Hiding loot history", "Entering combat" } },
@@ -442,30 +442,56 @@ local function TestQoLReminders()
     end)
 end
 
--- /rawraids: every Encounter Journal tier with its raids (name + map ID, the
--- ID GetInstanceInfo returns as instanceID), to see which tier counts as
--- "current" and whether Data/LegacyRaids.lua agrees. The journal's selected
--- tier is put back afterwards.
-local function DumpRaidTiers()
+-- /rawraids and /rawdungeons: every Encounter Journal tier with its raids or
+-- dungeons (name + map ID, the ID GetInstanceInfo returns as instanceID), to see
+-- which tier counts as "current" and whether the addon's data agrees. The
+-- journal's selected tier is put back afterwards.
+local function DumpJournalTiers(isRaid)
     local function Log(...) RA.AppendDebugLogUnfiltered(...) end
+    local tag = isRaid and "[Raids]" or "[Dungeons]"
     local here = RA.cachedInstanceID
+    local current = RA.GetCurrentSeasonInstances(isRaid)
     local previous = EJ_GetCurrentTier()
-    Log("[Raids] Encounter Journal tiers:", EJ_GetNumTiers(), "| selected before:", previous, "| you are in instance:", here)
+    Log(tag, "Encounter Journal tiers:", EJ_GetNumTiers(), "| selected before:", previous,
+        "| you are in instance:", here, "| current season set:", current and "yes" or "empty")
     for tier = 1, EJ_GetNumTiers() do
         EJ_SelectTier(tier)
-        local raids, index = {}, 1
+        local entries, index = {}, 1
         while true do
-            local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, true)
+            local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, isRaid)
             if not journalID then break end
-            raids[#raids + 1] = string.format("%s [map %s%s%s]", name, tostring(mapID),
-                RA.LEGACY_RAID_INSTANCES[mapID] and ", legacy list" or "",
-                mapID == here and ", HERE" or "")
+            local marks = {}
+            if isRaid and RA.LEGACY_RAID_INSTANCES[mapID] then marks[#marks + 1] = "legacy list" end
+            if not isRaid and RA.DUNGEON_MAP[mapID] then marks[#marks + 1] = "addon: " .. RA.DUNGEON_MAP[mapID] end
+            if current and current[mapID] then marks[#marks + 1] = "SEASON" end
+            if mapID == here then marks[#marks + 1] = "HERE" end
+            entries[#entries + 1] = string.format("%s [map %s%s%s]", name, tostring(mapID),
+                #marks > 0 and ", " or "", table.concat(marks, ", "))
             index = index + 1
         end
-        Log(string.format("[Raids] tier %d %s: %s", tier, tostring((EJ_GetTierInfo(tier))),
-            #raids > 0 and table.concat(raids, "; ") or "-"))
+        Log(string.format("%s tier %d %s: %s", tag, tier, tostring((EJ_GetTierInfo(tier))),
+            #entries > 0 and table.concat(entries, "; ") or "-"))
     end
     if previous then EJ_SelectTier(previous) end
+
+    -- Dungeons: the Mythic+ pool the game reports, with the season it matches
+    -- in Data/Dungeons.lua (map ID and challenge mode ID).
+    if not isRaid and C_ChallengeMode then
+        local pool = {}
+        for _, cmID in ipairs(C_ChallengeMode.GetMapTable() or {}) do
+            local name, _, _, _, _, mapID = C_ChallengeMode.GetMapUIInfo(cmID)
+            local seasons = {}
+            for season, list in pairs(RA.DUNGEONS) do
+                for _, d in ipairs(list) do
+                    if d.cmID == cmID then seasons[#seasons + 1] = tostring(season) end
+                end
+            end
+            table.sort(seasons)
+            pool[#pool + 1] = string.format("%s [cm %s, map %s, addon season: %s]", tostring(name), cmID,
+                tostring(mapID), #seasons > 0 and table.concat(seasons, "+") or "NONE")
+        end
+        Log(tag, "Mythic+ pool (" .. #pool .. "):", #pool > 0 and table.concat(pool, "; ") or "-")
+    end
 end
 
 local function RegisterSlashCommands()
@@ -491,8 +517,14 @@ local function RegisterSlashCommands()
 
     -- /rawraids → Encounter Journal tiers and raids into the log
     RegisterDevCommand("RAWRAIDS", function()
-        local ok, err = pcall(DumpRaidTiers)
+        local ok, err = pcall(DumpJournalTiers, true)
         RA.Print(ok and RA.RA_L["cmd_rawraids_done"] or ("/rawraids: " .. tostring(err)))
+    end, true)
+
+    -- /rawdungeons → Encounter Journal tiers, dungeons and the Mythic+ pool into the log
+    RegisterDevCommand("RAWDUNGEONS", function()
+        local ok, err = pcall(DumpJournalTiers, false)
+        RA.Print(ok and RA.RA_L["cmd_rawdungeons_done"] or ("/rawdungeons: " .. tostring(err)))
     end, true)
 
     -- /rawreset → reset reminder state
