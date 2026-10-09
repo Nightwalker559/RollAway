@@ -43,9 +43,10 @@ local function DeepCopy(t)
 end
 RA.DeepCopy = DeepCopy
 
+-- C_Timer handles may be tables or userdata: cancel whatever answers Cancel().
 local function SafeCancelTimer(timer)
-    if type(timer) == "table" and timer.Cancel then
-        pcall(timer.Cancel, timer)
+    if timer then
+        pcall(function() timer:Cancel() end)
     end
 end
 RA.SafeCancelTimer = SafeCancelTimer

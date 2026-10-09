@@ -17,6 +17,12 @@ local RAID_LOG_OPTION = {
     [17] = "autoLogRaidLFR",
 }
 
+-- "Current season raids only" is on and the player is in an old-tier raid
+-- (one listed in Data/LegacyRaids.lua).
+local function SkipLegacyRaid()
+    return RollAwayDB.autoLogRaidCurrentOnly == true and RA.LEGACY_RAID_INSTANCES[RA.cachedInstanceID] ~= nil
+end
+
 ------------------------------------------------------------------------
 -- Decide whether logging should be on/off for the current zone.
 -- Returns true/false, or nil if the master toggle is off (i.e. "don't touch
@@ -29,6 +35,7 @@ local function DetermineDesiredLogState()
     local iType = RA.cachedInstanceType
 
     if iType == "raid" then
+        if SkipLegacyRaid() then return false end
         local option = RAID_LOG_OPTION[RA.cachedDiffID]
         return option ~= nil and db[option] == true
 
@@ -156,6 +163,8 @@ function RA.ShowAdvLogReminder()
         if iType == "none" then RollAwayDBChar.lastAdvLogReminderInstID = nil end
         return
     end
+    -- Old raids are not logged by choice, so there is nothing to remind about.
+    if isRaid and RollAwayDB.autoLogEnabled and SkipLegacyRaid() then return end
 
     if RollAwayDBChar.lastAdvLogReminderInstID == instID then return end
     if C_CVar.GetCVar("advancedCombatLogging") == "1" then return end

@@ -5,6 +5,7 @@
 ## 3.1.2
 
 ### New
+- Auto-log: checkbox "Raids: current season only" skips old-tier raids (Data/LegacyRaids.lua); the Advanced Combat Logging reminder is skipped there too.
 - Legacy auto-roll: Pass option (turns the other roll types off); with nothing selected it no longer passes on everything.
 - Hide error messages: sub-option to also hide yellow messages (quest progress); "you can't carry any more of these" is hidden too.
 - World Map: the hide option now also hides the bounty board and the N'Zoth eye.
@@ -21,6 +22,10 @@
 
 ### Fixed
 - Loot history auto-close: finished rolls are matched by the game's loot handle and cancelled rolls are noticed.
+- Loot history auto-close: a timer of an already finished roll (or a close timer overtaken by a new roll) no longer closes the history frame; stuck rolls are still force-closed.
+- Debug log: lines are kept in a table and the window is only a view of it, so selecting or copying text can no longer overwrite log lines (the view pauses while the box has focus, Esc resumes it).
+- Loot history auto-close: every finished roll restarts the close countdown, so the frame closes after the LAST roll of a boss, not after the first one.
+- Debug log: millisecond timestamps, and every roll that ends is logged with its reason and the number of rolls still open.
 - Great Vault reminder could show again on every login.
 - Tank marker: solo role check used a function the game no longer has.
 - Auto repair: the cost in the chat message used a removed function.

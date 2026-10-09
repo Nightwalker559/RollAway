@@ -10,12 +10,25 @@ local DBG  = RA.DBG
 -- chat spam for DBG() output. Created lazily and auto-shown the first
 -- time a log line comes in while RollAwayDB.debug is on; closing it
 -- manually is respected (won't force itself back open). Not line-capped
--- by design (dev-only, cleared on /reload, relog, or manual Clear).
+-- by design (dev-only, cleared on /reload, relog, or manual Clear) and never
+-- overwritten (see logLines).
 ------------------------------------------------------------------------
 
 local debugLogFrame
 local debugLogEditBox
 local debugLogScrollFrame
+local debugLogTitle
+
+local LOG_TITLE        = "|cff33ff99RollAway|r Debug Log"
+local LOG_TITLE_PAUSED = LOG_TITLE .. " |cffff8800(paused while selecting - press Esc)|r"
+
+-- The log itself lives in this table; the EditBox is only a view of it. Lines
+-- used to be written straight into the EditBox (Insert), which replaces
+-- whatever the player has selected in it - so selecting text to copy while new
+-- lines came in overwrote parts of the log. Nothing here is ever modified or
+-- dropped except by Clear.
+local logLines = {}
+local viewRefreshQueued = false
 
 -- Grows the EditBox to fit its text and pins the scroll to the bottom so
 -- the newest line is always visible (EditBox has no built-in auto-scroll).
@@ -28,6 +41,25 @@ local function ScrollDebugLogToBottom()
     debugLogEditBox:SetHeight(math.max(debugLogScrollFrame:GetHeight(), neededHeight))
     debugLogScrollFrame:UpdateScrollChildRect()
     debugLogScrollFrame:SetVerticalScroll(debugLogScrollFrame:GetVerticalScrollRange() or 0)
+end
+
+-- Rewrites the EditBox from the log lines. Skipped while the box has keyboard
+-- focus (the player is selecting or copying text): the lines stay in the table
+-- and the view catches up when the focus is gone (OnEditFocusLost).
+local function RefreshLogView()
+    viewRefreshQueued = false
+    if not debugLogEditBox or debugLogEditBox:HasFocus() then return end
+    local text = table.concat(logLines, "\n")
+    if #logLines > 0 then text = text .. "\n" end
+    debugLogEditBox:SetText(text)
+    ScrollDebugLogToBottom()
+end
+
+-- One refresh per frame, however many lines came in.
+local function QueueLogViewRefresh()
+    if viewRefreshQueued then return end
+    viewRefreshQueued = true
+    RunNextFrame(RefreshLogView)
 end
 
 local function CreateDebugLogFrame()
@@ -63,7 +95,8 @@ local function CreateDebugLogFrame()
 
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOP", f, "TOP", 0, -14)
-    title:SetText("|cff33ff99RollAway|r Debug Log")
+    title:SetText(LOG_TITLE)
+    debugLogTitle = title
 
     local closeBtn = CreateFrame("Button", "RollAwayDebugLogClose", f, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
@@ -78,6 +111,11 @@ local function CreateDebugLogFrame()
     editBox:SetWidth(scrollFrame:GetWidth())
     editBox:SetAutoFocus(false)
     editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    editBox:SetScript("OnEditFocusGained", function() debugLogTitle:SetText(LOG_TITLE_PAUSED) end)
+    editBox:SetScript("OnEditFocusLost", function()
+        debugLogTitle:SetText(LOG_TITLE)
+        QueueLogViewRefresh()
+    end)
     editBox:SetText("")
     scrollFrame:SetScrollChild(editBox)
 
@@ -122,13 +160,10 @@ local function CreateDebugLogFrame()
     f:Show()  -- auto-open on first log line
 end
 
--- Appends `text` as one line. Forces the cursor to the end first, since
--- the player may have clicked into the box (e.g. to select text) and
--- moved it, which would otherwise corrupt the log order.
+-- Appends `text` as one line to the log.
 local function AppendLine(text)
-    debugLogEditBox:SetCursorPosition(#debugLogEditBox:GetText())
-    debugLogEditBox:Insert(text .. "\n")
-    ScrollDebugLogToBottom()
+    logLines[#logLines + 1] = text
+    QueueLogViewRefresh()
 end
 
 ------------------------------------------------------------------------
@@ -142,7 +177,7 @@ end
 -- In the order of the Developer panel. The label is the locale key
 -- "dev_filter_<key>"; a line that matches nothing is "other".
 RA.DEBUG_CATEGORIES = {
-    { key = "zone",     prefixes = { "Instance:", "[Season]", "--- GetInstanceInfo", "  ", "->", "----" } },
+    { key = "zone",     prefixes = { "Instance:", "[Season]", "[Raids]", "--- GetInstanceInfo", "  ", "->", "----" } },
     { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "ENCOUNTER_END", "Watchdog",
                                      "ResetState", "FullReset", "Close timer", "Starting close",
                                      "Hiding loot history", "Entering combat" } },
@@ -199,7 +234,7 @@ function RA.AppendDebugLog(...)
     for i = 1, select("#", ...) do
         parts[i] = tostring((select(i, ...)))
     end
-    AppendLine(date("%H:%M:%S") .. "  " .. table.concat(parts, " "))
+    AppendLine(date("%H:%M:%S") .. string.format(".%03d", (GetTime() % 1) * 1000) .. "  " .. table.concat(parts, " "))
 end
 
 -- Same, but never filtered: errors, window messages, tool output.
@@ -215,8 +250,7 @@ end
 local SEPARATOR_LINE = "|cff666666------------------------------------------------------------|r"
 
 function RA.AppendDebugLogSeparator()
-    if not debugLogEditBox then return end
-    if debugLogEditBox:GetText() == "" then return end
+    if #logLines == 0 then return end
     AppendLine(SEPARATOR_LINE)
 end
 
@@ -243,7 +277,11 @@ function RA.ResetDebugLogWindow()
 end
 
 function RA.ClearDebugLog()
-    if debugLogEditBox then debugLogEditBox:SetText("") end
+    wipe(logLines)
+    if debugLogEditBox then
+        debugLogEditBox:ClearFocus()
+        RefreshLogView()
+    end
     if debugLogScrollFrame then
         debugLogEditBox:SetHeight(debugLogScrollFrame:GetHeight())
         debugLogScrollFrame:SetVerticalScroll(0)
@@ -404,6 +442,32 @@ local function TestQoLReminders()
     end)
 end
 
+-- /rawraids: every Encounter Journal tier with its raids (name + map ID, the
+-- ID GetInstanceInfo returns as instanceID), to see which tier counts as
+-- "current" and whether Data/LegacyRaids.lua agrees. The journal's selected
+-- tier is put back afterwards.
+local function DumpRaidTiers()
+    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
+    local here = RA.cachedInstanceID
+    local previous = EJ_GetCurrentTier()
+    Log("[Raids] Encounter Journal tiers:", EJ_GetNumTiers(), "| selected before:", previous, "| you are in instance:", here)
+    for tier = 1, EJ_GetNumTiers() do
+        EJ_SelectTier(tier)
+        local raids, index = {}, 1
+        while true do
+            local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, true)
+            if not journalID then break end
+            raids[#raids + 1] = string.format("%s [map %s%s%s]", name, tostring(mapID),
+                RA.LEGACY_RAID_INSTANCES[mapID] and ", legacy list" or "",
+                mapID == here and ", HERE" or "")
+            index = index + 1
+        end
+        Log(string.format("[Raids] tier %d %s: %s", tier, tostring((EJ_GetTierInfo(tier))),
+            #raids > 0 and table.concat(raids, "; ") or "-"))
+    end
+    if previous then EJ_SelectTier(previous) end
+end
+
 local function RegisterSlashCommands()
     -- Dev/tester characters only.
     if not RA.DEV_CHARS[UnitName("player")] then return end
@@ -424,6 +488,12 @@ local function RegisterSlashCommands()
     end)
 
     RegisterDevCommand("RAWREMINDER", TestReminders)
+
+    -- /rawraids → Encounter Journal tiers and raids into the log
+    RegisterDevCommand("RAWRAIDS", function()
+        local ok, err = pcall(DumpRaidTiers)
+        RA.Print(ok and RA.RA_L["cmd_rawraids_done"] or ("/rawraids: " .. tostring(err)))
+    end, true)
 
     -- /rawreset → reset reminder state
     RegisterDevCommand("RAWRESET", function()

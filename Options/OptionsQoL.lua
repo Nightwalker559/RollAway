@@ -471,6 +471,7 @@ function RA.BuildQoLOptions(category, S, classColor)
         { dbKey = "autoLogRaidHeroic",    labelKey = "qol_log_raid_heroic_label"  },
         { dbKey = "autoLogRaidNormal",    labelKey = "qol_log_raid_normal_label"  },
         { dbKey = "autoLogRaidLFR",       labelKey = "qol_log_raid_lfr_label"     },
+        { dbKey = "autoLogRaidCurrentOnly", labelKey = "qol_log_raid_current_label"  },
     }
 
     local logZoneAnchor = qolLogMasterInfo

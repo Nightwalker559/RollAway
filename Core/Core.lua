@@ -187,6 +187,7 @@ RA.defaults = {
         autoLogRaidHeroic    = false,
         autoLogRaidNormal    = false,
         autoLogRaidLFR       = false,
+        autoLogRaidCurrentOnly = false, -- skip raids of old tiers (Data/LegacyRaids.lua)
         autoLogChatNotify    = false,
         advLogReminderEnabled = false,
         debug              = false,
@@ -413,6 +414,12 @@ local function HasActiveRolls()
     return false
 end
 
+local function CountActiveRolls()
+    local n = 0
+    for _ in pairs(RA.activeRolls) do n = n + 1 end
+    return n
+end
+
 -- Deferred by one frame (RunNextFrame) so our Hide() call runs on a fresh,
 -- untainted execution stack instead of directly inside whatever event handler
 -- (START_LOOT_ROLL, ENCOUNTER_END, etc.) triggered it. Calling Hide() on
@@ -466,10 +473,11 @@ local function CancelAllRollTimers()
 end
 
 -- A roll that is over: drops it and its watchdog.
-local function ForgetRoll(rollID)
+local function ForgetRoll(rollID, reason)
     RA.activeRolls[rollID] = nil
     RA.SafeCancelTimer(RA.rollTimers[rollID])
     RA.rollTimers[rollID] = nil
+    DBG("Roll finished:", rollID, "|", reason, "| active left:", CountActiveRolls())
 end
 
 -- Resets roll state and timers – does not touch the loot history frame.
@@ -526,13 +534,28 @@ end
 
 local function TryStartCloseTimer()
     if RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled then return end
-    if HasActiveRolls() or RA.closeTimer then return end
+    if HasActiveRolls() then return end
+    -- Every finished roll restarts the countdown: the frame closes `delay` seconds
+    -- after the LAST roll, not after the first one.
+    if RA.closeTimer then
+        DBG("Close timer restarted")
+        RA.SafeCancelTimer(RA.closeTimer)
+        RA.closeTimer = nil
+    end
     DBG("Starting close timer:", RollAwayDB.delay, "sec")
-    RA.closeTimer = C_Timer.NewTimer(RollAwayDB.delay, function()
+    local timer
+    timer = C_Timer.NewTimer(RollAwayDB.delay, function()
+        if RA.closeTimer ~= timer then return end   -- replaced or cancelled meanwhile
+        RA.closeTimer = nil
+        -- A new roll can start while this timer runs; never close the frame under it.
+        if HasActiveRolls() then
+            DBG("Close timer expired, but a roll is active - keeping the frame")
+            return
+        end
         DBG("Close timer expired")
         HideHistoryFrame()
-        RA.closeTimer = nil
     end)
+    RA.closeTimer = timer
 end
 
 -- Called once after all rolls complete to decide whether to start close timer.
@@ -624,8 +647,12 @@ f:SetScript("OnEvent", function(_, event, ...)
         if not RA.rollTimers[arg1] and not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
             local wdID = arg1
             RA.rollTimers[wdID] = C_Timer.NewTimer(RollAwayDB.rollTimeout, function()
-                DBG("Watchdog expired for rollID", wdID)
                 RA.rollTimers[wdID] = nil
+                -- Only a roll that is still open at this point is a stuck one. A roll
+                -- that already finished must not close a history frame the player
+                -- may have opened since.
+                if not RA.activeRolls[wdID] then return end
+                DBG("Watchdog expired for rollID", wdID)
                 RA.activeRolls[wdID] = nil
                 if not HasActiveRolls() then
                     CancelAllRollTimers()
@@ -647,17 +674,17 @@ f:SetScript("OnEvent", function(_, event, ...)
         end
 
     elseif event == "LOOT_ROLLS_COMPLETE" then
-        DBG("LOOT_ROLLS_COMPLETE lootHandle:", arg1)
+        DBG("LOOT_ROLLS_COMPLETE lootHandle:", arg1, "| active before:", CountActiveRolls())
 
         -- Remove the completed roll and its watchdog (matched by its lootHandle,
         -- or by rollID in case the game reports that).
         for rollID, lootHandle in pairs(RA.activeRolls) do
-            if rollID == arg1 or lootHandle == arg1 then ForgetRoll(rollID) end
+            if rollID == arg1 or lootHandle == arg1 then ForgetRoll(rollID, "completed") end
         end
 
         -- Clean up stale rolls the game no longer knows (concurrent rolls only).
         for rollID in pairs(RA.activeRolls) do
-            if not select(2, GetLootRollItemInfo(rollID)) then ForgetRoll(rollID) end
+            if not select(2, GetLootRollItemInfo(rollID)) then ForgetRoll(rollID, "stale (game no longer knows it)") end
         end
 
         C_Timer.After(0.1, CheckAndClose)
@@ -671,14 +698,14 @@ f:SetScript("OnEvent", function(_, event, ...)
         -- when it was opened by hand.
         if RA.activeRolls[arg1] then
             DBG("CANCEL_LOOT_ROLL rollID:", arg1)
-            ForgetRoll(arg1)
+            ForgetRoll(arg1, "cancelled")
             C_Timer.After(0.1, CheckAndClose)
         end
 
     elseif event == "CANCEL_ALL_LOOT_ROLLS" then
         if next(RA.activeRolls) then
             DBG("CANCEL_ALL_LOOT_ROLLS")
-            for rollID in pairs(RA.activeRolls) do ForgetRoll(rollID) end
+            for rollID in pairs(RA.activeRolls) do ForgetRoll(rollID, "all cancelled") end
             C_Timer.After(0.1, CheckAndClose)
         end
 

@@ -26,6 +26,7 @@ local PUBLIC_COMMANDS = {
     { "/rawtank",        "cmd_rawtank_info"   },
 }
 local DEV_COMMANDS = {
+    { "/rawraids",         "cmd_rawraids_info"       },
     { "/rawtest",          "cmd_rawtest_info"        },
     { "/rawreminder",      "cmd_rawreminder_info"    },
     { "/rawreset",         "cmd_rawreset_info"       },
