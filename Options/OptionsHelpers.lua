@@ -283,7 +283,7 @@ local function MakeTemplateSlider(parent, globalName, anchor, opts)
         maxLabel:SetText(opts.maxText)
     end
 
-    RA.Skin.StepSlider(slider)
+    RA.Skin.StepSlider(slider, true)
     return slider, minLabel, maxLabel
 end
 

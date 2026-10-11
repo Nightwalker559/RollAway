@@ -34,11 +34,14 @@ function Skin.IsActive() return Enabled() end
 -- Window from RA.CreatePanelWindow / popups: flat ElvUI frame, its close button included.
 function Skin.Window(frame) Handle("HandleFrame", frame) end
 
-function Skin.Button(btn)        Handle("HandleButton", btn) end
-function Skin.CheckBox(box)      Handle("HandleCheckBox", box) end
-function Skin.EditBox(box)       Handle("HandleEditBox", box) end
-function Skin.ScrollBar(bar)     Handle("HandleTrimScrollBar", bar) end
-function Skin.StepSlider(slider) Handle("HandleStepSlider", slider) end
+function Skin.Button(btn)    Handle("HandleButton", btn) end
+function Skin.CheckBox(box)  Handle("HandleCheckBox", box) end
+function Skin.EditBox(box)   Handle("HandleEditBox", box) end
+function Skin.ScrollBar(bar) Handle("HandleTrimScrollBar", bar) end
+
+-- MinimalSliderWithSteppersTemplate. ElvUI sizes the track from the frame height (40 =
+-- the game's default); `minimal` is for low frames (about 24): a slim track.
+function Skin.StepSlider(slider, minimal) Handle("HandleStepSlider", slider, minimal) end
 
 -- Dropdown button (WowStyle1DropdownTemplate); ElvUI forces the width.
 function Skin.Dropdown(dropdown, width) Handle("HandleDropDownBox", dropdown, width) end
