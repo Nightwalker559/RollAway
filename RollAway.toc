@@ -42,6 +42,7 @@ Modules\Paragon.lua
 Modules\GreatVault.lua
 Modules\LFGQuickCreate.lua
 Modules\Logs.lua
+Modules\FeatureList.lua
 Options\OptionsHelpers.lua
 Options\OptionsQoL.lua
 Options\OptionsProfile.lua

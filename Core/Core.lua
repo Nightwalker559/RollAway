@@ -535,7 +535,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitQuests", "InitTankMarker", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitQuests", "InitTankMarker", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 

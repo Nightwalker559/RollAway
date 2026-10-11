@@ -89,10 +89,15 @@ function RA.InitOptions()
     local category = Settings.RegisterCanvasLayoutCategory(panel, RA_L["addon_title"])
     local RA_CategoryID = category:GetID()
 
-    -- /raw, /rollaway → options (queued in combat)
+    -- /raw, /rollaway → options (queued in combat); "/raw features" → feature overview
     SLASH_ROLLAWAY1 = "/raw"
     SLASH_ROLLAWAY2 = "/rollaway"
-    SlashCmdList["ROLLAWAY"] = function()
+    SlashCmdList["ROLLAWAY"] = function(msg)
+        local arg = strtrim(msg or ""):lower()
+        if arg == "features" or arg == "funktionen" then
+            RA.ToggleFeatureList()
+            return
+        end
         RA.RunProtectedOrQueue(function() Settings.OpenToCategory(RA_CategoryID) end)
     end
 
@@ -105,6 +110,10 @@ function RA.InitOptions()
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("LEFT", icon, "RIGHT", 8, 0)
     title:SetText(RA_L["addon_title"])
+
+    local featuresBtn = UI.MakeSkinnedButton(panel, RA_L["feat_button"], 140)
+    featuresBtn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -16, -20)
+    featuresBtn:SetScript("OnClick", RA.ToggleFeatureList)
 
     local headerLine = panel:CreateTexture(nil, "ARTWORK")
     headerLine:SetHeight(1)

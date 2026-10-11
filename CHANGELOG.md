@@ -4,7 +4,11 @@
 
 ## 3.1.3 (alpha 4)
 
+### New
+- Feature overview with description and state of every feature: `/raw features` or the Features button in the options; a click opens the setting.
+
 ### Changed
+- QoL options re-sorted by topic: Group, Crafting & Vendors, Hide, Character, Quests, Logs, Reminder (Misc, Filter and LFG are gone; all settings are kept).
 - Game versions: 12.0.7 dropped, only 12.1 and 12.1.5 are marked as supported.
 
 ---
@@ -31,7 +35,7 @@
 ## 3.1.3 (alpha 1)
 
 ### New
-- Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own and refills when the stack is used up. Off by default (QoL > Misc); a checkbox with a warning in the Professions window switches it on and off.
+- Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own and refills when the stack is used up. Off by default (QoL > Crafting & Vendors); a checkbox with a warning in the Professions window switches it on and off.
 
 ### Changed
 - ElvUI: loot roll buttons are read from ElvUI's own fields; the new checkbox has the ElvUI skin.
