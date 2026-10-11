@@ -1,6 +1,6 @@
 # Builds the addon zip and uploads it to CurseForge and Wago when a tag is pushed.
 # The tag name is the version; a tag containing "alpha" or "beta" is uploaded as such,
-# anything else as a release. Needs the repository secrets CF_API_KEY and WAGO_API_TOKEN
+# anything else as a release. Needs the repository secrets CURSEFORGE and WAGO
 # (GITHUB_TOKEN is provided by GitHub). Project IDs come from the TOC.
 name: Package and release
 
@@ -16,8 +16,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      CF_API_KEY: ${{ secrets.CF_API_KEY }}
-      WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+      CF_API_KEY: ${{ secrets.CURSEFORGE }}
+      WAGO_API_TOKEN: ${{ secrets.WAGO }}
       GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Clone project
