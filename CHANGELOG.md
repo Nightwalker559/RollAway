@@ -2,7 +2,7 @@
 
 ---
 
-## 3.1.3
+## 3.1.3 (alpha 1)
 
 ### New
 - Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own and refills when the stack is used up. Off by default (QoL > Misc); a checkbox in the Professions window switches it on and off.
