@@ -70,7 +70,6 @@ local function SetItemLook(b)
     else
         b.frame:SetColorTexture(0.25, 0.25, 0.25, 1)
     end
-    b.check:SetShown(on and true or false)
     b.icon:SetDesaturated(b.owned == 0)
     b.icon:SetAlpha(b.owned == 0 and 0.45 or 1)
 end
@@ -96,10 +95,6 @@ local function GetItemButton(i)
     b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     b.count = b:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     b.count:SetPoint("BOTTOMRIGHT", -3, 3)
-    b.check = b:CreateTexture(nil, "OVERLAY")
-    b.check:SetSize(14, 14)
-    b.check:SetPoint("TOPRIGHT", 1, -1)
-    b.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
     b:SetScript("OnClick", OnItemClick)
     b:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
