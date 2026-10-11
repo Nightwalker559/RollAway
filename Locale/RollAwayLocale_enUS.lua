@@ -11,6 +11,15 @@ L["addon_title"]              = "RollAway & Tools"
 -- Tabs
 L["options_nav_main"]          = "Loot & Rolls"
 L["main_panel_info"]           = "Group loot history, bonus roll auto-pass, roll confirmation and legacy raid rolls."
+
+-- Popup window titles (what the popup is for)
+L["popup_title_bonusroll"]        = "Bonus Roll Reminder"
+L["popup_title_autopass_warning"] = "Auto-Pass Warning"
+L["popup_title_paragon"]          = "Paragon Reminder"
+L["popup_title_vault"]            = "Great Vault"
+L["popup_title_advlog"]           = "Advanced Combat Logging"
+L["popup_title_tank"]             = "Mark the Tank"
+L["popup_title_teleport"]         = "Teleport Reminder"
 L["tab_general"]              = "General"
 L["tab_dungeons"]             = "Dungeons"
 L["tab_raids"]                = "Raids"

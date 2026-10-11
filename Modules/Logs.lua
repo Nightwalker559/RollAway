@@ -109,6 +109,7 @@ local function CreateAdvLogFrame()
 
     advLogFrame = RA.CreatePopupFrame({
         name     = "RollAwayAdvLogFrame",
+        title    = RA_L["popup_title_advlog"],
         okayName = "RollAwayAdvLogOkay",
         width    = 300,
         height   = 110,

@@ -46,7 +46,7 @@ end
 local function CreateReminderFrame()
     if reminderFrame then return end
 
-    reminderFrame = RA.CreatePanelWindow("RollAwayTeleportReminderFrame", UIParent, 340, 112, "RollAway")
+    reminderFrame = RA.CreatePanelWindow("RollAwayTeleportReminderFrame", UIParent, 340, 112, RA_L["popup_title_teleport"])
     reminderFrame:SetPoint("TOP", UIParent, "TOP", 0, -180)
     reminderFrame:SetFrameStrata("HIGH")
     reminderFrame:SetClampedToScreen(true)

@@ -16,6 +16,7 @@ local function CreateVaultFrame()
 
     vaultFrame = RA.CreatePopupFrame({
         name     = "RollAwayGreatVaultFrame",
+        title    = RA_L["popup_title_vault"],
         okayName = "RollAwayGreatVaultOkay",
         width    = 300,
         height   = 110,

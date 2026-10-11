@@ -12,6 +12,15 @@ L["addon_title"]              = "RollAway & Tools"
 -- Tabs
 L["options_nav_main"]          = "Loot & Rolls"
 L["main_panel_info"]           = "Loot-Verlauf, Bonusroll-Auto-Pass, Roll-Bestätigung und Legacy-Raid-Würfe."
+
+-- Titel der Popup-Fenster (wofür das Popup steht)
+L["popup_title_bonusroll"]        = "Bonusroll-Erinnerung"
+L["popup_title_autopass_warning"] = "Auto-Pass-Warnung"
+L["popup_title_paragon"]          = "Paragon-Erinnerung"
+L["popup_title_vault"]            = "Große Schatzkammer"
+L["popup_title_advlog"]           = "Advanced Combat Logging"
+L["popup_title_tank"]             = "Tank markieren"
+L["popup_title_teleport"]         = "Teleport-Hinweis"
 L["tab_general"]              = "Allgemein"
 L["tab_dungeons"]             = "Dungeons"
 L["tab_raids"]                = "Raids"

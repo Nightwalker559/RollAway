@@ -48,6 +48,7 @@ local function CreateParagonFrame()
 
     paragonFrame = RA.CreatePopupFrame({
         name     = "RollAwayParagonFrame",
+        title    = RA_L["popup_title_paragon"],
         okayName = "RollAwayParagonOkay",
         width    = 300,
         height   = 130,

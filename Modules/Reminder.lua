@@ -81,6 +81,7 @@ local function CreateReminderFrame()
 
     reminderFrame = RA.CreatePopupFrame({
         name     = "RollAwayReminderFrame",
+        title    = RA_L["popup_title_bonusroll"],
         okayName = "RollAwayReminderOkay",
         width    = 300,
         height   = 130,
@@ -209,6 +210,7 @@ function RA.ShowReminder()
     -- Only the safety-net warning: just the "auto-pass ACTIVE" text.
     local warnOnly = not RollAwayDB.showReminder
     reminderFrame.warnOnly = warnOnly
+    reminderFrame:SetTitle(RA_L[warnOnly and "popup_title_autopass_warning" or "popup_title_bonusroll"])
     reminderFrame.sep:SetShown(not warnOnly)
     reminderFrame.currency:SetShown(not warnOnly)
     reminderFrame.status:SetShown(not warnOnly)

@@ -8,6 +8,7 @@
 - New name: RollAway & Tools (addon folder, settings and commands stay the same).
 - Minimap button: right click closes the options window again.
 - Addon logo in the header of every options page.
+- Popup windows are titled by what they are for (Bonus Roll Reminder, Great Vault, Paragon Reminder, ...).
 - Loot & Rolls page: tab list on the left like QoL; options window is wider.
 - Options pages use the full width up to the scroll bar.
 

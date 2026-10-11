@@ -97,6 +97,7 @@ local function CreateMarkFrame()
 
     markFrame = RA.CreatePopupFrame({
         name      = "RollAwayTankMarkFrame",
+        title     = RA_L["popup_title_tank"],
         okayName  = "RollAwayTankMarkOkay",
         width     = 300,
         height    = 100,

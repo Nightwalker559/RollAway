@@ -255,6 +255,7 @@ end
 --
 -- opts:
 --   name, okayName  global names of the frame and the Okay button
+--   title           window title: what the popup is for (the RollAway logo marks the addon)
 --   width, height   initial size; height is also the minimum
 --   yOffset         initial TOP offset
 --   duration        countdown in seconds
@@ -270,7 +271,7 @@ end
 RA.POPUP_CHROME_HEIGHT = 78
 
 function RA.CreatePopupFrame(opts)
-    local frame = RA.CreatePanelWindow(opts.name, UIParent, opts.width, opts.height, "RollAway")
+    local frame = RA.CreatePanelWindow(opts.name, UIParent, opts.width, opts.height, opts.title or "RollAway")
     frame:SetPoint("TOP", UIParent, "TOP", 0, opts.yOffset)
     frame.defaultY = opts.yOffset  -- used by RA.StackPopupFrame
     frame:SetFrameStrata("HIGH")
