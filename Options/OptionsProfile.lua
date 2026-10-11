@@ -207,7 +207,7 @@ function RA.PromptProfileReload()
 end
 
 -- Subcategory: Profile
-function RA.BuildProfileOptions(category, S)
+function RA.BuildProfileOptions(category)
     local panel = CreateFrame("Frame")
     Settings.RegisterCanvasLayoutSubcategory(category, panel, RA_L["profile_section_title"])
 
@@ -223,7 +223,7 @@ function RA.BuildProfileOptions(category, S)
 
     -- ── New / Reset (act on the active profile) ─────────────────────
     local function MakeButton(label, width)
-        return MakeSkinnedButton(panel, label, width, S)
+        return MakeSkinnedButton(panel, label, width)
     end
 
     local newBtn = MakeButton(RA_L["profile_new_button"], 90)

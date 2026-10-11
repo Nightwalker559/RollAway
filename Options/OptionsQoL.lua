@@ -15,9 +15,9 @@ local MakeSkinnedButton = UI.MakeSkinnedButton
 local QOL_CONTENT_W = UI.QOL_CONTENT_W
 local QOL_INFO_W    = UI.QOL_INFO_W
 
--- category: the main RollAway category; S: ElvUI Skins module or nil; classColor: for the
--- ElvUI tab highlight. The nav is sorted by the shown label.
-function RA.BuildQoLOptions(category, S, classColor)
+-- category: the main RollAway category; classColor: for the ElvUI tab highlight (nil
+-- without ElvUI). The nav is sorted by the shown label.
+function RA.BuildQoLOptions(category, classColor)
     local qolPanel = CreateFrame("Frame")
     Settings.RegisterCanvasLayoutSubcategory(category, qolPanel, RA_L["qol_section_title"])
 
@@ -70,13 +70,13 @@ function RA.BuildQoLOptions(category, S, classColor)
         end
         prevNavBtn = btn
         btn:SetScript("OnClick", function() ShowQolCategory(key) end)
-        if S and RA.ElvSkinTab then RA.ElvSkinTab(btn, qolCatPanels, key, classColor) end
+        RA.Skin.OptionTab(btn, qolCatPanels, key, classColor)
         qolNavButtons[key] = btn
     end
 
     -- A ScrollFrame per category (UI.MakeCategoryPage).
     local function CreateQolCategoryPanel(key, name)
-        return UI.MakeCategoryPage(qolPanel, qolHeaderLine, QOL_NAV_W, "RollAwayQol", name, qolCatPanels, key, S)
+        return UI.MakeCategoryPage(qolPanel, qolHeaderLine, QOL_NAV_W, "RollAwayQol", name, qolCatPanels, key)
     end
 
     local character = isMaxLevel and CreateQolCategoryPanel("character", "Character") or nil
@@ -300,7 +300,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     end)
     qolLockCB.frame:SetPoint("TOPLEFT", qolShowSpecCB.frame, "BOTTOMLEFT", -20, -14)
 
-    local qolResetPosBtn = MakeSkinnedButton(reminder, RA_L["qol_reset_position_button"], 160, S)
+    local qolResetPosBtn = MakeSkinnedButton(reminder, RA_L["qol_reset_position_button"], 160)
     qolResetPosBtn:SetPoint("TOPLEFT", qolLockCB.frame, "BOTTOMLEFT", 4, -8)
     qolResetPosBtn:SetScript("OnClick", RA.ResetToastPositions)
 

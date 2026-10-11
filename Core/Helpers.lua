@@ -6,6 +6,11 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
+-- Skin hooks (Skin.Window, Skin.Button, Skin.CheckBox, ...): no-ops here, replaced by
+-- Core/ElvUI_Skin.lua when ElvUI is loaded.
+local function Noop() end
+RA.Skin = setmetatable({}, { __index = function() return Noop end })
+
 ------------------------------------------------------------------------
 -- Generic utilities
 ------------------------------------------------------------------------
@@ -144,6 +149,7 @@ function RA.CreatePanelWindow(name, parent, width, height, title)
     f:SetSize(width, height)
     f:SetTitle(title)
     f.CloseButton = CreateFrame("Button", nil, f, "UIPanelCloseButtonDefaultAnchors")
+    RA.Skin.Window(f)
     return f
 end
 
@@ -243,8 +249,7 @@ end
 -- Callers add their own content.
 --
 -- opts:
---   name, okayName  global names of the frame and the Okay button (ElvUI_Skin.lua
---                   looks them up)
+--   name, okayName  global names of the frame and the Okay button
 --   width, height   initial size; height is also the minimum
 --   yOffset         initial TOP offset
 --   duration        countdown in seconds
@@ -271,7 +276,7 @@ function RA.CreatePopupFrame(opts)
     -- ESC closes the frame
     tinsert(UISpecialFrames, opts.name)
 
-    -- Icon in the title bar. Own holder, stays above ElvUI's backdrop child.
+    -- Icon in the title bar (own holder: it must sit above the window border).
     local iconHolder = CreateFrame("Frame", nil, frame)
     iconHolder:SetSize(18, 18)
     iconHolder:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -3)
@@ -312,8 +317,8 @@ function RA.CreatePopupFrame(opts)
     end)
     frame:SetScript("OnHide", timer.Stop)
 
-    -- ElvUI skin, once at creation.
-    if RA.SkinPopupFrame then RA.SkinPopupFrame(frame) end
+    RA.Skin.Button(okayBtn)
+    RA.Skin.StatusBar(timer.bar, 0.8, 0.7, 0.1, 0.9)
 
     return frame
 end

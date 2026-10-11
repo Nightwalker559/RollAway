@@ -3,8 +3,8 @@
 -- panel (Stats view only). One idempotent RA.RefreshCharFrameButtons() decides from
 -- the current state which buttons show; it is called from a few events (no timers,
 -- no cached flags).
--- ElvUI: ElvUI_Skin.lua skins the buttons after each refresh. Chonky Character Sheet:
--- the buttons anchor to CharacterFrameBg and the Stats-only rule is skipped.
+-- Chonky Character Sheet: the buttons anchor to CharacterFrameBg and the Stats-only rule
+-- is skipped.
 
 local RA       = _G["RollAway"]
 local RA_L     = RA.RA_L
@@ -63,6 +63,8 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     tex:SetPoint("BOTTOMRIGHT", -3, 3)
     tex:SetTexture(icon)
     btn.icon = tex
+
+    RA.Skin.Button(btn)
 
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnEnter", onEnter)

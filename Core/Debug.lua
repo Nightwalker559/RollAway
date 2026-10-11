@@ -81,6 +81,7 @@ local function CreateDebugLogFrame()
 
     local scrollFrame = CreateFrame("ScrollFrame", "RollAwayDebugLogScroll", f, "ScrollFrameTemplate")
     scrollFrame.ScrollBar:SetHideIfUnscrollable(true)
+    RA.Skin.ScrollBar(scrollFrame.ScrollBar)
     scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -34)
     scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 46)
 
@@ -97,11 +98,13 @@ local function CreateDebugLogFrame()
     end)
     editBox:SetText("")
     scrollFrame:SetScrollChild(editBox)
+    RA.Skin.EditBox(editBox)
 
     local selectAllBtn = CreateFrame("Button", "RollAwayDebugLogSelectAll", f, "UIPanelButtonTemplate")
     selectAllBtn:SetSize(100, 22)
     selectAllBtn:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 16, 14)
     selectAllBtn:SetText("Select All")
+    RA.Skin.Button(selectAllBtn)
     selectAllBtn:SetScript("OnClick", function()
         editBox:SetFocus()
         editBox:HighlightText()
@@ -111,6 +114,7 @@ local function CreateDebugLogFrame()
     clearBtn:SetSize(80, 22)
     clearBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 14)
     clearBtn:SetText("Clear")
+    RA.Skin.Button(clearBtn)
     clearBtn:SetScript("OnClick", function() RA.ClearDebugLog() end)
 
     -- Resize grip
@@ -230,8 +234,7 @@ function RA.AppendDebugLogSeparator()
     AppendLine(SEPARATOR_LINE)
 end
 
--- /rawlog: opens the window or toggles it. Goes through AppendDebugLog so a fresh
--- window gets the ElvUI skin.
+-- /rawlog: opens the window or toggles it (a fresh window is created and shown by AppendDebugLog).
 function RA.ToggleDebugLogWindow()
     local existed = debugLogFrame ~= nil
     RA.AppendDebugLogUnfiltered("Log window toggled")

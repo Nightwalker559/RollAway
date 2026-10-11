@@ -160,6 +160,7 @@ local function CreateOverviewFrame()
     }
     overviewFrame.numTabs = #tabLabels
     local prevTab
+    local tabs = {}
     for i, label in ipairs(tabLabels) do
         local tab = CreateFrame("Button", frameName.."Tab"..i, overviewFrame, "PanelTabButtonTemplate")
         tab:SetID(i)
@@ -172,7 +173,9 @@ local function CreateOverviewFrame()
         end
         tab:SetScript("OnClick", function(self) SelectTab(self:GetID()) end)
         prevTab = tab
+        tabs[i] = tab
     end
+    RA.Skin.TabRow(tabs)
     PanelTemplates_SetTab(overviewFrame, 1)
 
     -- Scrollable content: icons and headers are anchored inside `content`, which grows

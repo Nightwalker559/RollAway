@@ -125,7 +125,7 @@ local function CreateMarkFrame()
         if testMode then LogClick(markFrame.unit, markFrame.icon) end
         ClosePopup(markFrame)
     end)
-    if RA.SkinPopupButton then RA.SkinPopupButton(btn) end
+    RA.Skin.Button(btn)
     markFrame.markBtn = btn
 
     -- Closes on a pull, on leaving the group and when the key starts.

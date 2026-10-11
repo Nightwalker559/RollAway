@@ -191,7 +191,8 @@ local function CreatePanel()
     noneBtn:SetText(RA_L["salvage_panel_none"])
     noneBtn:SetScript("OnClick", function() SetAll(false) end)
 
-    if RA.SkinSalvagePanel then RA.SkinSalvagePanel(panel, allBtn, noneBtn) end
+    RA.Skin.Button(allBtn)
+    RA.Skin.Button(noneBtn)
 end
 
 local function TogglePanel()
@@ -243,7 +244,7 @@ local function SetToggle(form, show)
     if not toggle then
         toggle = CreateFrame("CheckButton", nil, container, "UICheckButtonTemplate")
         toggle:SetSize(22, 22)
-        if RA.SkinCheckBox then RA.SkinCheckBox(toggle) end
+        RA.Skin.CheckBox(toggle)
         toggle:SetScript("OnClick", function(self)
             RollAwayDB.salvageSlotActive = self:GetChecked() and true or false
             UpdateToggleLook()

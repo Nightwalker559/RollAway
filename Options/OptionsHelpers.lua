@@ -108,7 +108,7 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
             tex:SetAllPoints(box)
         end
     end
-    if RA.SkinCheckBox then RA.SkinCheckBox(box) end
+    RA.Skin.CheckBox(box)
 
     local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     text:SetText(label)
@@ -232,7 +232,7 @@ local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
     function dd:SetCallback(_, fn) self.callback = fn end
     function dd:SetDisabled(disabled) frame:SetEnabled(not disabled) end
 
-    if RA.SkinDropdown then RA.SkinDropdown(frame, width) end  -- ElvUI only
+    RA.Skin.Dropdown(frame, width)
     return dd
 end
 
@@ -248,24 +248,17 @@ local function MakeValueSlider(parent, anchor, xOffset, yOffset, opts)
     })
     frame:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged,
         function(_, value) opts.onChange(math.floor(value)) end, frame)
-    if RA.SkinStepSlider then RA.SkinStepSlider(frame) end
+    RA.Skin.StepSlider(frame)
     return frame
 end
 
--- UIPanelButtonTemplate button, with ElvUI's HandleButton skin when available (its native
--- textures are cleared too, they would show through).
-local function MakeSkinnedButton(parent, label, width, S)
+-- UIPanelButtonTemplate button (ElvUI skin when active).
+local function MakeSkinnedButton(parent, label, width)
     local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     btn:SetText(label)
     -- At least as wide as the label (German is longer).
     btn:SetSize(math.max(width or 110, btn:GetTextWidth() + 24), 22)
-    if S and S.HandleButton then
-        S:HandleButton(btn)
-        btn:SetNormalTexture("")
-        btn:SetPushedTexture("")
-        btn:SetHighlightTexture("")
-        btn:SetDisabledTexture("")
-    end
+    RA.Skin.Button(btn)
     return btn
 end
 
@@ -290,7 +283,7 @@ local function MakeTemplateSlider(parent, globalName, anchor, opts)
         maxLabel:SetText(opts.maxText)
     end
 
-    if RA.SkinStepSlider then RA.SkinStepSlider(slider) end
+    RA.Skin.StepSlider(slider)
     return slider, minLabel, maxLabel
 end
 
@@ -306,11 +299,11 @@ end
 
 -- ScrollFrame with the game's slim scroll bar, shown only when there is something to
 -- scroll. The bar sits right of the frame: end the frame ~12px before the panel edge.
--- ElvUI skin via S if given.
-local function MakeScrollFrame(parent, name, S)
+-- ElvUI skin when active.
+local function MakeScrollFrame(parent, name)
     local scroll = CreateFrame("ScrollFrame", name, parent, "ScrollFrameTemplate")
     scroll.ScrollBar:SetHideIfUnscrollable(true)
-    if S and S.HandleTrimScrollBar then S:HandleTrimScrollBar(scroll.ScrollBar) end
+    RA.Skin.ScrollBar(scroll.ScrollBar)
     return scroll
 end
 
@@ -383,14 +376,14 @@ local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf
 end
 
 -- Season sub-tabs in a parent panel below anchorFrame. Returns panels[key] = contentFrame, tabRowFrame.
-local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
+local function MakeSeasonTabs(parent, anchorFrame, seasons)
     local TAB_H   = 22
     local TAB_GAP = 4
     local panels  = {}
     local buttons = {}
     local buttonOrder = {}
 
-    local classColor = S and (RAID_CLASS_COLORS and RAID_CLASS_COLORS[select(2, UnitClass("player"))])
+    local classColor = RA.Skin.ClassColor()
 
     -- devOnly season tabs (S1/S3) need debug mode.
     local devDebugActive = RollAwayDB and RollAwayDB.debug
@@ -424,10 +417,7 @@ local function MakeSeasonTabs(S, parent, anchorFrame, seasons)
         buttons[key] = btn
         buttonOrder[#buttonOrder + 1] = btn
 
-        -- ElvUI skin or default style
-        if S and RA.ElvSkinTab then
-            RA.ElvSkinTab(btn, panels, key, classColor)
-        end
+        RA.Skin.OptionTab(btn, panels, key, classColor)
 
         -- No season sub-tabs without bonus rolls
         if not RA.BONUS_ROLLS_ENABLED then btn:Hide() end
@@ -564,7 +554,7 @@ end
 --   prefix, name       global name of the scroll frame: <prefix><name>Scroll
 --   pages, key         the nav's pages table; the page is stored there
 -- Returns the scroll child for the page's content.
-local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages, key, S)
+local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages, key)
     local function FitContentHeight(content)
         local top = content:GetTop()
         if not top then return end
@@ -585,7 +575,7 @@ local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages
     page:SetPoint("BOTTOMRIGHT", panel,      "BOTTOMRIGHT", 0, 0)
     page:Hide()
 
-    local scroll = MakeScrollFrame(page, prefix .. name .. "Scroll", S)
+    local scroll = MakeScrollFrame(page, prefix .. name .. "Scroll")
     scroll:SetPoint("TOPLEFT",     page, "TOPLEFT",     0,   0)
     scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -12, 0)
 

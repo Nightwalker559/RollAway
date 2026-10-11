@@ -84,7 +84,6 @@ end
 -- Main init (Core.lua, ADDON_LOADED)
 
 function RA.InitOptions()
-    local S    = ElvUI and unpack(ElvUI):GetModule("Skins", true)
 
     local panel = CreateFrame("Frame")
     local category = Settings.RegisterCanvasLayoutCategory(panel, RA_L["addon_title"])
@@ -136,11 +135,7 @@ function RA.InitOptions()
     end
 
     -- Class color (ElvUI tab highlight)
-    local classColor
-    if S then
-        local _, className = UnitClass("player")
-        classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[className]
-    end
+    local classColor = RA.Skin.ClassColor()
 
     -- Bonus roll tabs: hidden without bonus rolls this season or below max level (dev
     -- characters bypass the level check only with debug mode on). Registered in
@@ -171,9 +166,7 @@ function RA.InitOptions()
 
         btn:SetScript("OnClick", function() ShowTab(key) end)
 
-        if S and RA.ElvSkinTab then
-            RA.ElvSkinTab(btn, tabPanels, key, classColor)
-        end
+        RA.Skin.OptionTab(btn, tabPanels, key, classColor)
         tabButtons[key] = btn
 
         if BONUS_ROLL_TABS[key] and devLiveGate then
@@ -209,7 +202,7 @@ function RA.InitOptions()
     table.insert(RA.SeasonTabDebugChecks, EnsureValidTopTabSelected)
 
     -- Tab: General (in a ScrollFrame)
-    local genScroll = UI.MakeScrollFrame(tabPanels["general"], "RollAwayGenScroll", S)
+    local genScroll = UI.MakeScrollFrame(tabPanels["general"], "RollAwayGenScroll")
     genScroll:SetPoint("TOPLEFT",     tabPanels["general"], "TOPLEFT",     0,   0)
     genScroll:SetPoint("BOTTOMRIGHT", tabPanels["general"], "BOTTOMRIGHT", -12, 0)
 
@@ -410,7 +403,7 @@ function RA.InitOptions()
     dngSeasonAnchor:SetPoint("TOPLEFT", dngAllCB.frame, "BOTTOMLEFT", 0, 0)
     dngSeasonAnchor:SetSize(560, 1)
 
-    local dngSeasons = MakeSeasonTabs(S, dng, dngSeasonAnchor, SeasonTabDefs())
+    local dngSeasons = MakeSeasonTabs(dng, dngSeasonAnchor, SeasonTabDefs())
 
     -- Season 1 / Season 2 content
     local _, dngS1CB = MakeCheckboxGrid(dngSeasons["s1"], MakeSeasonAnchor(dngSeasons["s1"]), -8,
@@ -537,7 +530,7 @@ function RA.InitOptions()
     raidSeasonAnchor:SetPoint("TOPLEFT", raidDiffRow, "BOTTOMLEFT", 0, 0)
     raidSeasonAnchor:SetSize(560, 1)
 
-    local raidSeasons = MakeSeasonTabs(S, raidPanel, raidSeasonAnchor, SeasonTabDefs())
+    local raidSeasons = MakeSeasonTabs(raidPanel, raidSeasonAnchor, SeasonTabDefs())
 
     -- Groups bosses into `sections` (boss.raid == section.key), in section order.
     local function FillRaidSections(sections, bosses)
@@ -717,9 +710,9 @@ function RA.InitOptions()
 
     -- Subcategories: QoL (OptionsQoL.lua), Profile (OptionsProfile.lua), Developer (dev
     -- characters, OptionsDev.lua)
-    RA.BuildQoLOptions(category, S, classColor)
-    RA.BuildProfileOptions(category, S)
-    if isDevChar then RA.BuildDevOptions(category, S, classColor) end
+    RA.BuildQoLOptions(category, classColor)
+    RA.BuildProfileOptions(category)
+    if isDevChar then RA.BuildDevOptions(category, classColor) end
 
     ShowTab("general")
     Settings.RegisterAddOnCategory(category)

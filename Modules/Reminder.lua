@@ -130,7 +130,7 @@ local function CreateReminderFrame()
             RA.OpenOptionsTab(currentTabKey)
         end
     end)
-    if RA.SkinPopupButton then RA.SkinPopupButton(reminderFrame.btn) end
+    RA.Skin.Button(reminderFrame.btn)
 
     RA.SetupInstanceReminderLifecycle(reminderFrame, "lastReminderInstID")
 end

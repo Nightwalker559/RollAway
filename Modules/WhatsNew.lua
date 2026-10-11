@@ -96,6 +96,7 @@ local function CreateWhatsNewFrame()
     okBtn:SetSize(90, 24)
     okBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 12)
     okBtn:SetText(RA_L["reminder_okay"])
+    RA.Skin.Button(okBtn)
     okBtn:SetScript("OnClick", function()
         RollAwayDB.whatsNewSeen = WHATS_NEW_VERSION
         f:Hide()

@@ -49,7 +49,7 @@ local function CommandLines(list)
     return table.concat(lines, "\n")
 end
 
-function RA.BuildDevOptions(category, S, classColor)
+function RA.BuildDevOptions(category, classColor)
     local panel = CreateFrame("Frame")
     Settings.RegisterCanvasLayoutSubcategory(category, panel, RA_L["dev_section_title"])
 
@@ -90,13 +90,13 @@ function RA.BuildDevOptions(category, S, classColor)
         end
         prevNavBtn = btn
         btn:SetScript("OnClick", function() ShowCategory(key) end)
-        if S and RA.ElvSkinTab then RA.ElvSkinTab(btn, catPanels, key, classColor) end
+        RA.Skin.OptionTab(btn, catPanels, key, classColor)
         navButtons[key] = btn
     end
 
     -- A scroll frame per category (UI.MakeCategoryPage).
     local function CreateCategoryPanel(key, name)
-        return UI.MakeCategoryPage(panel, headerLine, NAV_W, "RollAwayDev", name, catPanels, key, S)
+        return UI.MakeCategoryPage(panel, headerLine, NAV_W, "RollAwayDev", name, catPanels, key)
     end
 
     local logPage      = CreateCategoryPanel("log",      "Log")
@@ -116,7 +116,7 @@ function RA.BuildDevOptions(category, S, classColor)
     -- A dev command button with its description (and slash command) below; anchor = what it
     -- hangs below (nil: page top). Returns the description as the next anchor.
     local function AddAction(page, anchor, x, y, command, labelKey, slash)
-        local btn = MakeSkinnedButton(page, RA_L[labelKey], 200, S)
+        local btn = MakeSkinnedButton(page, RA_L[labelKey], 200)
         if anchor then
             btn:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, y)
         else
@@ -147,15 +147,15 @@ function RA.BuildDevOptions(category, S, classColor)
     logHeader:SetPoint("TOPLEFT", errorsInfo, "BOTTOMLEFT", -20, -18)
     logHeader:SetText(RA_L["dev_log_window_label"])
 
-    local openBtn = MakeSkinnedButton(logPage, RA_L["dev_log_open"], 150, S)
+    local openBtn = MakeSkinnedButton(logPage, RA_L["dev_log_open"], 150)
     openBtn:SetPoint("TOPLEFT", logHeader, "BOTTOMLEFT", 0, -8)
     openBtn:SetScript("OnClick", RA.ToggleDebugLogWindow)
 
-    local clearBtn = MakeSkinnedButton(logPage, RA_L["dev_log_clear"], 110, S)
+    local clearBtn = MakeSkinnedButton(logPage, RA_L["dev_log_clear"], 110)
     clearBtn:SetPoint("LEFT", openBtn, "RIGHT", 8, 0)
     clearBtn:SetScript("OnClick", RA.ClearDebugLog)
 
-    local resetBtn = MakeSkinnedButton(logPage, RA_L["dev_log_reset"], 190, S)
+    local resetBtn = MakeSkinnedButton(logPage, RA_L["dev_log_reset"], 190)
     resetBtn:SetPoint("LEFT", clearBtn, "RIGHT", 8, 0)
     resetBtn:SetScript("OnClick", RA.ResetDebugLogWindow)
 
@@ -167,9 +167,9 @@ function RA.BuildDevOptions(category, S, classColor)
     filterHeader:SetText(RA_L["dev_filter_title"])
     local filterInfo = MakeInfoText(logPage, filterHeader, 0, -6, QOL_INFO_W, RA_L["dev_filter_info"])
 
-    local allBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_all"], 80, S)
+    local allBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_all"], 80)
     allBtn:SetPoint("TOPLEFT", filterInfo, "BOTTOMLEFT", 0, -8)
-    local noneBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_none"], 80, S)
+    local noneBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_none"], 80)
     noneBtn:SetPoint("LEFT", allBtn, "RIGHT", 8, 0)
 
     local filterCBs = {}
