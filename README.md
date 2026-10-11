@@ -83,9 +83,4 @@ Red error text (important errors stay visible), Talking Head, boss banner, event
 
 ---
 
-## Installation
-
-1. Download and extract to `Interface/AddOns/RollAway`. The folder must be named exactly `RollAway`.
-2. Restart the game or run `/reload`.
-
 The full version history is in `CHANGELOG.md`. Bugs and suggestions: CurseForge or Wago.
