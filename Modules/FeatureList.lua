@@ -7,6 +7,8 @@ local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
 local WIDTH, HEIGHT, CONTENT_W = 400, 640, 340
+-- Name / description of a row end here, left of the checkbox or the "On/Off" text.
+local TEXT_W = CONTENT_W - 44
 
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
@@ -185,7 +187,7 @@ local function CreateFrameOnce()
 
                     local name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
                     name:SetPoint("TOPLEFT", row, "TOPLEFT", 6, -4)
-                    name:SetWidth(CONTENT_W - 70)
+                    name:SetWidth(TEXT_W)
                     name:SetJustifyH("LEFT")
                     name:SetText(RA_L[item.name])
 
@@ -214,7 +216,7 @@ local function CreateFrameOnce()
                     if item.info then
                         local info = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
                         info:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -3)
-                        info:SetWidth(CONTENT_W - 70)   -- same as the name: ends before the checkbox / "On"
+                        info:SetWidth(TEXT_W)
                         info:SetJustifyH("LEFT")
                         info:SetTextColor(0.7, 0.7, 0.7)
                         info:SetText(RA_L[item.info])
