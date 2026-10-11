@@ -35,7 +35,8 @@ jobs:
           else
             heading="## ${tag}"
           fi
-          awk -v h="$heading" '$0 == h {on=1} on && /^---/ {exit} on' CHANGELOG.md > CHANGELOG.cut
+          # From the heading to the next "---" line or the next "## " heading, whichever comes first.
+          awk -v h="$heading" '$0 == h {on=1; print; next} on && (/^---/ || /^## /) {exit} on' CHANGELOG.md > CHANGELOG.cut
           if [ ! -s CHANGELOG.cut ]; then
             echo "::error::No section '$heading' in CHANGELOG.md"
             exit 1
