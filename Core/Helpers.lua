@@ -499,10 +499,11 @@ end
 
 ------------------------------------------------------------------------
 -- Loot roll buttons (AutoRoll, RollConfirm): Blizzard's GroupLootFrameN or, with
--- ElvUI, ElvUI_LootRollFrameN (buttons found by name fragments).
+-- ElvUI, ElvUI_LootRollFrameN (buttons: fields bar.need/greed/transmog/pass, older
+-- ElvUI: found by name fragments).
 ------------------------------------------------------------------------
 
--- dbKey, native button field, ElvUI button name fragments (localized).
+-- dbKey (also ElvUI's bar field), native button field, ElvUI button name fragments (localized).
 RA.ROLL_BUTTONS = {
     { dbKey = "need",     nativeField = "NeedButton",     elvNames = { "Bedarf", "Need" } },
     { dbKey = "greed",    nativeField = "GreedButton",    elvNames = { "Gier", "Greed" } },
@@ -522,6 +523,12 @@ function RA.GetElvRollButtons(i)
     if not elvFrame then return nil end
 
     local found = {}
+    for _, def in ipairs(RA.ROLL_BUTTONS) do
+        local btn = elvFrame[def.dbKey]
+        if type(btn) == "table" and btn.GetObjectType and btn:GetObjectType() == "Button" then
+            found[def.dbKey] = btn
+        end
+    end
     for _, child in ipairs({ elvFrame:GetChildren() }) do
         if child:GetObjectType() == "Button" then
             local cname = child:GetName() or ""

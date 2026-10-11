@@ -24,9 +24,12 @@ end
 
 -- ElvUI backdrop/border colors
 local function GetElvUIColors()
-    local bg = (E.media and E.media.backdropcolor) or {0.1, 0.1, 0.1, 0.8}
-    local bd = (E.media and E.media.bordercolor)  or {0.1, 0.1, 0.1}
-    return bg, bd
+    local function Rgba(c, r, g, b, a)
+        if not c then return { r, g, b, a } end
+        return { c.r or c[1] or r, c.g or c[2] or g, c.b or c[3] or b, c.a or c[4] or a }
+    end
+    local m = E.media
+    return Rgba(m and m.backdropcolor, 0.1, 0.1, 0.1, 0.8), Rgba(m and m.bordercolor, 0.1, 0.1, 0.1, 1)
 end
 
 -- bg/bd: { r, g, b [, a] } - applied to the frame and to its ElvUI backdrop child.
@@ -205,7 +208,7 @@ local function SkinPortalOverviewFrame(f)
     end
     -- S:HandleTab does not touch anchoring: ElvUI insets the tab backdrop by 5px, so tabs
     -- need a matching negative gap instead of PortalOverview.lua's wider one.
-    local offset = E.Retail and -5 or -19
+    local offset = (E.Modern or E.Retail) and -5 or -19
     for i = 2, #tabs do
         tabs[i]:ClearAllPoints()
         tabs[i]:SetPoint("TOPLEFT", tabs[i - 1], "TOPRIGHT", offset, 0)
