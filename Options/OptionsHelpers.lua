@@ -167,10 +167,9 @@ local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
     return dd
 end
 
--- Slider in the game's current style (MinimalSliderWithSteppersTemplate, like the game's
--- settings) with its value in the label above the track. Returns the slider frame.
+-- Game-style slider (MinimalSliderWithSteppersTemplate), value in the label above the track,
 -- (xOffset, yOffset) below `anchor`. opts: min, max, step, value, formatLabel(value) -> text,
--- onChange(rounded value).
+-- onChange(rounded value). Returns the slider frame.
 local function MakeValueSlider(parent, anchor, xOffset, yOffset, opts)
     local frame = CreateFrame("Frame", nil, parent, "MinimalSliderWithSteppersTemplate")
     frame:SetSize(300, 40) -- room for the longest label ("Transparenz bekannter Items 100%")
@@ -201,9 +200,8 @@ local function MakeSkinnedButton(parent, label, width, S)
     return btn
 end
 
--- Slider in the game's current style without label (the caller shows a live value label)
--- and optional min/max footers. Returns slider frame (SetEnabled/SetAlpha), minLabel,
--- maxLabel (nil without opts.minText).
+-- Game-style slider without label (the caller shows the value) and optional min/max
+-- footers. Returns slider frame, minLabel, maxLabel (nil without opts.minText).
 local function MakeTemplateSlider(parent, globalName, anchor, opts)
     local slider = CreateFrame("Frame", globalName, parent, "MinimalSliderWithSteppersTemplate")
     slider:SetSize(opts.width or 200, 24)
@@ -237,9 +235,9 @@ local function MakeHintText(parent, anchorLine, text)
     return hint
 end
 
--- ScrollFrame in the game's current style (ScrollFrameTemplate: slim scroll bar at its
--- right edge: end the frame ~12px before the panel edge); the bar shows only when there is something to
--- scroll. Skinned with ElvUI's Skins module (S) if given.
+-- ScrollFrame with the game's slim scroll bar, shown only when there is something to
+-- scroll. The bar sits right of the frame: end the frame ~12px before the panel edge.
+-- ElvUI skin via S if given.
 local function MakeScrollFrame(parent, name, S)
     local scroll = CreateFrame("ScrollFrame", name, parent, "ScrollFrameTemplate")
     scroll.ScrollBar:SetHideIfUnscrollable(true)

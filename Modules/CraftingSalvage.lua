@@ -1,12 +1,9 @@
 -- RollAway - CraftingSalvage.lua
--- Professions: salvage recipes (e.g. Cooking "Thalassian Filet", fish -> fillets)
--- need an item put into the slot by hand. This fills the slot with the first item
--- you own AND ticked in the material list, in the order of Blizzard's own list
--- (name, then item ID), once a stack is big enough. Refills when the stack is used
--- up. Only the crafting page. Next to "Reagents:" sit a checkbox (on/off) and the red
--- text that opens the material list; nothing ticked = nothing is filled.
--- Everything runs one frame after Blizzard's code and only sets what the slot's
--- own click handler sets.
+-- Professions: fills the slot of salvage recipes (e.g. Cooking fish -> fillets) with the
+-- first owned item that is ticked in the material list (Blizzard's order: name, item ID)
+-- and has a big enough stack; refills when the stack is used up. Nothing ticked = nothing
+-- filled. Next to "Reagents:": checkbox (on/off) + red text that opens the list.
+-- Runs one frame after Blizzard's code and only sets what the slot's click handler sets.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -86,7 +83,7 @@ local function GetItemButton(i)
     b:SetSize(CELL - 4, CELL - 4)
     -- 2px border: green = allowed, grey = not allowed.
     b.edges = {}
-    for i = 1, 4 do b.edges[i] = b:CreateTexture(nil, "BORDER") end
+    for n = 1, 4 do b.edges[n] = b:CreateTexture(nil, "BORDER") end
     b.edges[1]:SetPoint("TOPLEFT");     b.edges[1]:SetPoint("TOPRIGHT");     b.edges[1]:SetHeight(2)
     b.edges[2]:SetPoint("BOTTOMLEFT");  b.edges[2]:SetPoint("BOTTOMRIGHT");  b.edges[2]:SetHeight(2)
     b.edges[3]:SetPoint("TOPLEFT");     b.edges[3]:SetPoint("BOTTOMLEFT");   b.edges[3]:SetWidth(2)
@@ -337,6 +334,7 @@ function RA.InitCraftingSalvage()
         ProfessionsFrame:HookScript("OnHide", function()
             ev:UnregisterAllEvents()
             autoGUID = nil
+            if panel then panel:Hide() end
         end)
         if ProfessionsFrame:IsShown() then ev:RegisterEvent("BAG_UPDATE_DELAYED") end
     end

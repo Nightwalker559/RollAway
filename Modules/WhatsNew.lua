@@ -50,10 +50,9 @@ local function CreateWhatsNewFrame()
     local yOffset = -8
 
     for _, feat in ipairs(FEATURES) do
-        local card = CreateFrame("Frame", nil, content, "BackdropTemplate")
+        local card = CreateFrame("Frame", nil, content)
         card:SetWidth(CARD_W)
         card:SetPoint("TOPLEFT", content, "TOPLEFT", 4, yOffset)
-        card:SetBackdrop(nil)
 
         -- Title
         local titleText = card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")

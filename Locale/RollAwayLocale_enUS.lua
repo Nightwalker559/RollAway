@@ -553,7 +553,7 @@ L["greatvault_alert_msg"]          = "You have unclaimed rewards in your Great V
 L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 
 ------------------------------------------------------------------------
--- What's New (3.1.2)
+-- What's New (3.1.3)
 ------------------------------------------------------------------------
 L["whatsnew_salvage_title"]       = "Salvage slot fills itself"
 L["whatsnew_salvage_desc"]        = "Recipes like Cooking fish -> fillets need an item in the slot. RollAway now puts in the first one you own and ticked in a list (click the red text in the Professions window) and refills it when the stack is used up."

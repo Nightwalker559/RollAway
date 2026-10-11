@@ -554,7 +554,7 @@ L["greatvault_alert_msg"]          = "Du hast unabgeholte Belohnungen in der Gro
 L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 
 ------------------------------------------------------------------------
--- What's New (3.1.2)
+-- What's New (3.1.3)
 ------------------------------------------------------------------------
 L["whatsnew_salvage_title"]       = "Verwerten-Slot füllt sich selbst"
 L["whatsnew_salvage_desc"]        = "Rezepte wie Kochkunst Fisch -> Filet brauchen einen Gegenstand im Slot. RollAway legt jetzt den ersten ein, den du hast und in einer Liste angehakt hast (roten Text im Berufe-Fenster anklicken), und füllt nach, wenn der Stapel aufgebraucht ist."
