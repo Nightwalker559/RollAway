@@ -15,6 +15,7 @@
 - Debug log: character frame button lines no longer flood the log (e.g. with Baganator).
 - Feature overview: description text no longer runs under the checkbox / "On".
 - Feature overview opens on the first click of the minimap button.
+- Windows no longer draw through each other when they overlap; clicking or opening one brings it to the front.
 
 ---
 

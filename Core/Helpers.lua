@@ -138,6 +138,13 @@ function RA.CreatePanelWindow(name, parent, width, height, title)
     f:SetTitle(title)
     f.CloseButton = CreateFrame("Button", nil, f, "UIPanelCloseButtonDefaultAnchors")
     RA.Skin.Window(f)
+    -- Windows of one strata overlap as a whole: opening or clicking one raises it with all
+    -- its parts (title bar and border sit 500+ levels above the body, so without this they
+    -- would be drawn through a neighbouring window). Windows parented to another frame follow it.
+    if not parent or parent == UIParent then
+        f:SetToplevel(true)
+        f:HookScript("OnShow", f.Raise)
+    end
     return f
 end
 

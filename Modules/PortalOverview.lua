@@ -206,7 +206,7 @@ local function CreateOverviewFrame()
     -- Bag changes (keystone highlight) and new teleports (SPELLS_CHANGED) only matter
     -- while open; OnShow also covers a Show deferred until after combat.
     overviewFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-    overviewFrame:SetScript("OnShow", function(self)
+    overviewFrame:HookScript("OnShow", function(self)
         self:RegisterEvent("BAG_UPDATE_DELAYED")
         self:RegisterEvent("SPELLS_CHANGED")
         RA.RefreshPortalOverview()

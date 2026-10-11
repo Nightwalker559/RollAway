@@ -267,7 +267,7 @@ local function CreateFrameOnce()
     end
     content:SetHeight(-y + 4)
 
-    f:SetScript("OnShow", function()
+    f:HookScript("OnShow", function()
         for _, refresh in ipairs(refreshers) do refresh() end
     end)
     f:Hide()   -- a new frame is shown; the first toggle must open it, not close it
