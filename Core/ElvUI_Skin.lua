@@ -118,9 +118,10 @@ local function SetTextColor(btn, color)
     if text then text:SetTextColor(color.r, color.g, color.b, 1) end
 end
 
--- btn: UIPanelButtonTemplate button that shows panels[key] on click. Idle tabs are a
--- shade lighter than the panel; the active one is tinted with classColor (hover
--- brightens it) and gets gold text. Adds btn.RA_ApplyActive/RA_ApplyInactive/RA_Refresh.
+-- btn: UIPanelButtonTemplate button that shows panels[key] on click. The fill stays ElvUI's
+-- (a shade lighter than the panel so tabs read as buttons); the border takes classColor on
+-- hover and while the tab is active, and the text turns gold. Adds btn.RA_ApplyActive /
+-- RA_ApplyInactive / RA_Refresh.
 function Skin.OptionTab(btn, panels, key, classColor)
     if not Enabled() then return end
     S:HandleButton(btn)
@@ -129,34 +130,28 @@ function Skin.OptionTab(btn, panels, key, classColor)
     btn:SetPushedTexture("")
     btn:SetDisabledTexture("")
 
-    local function ResetBackdrop()
+    -- highlight: class-colored border instead of ElvUI's default one.
+    local function Paint(highlight)
         local bg, bd = ElvColors()
+        local border = (highlight and classColor) and { classColor.r, classColor.g, classColor.b, 1 } or bd
         SetBackdropColors(btn, {
             math.min((bg[1] or 0.1) + 0.08, 1),
             math.min((bg[2] or 0.1) + 0.08, 1),
             math.min((bg[3] or 0.1) + 0.08, 1),
             bg[4] or 1,
-        }, bd)
+        }, border)
     end
-    ResetBackdrop()
+    Paint(false)
 
+    -- Disabled tabs (season tabs without debug mode) get no border; the gold text still
+    -- marks the current one.
     local function ApplyActive()
-        -- Disabled tabs (season tabs without debug mode) get no tint; the gold text still
-        -- marks the current one.
-        if btn.IsEnabled and not btn:IsEnabled() then
-            ResetBackdrop()
-        elseif classColor then
-            SetBackdropColors(btn,
-                { classColor.r, classColor.g, classColor.b, btn:IsMouseOver() and 1 or 0.35 },
-                { classColor.r, classColor.g, classColor.b, 1 })
-        else
-            ResetBackdrop()
-        end
+        Paint(not (btn.IsEnabled and not btn:IsEnabled()))
         SetTextColor(btn, GOLD)
     end
 
     local function ApplyInactive()
-        ResetBackdrop()
+        Paint(false)
         SetTextColor(btn, GRAY)
     end
 
@@ -170,11 +165,7 @@ function Skin.OptionTab(btn, panels, key, classColor)
     -- HookScript runs after ElvUI's own OnEnter, so our color wins.
     btn:HookScript("OnEnter", function(self)
         if self.IsEnabled and not self:IsEnabled() then return end
-        if classColor then
-            SetBackdropColors(self,
-                { classColor.r, classColor.g, classColor.b, 1 },
-                { classColor.r, classColor.g, classColor.b, 0 })
-        end
+        Paint(true)
         SetTextColor(self, GOLD)
     end)
     btn:HookScript("OnLeave", function(self) self.RA_Refresh() end)
