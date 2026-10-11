@@ -22,13 +22,11 @@ local FEATURES = {
 local frame
 
 local function CreateWhatsNewFrame()
-    local f = CreateFrame("Frame", "RollAwayWhatsNewFrame", UIParent, "BasicFrameTemplateWithInset")
-    f:SetSize(440, 340)
+    local f = RA.CreatePanelWindow("RollAwayWhatsNewFrame", UIParent, 440, 340,
+        "RollAway - What's New  |cFFAA8830v" .. WHATS_NEW_VERSION .. "|r")
     f:SetPoint("CENTER")
     f:SetFrameStrata("HIGH")
     RA.MakeDraggable(f)
-
-    f.TitleText:SetText("RollAway - What's New  |cFFAA8830v" .. WHATS_NEW_VERSION .. "|r")
 
     -- Plain ScrollFrame: mouse wheel only
     local sf = CreateFrame("ScrollFrame", "RollAwayWhatsNewScroll", f)

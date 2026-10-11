@@ -168,11 +168,10 @@ local function SetAll(on)
 end
 
 local function CreatePanel()
-    panel = CreateFrame("Frame", "RollAwaySalvagePanel", ProfessionsFrame, "BasicFrameTemplateWithInset")
-    panel:SetSize(COLS * CELL + 28, 200)
+    panel = RA.CreatePanelWindow("RollAwaySalvagePanel", ProfessionsFrame, COLS * CELL + 28, 200,
+        RA_L["salvage_panel_title"])
     panel:SetPoint("TOPLEFT", ProfessionsFrame, "TOPRIGHT", 4, 0)
     panel:SetFrameStrata("HIGH")
-    panel.TitleText:SetText(RA_L["salvage_panel_title"])
 
     local hint = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     hint:SetPoint("TOPLEFT", 14, -30)

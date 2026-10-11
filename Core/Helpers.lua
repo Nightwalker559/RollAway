@@ -137,6 +137,16 @@ function RA.MakeDraggable(frame)
     frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
 end
 
+-- Window in the game's current standard style (DefaultPanelTemplate: stone background,
+-- metal NineSlice border, title bar) with the standard close button (frame.CloseButton).
+function RA.CreatePanelWindow(name, parent, width, height, title)
+    local f = CreateFrame("Frame", name, parent, "DefaultPanelTemplate")
+    f:SetSize(width, height)
+    f:SetTitle(title)
+    f.CloseButton = CreateFrame("Button", nil, f, "UIPanelCloseButtonDefaultAnchors")
+    return f
+end
+
 -- Like MakeDraggable, but honors qolReminderLockPosition (checked on every drag).
 function RA.MakeLockableDraggable(frame)
     frame:SetMovable(true)
