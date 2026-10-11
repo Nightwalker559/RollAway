@@ -682,21 +682,12 @@ f:SetScript("OnEvent", function(_, event, ...)
         FullReset("GROUP_LEFT")
 
     elseif event == "PLAYER_REGEN_DISABLED" then
-        local autoClose = not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled)
-        if autoClose and HasActiveRolls() then
-            -- Rolls still running: the frame and the roll tracking stay, the close
-            -- timer closes it after the last roll is complete.
-            DBG("Entering combat – rolls still open, keeping the loot history frame")
-            RA.lastEncounterID = 0
-            RA.bonusRollEncounterID = nil
-        else
-            ResetState("PLAYER_REGEN_DISABLED")
-            -- Combat hides the loot history everywhere (roll popups stay usable),
-            -- unless auto-close is off.
-            if autoClose then
-                if HistoryFrameShown() then DBG("Entering combat – hiding loot history frame") end
-                HideHistoryFrame()
-            end
+        ResetState("PLAYER_REGEN_DISABLED")
+        -- Combat hides the loot history everywhere (roll popups stay usable),
+        -- unless auto-close is off.
+        if not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
+            if HistoryFrameShown() then DBG("Entering combat – hiding loot history frame") end
+            HideHistoryFrame()
         end
 
     elseif event == "PLAYER_REGEN_ENABLED" then
