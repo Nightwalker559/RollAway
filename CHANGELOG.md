@@ -5,7 +5,8 @@
 ## 3.1.3 (alpha 4)
 
 ### New
-- Feature overview with description and state of every feature: `/raw features` or the Features button in the options; a click opens the setting.
+- Feature overview with description of every feature: `/raw features` or the Features button in the options. Features can be switched on and off right there; a click on a row opens its settings.
+- Minimap button: left click opens the feature overview, right click the options, drag to move. Can be hidden (QoL > Hide).
 
 ### Changed
 - QoL options re-sorted by topic: Group, Crafting & Vendors, Hide, Character, Quests, Logs, Reminder (Misc, Filter and LFG are gone; all settings are kept).

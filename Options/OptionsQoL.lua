@@ -328,6 +328,12 @@ function RA.BuildQoLOptions(category, classColor)
         dbKey = "hideMapActivityTracker", onChange = RA.ApplyMapActivityTrackerFeature,
     })
 
+    -- RollAway's own minimap button
+    hideChain.Add({
+        label = RA_L["qol_hide_minimapbtn_label"], info = RA_L["qol_hide_minimapbtn_info"],
+        dbKey = "minimapButtonHide", onChange = RA.ApplyMinimapButton,
+    })
+
     -- Omniumfoliant: minimap icon hidden, button on the Character panel (max level)
     hideChain.Add({
         label = RA_L["qol_omniumfoliant_label"], info = RA_L["qol_omniumfoliant_info"],
@@ -386,6 +392,7 @@ function RA.BuildQoLOptions(category, classColor)
         RollAwayDB.advLogReminderEnabled = checked
     end, nil, QOL_CONTENT_W)
     qolLogAdvReminderCB.frame:SetPoint("TOPLEFT", qolLogChatCB.frame, "BOTTOMLEFT", 0, -10)
+    RA.ToggleControls["advLogReminderEnabled"] = qolLogAdvReminderCB
 
     UpdateLogSubCBsState()
 

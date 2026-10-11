@@ -92,13 +92,16 @@ function RA.InitOptions()
     -- /raw, /rollaway → options (queued in combat); "/raw features" → feature overview
     SLASH_ROLLAWAY1 = "/raw"
     SLASH_ROLLAWAY2 = "/rollaway"
+    function RA.OpenOptions()
+        RA.RunProtectedOrQueue(function() Settings.OpenToCategory(RA_CategoryID) end)
+    end
     SlashCmdList["ROLLAWAY"] = function(msg)
         local arg = strtrim(msg or ""):lower()
         if arg == "features" or arg == "funktionen" then
             RA.ToggleFeatureList()
-            return
+        else
+            RA.OpenOptions()
         end
-        RA.RunProtectedOrQueue(function() Settings.OpenToCategory(RA_CategoryID) end)
     end
 
     -- Header
@@ -238,6 +241,7 @@ function RA.InitOptions()
         if SetLootFrameFeatureEnabled then SetLootFrameFeatureEnabled(not checked) end
     end)
     cbFrameFeatureDisable.frame:SetPoint("TOPLEFT", visMainInfo, "BOTTOMLEFT", 0, -14)
+    RA.ToggleControls["lootFrameAutoCloseDisabled"] = cbFrameFeatureDisable
 
     -- Row 1: delay (left), safety timeout (right)
     local delayLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -327,6 +331,7 @@ function RA.InitOptions()
         end
     end)
     cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -10)
+    RA.ToggleControls["showReminder"] = cbReminder
 
     local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, 480, RA_L["reminder_info"])
 
@@ -335,6 +340,7 @@ function RA.InitOptions()
         RollAwayDB.autoPassWarning = checked
     end)
     cbWarn.frame:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -10)
+    RA.ToggleControls["autoPassWarning"] = cbWarn
     local warnInfo = MakeInfoText(gen, cbWarn.frame, 20, -6, 480, RA_L["autopass_warning_info"])
 
     -- Hidden without bonus rolls or below max level (like the tabs above).
@@ -362,6 +368,7 @@ function RA.InitOptions()
     -- widget has a single OnValueChanged slot, one given here would be overwritten.
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
+    RA.ToggleControls["legacy"] = cbLegacy
 
 
     -- Scroll child height = last General element, one frame later (GetTop/GetBottom need the layout).
@@ -602,6 +609,7 @@ function RA.InitOptions()
         RollAwayDBChar.prey = checked
     end)
     preyCB.frame:SetPoint("TOPLEFT", preyHint, "BOTTOMLEFT", 0, -14)
+    RA.ToggleControls["char:prey"] = preyCB  -- a per-character setting
 
     -- Tab: Legacy raids
     local legacyPanel = tabPanels["legacy"]

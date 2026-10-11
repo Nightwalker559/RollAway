@@ -49,7 +49,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 | Command | Description |
 | --- | --- |
 | `/raw` or `/rollaway` | Open options |
-| `/raw features` or `/rawfeatures` | Overview of all features with description and state |
+| `/raw features` or `/rawfeatures` | Overview of all features: description, switch on/off, jump to the settings (also via the minimap button) |
 | `/rat` | Toggle RollAway Portal Overview |
 | `/rawvault` | Manually check Great Vault status |
 | `/rawparagon` | Manually check Paragon Bag availability |

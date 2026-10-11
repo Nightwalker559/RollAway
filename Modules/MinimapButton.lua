@@ -1,0 +1,106 @@
+-- RollAway - MinimapButton.lua
+-- Minimap button (no library): left click toggles the feature overview, right click opens
+-- the options, dragging moves it around the minimap (angle saved in the profile).
+-- Hidden with RollAwayDB.minimapButtonHide (QoL > Hide).
+
+local RA   = _G.RollAway
+local RA_L = RA.RA_L
+
+local button
+
+-- Places the button on the minimap edge at `angle` degrees (0 = right, counterclockwise);
+-- square minimaps (ElvUI) get the button on the square edge.
+local function Place(angle)
+    local rad = math.rad(angle)
+    local dx, dy = math.cos(rad), math.sin(rad)
+    local half = Minimap:GetWidth() / 2 + 5
+    local shape = GetMinimapShape and GetMinimapShape() or "ROUND"
+    if shape ~= "ROUND" then
+        local m = math.max(math.abs(dx), math.abs(dy))
+        dx, dy = dx / m, dy / m
+    end
+    button:ClearAllPoints()
+    button:SetPoint("CENTER", Minimap, "CENTER", dx * half, dy * half)
+end
+
+local function UpdateAngleFromCursor()
+    local mx, my = Minimap:GetCenter()
+    local cx, cy = GetCursorPosition()
+    local scale = Minimap:GetEffectiveScale()
+    local angle = math.deg(math.atan2(cy / scale - my, cx / scale - mx))
+    RollAwayDB.minimapAngle = angle
+    Place(angle)
+end
+
+local function ShowTooltip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    GameTooltip:AddLine("RollAway")
+    GameTooltip:AddLine(RA_L["feat_mm_left"], 1, 1, 1)
+    GameTooltip:AddLine(RA_L["feat_mm_right"], 1, 1, 1)
+    GameTooltip:AddLine(RA_L["feat_mm_drag"], 0.6, 0.6, 0.6)
+    GameTooltip:Show()
+end
+
+local function CreateButton()
+    local b = CreateFrame("Button", "RollAwayMinimapButton", Minimap)
+    b:SetSize(31, 31)
+    b:SetFrameStrata("MEDIUM")
+    b:SetFrameLevel(8)
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    b:RegisterForDrag("LeftButton")
+    b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+
+    local bg = b:CreateTexture(nil, "BACKGROUND")
+    bg:SetSize(20, 20)
+    bg:SetPoint("TOPLEFT", 7, -5)
+    bg:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+
+    local icon = b:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(17, 17)
+    icon:SetPoint("TOPLEFT", 7, -6)
+    icon:SetTexture("Interface\\AddOns\\RollAway\\Media\\Icon")
+    icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+
+    local border = b:CreateTexture(nil, "OVERLAY")
+    border:SetSize(50, 50)
+    border:SetPoint("TOPLEFT")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+
+    b:SetScript("OnClick", function(_, mouseButton)
+        if mouseButton == "RightButton" then
+            RA.OpenOptions()
+        else
+            RA.ToggleFeatureList()
+        end
+    end)
+    b:SetScript("OnDragStart", function(self)
+        GameTooltip:Hide()
+        self:SetScript("OnUpdate", UpdateAngleFromCursor)
+    end)
+    b:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
+    b:SetScript("OnEnter", ShowTooltip)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return b
+end
+
+-- Shows or hides the button according to the setting (creates it on first need).
+function RA.ApplyMinimapButton()
+    if RollAwayDB.minimapButtonHide then
+        if button then button:Hide() end
+        return
+    end
+    if not button then button = CreateButton() end
+    Place(RollAwayDB.minimapAngle or 225)
+    button:Show()
+end
+
+function RA.InitMinimapButton()
+    RA.ApplyMinimapButton()
+    -- A profile switch brings another saved position / visibility.
+    RA.db.onProfileChange = (function(previous)
+        return function(...)
+            if previous then previous(...) end
+            RA.ApplyMinimapButton()
+        end
+    end)(RA.db.onProfileChange)
+end

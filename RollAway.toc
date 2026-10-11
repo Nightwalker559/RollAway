@@ -43,6 +43,7 @@ Modules\GreatVault.lua
 Modules\LFGQuickCreate.lua
 Modules\Logs.lua
 Modules\FeatureList.lua
+Modules\MinimapButton.lua
 Options\OptionsHelpers.lua
 Options\OptionsQoL.lua
 Options\OptionsProfile.lua

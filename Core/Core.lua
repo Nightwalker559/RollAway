@@ -171,6 +171,8 @@ RA.defaults = {
         questModifierKey         = "SHIFT",   -- "SHIFT" | "ALT" | "CTRL"
         tankMarkEnabled          = false,
         tankMarkIcon             = 6,   -- raid marker 1-8 (6 = square)
+        minimapButtonHide        = false,
+        minimapAngle             = 225,   -- degrees around the minimap
         paragonAlert            = false,
         greatVaultAlert          = false,
         talentFontSize     = 20,
@@ -535,7 +537,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitQuests", "InitTankMarker", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 

@@ -21,24 +21,33 @@ local function DB(key) return function() return RollAwayDB[key] end end
 
 -- One entry: name / info (locale keys, info optional), on() -> state, open = where a click
 -- goes ({ tab = key } main options tab, { qol = key } QoL page), show == false hides it.
--- Entries: the lists below are built lazily (RollAwayDB/RA flags are not known at load).
+-- toggle = key in RA.ToggleControls (the options' checkbox, so the overview runs the very
+-- same code as a click there); invert: the checkbox means the opposite of "on".
+-- Without toggle the row only shows its state (several settings, a dropdown ...).
+-- Built lazily (RollAwayDB/RA flags are not known at load).
 local function BuildSections()
     local maxLevel = RA.IsMaxLevel()
     local bonusRolls = RA.BONUS_ROLLS_ENABLED and maxLevel
     local char = RollAwayDBChar
 
+    -- `on`: saved key (then a toggle) or a function.
     local function Qol(page, name, info, on, show)
-        return { name = name, info = info, on = on, open = { qol = page }, show = show }
+        local entry = { name = name, info = info, on = on, open = { qol = page }, show = show }
+        if type(on) == "string" then
+            entry.toggle, entry.on = on, DB(on)
+        end
+        return entry
     end
 
     local sections = {
         { title = "feat_section_loot", items = {
             { name = "visibility_section_title", info = "visibility_info",
-              on = function() return not RollAwayDB.lootFrameAutoCloseDisabled end, open = { tab = "general" } },
+              on = function() return not RollAwayDB.lootFrameAutoCloseDisabled end, open = { tab = "general" },
+              toggle = "lootFrameAutoCloseDisabled", invert = true },
             { name = "confirm_roll_title", info = "confirm_roll_hint",
               on = function() return AnyTrue(RollAwayDB.confirmRoll) end, open = { tab = "raids" } },
             { name = "legacy_section_title", info = "feat_legacy",
-              on = DB("legacy"), open = { tab = "general" } },
+              on = DB("legacy"), open = { tab = "general" }, toggle = "legacy" },
         } },
         { title = "feat_section_bonusroll", show = bonusRolls, items = {
             { name = "feat_name_dungeons", info = "feat_dungeons", open = { tab = "dungeons" },
@@ -48,55 +57,58 @@ local function BuildSections()
             { name = "feat_name_delves", info = "feat_delves", open = { tab = "delves" },
               on = function() return char.delveAutoPassAll or AnyTrue(char.delves) or AnyTrue(char.delves_s2) end },
             { name = "feat_name_prey", info = "feat_prey", open = { tab = "prey" },
-              on = function() return char.prey end },
-            { name = "feat_name_reminder", info = "reminder_info", open = { tab = "general" }, on = DB("showReminder") },
-            { name = "feat_name_warning", info = "autopass_warning_info", open = { tab = "general" }, on = DB("autoPassWarning") },
+              on = function() return char.prey end, toggle = "char:prey" },
+            { name = "feat_name_reminder", info = "reminder_info", open = { tab = "general" },
+              on = DB("showReminder"), toggle = "showReminder" },
+            { name = "feat_name_warning", info = "autopass_warning_info", open = { tab = "general" },
+              on = DB("autoPassWarning"), toggle = "autoPassWarning" },
         } },
         { title = "qol_nav_group", items = {
-            Qol("group", "qol_autoaccept_label",   "qol_autoaccept_info",   DB("autoAcceptInvite")),
-            Qol("group", "qol_tankmark_label",     "qol_tankmark_info",     DB("tankMarkEnabled")),
-            Qol("group", "qol_lfgqc_label",        "qol_lfgqc_info",        DB("lfgQuickCreate")),
-            Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", DB("lfgAutoMythicPlus")),
-            Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", DB("lfgAutoPlaystyle")),
+            Qol("group", "qol_autoaccept_label",   "qol_autoaccept_info",   "autoAcceptInvite"),
+            Qol("group", "qol_tankmark_label",     "qol_tankmark_info",     "tankMarkEnabled"),
+            Qol("group", "qol_lfgqc_label",        "qol_lfgqc_info",        "lfgQuickCreate"),
+            Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", "lfgAutoMythicPlus"),
+            Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", "lfgAutoPlaystyle"),
         } },
         { title = "qol_nav_craft", items = {
-            Qol("craft", "qol_salvage_slot_label", "qol_salvage_slot_info", DB("autoSalvageSlot")),
-            Qol("craft", "qol_crafting_output_log_label", "qol_crafting_output_log_info", DB("hideCraftingOutputLog")),
-            Qol("craft", "qol_expansion_filter_label", "qol_expansion_filter_info", DB("expansionFilterAH")),
+            Qol("craft", "qol_salvage_slot_label", "qol_salvage_slot_info", "autoSalvageSlot"),
+            Qol("craft", "qol_crafting_output_log_label", "qol_crafting_output_log_info", "hideCraftingOutputLog"),
+            Qol("craft", "qol_expansion_filter_label", "qol_expansion_filter_info", "expansionFilterAH"),
             Qol("craft", "qol_autorepair_label",   "qol_autorepair_info",
                 function() return (RollAwayDB.autoRepairMode or "none") ~= "none" end),
-            Qol("craft", "qol_vendor_filter_label", "qol_vendor_filter_info", DB("vendorFilterEnabled")),
+            Qol("craft", "qol_vendor_filter_label", "qol_vendor_filter_info", "vendorFilterEnabled"),
         } },
         { title = "qol_nav_quests", items = {
             Qol("quests", "feat_name_quests_accept", "feat_quests_accept", function()
                 return RollAwayDB.questAcceptRegular or RollAwayDB.questAcceptDaily or RollAwayDB.questAcceptWeekly
             end),
-            Qol("quests", "qol_quests_turnin_label", "qol_quests_turnin_info", DB("questAutoTurnIn")),
+            Qol("quests", "qol_quests_turnin_label", "qol_quests_turnin_info", "questAutoTurnIn"),
         } },
         { title = "qol_reminder_section", items = {
-            Qol("reminder", "qol_durability_label",    "qol_durability_info",    DB("durabilityWarning")),
-            Qol("reminder", "qol_join_reminder_label", "qol_join_reminder_info", DB("instanceJoinReminder")),
-            Qol("reminder", "qol_readycheck_label",    "qol_readycheck_info",    DB("readyCheckReminder")),
-            Qol("reminder", "greatvault_alert_label",  "greatvault_alert_info",  DB("greatVaultAlert"), maxLevel),
-            Qol("reminder", "paragon_alert_label",     "paragon_alert_info",     DB("paragonAlert")),
+            Qol("reminder", "qol_durability_label",    "qol_durability_info",    "durabilityWarning"),
+            Qol("reminder", "qol_join_reminder_label", "qol_join_reminder_info", "instanceJoinReminder"),
+            Qol("reminder", "qol_readycheck_label",    "qol_readycheck_info",    "readyCheckReminder"),
+            Qol("reminder", "greatvault_alert_label",  "greatvault_alert_info",  "greatVaultAlert", maxLevel),
+            Qol("reminder", "paragon_alert_label",     "paragon_alert_info",     "paragonAlert"),
         } },
         { title = "qol_nav_hide", items = {
-            Qol("hide", "qol_hide_errors_label",       "qol_hide_errors_info",       DB("hideErrorMessages")),
-            Qol("hide", "qol_hide_talkinghead_label",  "qol_hide_talkinghead_info",  DB("hideTalkingHead")),
-            Qol("hide", "qol_hide_bossbanner_label",   "qol_hide_bossbanner_info",   DB("hideBossBanner")),
-            Qol("hide", "qol_hide_eventtoasts_label",  "qol_hide_eventtoasts_info",  DB("hideEventToasts")),
-            Qol("hide", "qol_hide_alerts_label",       "qol_hide_alerts_info",       DB("hideAlerts")),
-            Qol("hide", "qol_map_activity_label",      "qol_map_activity_info",      DB("hideMapActivityTracker")),
-            Qol("hide", "qol_omniumfoliant_label",     "qol_omniumfoliant_info",     DB("hideOmniumfoliantMinimap"), maxLevel),
+            Qol("hide", "qol_hide_errors_label",       "qol_hide_errors_info",       "hideErrorMessages"),
+            Qol("hide", "qol_hide_talkinghead_label",  "qol_hide_talkinghead_info",  "hideTalkingHead"),
+            Qol("hide", "qol_hide_bossbanner_label",   "qol_hide_bossbanner_info",   "hideBossBanner"),
+            Qol("hide", "qol_hide_eventtoasts_label",  "qol_hide_eventtoasts_info",  "hideEventToasts"),
+            Qol("hide", "qol_hide_alerts_label",       "qol_hide_alerts_info",       "hideAlerts"),
+            Qol("hide", "qol_map_activity_label",      "qol_map_activity_info",      "hideMapActivityTracker"),
+            Qol("hide", "qol_hide_minimapbtn_label",   "qol_hide_minimapbtn_info",   "minimapButtonHide"),
+            Qol("hide", "qol_omniumfoliant_label",     "qol_omniumfoliant_info",     "hideOmniumfoliantMinimap", maxLevel),
         } },
         { title = "qol_nav_character", show = maxLevel, items = {
-            Qol("character", "qol_vault_button_label",   "qol_vault_button_info",   DB("vaultButtonCharFrame")),
-            Qol("character", "qol_vault_currency_label", "qol_vault_currency_info", DB("vaultCurrencyDisplay"),
+            Qol("character", "qol_vault_button_label",   "qol_vault_button_info",   "vaultButtonCharFrame"),
+            Qol("character", "qol_vault_currency_label", "qol_vault_currency_info", "vaultCurrencyDisplay",
                 RA.BONUS_ROLLS_ENABLED),
         } },
         { title = "qol_nav_logs", items = {
-            Qol("logs", "qol_log_enable_label",        "qol_log_enable_info", DB("autoLogEnabled")),
-            Qol("logs", "qol_log_advlog_reminder_label", nil,                 DB("advLogReminderEnabled")),
+            Qol("logs", "qol_log_enable_label",        "qol_log_enable_info", "autoLogEnabled"),
+            Qol("logs", "qol_log_advlog_reminder_label", nil,                 "advLogReminderEnabled"),
         } },
         { title = "feat_section_commands", commands = {
             { "/raw",         "cmd_raw_info"         },
@@ -121,6 +133,11 @@ end
 
 local frame
 local refreshers = {}
+
+-- The row's checkbox, if the overview can switch the feature.
+local function Control(item)
+    return item.toggle and RA.ToggleControls and RA.ToggleControls[item.toggle]
+end
 
 local function StateText(on)
     return on and ("|cff33ff33" .. RA_L["feat_on"] .. "|r") or ("|cff888888" .. RA_L["feat_off"] .. "|r")
@@ -170,8 +187,26 @@ local function CreateFrameOnce()
                     name:SetJustifyH("LEFT")
                     name:SetText(RA_L[item.name])
 
-                    local state = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-                    state:SetPoint("TOPRIGHT", row, "TOPRIGHT", -6, -4)
+                    local state, box
+                    local control = Control(item)
+                    if control then
+                        box = RA.OptionsUI.MakeCheckBox(row)
+                        box:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -2)
+                        box:SetScript("OnClick", function(self)
+                            local value = self:GetChecked() and true or false
+                            if InCombatLockdown() then
+                                self:SetChecked(not value)
+                                RA.Print(RA_L["feat_combat"])
+                                return
+                            end
+                            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                            if item.invert then value = not value end
+                            control:Toggle(value)
+                        end)
+                    else
+                        state = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+                        state:SetPoint("TOPRIGHT", row, "TOPRIGHT", -6, -4)
+                    end
 
                     local height = 4 + name:GetStringHeight() + 6
                     if item.info then
@@ -193,7 +228,13 @@ local function CreateFrameOnce()
                         OpenFeature(item.open)
                     end)
 
-                    refreshers[#refreshers + 1] = function() state:SetText(StateText(item.on())) end
+                    refreshers[#refreshers + 1] = function()
+                        if box then
+                            box:SetChecked(item.on() and true or false)
+                        else
+                            state:SetText(StateText(item.on()))
+                        end
+                    end
                     y = y - height - 2
                 end
             end

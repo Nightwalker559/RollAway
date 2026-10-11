@@ -90,14 +90,9 @@ local function GrowCBIfTruncated(cb, tries)
     end
 end
 
--- Checkbox row in the game's current style (MinimalCheckboxTemplate box + label; a click
--- anywhere on the row toggles). The caller positions cb.frame. Methods: SetValue,
--- GetValue, SetDisabled, SetCallback("OnValueChanged", fn(cb, event, value)).
--- widthOverride: fixed width, else sized to the label, at most maxWidth (default 520, the
--- General tab's room).
-local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
-    local frame = CreateFrame("Button", nil, parent)
-    local box = CreateFrame("CheckButton", nil, frame, "MinimalCheckboxTemplate")
+-- Bare checkbox in the game's current style (MinimalCheckboxTemplate, ElvUI skin).
+local function MakeCheckBox(parent)
+    local box = CreateFrame("CheckButton", nil, parent, "MinimalCheckboxTemplate")
     box:SetSize(CB_BOX_SIZE, CB_BOX_SIZE)
     -- The template's textures keep their atlas size: stretch them to the (smaller) box.
     for _, key in ipairs({ "NormalTexture", "PushedTexture", "HighlightTexture", "CheckedTexture",
@@ -109,6 +104,19 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
         end
     end
     RA.Skin.CheckBox(box)
+    return box
+end
+
+-- Checkbox row in the game's current style (MinimalCheckboxTemplate box + label; a click
+-- anywhere on the row toggles). The caller positions cb.frame. Methods: SetValue,
+-- GetValue, SetDisabled, SetCallback("OnValueChanged", fn(cb, event, value)), and
+-- Toggle(value): like a click (sets the box and runs the callbacks), for the feature
+-- overview.
+-- widthOverride: fixed width, else sized to the label, at most maxWidth (default 520, the
+-- General tab's room).
+local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
+    local frame = CreateFrame("Button", nil, parent)
+    local box = MakeCheckBox(frame)
 
     local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     text:SetText(label)
@@ -127,11 +135,18 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
         text:SetTextColor(shade, shade, shade)
     end
 
-    local function Changed()
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+    local function Fire()
         local value = box:GetChecked() and true or false
         if onChange then onChange(value) end
         if cb.callback then cb.callback(cb, "OnValueChanged", value) end
+    end
+    local function Changed()
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        Fire()
+    end
+    function cb:Toggle(value)
+        box:SetChecked(value and true or false)
+        Fire()
     end
     box:SetScript("OnClick", Changed)
     frame:SetScript("OnClick", function()
@@ -170,6 +185,9 @@ end
 local QOL_CONTENT_W = 470
 local QOL_INFO_W    = QOL_CONTENT_W - 20
 
+-- Checkboxes the feature overview can switch, by saved key (MakeToggle registers its own).
+RA.ToggleControls = {}
+
 -- Checkbox bound to RollAwayDB[opts.dbKey] with its gray description (opts.info) below.
 -- Placed (xOffset, yOffset) below `anchor` (nil: from the parent's top-left).
 -- opts.onChange(checked) runs after saving; opts.width / opts.infoWidth set the widths,
@@ -180,6 +198,7 @@ local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
         RollAwayDB[opts.dbKey] = checked
         if opts.onChange then opts.onChange(checked) end
     end, opts.width, opts.maxWidth or QOL_CONTENT_W)
+    RA.ToggleControls[opts.dbKey] = cb
     if anchor then
         cb.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
     else
@@ -603,6 +622,7 @@ RA.OptionsUI = {
     GRAY              = GRAY,
     MakeSectionHeader = MakeSectionHeader,
     MakeCB            = MakeCB,
+    MakeCheckBox      = MakeCheckBox,
     MakeInfoText      = MakeInfoText,
     MakeToggle        = MakeToggle,
     MakeDropdown      = MakeDropdown,
