@@ -159,21 +159,6 @@ function RA.MakeLockableDraggable(frame)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 end
 
--- Backdrop shared by the popup/portal frames.
-local POPUP_BACKDROP = {
-    bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true, tileSize = 16, edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 },
-}
-
--- `frame` must have been created with "BackdropTemplate".
-function RA.ApplyPopupBackdrop(frame)
-    frame:SetBackdrop(POPUP_BACKDROP)
-    frame:SetBackdropColor(0.05, 0.05, 0.05, 0.95)
-    frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
-end
-
 ------------------------------------------------------------------------
 -- Timers
 ------------------------------------------------------------------------
@@ -253,7 +238,8 @@ end
 
 ------------------------------------------------------------------------
 -- Popup frame factory (Reminder, Paragon, Great Vault, Advanced Logging, Tank
--- marker): draggable, ESC-closable, title with icon, countdown bar, Okay button.
+-- marker): game-style window (RA.CreatePanelWindow) with icon in the title bar,
+-- draggable, ESC-closable, countdown bar, Okay button.
 -- Callers add their own content.
 --
 -- opts:
@@ -271,11 +257,10 @@ end
 ------------------------------------------------------------------------
 
 -- Height of header + footer, for fitHeight: RA.POPUP_CHROME_HEIGHT + body height.
-RA.POPUP_CHROME_HEIGHT = 88
+RA.POPUP_CHROME_HEIGHT = 78
 
 function RA.CreatePopupFrame(opts)
-    local frame = CreateFrame("Frame", opts.name, UIParent, "BackdropTemplate")
-    frame:SetSize(opts.width, opts.height)
+    local frame = RA.CreatePanelWindow(opts.name, UIParent, opts.width, opts.height, "RollAway")
     frame:SetPoint("TOP", UIParent, "TOP", 0, opts.yOffset)
     frame.defaultY = opts.yOffset  -- used by RA.StackPopupFrame
     frame:SetFrameStrata("HIGH")
@@ -286,12 +271,10 @@ function RA.CreatePopupFrame(opts)
     -- ESC closes the frame
     tinsert(UISpecialFrames, opts.name)
 
-    RA.ApplyPopupBackdrop(frame)
-
-    -- Own holder, stays above ElvUI's backdrop child.
+    -- Icon in the title bar. Own holder, stays above ElvUI's backdrop child.
     local iconHolder = CreateFrame("Frame", nil, frame)
-    iconHolder:SetSize(24, 24)
-    iconHolder:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -10)
+    iconHolder:SetSize(18, 18)
+    iconHolder:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -3)
     frame.iconHolder = iconHolder
 
     local icon = iconHolder:CreateTexture(nil, "ARTWORK")
@@ -299,11 +282,7 @@ function RA.CreatePopupFrame(opts)
     icon:SetTexture("Interface\\AddOns\\RollAway\\Media\\Icon")
     frame.icon = icon
 
-    -- Title
-    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("LEFT", iconHolder, "RIGHT", 6, 0)
-    titleText:SetText("|cffD4AF37RollAway|r")
-    frame.titleText = titleText
+    frame.titleText = frame:GetTitleText()
 
     -- Okay button (bottom right) - closes the popup
     local okayBtn = CreateFrame("Button", opts.okayName, frame, "UIPanelButtonTemplate")
@@ -312,6 +291,7 @@ function RA.CreatePopupFrame(opts)
     okayBtn:SetText(RA_L["reminder_okay"])
     local hide = opts.hide or function(f) f:Hide() end
     okayBtn:SetScript("OnClick", function() hide(frame) end)
+    frame.CloseButton:SetScript("OnClick", function() hide(frame) end)
     frame.okayBtn = okayBtn
 
     -- Countdown bar (OnShow/OnHide).
@@ -340,8 +320,8 @@ end
 -- Left-aligned, wrapping body text anchored below the popup header.
 function RA.CreatePopupBodyText(frame)
     local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    text:SetPoint("TOPLEFT",  frame, "TOPLEFT",  10, -40)
-    text:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -40)
+    text:SetPoint("TOPLEFT",  frame, "TOPLEFT",  12, -32)
+    text:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -12, -32)
     text:SetJustifyH("LEFT")
     text:SetNonSpaceWrap(true)
     return text
