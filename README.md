@@ -1,82 +1,91 @@
 # RollAway & Tools
 
-Bonus Roll automation, loot history cleanup, and group quality-of-life tools for World of Warcraft (Midnight, Season 2).
+Auto-pass bonus rolls, confirm or auto-roll loot, tidy the loot history, plus small helpers for groups, crafting and vendors. Switch every feature on or off in one window.
 
-**Author:** Nightwalker559
-**Optional dependency:** ElvUI (native skin support throughout)
+For World of Warcraft: Midnight (Season 2, game versions 12.1 and 12.1.5). English and German. Optional dependency: ElvUI (native skin).
 
----
-
-## Features
-
-### Bonus Roll Auto-Pass
-Automatically passes on the Bonus Roll prompt for content you've checked off:
-- Dungeons (Season 1 & 2, matched by map)
-- Delves (Season 1 & 2)
-- Raid bosses (per-boss toggle, or auto-pass an entire raid difficulty — combinable)
-- Prey encounters in the open world (Midnight zones only, including the Coiled Isle)
-- World Bosses / Lairs fought as raid instances (e.g. Tidebound Grotto) are treated as regular raid bosses
-
-### Legacy Auto-Roll
-Auto-rolls Need/Greed/Transmog on loot from legacy Dragonflight & The War Within raids. Priority chain: Need → Greed → Transmog, all combinable, or Pass. Optional account-wide setting.
-
-### Group Loot History
-Cleans up and controls visibility of the Group Loot History frame — auto-hide per raid difficulty (LFR/Normal/Heroic/Mythic) in current raids, plus a separate switch to always hide it in legacy raids. Visible by default.
-
-### Reminders
-- **Bonus Roll reminder** on entering a Mythic dungeon/raid — shows Voidcore currency and available rolls, and whether a Bonus Roll auto-pass is active there. A separate safety-net warning (on by default) appears only when an auto-pass is active, so a forgotten checkbox does not cost you a roll.
-- **Instance join reminder** (Group Finder M+ only, shows the listed key level such as +14) with optional auto-open of your keystone companion addon (BigWigs Keystones, Details! Keystones, or RollAway's own Teleport Reminder showing the exact dungeon portal).
-- **RollAway Portal Overview** — own portal reference frame (current season or all learned dungeons by expansion), open anytime with `/rat`.
-- **Ready Check talent reminder**, optionally showing your active spec/talent build.
-- **Great Vault reminder** — popup on login at max level if you have unclaimed rewards (once per weekly reset). Manual check: `/rawvault`
-- **Paragon Bag reminder** — popup when Paragon quests are available across all Midnight factions, with turn-in NPC & zone. Manual check: `/rawparagon`
-- Reminder positions can be locked and reset to default from the options.
-
-### Quality of Life
-- **LFG Quick Create** — one-click dungeon listing buttons in Group Finder, with default playstyle auto-apply.
-- **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable, optionally for the current season's raids only (read from the game). Makes MRT's logging unnecessary.
-- **Tank marker** — in current-season Mythic dungeons a popup offers to put a raid marker (default: square) on your group's tank. It needs your click: since 12.0 addons cannot set markers themselves. Off by default.
-- **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.
-- **Crafting salvage slot** — fills the slot of salvage recipes (e.g. Cooking fish -> fillets) with the first item you own that you ticked in a list (click the red text in the Professions window) and refills it when the stack is used up (off by default, QoL > Crafting & Vendors; a checkbox in the Professions window switches it on and off).
-- **Hide Blizzard UI elements** — red error text (important errors stay visible, optionally the yellow quest-progress messages too), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map trackers (bounty board, faction button, eye), crafting output log. Everything is off by default.
-- **Auction House filter** — keeps "Current Expansion Only" enforced.
-- Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.
+**Author:** Nightwalker559 · **License:** MIT
 
 ---
 
-## Slash Commands
+## At a glance
 
-| Command | Description |
+- **One window for everything.** `/raw` or a right click on the minimap button opens the options. A left click (or `/raw features`) opens the feature overview: every feature with its description and state, a checkbox to switch it, and a click on a row jumps to its settings.
+- **Everything has its own switch**, so you only use what you want.
+- **Profiles.** Share settings between characters or keep separate setups; export and import as text. Bonus roll selections are always per character.
+
+---
+
+## Loot and bonus rolls
+
+### Bonus roll auto-pass
+Passes the bonus roll prompt for the content you ticked:
+- **Dungeons** (Season 1 and 2, matched by map)
+- **Delves** (Season 1 and 2)
+- **Raid bosses**: per boss, or a whole raid difficulty at once. Both can be combined.
+- **Prey hunts** in the open world (Midnight zones only)
+- World bosses and lairs fought as raid instances (e.g. Tidebound Grotto) count as normal raid bosses.
+
+A reminder popup on entering a Mythic dungeon or raid shows your Voidcore currency and available rolls. An optional safety-net warning appears only when an auto-pass is active there, so a forgotten checkbox does not cost you a roll.
+
+### Roll confirmation
+A popup asks before you roll Need, Greed, Transmog or Pass on group loot, for any raid, current or legacy.
+
+### Legacy auto-roll
+Rolls automatically on loot from older raids (Dragonflight, The War Within): Need, then Greed, then Transmog, or Pass. Optionally account-wide.
+
+### Group loot history
+Closes the loot history window once the last roll is finished, with your delay and a safety timeout. It can be hidden for the raid difficulties you pick, and always in legacy raids. Without these options it behaves like the default window.
+
+---
+
+## Group and instances
+
+- **LFG quick create**: one-click listing buttons for your dungeons in the Group Finder.
+- **Tank marker**: in current-season Mythic dungeons, a popup offers to put a raid marker on your tank. It needs your click, since addons cannot set markers themselves. Off by default.
+- **Auto-accept invites** from guild members and friends.
+- **Instance join reminder** (Group Finder, Mythic+): shows the listed key level and can open your keystone addon (BigWigs Keystones, Details! Keystones, or the built-in teleport reminder with the exact dungeon portal).
+- **Portal overview** (`/rat`): all dungeon portals of the current season or by expansion.
+- **Ready check reminder** for your talents.
+- **Automatic combat logging** by zone and difficulty, optionally for the current season's raids only.
+
+## Quests, crafting and vendors
+
+- **Automatic quests**: accepts and turns in quests at NPCs. It never takes quests that cost gold or currency or offer several rewards. A modifier key can pause or require it.
+- **Crafting salvage slot**: fills the slot of salvage recipes (e.g. Cooking fish to fillets) with the first item you ticked in a list, and refills it when the stack is used up. Off by default.
+- **Vendor filter**: dims what you already know or own (recipes, toys, mounts, heirlooms, housing decor, pets, transmog appearances).
+- **Auto repair** at the merchant (yourself or guild funds).
+- **Auction House**: keeps "Current Expansion Only" switched on.
+
+## Reminders
+
+- **Great Vault** popup on login at max level when rewards are unclaimed (`/rawvault` checks by hand).
+- **Paragon bag** popup when Paragon quests are available, with turn-in NPC and zone (`/rawparagon`).
+- **Durability warning**, Great Vault and Omniumfoliant buttons on the character frame.
+- Reminder positions can be locked or reset.
+
+## Hide clutter
+
+Red error text (important errors stay visible), Talking Head, boss banner, event toasts, alert pop-ups, world map trackers and the crafting output log. Everything is off by default.
+
+---
+
+## Commands
+
+| Command | What it does |
 | --- | --- |
-| `/raw` or `/rollaway` | Open options |
-| `/raw features` or `/rawfeatures` | Overview of all features: description, switch on/off, jump to the settings (also via the minimap button) |
-| `/rat` | Toggle RollAway Portal Overview |
-| `/rawvault` | Manually check Great Vault status |
-| `/rawparagon` | Manually check Paragon Bag availability |
-| `/rawtank` | Show the tank marker popup right now |
-
----
-
-## Options
-
-Open with `/raw` or the minimap button (right click) - RollAway has its own options window. Pages: Loot & Rolls (tabs General, Dungeons, Raids, Delves, Open World, Legacy), QoL (Character, Crafting & Vendors, Group, Hide, Logs, Quests, Reminder) and Profile.
+| `/raw`, `/rollaway` | Open or close the options |
+| `/raw features`, `/rawfeatures` | Feature overview |
+| `/rat` | Portal overview |
+| `/rawvault` | Check the Great Vault now |
+| `/rawparagon` | Check Paragon availability now |
+| `/rawtank` | Show the tank marker popup now |
 
 ---
 
 ## Installation
 
-1. Download and extract to `Interface/AddOns/RollAway`.
-2. Ensure the folder is named exactly `RollAway`.
-3. Restart or reload WoW (`/reload`).
+1. Download and extract to `Interface/AddOns/RollAway`. The folder must be named exactly `RollAway`.
+2. Restart the game or run `/reload`.
 
----
-
-## Changelog
-
-Full version history in `CHANGELOG.md` (same package/repo).
-
----
-
-## Support
-
-Report bugs or suggest features via CurseForge or Wago.
+The full version history is in `CHANGELOG.md`. Bugs and suggestions: CurseForge or Wago.
