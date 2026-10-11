@@ -3,6 +3,9 @@
 ### Changed
 - Minimap button: right click closes the options window again.
 
+### Fixed
+- Debug log: character frame button lines no longer flood the log (e.g. with Baganator).
+
 ## 3.1.3 (alpha 5)
 
 ### Changed

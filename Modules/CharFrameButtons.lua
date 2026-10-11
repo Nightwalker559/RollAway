@@ -175,8 +175,11 @@ local DEFS = {
 }
 
 local lastState = {}  -- [key] = last logged "shown" / "hidden (reason)"
+local lastLogTime, skippedFlips = {}, {}  -- per key: time of the last log line, flips since
 
 -- Logs only state changes, with reason and trigger (a vanishing button leaves a trace).
+-- Normal debug channel (filter category QoL): other addons (Baganator's currency window)
+-- can flip the character frame many times a second. Real problems go to DBGError.
 local function LogState(key, wanted, featureOn, statsView, source, btn)
     local state
     if wanted then
@@ -190,7 +193,17 @@ local function LogState(key, wanted, featureOn, statsView, source, btn)
     end
     if lastState[key] ~= state then
         lastState[key] = state
-        DBGError("[CharFrameButtons]", key, state, "| trigger:", source or "?")
+        -- At most one line per key and second: a flip storm becomes one line with a count.
+        local now = GetTime()
+        if lastLogTime[key] and now - lastLogTime[key] < 1 then
+            skippedFlips[key] = (skippedFlips[key] or 0) + 1
+            return
+        end
+        lastLogTime[key] = now
+        local skipped = skippedFlips[key]
+        skippedFlips[key] = nil
+        DBG("[CharFrameButtons]", key, state, "| trigger:", source or "?",
+            skipped and ("| +" .. skipped .. " quick flips skipped") or "")
     end
 end
 
