@@ -211,7 +211,7 @@ function RA.InitOptions()
     -- Tab: General (in a ScrollFrame)
     local genScroll = UI.MakeScrollFrame(tabPanels["general"], "RollAwayGenScroll", S)
     genScroll:SetPoint("TOPLEFT",     tabPanels["general"], "TOPLEFT",     0,   0)
-    genScroll:SetPoint("BOTTOMRIGHT", tabPanels["general"], "BOTTOMRIGHT", -26, 0)
+    genScroll:SetPoint("BOTTOMRIGHT", tabPanels["general"], "BOTTOMRIGHT", -12, 0)
 
     local gen = CreateFrame("Frame", nil, genScroll)
     gen:SetWidth(580)

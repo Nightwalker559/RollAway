@@ -238,7 +238,7 @@ local function MakeHintText(parent, anchorLine, text)
 end
 
 -- ScrollFrame in the game's current style (ScrollFrameTemplate: slim scroll bar at its
--- right edge, so leave ~26px there); the bar shows only when there is something to
+-- right edge: end the frame ~12px before the panel edge); the bar shows only when there is something to
 -- scroll. Skinned with ElvUI's Skins module (S) if given.
 local function MakeScrollFrame(parent, name, S)
     local scroll = CreateFrame("ScrollFrame", name, parent, "ScrollFrameTemplate")
@@ -520,7 +520,7 @@ local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages
 
     local scroll = MakeScrollFrame(page, prefix .. name .. "Scroll", S)
     scroll:SetPoint("TOPLEFT",     page, "TOPLEFT",     0,   0)
-    scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -26, 0)
+    scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -12, 0)
 
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(QOL_CONTENT_W, 1)  -- real height set by FitContentHeight
