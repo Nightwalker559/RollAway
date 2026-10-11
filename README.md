@@ -19,7 +19,7 @@ For World of Warcraft: Midnight (Season 2, game versions 12.1 and 12.1.5). Engli
 ## Loot and bonus rolls
 
 ### Bonus roll auto-pass
-Passes the bonus roll prompt for the content you ticked:
+Passes the bonus roll prompt for the Midnight content you ticked:
 - **Dungeons** (matched by map)
 - **Delves**
 - **Raid bosses**: per boss, or a whole raid difficulty at once. Both can be combined.
