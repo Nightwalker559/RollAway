@@ -10,6 +10,7 @@
 ### Changed
 - Windows (What's New, material list, popups, teleport reminder, portal overview, debug log), scroll bars and sliders use the game's current UI style.
 - Options: checkboxes and dropdowns use the game's current style too; AceGUI is no longer needed (smaller addon).
+- Profiles use RollAway's own database (same saved data, nothing is lost); all bundled libraries are gone, the addon is much smaller.
 - ElvUI: skin rebuilt for the new windows, checkboxes, dropdowns, sliders and scroll bars.
 
 ---

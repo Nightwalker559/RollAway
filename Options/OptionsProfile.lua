@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsProfile.lua
--- The "Profile" settings subcategory: switch, create, copy, delete and reset AceDB-3.0
--- profiles (RA.db). Built once from RA.InitOptions().
+-- The "Profile" settings subcategory: switch, create, copy, delete and reset profiles
+-- (RA.db, Core/DB.lua). Built once from RA.InitOptions().
 -- The other options pages are built at ADDON_LOADED with the values of that moment: a
 -- profile change takes effect at once but they only refresh after a UI reload (hence the
 -- reload prompt).
@@ -14,8 +14,8 @@ local MakeDropdown      = UI.MakeDropdown
 local MakeSkinnedButton = UI.MakeSkinnedButton
 local MakeHintText      = UI.MakeHintText
 
--- Profile import/export (AceDB profile only; Dungeons/Raids/Delves/Prey are per
--- character in RollAwayDBChar). Format: "RollAway1:" + Base64(CBOR(RA.db.profile)) via
+-- Profile import/export (profile only; Dungeons/Raids/Delves/Prey are per character in
+-- RollAwayDBChar). Format: "RollAway1:" + Base64(CBOR(profile without defaults)) via
 -- C_EncodingUtil.
 local PROFILE_EXPORT_PREFIX = "RollAway1:"
 
@@ -116,7 +116,7 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
     button2      = CANCEL,
     OnAccept = function()
         RA.db:ResetProfile()
-        -- The Dungeons/Raids/Delves/Prey selections (RollAwayDBChar) are outside AceDB:
+        -- The Dungeons/Raids/Delves/Prey selections (RollAwayDBChar) are not part of the profile:
         -- reset them too, at once.
         wipe(RollAwayDBChar)
         RA.InitCharDB()
@@ -349,7 +349,9 @@ function RA.BuildProfileOptions(category)
     end)
 
     exportBtn:SetScript("OnClick", function()
-        local encoded = EncodeProfile(RA.db.profile)
+        local exported = RA.DeepCopy(RA.db.profile)
+        RA.StripDefaults(exported, RA.defaults.profile)
+        local encoded = EncodeProfile(exported)
         if encoded then
             StaticPopup_Show("ROLLAWAY_PROFILE_EXPORT", nil, nil, encoded)
         else

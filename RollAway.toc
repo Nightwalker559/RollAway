@@ -13,10 +13,6 @@
 ## OptionalDeps: ElvUI
 ## IconTexture: Interface\AddOns\RollAway\Media\Icon
 
-Libs\LibStub\LibStub.lua
-Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
-Libs\AceDB-3.0\AceDB-3.0.xml
-
 Locale\RollAwayLocale_enUS.lua
 Locale\RollAwayLocale_deDE.lua
 Data\Dungeons.lua
@@ -25,6 +21,7 @@ Data\Raids.lua
 Data\LegacyRaids.lua
 Data\LegacyDungeonTeleports.lua
 Core\Core.lua
+Core\DB.lua
 Core\Helpers.lua
 Modules\WhatsNew.lua
 Modules\Misc.lua

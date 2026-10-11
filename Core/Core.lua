@@ -117,7 +117,7 @@ RA.activeRolls           = {}
 RA.rollTimers            = {}
 
 ------------------------------------------------------------------------
--- Saved variable defaults (AceDB-3.0, RollAwayDBAccount)
+-- Saved variable defaults (RA.NewDB in Core/DB.lua, RollAwayDBAccount)
 --   profile   per-profile settings (one profile per character by default)
 --   global    account-wide settings, shared by all profiles
 --   defaultsChar  SavedVariablesPerCharacter, never part of a profile
@@ -727,7 +727,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then
 
-        -- The pre-3.0.1 flat RollAwayDB, captured before AceDB touches it.
+        -- The pre-3.0.1 flat RollAwayDB, captured before it is replaced by the profile alias.
         local legacyFlatSV = _G.RollAwayDB
 
         if legacyFlatSV then
@@ -746,18 +746,15 @@ f:SetScript("OnEvent", function(_, event, ...)
             legacyFlatSV.hideInRaid = nil
         end
 
-        -- No 3rd argument: every character gets its own default profile
-        -- ("true" would share one "Default" profile).
-        RA.db = LibStub("AceDB-3.0"):New("RollAwayDBAccount", RA.defaults)
+        -- Every character starts on its own profile.
+        RA.db = RA.NewDB("RollAwayDBAccount", RA.defaults)
 
         -- RollAwayDB is an alias of the active profile, kept in sync on profile changes.
         local function SyncCompatAlias()
             RollAwayDB = RA.db.profile
         end
         SyncCompatAlias()
-        RA.db.RegisterCallback(RA, "OnProfileChanged", SyncCompatAlias)
-        RA.db.RegisterCallback(RA, "OnProfileCopied",  SyncCompatAlias)
-        RA.db.RegisterCallback(RA, "OnProfileReset",   SyncCompatAlias)
+        RA.db.onProfileChange = SyncCompatAlias
 
         RA.InitCharDB()
 
