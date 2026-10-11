@@ -1,10 +1,8 @@
 -- RollAway - MinimapButton.lua
--- Minimap button (no library): left click toggles the feature overview, right click opens
--- the options, dragging moves it around the minimap (angle saved in the profile).
--- Hidden with RollAwayDB.minimapButtonHide (QoL > Hide).
--- It is named like a LibDBIcon button ("LibDBIcon10_<name>", fields .icon / .border /
--- .background): minimap button collectors (LuckyoneUI, MinimapButtonButton ...) pick up
--- that scheme without the library.
+-- Minimap button (no library): left click toggles the feature overview, right click the
+-- options, drag moves it (angle saved in the profile). Hidden with minimapButtonHide (QoL > Hide).
+-- Named like a LibDBIcon button ("LibDBIcon10_<name>", .icon / .border / .background) so
+-- button collectors (LuckyoneUI, MinimapButtonButton ...) pick it up.
 
 local RA   = _G.RollAway
 local RA_L = RA.RA_L

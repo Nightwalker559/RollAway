@@ -569,9 +569,9 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
     return prevAnchor, prevOffsetY
 end
 
--- One page of a left-nav options page (QoL, Developer): a scrolling area next to the
--- nav. Its height hugs the lowest element, measured on every show (a hidden page has no
--- layout; checkboxes settle a few frames after creation).
+-- One category of a page with a left nav (QoL, Developer): a scrolling area next to the nav.
+-- Its height hugs the lowest element, measured on every show (a hidden page has no layout;
+-- checkboxes settle a few frames after creation).
 --   panel, headerLine  the panel and the line under its header
 --   navWidth           width of the nav buttons
 --   prefix, name       global name of the scroll frame: <prefix><name>Scroll
