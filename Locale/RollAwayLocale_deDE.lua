@@ -551,5 +551,5 @@ L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Gro�
 ------------------------------------------------------------------------
 L["whatsnew_salvage_title"]       = "Verwerten-Slot füllt sich selbst"
 L["whatsnew_salvage_desc"]        = "Rezepte wie Kochkunst Fisch -> Filet brauchen einen Gegenstand im Slot. RollAway legt jetzt den ersten ein, den du hast (Reihenfolge der Spiel-Liste), und füllt nach, wenn der Stapel aufgebraucht ist."
-L["whatsnew_salvage_location"]    = "QoL > Filter"
+L["whatsnew_salvage_location"]    = "QoL > Misc"
 L["whatsnew_options_label"]      = "Optionen:"

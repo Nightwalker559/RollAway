@@ -147,6 +147,12 @@ function RA.BuildQoLOptions(category, S, classColor)
     end
     UpdateTankIconState(RollAwayDB.tankMarkEnabled)
 
+    -- Salvage slot (CraftingSalvage.lua)
+    MakeToggle(misc, tankIconDD.frame, -20, -14, {
+        label = RA_L["qol_salvage_slot_label"], info = RA_L["qol_salvage_slot_info"],
+        dbKey = "autoSalvageSlot", onChange = RA.ApplyCraftingSalvageFeature,
+    })
+
     -- ── Category: Quests ───────────────────────────────────────────────
     -- Every change registers only the events still needed.
 
@@ -361,12 +367,6 @@ function RA.BuildQoLOptions(category, S, classColor)
 
     filterChain.Add({
         label = RA_L["qol_expansion_filter_label"], info = RA_L["qol_expansion_filter_info"], dbKey = "expansionFilterAH",
-    })
-
-    -- Salvage slot (Cooking fish -> fillets etc.)
-    filterChain.Add({
-        label = RA_L["qol_salvage_slot_label"], info = RA_L["qol_salvage_slot_info"],
-        dbKey = "autoSalvageSlot", onChange = RA.ApplyCraftingSalvageFeature,
     })
 
     -- Vendor filter: dims known items (reset when turned off)

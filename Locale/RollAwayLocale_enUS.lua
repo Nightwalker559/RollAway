@@ -550,5 +550,5 @@ L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 ------------------------------------------------------------------------
 L["whatsnew_salvage_title"]       = "Salvage slot fills itself"
 L["whatsnew_salvage_desc"]        = "Recipes like Cooking fish -> fillets need an item in the slot. RollAway now puts in the first one you own (game list order) and refills it when the stack is used up."
-L["whatsnew_salvage_location"]    = "QoL > Filter"
+L["whatsnew_salvage_location"]    = "QoL > Misc"
 L["whatsnew_options_label"]      = "Options:"
