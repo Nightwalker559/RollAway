@@ -276,7 +276,7 @@ function RA.InitOptions()
 
     -- Row 2: hide the loot history per raid difficulty
     local hideLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", 0, -20)
+    hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", -19, -20)  -- the min label sits 19px in
     hideLabel:SetText(RA_L["hide_in_raid_label"])
 
     local hideInfo = MakeInfoText(gen, hideLabel, 0, -4, 480, RA_L["hide_in_raid_info"])

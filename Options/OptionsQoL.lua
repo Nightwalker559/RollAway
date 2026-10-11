@@ -331,7 +331,7 @@ function RA.BuildQoLOptions(category, S, classColor)
             end, nil, QOL_INFO_W)
             sub.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 20, -10)
             sub:SetDisabled(not RollAwayDB[parentKey])
-            anchor, x, y = sub.frame, -20, -12
+            anchor, x, y = sub.frame, -40, -12  -- back to the main toggles' left edge (sub = +40)
             return sub
         end
         return chain
