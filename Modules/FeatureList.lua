@@ -145,6 +145,7 @@ end
 
 local function CreateFrameOnce()
     local f = RA.CreatePanelWindow("RollAwayFeatureListFrame", UIParent, WIDTH, HEIGHT, RA_L["feat_title"])
+    RA.AddTitleIcon(f)
     f:SetFrameStrata("HIGH")
     RA.MakeDraggable(f)
     tinsert(UISpecialFrames, "RollAwayFeatureListFrame")

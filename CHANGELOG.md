@@ -2,6 +2,7 @@
 
 ### Changed
 - Minimap button: right click closes the options window again.
+- Addon icon in the title of the options and feature windows.
 
 ### Fixed
 - Debug log: character frame button lines no longer flood the log (e.g. with Baganator).

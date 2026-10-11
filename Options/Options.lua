@@ -91,6 +91,7 @@ function RA.InitOptions()
     -- Own options window: page list on the left (Main, QoL, Profile, Developer), the
     -- selected page on the right. No entry in the game's Settings panel.
     local win = RA.CreatePanelWindow("RollAwayOptionsFrame", UIParent, 860, 640, RA_L["addon_title"])
+    RA.AddTitleIcon(win)
     win:SetPoint("CENTER")
     win:SetFrameStrata("HIGH")
     win:SetClampedToScreen(true)

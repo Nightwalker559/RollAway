@@ -141,6 +141,18 @@ function RA.CreatePanelWindow(name, parent, width, height, title)
     return f
 end
 
+-- The addon icon left of a CreatePanelWindow title (the title text is centered).
+function RA.AddTitleIcon(window)
+    local title = window.TitleContainer and window.TitleContainer.TitleText
+    if not title then return end
+    local icon = window:CreateTexture(nil, "OVERLAY")
+    icon:SetSize(18, 18)
+    icon:SetTexture("Interface\AddOns\RollAway\Media\Icon")
+    icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+    icon:SetPoint("RIGHT", title, "CENTER", -(title:GetStringWidth() / 2 + 6), 0)
+    return icon
+end
+
 -- Like MakeDraggable, but honors qolReminderLockPosition (checked on every drag).
 function RA.MakeLockableDraggable(frame)
     frame:SetMovable(true)
