@@ -412,7 +412,7 @@ local function MakeSeasonTabs(parent, anchorFrame, seasons)
         btn:SetSize(100, TAB_H)
         btn:SetText(s.label)
 
-        -- OnClick before ElvSkinTab (HandleButton would overwrite it)
+        -- OnClick before Skin.OptionTab (HandleButton would overwrite it)
         btn:SetScript("OnClick", function() ShowSeason(key) end)
         buttons[key] = btn
         buttonOrder[#buttonOrder + 1] = btn
