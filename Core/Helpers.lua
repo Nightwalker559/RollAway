@@ -275,6 +275,7 @@ function RA.CreatePopupFrame(opts)
     local iconHolder = CreateFrame("Frame", nil, frame)
     iconHolder:SetSize(18, 18)
     iconHolder:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -3)
+    iconHolder:SetFrameLevel(520)  -- above the panel's border (NineSlice is level 500)
     frame.iconHolder = iconHolder
 
     local icon = iconHolder:CreateTexture(nil, "ARTWORK")
