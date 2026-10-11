@@ -4,9 +4,6 @@
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
--- Resolved at file load (Libs load first; the AceGUI widgets are bundled).
-local AceGUI = LibStub("AceGUI-3.0")
-
 -- Grid layout constants (all tabs)
 local ENTRY_W = 255
 local ENTRY_H = 26
@@ -45,27 +42,30 @@ end
 local CB_BOX_WIDTH  = 24  -- checkbox graphic left of the label
 local CB_SLACK      = 16  -- breathing room after the label
 local CB_LINE_H     = 14
+local CB_BOX_SIZE   = 22
 
 -- Sizes the checkbox to its label (up to widthOverride / maxWidth); a longer label wraps
 -- onto more lines (frame and label grow, so what hangs below moves down).
 local function SetCBLines(cb, lines)
-    local text = cb.text
+    local text, box, frame = cb.text, cb.box, cb.frame
     text:SetWordWrap(true)
     text:ClearAllPoints()
+    box:ClearAllPoints()
     if lines > 1 then
         -- Top-anchored: the first line stays beside the box.
-        text:SetPoint("TOPLEFT", cb.checkbg, "TOPRIGHT", 0, -4)
-        text:SetPoint("TOPRIGHT", cb.frame, "TOPRIGHT", 0, -4)
+        box:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -1)
+        text:SetPoint("TOPLEFT", box, "TOPRIGHT", 2, -4)
+        text:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -4)
         text:SetJustifyV("TOP")
         text:SetHeight(lines * CB_LINE_H)
-        cb.frame:SetHeight(lines * CB_LINE_H + 8)
+        frame:SetHeight(lines * CB_LINE_H + 8)
     else
-        -- AceGUI's CheckBox anchors.
-        text:SetPoint("LEFT", cb.checkbg, "RIGHT")
-        text:SetPoint("RIGHT")
+        box:SetPoint("LEFT", frame, "LEFT", 0, 0)
+        text:SetPoint("LEFT", box, "RIGHT", 2, 0)
+        text:SetPoint("RIGHT", frame, "RIGHT")
         text:SetJustifyV("MIDDLE")
         text:SetHeight(18)
-        cb.frame:SetHeight(24)
+        frame:SetHeight(24)
     end
     cb.raLines = lines
 end
@@ -90,31 +90,67 @@ local function GrowCBIfTruncated(cb, tries)
     end
 end
 
--- Self-contained AceGUI checkbox (own textures, no ElvUI template dependency); the caller
--- positions cb.frame. widthOverride: fixed width, else sized to the label, at most
--- maxWidth (default 520, the General tab's room).
+-- Checkbox row in the game's current style (MinimalCheckboxTemplate box + label; a click
+-- anywhere on the row toggles). The caller positions cb.frame. Methods: SetValue,
+-- GetValue, SetDisabled, SetCallback("OnValueChanged", fn(cb, event, value)).
+-- widthOverride: fixed width, else sized to the label, at most maxWidth (default 520, the
+-- General tab's room).
 local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
-    local cb = AceGUI:Create("CheckBox")
-    cb:SetLabel(label)
-    cb:SetValue(checked)
+    local frame = CreateFrame("Button", nil, parent)
+    local box = CreateFrame("CheckButton", nil, frame, "MinimalCheckboxTemplate")
+    box:SetSize(CB_BOX_SIZE, CB_BOX_SIZE)
+    -- The template's textures keep their atlas size: stretch them to the (smaller) box.
+    for _, key in ipairs({ "NormalTexture", "PushedTexture", "HighlightTexture", "CheckedTexture",
+                           "DisabledCheckedTexture" }) do
+        local tex = box[key]
+        if tex then
+            tex:ClearAllPoints()
+            tex:SetAllPoints(box)
+        end
+    end
+    if RA.SkinCheckBox then RA.SkinCheckBox(box) end
+
+    local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    text:SetText(label)
+    box:SetChecked(checked and true or false)
+
+    local cb = { frame = frame, box = box, text = text }
+
+    function cb:SetValue(value) box:SetChecked(value and true or false) end
+    function cb:GetValue() return box:GetChecked() and true or false end
+    function cb:SetWidth(width) frame:SetWidth(width) end
+    function cb:SetCallback(_, fn) self.callback = fn end
+    function cb:SetDisabled(disabled)
+        box:SetEnabled(not disabled)
+        frame:SetEnabled(not disabled)
+        local shade = disabled and 0.5 or 1
+        text:SetTextColor(shade, shade, shade)
+    end
+
+    local function Changed()
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        local value = box:GetChecked() and true or false
+        if onChange then onChange(value) end
+        if cb.callback then cb.callback(cb, "OnValueChanged", value) end
+    end
+    box:SetScript("OnClick", Changed)
+    frame:SetScript("OnClick", function()
+        box:SetChecked(not box:GetChecked())
+        Changed()
+    end)
+    frame:SetScript("OnEnter", function() box:LockHighlight() end)
+    frame:SetScript("OnLeave", function() box:UnlockHighlight() end)
+
     maxWidth = maxWidth or 520
     FitCB(cb, label, widthOverride, maxWidth)
-    -- Again after ElvUI skinned it (font change).
+    -- Again once the font is final (ElvUI re-fonts).
     RunNextFrame(function()
         FitCB(cb, label, widthOverride, maxWidth)
         RunNextFrame(function() GrowCBIfTruncated(cb, 3) end)
     end)
-    cb:SetCallback("OnValueChanged", function(_, _, value)
-        if onChange then onChange(value) end
-    end)
-    cb.frame:SetParent(parent)
-    cb.frame:ClearAllPoints()
-    cb.frame:Show()
-    cb.frame:HookScript("OnShow", function()
+    frame:HookScript("OnShow", function()
         RunNextFrame(function() GrowCBIfTruncated(cb, 3) end)
     end)
-    -- AceGUI moves the label anchor on press and does not restore it.
-    cb.frame:HookScript("OnMouseUp", function() SetCBLines(cb, cb.raLines or 1) end)
     return cb
 end
 
@@ -153,17 +189,50 @@ local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     return cb, info
 end
 
--- AceGUI Dropdown shell: blank label (the real one is a FontString above), width,
--- position. SetList/SetValue/SetCallback are left to the caller.
+-- Dropdown in the game's current style (WowStyle1DropdownTemplate, radio menu). Methods:
+-- SetList(list, order), SetValue(key), SetCallback("OnValueChanged", fn(dd, event, key)),
+-- SetDisabled. The caller shows the label as a FontString above. dd.frame is a holder that
+-- includes the box's overhang (the art reaches 8px sideways, 7 above, 9 below the button),
+-- positioned (xOffset, yOffset) below `anchor`: anchor what follows to it.
 local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
-    local dd = AceGUI:Create("Dropdown")
-    dd:SetLabel("")
-    dd:SetWidth(width)
-    dd.frame:SetParent(parent)
-    dd.frame:ClearAllPoints()
-    dd.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
-    dd.frame:Show()
-    if RA.SkinDropdownList then RA.SkinDropdownList(dd) end  -- ElvUI only
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetSize(width + 16, 42)
+    holder:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
+    local frame = CreateFrame("DropdownButton", nil, holder, "WowStyle1DropdownTemplate")
+    frame:SetWidth(width)
+    frame:SetPoint("TOPLEFT", holder, "TOPLEFT", 8, -8)
+
+    local dd = { frame = holder, list = {}, order = {} }
+
+    local function IsSelected(key) return dd.value == key end
+    local function SetSelected(key)
+        dd.value = key
+        if dd.callback then dd.callback(dd, "OnValueChanged", key) end
+    end
+    frame:SetupMenu(function(_, root)
+        for _, key in ipairs(dd.order) do
+            root:CreateRadio(dd.list[key], IsSelected, SetSelected, key)
+        end
+    end)
+
+    function dd:SetList(list, order)
+        self.list = list
+        if not order then
+            order = {}
+            for key in pairs(list) do order[#order + 1] = key end
+            table.sort(order, function(a, b) return tostring(a) < tostring(b) end)
+        end
+        self.order = order
+        frame:GenerateMenu()
+    end
+    function dd:SetValue(key)
+        self.value = key
+        frame:GenerateMenu()
+    end
+    function dd:SetCallback(_, fn) self.callback = fn end
+    function dd:SetDisabled(disabled) frame:SetEnabled(not disabled) end
+
+    if RA.SkinDropdown then RA.SkinDropdown(frame, width) end  -- ElvUI only
     return dd
 end
 
@@ -288,7 +357,7 @@ local function MakeTabSelector(panels, buttons)
 end
 
 -- A row of checkboxes below anchorFrame. Returns the row's invisible full-width container
--- (an anchor for what comes next, e.g. MakeSeasonTabs) and the AceGUI checkboxes.
+-- (an anchor for what comes next, e.g. MakeSeasonTabs) and the checkboxes.
 local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf, gap)
     gap = gap or 20
     local row = CreateFrame("Frame", nil, parent)

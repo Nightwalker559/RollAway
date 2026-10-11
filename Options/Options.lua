@@ -356,8 +356,8 @@ function RA.InitOptions()
     end
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
-    -- onChange is set below (cbLegacy:SetCallback) once legacyTabBtn exists; AceGUI has a single
-    -- OnValueChanged slot, one given here would be overwritten.
+    -- onChange is set below (cbLegacy:SetCallback) once legacyTabBtn exists; the
+    -- widget has a single OnValueChanged slot, one given here would be overwritten.
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
 

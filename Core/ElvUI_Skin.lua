@@ -158,34 +158,9 @@ function RA.SkinSalvagePanel(panel, ...)
     for _, btn in ipairs({ ... }) do Handle("HandleButton", btn) end
 end
 
--- Dropdown lists (RA.OptionsUI.MakeDropdown): ElvUI skins the box and the list but not the
--- entries (Blizzard's gold tick and yellow highlight): flat gold square, soft white hover.
-
-local function SkinDropdownItem(item)
-    if item.RA_ElvSkinned then return end
-    item.RA_ElvSkinned = true
-
-    local check = item.check
-    if check then
-        check:SetTexture(E.Media.Textures.White8x8)
-        check:SetVertexColor(1, .82, 0, 0.8)
-        check:SetSize(8, 8)
-        check:ClearAllPoints()
-        check:SetPoint("LEFT", item.frame, "LEFT", 7, 0)
-    end
-
-    local highlight = item.highlight
-    if highlight then
-        highlight:SetTexture(E.Media.Textures.White8x8)
-        highlight:SetVertexColor(1, 1, 1, 0.12)
-    end
-end
-
--- dd: AceGUI Dropdown. Follows ElvUI's Ace3 skin switch, like the dropdown box.
-function RA.SkinDropdownList(dd)
-    if not (E.private.skins and E.private.skins.ace3Enable) or not dd.pullout then return end
-    for _, item in dd.pullout:IterateItems() do SkinDropdownItem(item) end
-    hooksecurefunc(dd.pullout, "AddItem", function(_, item) SkinDropdownItem(item) end)
+-- Dropdown of the options (RA.OptionsUI.MakeDropdown, WowStyle1DropdownTemplate).
+function RA.SkinDropdown(frame, width)
+    if SkinsEnabled() and S.HandleDropDownBox then S:HandleDropDownBox(frame, width) end
 end
 
 -- Lazily created frames: skinned once by a hook right after the function that creates them.
@@ -245,8 +220,8 @@ local function SkinCharFrameButton(btn)
     btn:SetHighlightTexture("")
 end
 
--- Checkboxes/sliders keep ElvUI's AceGUI styling. The popups are skinned in
--- RA.CreatePopupFrame; the frames below have a different shape and get a hook.
+-- The popups are skinned in RA.CreatePopupFrame; the frames below have a different shape
+-- and get a hook.
 
 -- Hooks RA[funcName] to skin the frame it creates/shows, once.
 local function SkinOnShow(funcName, frameName, skin)
