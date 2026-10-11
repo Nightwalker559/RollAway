@@ -1,10 +1,8 @@
-## 3.1.3 (alpha 6)
+## 3.1.3 (alpha 5)
 
 ### Changed
 - Own options window (`/raw`, minimap button) with the pages on the left; no more entry in the game's Settings panel.
 - Options also open in combat.
-
-## 3.1.3 (alpha 5)
 
 ### Fixed
 - Loot history close timer now starts after the last roll is complete, not when you pass.
