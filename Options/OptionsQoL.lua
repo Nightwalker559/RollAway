@@ -100,12 +100,13 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     qolTitle:SetPoint("TOPLEFT", qolPanel, "TOPLEFT", 0, -10)
     qolTitle:SetText(RA_L["qol_panel_title"])
 
-    local qolPanelInfo = MakeInfoText(qolPanel, qolTitle, 0, -6, 560, RA_L["qol_panel_info"])
+    local qolPanelInfo = MakeInfoText(qolPanel, qolTitle, 0, -6, 510, RA_L["qol_panel_info"])
 
     local qolHeaderLine = qolPanel:CreateTexture(nil, "ARTWORK")
     qolHeaderLine:SetHeight(1); qolHeaderLine:SetWidth(560)
     qolHeaderLine:SetPoint("TOPLEFT", qolPanelInfo, "BOTTOMLEFT", 0, -10)
     qolHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    RA.AddHeaderLogo(qolPanel, qolHeaderLine)
 
     -- Left nav sorted by the shown label (follows the client language); no Character
     -- tab below max level.

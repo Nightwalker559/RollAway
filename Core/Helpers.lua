@@ -141,25 +141,13 @@ function RA.CreatePanelWindow(name, parent, width, height, title)
     return f
 end
 
--- The addon icon left of a CreatePanelWindow title (the title text is centered). A texture
--- of the title container itself, in the same layer as the title text: wherever the text is
--- drawn, the icon is too (also under skins that restyle the window). window.RA_TitleIcon
--- keeps it for debugging.
-function RA.AddTitleIcon(window)
-    local container = window.TitleContainer
-    local title = container and container.TitleText
-    local parent = container or window
-    local icon = parent:CreateTexture(nil, "OVERLAY")
-    icon:SetSize(18, 18)
+-- The addon logo at the right end of an options page's header line (above it).
+function RA.AddHeaderLogo(page, headerLine)
+    local icon = page:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(36, 36)
     icon:SetTexture("Interface\\AddOns\\RollAway\\Media\\Icon")
     icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
-    local width = title and title:GetStringWidth() or 0
-    if width > 0 then
-        icon:SetPoint("RIGHT", title, "CENTER", -(width / 2 + 6), 0)
-    else
-        icon:SetPoint("TOPLEFT", window, "TOPLEFT", 10, -3)
-    end
-    window.RA_TitleIcon = icon
+    icon:SetPoint("BOTTOMRIGHT", headerLine, "TOPRIGHT", 0, 6)
     return icon
 end
 

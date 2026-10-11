@@ -6,7 +6,7 @@
 
 ### Changed
 - Minimap button: right click closes the options window again.
-- Addon icon in the title of the options and feature windows.
+- Addon logo in the header of every options page.
 - Loot & Rolls page: tab list on the left like QoL; options window is wider.
 
 ### Fixed

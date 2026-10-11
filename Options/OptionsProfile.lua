@@ -214,6 +214,7 @@ function RA.BuildProfileOptions(parent, registerPage)
     registerPage("profile", RA_L["profile_section_title"], panel)
 
     local _, headerLine = MakeSectionHeader(panel, panel, -10, RA_L["profile_panel_title"])
+    RA.AddHeaderLogo(panel, headerLine)
     local hint = MakeHintText(panel, headerLine, RA_L["profile_panel_info"])
 
     -- ── Active profile ───────────────────────────────────────────────

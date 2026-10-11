@@ -60,12 +60,13 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     title:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -10)
     title:SetText(RA_L["dev_panel_title"])
 
-    local panelInfo = MakeInfoText(panel, title, 0, -6, 560, RA_L["dev_panel_info"])
+    local panelInfo = MakeInfoText(panel, title, 0, -6, 510, RA_L["dev_panel_info"])
 
     local headerLine = panel:CreateTexture(nil, "ARTWORK")
     headerLine:SetHeight(1); headerLine:SetWidth(560)
     headerLine:SetPoint("TOPLEFT", panelInfo, "BOTTOMLEFT", 0, -10)
     headerLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    RA.AddHeaderLogo(panel, headerLine)
 
     -- Left nav in working order.
     local navDefs = {

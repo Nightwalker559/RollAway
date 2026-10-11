@@ -91,7 +91,6 @@ function RA.InitOptions()
     -- Own options window: page list on the left (Main, QoL, Profile, Developer), the
     -- selected page on the right. No entry in the game's Settings panel.
     local win = RA.CreatePanelWindow("RollAwayOptionsFrame", UIParent, 940, 640, RA_L["addon_title"])
-    RA.AddTitleIcon(win)
     win:SetPoint("CENTER")
     win:SetFrameStrata("HIGH")
     win:SetClampedToScreen(true)
@@ -171,12 +170,13 @@ function RA.InitOptions()
     mainTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -10)
     mainTitle:SetText(RA_L["options_nav_main"])
 
-    local mainInfo = MakeInfoText(panel, mainTitle, 0, -6, 560, RA_L["main_panel_info"])
+    local mainInfo = MakeInfoText(panel, mainTitle, 0, -6, 510, RA_L["main_panel_info"])
 
     local mainHeaderLine = panel:CreateTexture(nil, "ARTWORK")
     mainHeaderLine:SetHeight(1); mainHeaderLine:SetWidth(560)
     mainHeaderLine:SetPoint("TOPLEFT", mainInfo, "BOTTOMLEFT", 0, -10)
     mainHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    RA.AddHeaderLogo(panel, mainHeaderLine)
 
     -- Tab definitions
     local tabDefs = {
