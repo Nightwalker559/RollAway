@@ -37,6 +37,7 @@ Modules\TeleportReminder.lua
 Modules\PortalOverview.lua
 Modules\JoinReminder.lua
 Modules\QoL.lua
+Modules\CraftingSalvage.lua
 Modules\Quests.lua
 Modules\TankMarker.lua
 Modules\CharFrameButtons.lua
