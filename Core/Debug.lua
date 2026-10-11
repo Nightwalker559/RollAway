@@ -205,6 +205,18 @@ end
 
 local bypassFilter = false
 
+-- Wall clock + GetTime() are not in sync, so seconds (date) and milliseconds
+-- (GetTime) came from two clocks and could run backwards. One whole-second
+-- offset ties both to GetTime(); it is at most 1s off the real clock.
+local clockOffset
+
+local function DebugTimestamp()
+    local t = GetTime()
+    clockOffset = clockOffset or (time() - math.floor(t))
+    local now = clockOffset + t
+    return date("%H:%M:%S", math.floor(now)) .. string.format(".%03d", (now % 1) * 1000)
+end
+
 -- Appends one formatted line.
 function RA.AppendDebugLog(...)
     if not bypassFilter and RollAwayDB.debug and not RA.IsDebugCategoryOn(DebugCategoryOf((...))) then
@@ -216,7 +228,7 @@ function RA.AppendDebugLog(...)
     for i = 1, select("#", ...) do
         parts[i] = tostring((select(i, ...)))
     end
-    AppendLine(date("%H:%M:%S") .. string.format(".%03d", (GetTime() % 1) * 1000) .. "  " .. table.concat(parts, " "))
+    AppendLine(DebugTimestamp() .. "  " .. table.concat(parts, " "))
 end
 
 -- Same, but never filtered: errors, window messages, tool output.
