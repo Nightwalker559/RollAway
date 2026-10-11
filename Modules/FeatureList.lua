@@ -270,10 +270,16 @@ local function CreateFrameOnce()
     return f
 end
 
--- Toggles the window.
+-- Toggles the window; the options window closes when this one opens (they overlap).
 function RA.ToggleFeatureList()
     if not frame then frame = CreateFrameOnce() end
-    frame:SetShown(not frame:IsShown())
+    local show = not frame:IsShown()
+    if show and RA.CloseOptions then RA.CloseOptions() end
+    frame:SetShown(show)
+end
+
+function RA.CloseFeatureList()
+    if frame then frame:Hide() end
 end
 
 function RA.InitFeatureList()
