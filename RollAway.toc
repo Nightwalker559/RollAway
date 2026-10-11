@@ -1,4 +1,4 @@
-## Interface: 120007, 120100, 120105
+## Interface: 120100, 120105
 ## Title: RollAway
 ## Notes: Bonus Roll automation, loot history cleanup, and group quality-of-life tools for Midnight Season 2.
 ## Notes-deDE: Bonus-Roll-Automatisierung, Loot-Verlauf-Bereinigung und Gruppen-QoL-Tools für Midnight Season 2.
