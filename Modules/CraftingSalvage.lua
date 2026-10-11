@@ -64,12 +64,9 @@ local relayoutPending = false
 local UpdateToggleLook
 
 local function SetItemLook(b)
-    local on = Allowed()[b.itemID]
-    if on then
-        b.frame:SetColorTexture(0.1, 0.8, 0.1, 1)
-    else
-        b.frame:SetColorTexture(0.25, 0.25, 0.25, 1)
-    end
+    local r, g, bl = 0.25, 0.25, 0.25
+    if Allowed()[b.itemID] then r, g, bl = 0.1, 0.8, 0.1 end
+    for _, edge in ipairs(b.edges) do edge:SetColorTexture(r, g, bl, 1) end
     b.icon:SetDesaturated(b.owned == 0)
     b.icon:SetAlpha(b.owned == 0 and 0.45 or 1)
 end
@@ -87,8 +84,13 @@ local function GetItemButton(i)
     if b then return b end
     b = CreateFrame("Button", nil, panel.grid)
     b:SetSize(CELL - 4, CELL - 4)
-    b.frame = b:CreateTexture(nil, "BACKGROUND")
-    b.frame:SetAllPoints()
+    -- 2px border: green = allowed, grey = not allowed.
+    b.edges = {}
+    for i = 1, 4 do b.edges[i] = b:CreateTexture(nil, "BORDER") end
+    b.edges[1]:SetPoint("TOPLEFT");     b.edges[1]:SetPoint("TOPRIGHT");     b.edges[1]:SetHeight(2)
+    b.edges[2]:SetPoint("BOTTOMLEFT");  b.edges[2]:SetPoint("BOTTOMRIGHT");  b.edges[2]:SetHeight(2)
+    b.edges[3]:SetPoint("TOPLEFT");     b.edges[3]:SetPoint("BOTTOMLEFT");   b.edges[3]:SetWidth(2)
+    b.edges[4]:SetPoint("TOPRIGHT");    b.edges[4]:SetPoint("BOTTOMRIGHT");  b.edges[4]:SetWidth(2)
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetPoint("TOPLEFT", 2, -2)
     b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
