@@ -90,7 +90,7 @@ local function CreateButton()
 end
 
 -- Shows or hides the button according to the setting (creates it on first need).
-function RA.ApplyMinimapButton()
+local function Apply()
     if RollAwayDB.minimapButtonHide then
         if button then button:Hide() end
         return
@@ -100,8 +100,23 @@ function RA.ApplyMinimapButton()
     button:Show()
 end
 
+-- Button bars (LuckyoneUI) re-collect on ElvUI's minimap update; LibDBIcon buttons trigger
+-- that through the library's Show/Hide, a button without it has to ask. Without this the
+-- gap of a hidden button stays until the next reload.
+local function NotifyButtonBars()
+    local E = ElvUI and ElvUI[1]
+    local minimap = E and E.GetModule and E:GetModule("Minimap", true)
+    if minimap and minimap.UpdateSettings then pcall(minimap.UpdateSettings, minimap) end
+end
+
+-- After a setting change (options, overview, profile switch).
+function RA.ApplyMinimapButton()
+    Apply()
+    NotifyButtonBars()
+end
+
 function RA.InitMinimapButton()
-    RA.ApplyMinimapButton()
+    Apply()
     -- A profile switch brings another saved position / visibility.
     RA.db.onProfileChange = (function(previous)
         return function(...)
