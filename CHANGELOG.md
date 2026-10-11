@@ -1,6 +1,7 @@
 ## 3.1.3 (alpha 5)
 
 ### Fixed
+- Loot history close timer now starts after the last roll is complete, not when you pass.
 - Debug log: timestamps no longer run out of order.
 
 ## 3.1.3 (alpha 4)

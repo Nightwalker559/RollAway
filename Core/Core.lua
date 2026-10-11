@@ -652,11 +652,11 @@ f:SetScript("OnEvent", function(_, event, ...)
         CheckSeasonData()
 
     elseif event == "CANCEL_LOOT_ROLL" then
-        -- Only tracked rolls count: a history frame opened by hand stays.
+        -- Only your roll popup is gone; the history still shows the others' rolls.
+        -- The roll stays tracked until its LOOT_ROLLS_COMPLETE (or the stale sweep
+        -- there), so the close timer starts after the LAST roll is complete.
         if RA.activeRolls[arg1] then
-            DBG("CANCEL_LOOT_ROLL rollID:", arg1)
-            ForgetRoll(arg1, "cancelled")
-            C_Timer.After(0.1, CheckAndClose)
+            DBG("CANCEL_LOOT_ROLL rollID:", arg1, "| waiting for LOOT_ROLLS_COMPLETE")
         end
 
     elseif event == "CANCEL_ALL_LOOT_ROLLS" then
