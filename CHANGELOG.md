@@ -6,7 +6,7 @@
 - Feature overview is narrower and opens next to the options window.
 
 ### Fixed
-- Loot history close timer now starts after the last roll is complete, not when you pass.
+- Loot history close timer waits until the game's history has no open roll left.
 - Debug log: timestamps no longer run out of order.
 
 ## 3.1.3 (alpha 4)

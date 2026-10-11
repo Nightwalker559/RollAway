@@ -391,6 +391,28 @@ local function HasActiveRolls()
     return false
 end
 
+-- True while the game's own loot history still has a drop without winner/all-passed in a
+-- running encounter. Covers rolls that fire no START_LOOT_ROLL for us (rolls the player is
+-- not part of): they would otherwise look finished. Same test as Blizzard's history timer.
+local function HistoryHasPendingRolls()
+    if not (C_LootHistory and C_LootHistory.GetAllEncounterInfos) then return false end
+    local ok, pending = pcall(function()
+        local now = C_LootHistory.GetLootHistoryTime()
+        local encounters = C_LootHistory.GetAllEncounterInfos()
+        for i = 1, #encounters do
+            local enc = encounters[i]
+            if enc.duration > 0 and now - enc.startTime < enc.duration then
+                local drops = C_LootHistory.GetSortedDropsForEncounter(enc.encounterID)
+                for j = 1, drops and #drops or 0 do
+                    if not (drops[j].winner or drops[j].allPassed) then return true end
+                end
+            end
+        end
+        return false
+    end)
+    return ok and pending == true
+end
+
 local function CountActiveRolls()
     local n = 0
     for _ in pairs(RA.activeRolls) do n = n + 1 end
@@ -456,6 +478,7 @@ local function ResetState(reason)
     DBG("ResetState:", reason)
     CancelAllRollTimers()
     if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
+    if RA.historyPoll then RA.SafeCancelTimer(RA.historyPoll); RA.historyPoll = nil end
     wipe(RA.activeRolls)
     RA.lastEncounterID = 0
     RA.bonusRollEncounterID = nil
@@ -498,9 +521,23 @@ local function ShouldHideInInstance()
     return RollAwayDB.hideInRaidBuckets[bucket] == true
 end
 
+local CheckAndClose
+
 local function TryStartCloseTimer()
     if RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled then return end
     if HasActiveRolls() then return end
+    -- Rolls still open in the game's history: no timer yet, look again shortly (no event
+    -- tells us when the last one ends).
+    if HistoryHasPendingRolls() then
+        if not RA.historyPoll then
+            DBG("Loot history still has open rolls - close timer waits")
+            RA.historyPoll = C_Timer.NewTimer(2, function()
+                RA.historyPoll = nil
+                CheckAndClose()
+            end)
+        end
+        return
+    end
     -- Every finished roll restarts the countdown: the frame closes `delay` seconds
     -- after the LAST roll, not after the first one.
     if RA.closeTimer then
@@ -525,7 +562,7 @@ local function TryStartCloseTimer()
 end
 
 -- After a roll ends: start the close timer unless the frame is meant to stay hidden.
-local function CheckAndClose()
+CheckAndClose = function()
     if not HasActiveRolls() and not ShouldHideInInstance() then
         TryStartCloseTimer()
     end
@@ -603,6 +640,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         RA.activeRolls[arg1] = lootHandle or true
 
         if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
+        if RA.historyPoll then RA.SafeCancelTimer(RA.historyPoll); RA.historyPoll = nil end
 
         -- Watchdog: force-closes the frame if the roll never ends cleanly.
         if not RA.rollTimers[arg1] and not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
