@@ -162,7 +162,7 @@ RA.DEBUG_CATEGORIES = {
     { key = "loot",     prefixes = { "START_LOOT_ROLL", "LOOT_ROLLS_COMPLETE", "CANCEL_LOOT_ROLL",
                                      "CANCEL_ALL_LOOT_ROLLS", "Roll finished", "ENCOUNTER_END", "Watchdog",
                                      "ResetState", "FullReset", "Close timer", "Starting close",
-                                     "Hiding loot history", "Entering combat" } },
+                                     "Hiding loot history", "Loot history frame shown", "Entering combat" } },
     { key = "autopass", prefixes = { "[AutoPass]", "AutoPass:", "BonusRollFrame", "WARNING: BonusRollFrame",
                                      "Manual auto-pass" } },
     { key = "roll",     prefixes = { "[Legacy", "[Roll", "RollConfirm" } },
