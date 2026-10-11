@@ -1,5 +1,5 @@
 -- RollAway - Options/OptionsDev.lua
--- The "Developer" subcategory (left nav: Logging / Tests / Tools / Commands), for developer
+-- The "Developer" options page (left nav: Logging / Tests / Tools / Commands), for developer
 -- characters only (RA.DEV_CHARS), built once from RA.InitOptions(). The buttons run the dev
 -- commands (RA.RunDevCommand, Debug.lua).
 
@@ -49,9 +49,11 @@ local function CommandLines(list)
     return table.concat(lines, "\n")
 end
 
-function RA.BuildDevOptions(category, classColor)
-    local panel = CreateFrame("Frame")
-    Settings.RegisterCanvasLayoutSubcategory(category, panel, RA_L["dev_section_title"])
+function RA.BuildDevOptions(parent, registerPage, classColor)
+    local panel = CreateFrame("Frame", nil, parent)
+    panel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
+    panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
+    registerPage("dev", RA_L["dev_section_title"], panel)
 
     -- Fixed header
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")

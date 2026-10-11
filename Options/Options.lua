@@ -1,7 +1,7 @@
 -- RollAway - Options/Options.lua
--- Settings UI: the main "RollAway" category (header, tabs General / Dungeons / Raids /
--- Delves / Prey / Legacy) and the QoL, Profile and Developer subcategories
--- (OptionsQoL / OptionsProfile / OptionsDev). Shared widget builders: OptionsHelpers.lua.
+-- Options window (RollAwayOptionsFrame): page list on the left, main page (tabs General /
+-- Dungeons / Raids / Delves / Prey / Legacy) here, the QoL, Profile and Developer pages in
+-- OptionsQoL / OptionsProfile / OptionsDev. Shared widget builders: OptionsHelpers.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -85,44 +85,81 @@ end
 
 function RA.InitOptions()
 
-    local panel = CreateFrame("Frame")
-    local category = Settings.RegisterCanvasLayoutCategory(panel, RA_L["addon_title"])
-    local RA_CategoryID = category:GetID()
+    -- Class color (ElvUI tab highlight)
+    local classColor = RA.Skin.ClassColor()
 
-    -- /raw, /rollaway → options (queued in combat); "/raw features" → feature overview
+    -- Own options window: page list on the left (Main, QoL, Profile, Developer), the
+    -- selected page on the right. No entry in the game's Settings panel.
+    local win = RA.CreatePanelWindow("RollAwayOptionsFrame", UIParent, 860, 640, RA_L["addon_title"])
+    win:SetPoint("CENTER")
+    win:SetFrameStrata("HIGH")
+    win:SetClampedToScreen(true)
+    RA.MakeDraggable(win)
+    win:Hide()
+    tinsert(UISpecialFrames, "RollAwayOptionsFrame")   -- Esc closes it
+
+    local NAV_W = 130
+    local content = CreateFrame("Frame", nil, win)
+    content:SetPoint("TOPLEFT",     win, "TOPLEFT",     NAV_W + 28, -34)
+    content:SetPoint("BOTTOMRIGHT", win, "BOTTOMRIGHT", -12,         12)
+
+    local navLine = win:CreateTexture(nil, "ARTWORK")
+    navLine:SetWidth(1)
+    navLine:SetPoint("TOPLEFT",    win, "TOPLEFT",    NAV_W + 22, -40)
+    navLine:SetPoint("BOTTOMLEFT", win, "BOTTOMLEFT", NAV_W + 22,  16)
+    navLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+
+    local pages, navButtons = {}, {}
+    local ShowPage = UI.MakeTabSelector(pages, navButtons)
+
+    -- Adds a page to the list: key, button label, page frame (child of `content`). Pages
+    -- register in call order.
+    local prevNavButton
+    local function RegisterPage(key, label, page)
+        pages[key] = page
+        local btn = CreateFrame("Button", nil, win, "UIPanelButtonTemplate")
+        btn:SetSize(NAV_W, 26)
+        btn:SetText(label)
+        if prevNavButton then
+            btn:SetPoint("TOP", prevNavButton, "BOTTOM", 0, -4)
+        else
+            btn:SetPoint("TOPLEFT", win, "TOPLEFT", 14, -40)
+        end
+        prevNavButton = btn
+        btn:SetScript("OnClick", function() ShowPage(key) end)
+        RA.Skin.OptionTab(btn, pages, key, classColor)
+        navButtons[key] = btn
+    end
+
+    -- Opens the window, optionally on page `key`.
+    function RA.OpenOptions(key)
+        win:Show()
+        win:Raise()
+        if key and pages[key] then ShowPage(key) end
+    end
+
+    -- /raw, /rollaway → options window; "/raw features" → feature overview
     SLASH_ROLLAWAY1 = "/raw"
     SLASH_ROLLAWAY2 = "/rollaway"
-    function RA.OpenOptions()
-        RA.RunProtectedOrQueue(function() Settings.OpenToCategory(RA_CategoryID) end)
-    end
     SlashCmdList["ROLLAWAY"] = function(msg)
         local arg = strtrim(msg or ""):lower()
         if arg == "features" or arg == "funktionen" then
             RA.ToggleFeatureList()
+        elseif win:IsShown() then
+            win:Hide()
         else
             RA.OpenOptions()
         end
     end
 
-    -- Header
-    local icon = panel:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(32, 32)
-    icon:SetPoint("TOPLEFT", 16, -16)
-    icon:SetTexture("Interface\\AddOns\\RollAway\\Media\\Icon")
-
-    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("LEFT", icon, "RIGHT", 8, 0)
-    title:SetText(RA_L["addon_title"])
-
-    local featuresBtn = UI.MakeSkinnedButton(panel, RA_L["feat_button"], 140)
-    featuresBtn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -16, -20)
+    local featuresBtn = UI.MakeSkinnedButton(win, RA_L["feat_button"], NAV_W)
+    featuresBtn:SetPoint("BOTTOMLEFT", win, "BOTTOMLEFT", 14, 16)
     featuresBtn:SetScript("OnClick", RA.ToggleFeatureList)
 
-    local headerLine = panel:CreateTexture(nil, "ARTWORK")
-    headerLine:SetHeight(1)
-    headerLine:SetPoint("TOPLEFT",  panel, "TOPLEFT",  16,  -54)
-    headerLine:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -16, -54)
-    headerLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    -- Main page: tabs General / Dungeons / Raids / Delves / Prey / Legacy
+    local panel = CreateFrame("Frame", nil, content)
+    panel:SetAllPoints(content)
+    RegisterPage("main", RA_L["options_nav_main"], panel)
 
     -- Tab definitions
     local tabDefs = {
@@ -140,14 +177,11 @@ function RA.InitOptions()
 
     for _, def in ipairs(tabDefs) do
         local p = CreateFrame("Frame", nil, panel)
-        p:SetPoint("TOPLEFT",     panel, "TOPLEFT",     16,  -96)
+        p:SetPoint("TOPLEFT",     panel, "TOPLEFT",     16,  -44)
         p:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16,  16)
         p:Hide()
         tabPanels[def.key] = p
     end
-
-    -- Class color (ElvUI tab highlight)
-    local classColor = RA.Skin.ClassColor()
 
     -- Bonus roll tabs: hidden without bonus rolls this season or below max level (dev
     -- characters bypass the level check only with debug mode on). Registered in
@@ -189,7 +223,7 @@ function RA.InitOptions()
 
     -- Re-anchors the visible tabs left to right (no gaps); re-run when debug shows/hides tabs.
     local function PlaceTopTab(btn)
-        btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -60)
+        btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -8)
     end
     local function ReflowTopTabButtons()
         UI.ReflowTabRow(tabButtonOrder, TAB_GAP, PlaceTopTab, PlaceTopTab)
@@ -717,20 +751,18 @@ function RA.InitOptions()
         end
     end)
 
-    -- OpenOptionsTab, for Reminder.lua
+    -- OpenOptionsTab, for Reminder.lua: main page on tab `key`
     function RA.OpenOptionsTab(key)
-        RA.RunProtectedOrQueue(function()
-            Settings.OpenToCategory(RA_CategoryID)
-            ShowTab(key)
-        end)
+        RA.OpenOptions("main")
+        ShowTab(key)
     end
 
-    -- Subcategories: QoL (OptionsQoL.lua), Profile (OptionsProfile.lua), Developer (dev
-    -- characters, OptionsDev.lua)
-    RA.BuildQoLOptions(category, classColor)
-    RA.BuildProfileOptions(category)
-    if isDevChar then RA.BuildDevOptions(category, classColor) end
+    -- Further pages: QoL (OptionsQoL.lua), Profile (OptionsProfile.lua), Developer (dev
+    -- characters, OptionsDev.lua). Each registers itself with RegisterPage.
+    RA.BuildQoLOptions(content, RegisterPage, classColor)
+    RA.BuildProfileOptions(content, RegisterPage)
+    if isDevChar then RA.BuildDevOptions(content, RegisterPage, classColor) end
 
     ShowTab("general")
-    Settings.RegisterAddOnCategory(category)
+    ShowPage("main")
 end

@@ -87,11 +87,13 @@ local function NewToggleChain(panel)
     return chain
 end
 
--- category: the main RollAway category; classColor: for the ElvUI tab highlight (nil
--- without ElvUI).
-function RA.BuildQoLOptions(category, classColor)
-    local qolPanel = CreateFrame("Frame")
-    local subcategory = Settings.RegisterCanvasLayoutSubcategory(category, qolPanel, RA_L["qol_section_title"])
+-- parent: the options window's content frame; registerPage(key, label, page): adds the
+-- page to the window's list; classColor: for the ElvUI tab highlight (nil without ElvUI).
+function RA.BuildQoLOptions(parent, registerPage, classColor)
+    local qolPanel = CreateFrame("Frame", nil, parent)
+    qolPanel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
+    qolPanel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
+    registerPage("qol", RA_L["qol_section_title"], qolPanel)
 
     -- Fixed header
     local qolTitle = qolPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -543,10 +545,8 @@ function RA.BuildQoLOptions(category, classColor)
 
     -- Opens the QoL page `key` (feature overview); a page missing at this level shows the first.
     function RA.OpenQoLCategory(key)
-        RA.RunProtectedOrQueue(function()
-            Settings.OpenToCategory(subcategory:GetID())
-            ShowQolCategory(qolCatPanels[key] and key or qolNavDefs[1].key)
-        end)
+        RA.OpenOptions("qol")
+        ShowQolCategory(qolCatPanels[key] and key or qolNavDefs[1].key)
     end
 
     return qolPanel

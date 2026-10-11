@@ -587,7 +587,6 @@ f:RegisterEvent("CANCEL_ALL_LOOT_ROLLS")
 f:RegisterEvent("CHALLENGE_MODE_MAPS_UPDATE")
 f:RegisterEvent("ENCOUNTER_END")
 f:RegisterEvent("PLAYER_REGEN_DISABLED")
-f:RegisterEvent("PLAYER_REGEN_ENABLED")
 f:RegisterEvent("GROUP_LEFT")
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -688,13 +687,6 @@ f:SetScript("OnEvent", function(_, event, ...)
         if not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
             if HistoryFrameShown() then DBG("Entering combat – hiding loot history frame") end
             HideHistoryFrame()
-        end
-
-    elseif event == "PLAYER_REGEN_ENABLED" then
-        if RA.pendingProtectedAction then
-            local fn = RA.pendingProtectedAction
-            RA.pendingProtectedAction = nil
-            fn()
         end
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then

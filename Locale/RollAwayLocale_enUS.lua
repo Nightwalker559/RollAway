@@ -9,6 +9,7 @@ _G["RollAwayLocale"] = L
 L["addon_title"]              = "RollAway"
 
 -- Tabs
+L["options_nav_main"]          = "Loot & Rolls"
 L["tab_general"]              = "General"
 L["tab_dungeons"]             = "Dungeons"
 L["tab_raids"]                = "Raids"
@@ -336,7 +337,6 @@ L["qol_lfgqc_ps_carry"]         = "Carry Offered"
 L["qol_fontsize_label"]       = "Reminder font size"
 L["qol_check_talents"]        = "Check Talents"
 L["qol_check_talents_fmt"]    = "Check Talents (%s)"
-L["combat_action_queued"]     = "Can't open the options while in combat — opening automatically once combat ends."
 
 ------------------------------------------------------------------------
 -- Season 1 Dungeons

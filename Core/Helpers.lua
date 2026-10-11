@@ -94,18 +94,6 @@ function RA.RegisterPopup(name, def)
     StaticPopupDialogs[name] = def
 end
 
--- Runs fn() now, or after combat (PLAYER_REGEN_ENABLED) when protected calls such
--- as Settings.OpenToCategory are blocked. One queued action; a newer one replaces it.
-function RA.RunProtectedOrQueue(fn)
-    if InCombatLockdown() then
-        RA.pendingProtectedAction = fn
-        Print(RA_L["combat_action_queued"])
-        return false
-    end
-    fn()
-    return true
-end
-
 ------------------------------------------------------------------------
 -- Frame helpers
 ------------------------------------------------------------------------

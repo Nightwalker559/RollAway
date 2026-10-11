@@ -1,5 +1,5 @@
 -- RollAway - Options/OptionsProfile.lua
--- The "Profile" settings subcategory: switch, create, copy, delete and reset profiles
+-- The "Profile" options page: switch, create, copy, delete and reset profiles
 -- (RA.db, Core/DB.lua). Built once from RA.InitOptions().
 -- The other options pages are built at ADDON_LOADED with the values of that moment: a
 -- profile change takes effect at once but they only refresh after a UI reload (hence the
@@ -206,10 +206,12 @@ function RA.PromptProfileReload()
     StaticPopup_Show("ROLLAWAY_PROFILE_RELOAD")
 end
 
--- Subcategory: Profile
-function RA.BuildProfileOptions(category)
-    local panel = CreateFrame("Frame")
-    Settings.RegisterCanvasLayoutSubcategory(category, panel, RA_L["profile_section_title"])
+-- Page: Profile (parent / registerPage: see RA.BuildQoLOptions)
+function RA.BuildProfileOptions(parent, registerPage)
+    local panel = CreateFrame("Frame", nil, parent)
+    panel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
+    panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
+    registerPage("profile", RA_L["profile_section_title"], panel)
 
     local _, headerLine = MakeSectionHeader(panel, panel, -10, RA_L["profile_panel_title"])
     local hint = MakeHintText(panel, headerLine, RA_L["profile_panel_info"])
