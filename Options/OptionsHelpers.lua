@@ -167,32 +167,21 @@ local function MakeDropdown(parent, anchor, xOffset, yOffset, width)
     return dd
 end
 
--- AceGUI shows a Slider's numeric editbox on layout: kept hidden (slider + own value label).
-local function HideSliderEditbox(slider)
-    if not slider.editbox then return end
-    slider.editbox:SetScript("OnShow", function(self) self:Hide() end)
-    RunNextFrame(function() if slider.editbox then slider.editbox:Hide() end end)
-end
-
--- AceGUI slider with its value in the label, (xOffset, yOffset) below `anchor`. opts: min, max,
--- step, value, formatLabel(value) -> text, onChange(rounded value).
+-- Slider in the game's current style (MinimalSliderWithSteppersTemplate, like the game's
+-- settings) with its value in the label above the track. Returns the slider frame.
+-- (xOffset, yOffset) below `anchor`. opts: min, max, step, value, formatLabel(value) -> text,
+-- onChange(rounded value).
 local function MakeValueSlider(parent, anchor, xOffset, yOffset, opts)
-    local slider = AceGUI:Create("Slider")
-    slider:SetLabel(opts.formatLabel(opts.value))
-    slider:SetSliderValues(opts.min, opts.max, opts.step)
-    slider:SetValue(opts.value)
-    slider:SetWidth(300) -- room for the longest label ("Transparenz bekannter Items 100%")
-    slider:SetCallback("OnValueChanged", function(widget, _, value)
-        local v = math.floor(value)
-        widget:SetLabel(opts.formatLabel(v))
-        opts.onChange(v)
-    end)
-    slider.frame:SetParent(parent)
-    slider.frame:ClearAllPoints()
-    slider.frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
-    slider.frame:Show()
-    HideSliderEditbox(slider)
-    return slider
+    local frame = CreateFrame("Frame", nil, parent, "MinimalSliderWithSteppersTemplate")
+    frame:SetSize(300, 40) -- room for the longest label ("Transparenz bekannter Items 100%")
+    frame:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", xOffset, yOffset)
+    frame:Init(opts.value, opts.min, opts.max, (opts.max - opts.min) / opts.step, {
+        [MinimalSliderWithSteppersMixin.Label.Top] = function(v) return opts.formatLabel(math.floor(v)) end,
+    })
+    frame:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged,
+        function(_, value) opts.onChange(math.floor(value)) end, frame)
+    if RA.SkinStepSlider then RA.SkinStepSlider(frame) end
+    return frame
 end
 
 -- UIPanelButtonTemplate button, with ElvUI's HandleButton skin when available (its native
@@ -212,32 +201,29 @@ local function MakeSkinnedButton(parent, label, width, S)
     return btn
 end
 
--- OptionsSliderTemplate slider without label (the caller shows a live value label) and
--- optional min/max footers. Returns slider, minLabel, maxLabel (nil without opts.minText).
+-- Slider in the game's current style without label (the caller shows a live value label)
+-- and optional min/max footers. Returns slider frame (SetEnabled/SetAlpha), minLabel,
+-- maxLabel (nil without opts.minText).
 local function MakeTemplateSlider(parent, globalName, anchor, opts)
-    local slider = CreateFrame("Slider", globalName, parent, "OptionsSliderTemplate")
-    slider:SetWidth(opts.width or 200)
+    local slider = CreateFrame("Frame", globalName, parent, "MinimalSliderWithSteppersTemplate")
+    slider:SetSize(opts.width or 200, 24)
     slider:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -8)
-    slider:SetMinMaxValues(opts.min, opts.max)
-    slider:SetValueStep(opts.step)
-    slider:SetValue(opts.value)
-    _G[globalName.."Text"]:Hide()
-    _G[globalName.."Low"]:SetText("")
-    _G[globalName.."High"]:SetText("")
+    slider:Init(opts.value, opts.min, opts.max, (opts.max - opts.min) / opts.step, nil)
+    slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged,
+        function(_, value) opts.onChange(value) end, slider)
 
     local minLabel, maxLabel
     if opts.minText then
         minLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        minLabel:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -2)
+        minLabel:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 19, -2)
         minLabel:SetText(opts.minText)
         maxLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        maxLabel:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -2)
+        maxLabel:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", -19, -2)
         maxLabel:SetJustifyH("RIGHT")
         maxLabel:SetText(opts.maxText)
     end
 
-    slider:SetScript("OnValueChanged", function(_, value) opts.onChange(value) end)
-    if opts.S and opts.S.HandleSliderFrame then opts.S:HandleSliderFrame(slider) end
+    if RA.SkinStepSlider then RA.SkinStepSlider(slider) end
     return slider, minLabel, maxLabel
 end
 
@@ -251,35 +237,14 @@ local function MakeHintText(parent, anchorLine, text)
     return hint
 end
 
--- Scroll bar (UIPanelScrollFrameTemplate) shown only when there is something to scroll
--- (never with forceHide); skinned with ElvUI's Skins module (S) if given.
-local function SetupScrollBar(scroll, bar, S, forceHide)
-    if not bar then return end
-    scroll:SetScript("OnScrollRangeChanged", function(_, _, yRange)
-        local max = math.max(0, yRange or 0)
-        bar:SetMinMaxValues(0, max)
-        bar:SetValue(math.min(bar:GetValue(), max))
-        bar:SetShown((not forceHide) and max > 1)
-    end)
-    scroll:SetScript("OnVerticalScroll", function(_, offset) bar:SetValue(offset) end)
-    bar:SetScript("OnValueChanged", function(_, value) scroll:SetVerticalScroll(value) end)
-
-    local barName = bar:GetName()
-    local upBtn   = _G[barName.."ScrollUpButton"]
-    local downBtn = _G[barName.."ScrollDownButton"]
-    if upBtn then
-        upBtn:SetScript("OnClick", function()
-            scroll:SetVerticalScroll(math.max(0, scroll:GetVerticalScroll() - 20))
-        end)
-    end
-    if downBtn then
-        downBtn:SetScript("OnClick", function()
-            local _, max = bar:GetMinMaxValues()
-            scroll:SetVerticalScroll(math.min(max, scroll:GetVerticalScroll() + 20))
-        end)
-    end
-    if S and S.HandleScrollBar then S:HandleScrollBar(bar) end
-    if forceHide then bar:Hide() end
+-- ScrollFrame in the game's current style (ScrollFrameTemplate: slim scroll bar at its
+-- right edge, so leave ~26px there); the bar shows only when there is something to
+-- scroll. Skinned with ElvUI's Skins module (S) if given.
+local function MakeScrollFrame(parent, name, S)
+    local scroll = CreateFrame("ScrollFrame", name, parent, "ScrollFrameTemplate")
+    scroll.ScrollBar:SetHideIfUnscrollable(true)
+    if S and S.HandleTrimScrollBar then S:HandleTrimScrollBar(scroll.ScrollBar) end
+    return scroll
 end
 
 -- Tab buttons left to right, `gap` apart, closing gaps of hidden ones. placeFirst(btn)
@@ -529,7 +494,7 @@ end
 -- layout; checkboxes settle a few frames after creation).
 --   panel, headerLine  the panel and the line under its header
 --   navWidth           width of the nav buttons
---   prefix, name       global names: <prefix><name>Scroll (+ "ScrollBar")
+--   prefix, name       global name of the scroll frame: <prefix><name>Scroll
 --   pages, key         the nav's pages table; the page is stored there
 -- Returns the scroll child for the page's content.
 local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages, key, S)
@@ -553,15 +518,13 @@ local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages
     page:SetPoint("BOTTOMRIGHT", panel,      "BOTTOMRIGHT", 0, 0)
     page:Hide()
 
-    local scroll = CreateFrame("ScrollFrame", prefix .. name .. "Scroll", page, "UIPanelScrollFrameTemplate")
+    local scroll = MakeScrollFrame(page, prefix .. name .. "Scroll", S)
     scroll:SetPoint("TOPLEFT",     page, "TOPLEFT",     0,   0)
     scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -26, 0)
 
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(QOL_CONTENT_W, 1)  -- real height set by FitContentHeight
     scroll:SetScrollChild(content)
-
-    SetupScrollBar(scroll, _G[prefix .. name .. "ScrollScrollBar"], S, false)
 
     page:SetScript("OnShow", function()
         RunNextFrame(function() FitContentHeight(content) end)
@@ -590,7 +553,7 @@ RA.OptionsUI = {
     MakeSkinnedButton = MakeSkinnedButton,
     MakeTemplateSlider = MakeTemplateSlider,
     MakeHintText      = MakeHintText,
-    SetupScrollBar    = SetupScrollBar,
+    MakeScrollFrame   = MakeScrollFrame,
     MakeTabSelector   = MakeTabSelector,
     ReflowTabRow      = ReflowTabRow,
     MakeCheckboxRow   = MakeCheckboxRow,

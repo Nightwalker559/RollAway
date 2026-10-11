@@ -226,7 +226,7 @@ function RA.BuildQoLOptions(category, S, classColor)
     })
 
     -- Durability warning
-    local _, qolDuraInfo = MakeToggle(reminder, fontSlider.frame, 0, -14, {
+    local _, qolDuraInfo = MakeToggle(reminder, fontSlider, 0, -14, {
         label = RA_L["qol_durability_label"], info = RA_L["qol_durability_info"], dbKey = "durabilityWarning",
     })
 

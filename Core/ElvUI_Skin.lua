@@ -146,6 +146,11 @@ function RA.SkinCheckBox(cb)
     if SkinsEnabled() then Handle("HandleCheckBox", cb) end
 end
 
+-- Sliders (MinimalSliderWithSteppersTemplate) in the options.
+function RA.SkinStepSlider(frame)
+    if SkinsEnabled() then Handle("HandleStepSlider", frame) end
+end
+
 -- Material list of the Professions salvage slot (CraftingSalvage.lua).
 function RA.SkinSalvagePanel(panel, ...)
     if not SkinsEnabled() then return end
@@ -200,13 +205,11 @@ end
 
 local function SkinTeleportReminderFrame(f)
     Handle("HandleFrame", f)
-    Handle("HandleCloseButton", _G["RollAwayTeleportReminderClose"])
 end
 
 -- Own-frame Mythic+ portal picker, RA.ShowPortalOverview
 local function SkinPortalOverviewFrame(f)
     Handle("HandleFrame", f)
-    Handle("HandleCloseButton", _G["RollAwayPortalOverviewClose"])
 
     local tabs = {}
     for i = 1, (f.numTabs or 0) do
@@ -220,15 +223,15 @@ local function SkinPortalOverviewFrame(f)
         tabs[i]:ClearAllPoints()
         tabs[i]:SetPoint("TOPLEFT", tabs[i - 1], "TOPRIGHT", offset, 0)
     end
-    -- The scrollbar is hidden in PortalOverview.lua: nothing to skin.
+    -- No scrollbar in PortalOverview.lua: nothing to skin.
 end
 
 -- Debug log window (/rawlog)
 local function SkinDebugLogFrame(f)
     Handle("HandleFrame", f)
-    Handle("HandleScrollBar", _G["RollAwayDebugLogScrollScrollBar"])
+    local scroll = _G["RollAwayDebugLogScroll"]
+    if scroll then Handle("HandleTrimScrollBar", scroll.ScrollBar) end
     Handle("HandleEditBox", _G["RollAwayDebugLogEditBox"])
-    Handle("HandleCloseButton", _G["RollAwayDebugLogClose"])
     Handle("HandleButton", _G["RollAwayDebugLogSelectAll"])
     Handle("HandleButton", _G["RollAwayDebugLogClear"])
 end

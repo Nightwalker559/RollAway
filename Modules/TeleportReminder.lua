@@ -46,8 +46,7 @@ end
 local function CreateReminderFrame()
     if reminderFrame then return end
 
-    reminderFrame = CreateFrame("Frame", "RollAwayTeleportReminderFrame", UIParent, "BackdropTemplate")
-    reminderFrame:SetSize(340, 92)
+    reminderFrame = RA.CreatePanelWindow("RollAwayTeleportReminderFrame", UIParent, 340, 112, "RollAway")
     reminderFrame:SetPoint("TOP", UIParent, "TOP", 0, -180)
     reminderFrame:SetFrameStrata("HIGH")
     reminderFrame:SetClampedToScreen(true)
@@ -55,19 +54,10 @@ local function CreateReminderFrame()
     RA.SafeSetShown(reminderFrame, false)
 
     -- Not in UISpecialFrames: Esc closed it by accident. X button, portal click or /reload close it.
-    RA.ApplyPopupBackdrop(reminderFrame)
-
-    local closeBtn = CreateFrame("Button", "RollAwayTeleportReminderClose", reminderFrame, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", reminderFrame, "TOPRIGHT", 2, 2)
-
-    -- Title
-    local titleText = reminderFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("TOP", reminderFrame, "TOP", 0, -10)
-    titleText:SetText("|cffD4AF37RollAway|r")
 
     -- Message text
     reminderFrame.msg = reminderFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    reminderFrame.msg:SetPoint("TOP", reminderFrame, "TOP", 0, -26)
+    reminderFrame.msg:SetPoint("TOP", reminderFrame, "TOP", 0, -36)
     reminderFrame.msg:SetJustifyH("CENTER")
 
     CreatePortalButtons(reminderFrame, RA.DUNGEONS[RA.ACTIVE_SEASON] or {})
@@ -106,7 +96,7 @@ local function LayoutAndUpdate(visibleButtons)
     end
 
     for i, btn in ipairs(visibleButtons) do
-        btn:SetPoint("TOP", reminderFrame, "TOP", startX + ((i - 1) * (BUTTON_SIZE + BUTTON_GAP)), -46)
+        btn:SetPoint("TOP", reminderFrame, "TOP", startX + ((i - 1) * (BUTTON_SIZE + BUTTON_GAP)), -62)
         RA.UpdatePortalButtonState(btn, C_SpellBook.IsSpellInSpellBook(btn.spellID), 0.5)
         RA.SafeSetShown(btn, true)
     end

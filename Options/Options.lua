@@ -209,7 +209,7 @@ function RA.InitOptions()
     table.insert(RA.SeasonTabDebugChecks, EnsureValidTopTabSelected)
 
     -- Tab: General (in a ScrollFrame)
-    local genScroll = CreateFrame("ScrollFrame", "RollAwayGenScroll", tabPanels["general"], "UIPanelScrollFrameTemplate")
+    local genScroll = UI.MakeScrollFrame(tabPanels["general"], "RollAwayGenScroll", S)
     genScroll:SetPoint("TOPLEFT",     tabPanels["general"], "TOPLEFT",     0,   0)
     genScroll:SetPoint("BOTTOMRIGHT", tabPanels["general"], "BOTTOMRIGHT", -26, 0)
 
@@ -218,8 +218,6 @@ function RA.InitOptions()
     gen:SetHeight(1) -- placeholder; recalculated dynamically once content is laid out
     genScroll:SetScrollChild(gen)
 
-    local scrollBar = _G["RollAwayGenScrollScrollBar"]
-    UI.SetupScrollBar(genScroll, scrollBar, S, false)
 
     -- Visibility section
     local visMainLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -251,7 +249,7 @@ function RA.InitOptions()
 
     local slider, delayMin = MakeTemplateSlider(gen, "RollAwayDelaySlider", sliderDelayVal, {
         min = 5, max = 20, step = 1, value = RollAwayDB.delay,
-        minText = RA_L["slider_min"], maxText = RA_L["slider_max"], S = S,
+        minText = RA_L["slider_min"], maxText = RA_L["slider_max"],
         onChange = function(value)
             RollAwayDB.delay = math.floor(value)
             sliderDelayVal:SetText(string.format(RA_L["slider_label"], RollAwayDB.delay))
@@ -269,7 +267,7 @@ function RA.InitOptions()
 
     local sliderTimeout = MakeTemplateSlider(gen, "RollAwayTimeoutSlider", sliderTimeoutVal, {
         min = 30, max = 180, step = 5, value = RollAwayDB.rollTimeout,
-        minText = RA_L["timeout_min"], maxText = RA_L["timeout_max"], S = S,
+        minText = RA_L["timeout_min"], maxText = RA_L["timeout_max"],
         onChange = function(value)
             RollAwayDB.rollTimeout = math.floor(value)
             sliderTimeoutVal:SetText(string.format(RA_L["timeout_slider_label"], RollAwayDB.rollTimeout))
@@ -299,9 +297,9 @@ function RA.InitOptions()
     -- Master switch logic and initial state.
     SetLootFrameFeatureEnabled = function(enabled)
         local alpha = enabled and 1 or 0.4
-        if enabled then slider:Enable() else slider:Disable() end
+        slider:SetEnabled(enabled)
         slider:SetAlpha(alpha)
-        if enabled then sliderTimeout:Enable() else sliderTimeout:Disable() end
+        sliderTimeout:SetEnabled(enabled)
         sliderTimeout:SetAlpha(alpha)
         for _, cb in ipairs(hideRowCheckboxes) do
             cb:SetDisabled(not enabled)

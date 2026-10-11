@@ -57,10 +57,10 @@ end
 local function CreateDebugLogFrame()
     if debugLogFrame then return end
 
-    local f = CreateFrame("Frame", "RollAwayDebugLogFrame", UIParent, "BackdropTemplate")
     -- Size and position are remembered.
     local size = RollAwayDB.debugLogSize
-    f:SetSize(size and size.w or 560, size and size.h or 360)
+    local f = RA.CreatePanelWindow("RollAwayDebugLogFrame", UIParent,
+        size and size.w or 560, size and size.h or 360, LOG_TITLE)
     f:SetResizable(true)
     f:SetResizeBounds(380, 200, 1400, 1000)
     local pos = RollAwayDB.debugLogPos
@@ -77,23 +77,11 @@ local function CreateDebugLogFrame()
         local point, _, relPoint, x, y = self:GetPoint()
         RollAwayDB.debugLogPos = { point = point, relPoint = relPoint, x = x, y = y }
     end)
-    f:SetBackdrop({
-        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    })
+    debugLogTitle = f:GetTitleText()
 
-    local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOP", f, "TOP", 0, -14)
-    title:SetText(LOG_TITLE)
-    debugLogTitle = title
-
-    local closeBtn = CreateFrame("Button", "RollAwayDebugLogClose", f, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
-
-    local scrollFrame = CreateFrame("ScrollFrame", "RollAwayDebugLogScroll", f, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -38)
+    local scrollFrame = CreateFrame("ScrollFrame", "RollAwayDebugLogScroll", f, "ScrollFrameTemplate")
+    scrollFrame.ScrollBar:SetHideIfUnscrollable(true)
+    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -34)
     scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 46)
 
     local editBox = CreateFrame("EditBox", "RollAwayDebugLogEditBox", scrollFrame)

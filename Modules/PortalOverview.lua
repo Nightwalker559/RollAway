@@ -131,8 +131,8 @@ end
 local function CreateOverviewFrame()
     if overviewFrame then return end
 
-    overviewFrame = CreateFrame("Frame", "RollAwayPortalOverviewFrame", UIParent, "BackdropTemplate")
-    overviewFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
+    overviewFrame = RA.CreatePanelWindow("RollAwayPortalOverviewFrame", UIParent, FRAME_WIDTH, FRAME_HEIGHT,
+        RA_L["portal_overview_title"])
     local pos = RollAwayDB and RollAwayDB.portalOverviewPos
     if pos then
         overviewFrame:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
@@ -150,14 +150,6 @@ local function CreateOverviewFrame()
         end
     end)
     RA.SafeSetShown(overviewFrame, false)
-    RA.ApplyPopupBackdrop(overviewFrame)
-
-    local closeBtn = CreateFrame("Button", "RollAwayPortalOverviewClose", overviewFrame, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", overviewFrame, "TOPRIGHT", 2, 2)
-
-    local titleText = overviewFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("TOP", overviewFrame, "TOP", 0, -10)
-    titleText:SetText("|cffD4AF37"..RA_L["portal_overview_title"].."|r")
 
     -- Tabs (Blizzard tab template; names must be "<frameName>Tab<index>" for
     -- PanelTemplates_UpdateTabs).
@@ -185,16 +177,10 @@ local function CreateOverviewFrame()
 
     -- Scrollable content: icons and headers are anchored inside `content`, which grows
     -- to fit.
-    local scrollFrame = CreateFrame("ScrollFrame", frameName.."ScrollFrame", overviewFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", overviewFrame, "TOPLEFT", 10, -30)
+    -- Mouse wheel scrolls, no scrollbar (the width goes to the icons).
+    local scrollFrame = CreateFrame("ScrollFrame", frameName.."ScrollFrame", overviewFrame)
+    scrollFrame:SetPoint("TOPLEFT", overviewFrame, "TOPLEFT", 10, -34)
     scrollFrame:SetPoint("BOTTOMRIGHT", overviewFrame, "BOTTOMRIGHT", -10, 12)
-
-    -- Mouse wheel scrolls; the scrollbar is forced hidden (the width goes to the icons).
-    local scrollBar = _G[scrollFrame:GetName().."ScrollBar"]
-    if scrollBar then
-        scrollBar:Hide()
-        scrollBar:SetScript("OnShow", scrollBar.Hide)
-    end
 
     local content = CreateFrame("Frame", frameName.."Content", scrollFrame)
     content:SetSize(CONTENT_WIDTH, 1)

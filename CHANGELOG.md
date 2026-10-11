@@ -9,7 +9,7 @@
 
 ### Changed
 - ElvUI: loot roll buttons are read from ElvUI's own fields; the new checkbox has the ElvUI skin.
-- What's New window and the new material list use the game's current standard window style.
+- Windows (What's New, material list, teleport reminder, portal overview, debug log), scroll bars and sliders use the game's current UI style.
 
 ---
 
