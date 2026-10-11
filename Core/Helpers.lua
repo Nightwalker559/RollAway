@@ -141,25 +141,26 @@ function RA.CreatePanelWindow(name, parent, width, height, title)
     return f
 end
 
--- The addon icon left of a CreatePanelWindow title (the title text is centered). Own frame
--- above the title container (frame level 510) so skins' borders and backgrounds (ElvUI
--- adds child frames) never cover it; without a title text it sits at the left edge.
+-- The addon icon left of a CreatePanelWindow title (the title text is centered). A texture
+-- of the title container itself, in the same layer as the title text: wherever the text is
+-- drawn, the icon is too (also under skins that restyle the window). window.RA_TitleIcon
+-- keeps it for debugging.
 function RA.AddTitleIcon(window)
-    local holder = CreateFrame("Frame", nil, window)
-    holder:SetSize(18, 18)
-    holder:SetFrameLevel(window:GetFrameLevel() + 520)
-    local icon = holder:CreateTexture(nil, "OVERLAY")
-    icon:SetAllPoints(holder)
+    local container = window.TitleContainer
+    local title = container and container.TitleText
+    local parent = container or window
+    local icon = parent:CreateTexture(nil, "OVERLAY")
+    icon:SetSize(18, 18)
     icon:SetTexture("Interface\AddOns\RollAway\Media\Icon")
     icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
-    local title = window.TitleContainer and window.TitleContainer.TitleText
     local width = title and title:GetStringWidth() or 0
     if width > 0 then
-        holder:SetPoint("RIGHT", title, "CENTER", -(width / 2 + 6), 0)
+        icon:SetPoint("RIGHT", title, "CENTER", -(width / 2 + 6), 0)
     else
-        holder:SetPoint("TOPLEFT", window, "TOPLEFT", 10, -3)
+        icon:SetPoint("TOPLEFT", window, "TOPLEFT", 10, -3)
     end
-    return holder
+    window.RA_TitleIcon = icon
+    return icon
 end
 
 -- Like MakeDraggable, but honors qolReminderLockPosition (checked on every drag).
