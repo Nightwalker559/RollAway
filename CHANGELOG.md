@@ -2,75 +2,26 @@
 
 ---
 
-## 3.1.3 (alpha 6)
+## 3.1.3
+
+### New
+- Feature overview (`/raw features` or minimap button, left click): every feature with its description; switch it on or off, click a row for its settings.
+- Minimap button: left click opens the feature overview, right click the options, drag to move. Button bars (e.g. LuckyoneUI) pick it up; it can be hidden (QoL > Hide).
+- Own options window (`/raw`): pages on the left, opens in combat too, no entry in the game's Settings panel any more.
+- Crafting: the salvage slot (e.g. Cooking fish -> fillets) fills itself from a material list you tick (click the red text in the Professions window). Off by default (QoL > Crafting & Vendors).
+- New name: RollAway & Tools (folder, settings and commands stay the same).
 
 ### Changed
-- New name: RollAway & Tools (addon folder, settings and commands stay the same).
-- Minimap button: right click closes the options window again.
-- Addon logo in the header of every options page.
+- Loot & Rolls page: tab list on the left and a header with logo, like QoL. QoL options are sorted by topic (Misc, Filter and LFG are gone; all settings are kept).
 - Popup windows are titled by what they are for (Bonus Roll Reminder, Great Vault, Paragon Reminder, ...).
-- Loot & Rolls page: tab list on the left like QoL; options window is wider.
-- Options pages use the full width up to the scroll bar.
-
-### Fixed
-- Debug log: character frame button lines no longer flood the log (e.g. with Baganator).
-- Feature overview: description text no longer runs under the checkbox / "On".
-- Feature overview opens on the first click of the minimap button.
-- Windows no longer draw through each other when they overlap; clicking or opening one brings it to the front.
-
----
-
-## 3.1.3 (alpha 5)
-
-### Changed
-- Own options window (`/raw`, minimap button) with the pages on the left; no more entry in the game's Settings panel.
-- Options also open in combat.
-- Feature overview is narrower and opens next to the options window.
+- Windows, scroll bars, sliders, checkboxes and dropdowns use the game's current UI style (AceGUI is gone). ElvUI skin rebuilt, loot roll buttons read from ElvUI's own fields.
+- Profiles use RollAway's own database (nothing is lost); all bundled libraries are gone, the addon is much smaller.
+- Game versions: 12.0.7 dropped, only 12.1 and 12.1.5 are marked as supported.
 
 ### Fixed
 - Loot history close timer waits until the game's history has no open roll left.
-- Debug log: timestamps no longer run out of order.
-
----
-
-## 3.1.3 (alpha 4)
-
-### New
-- Feature overview with description of every feature: `/raw features` or the Features button in the options. Features can be switched on and off right there; a click on a row opens its settings.
-- Minimap button: left click opens the feature overview, right click the options, drag to move. Minimap button bars (e.g. LuckyoneUI) pick it up; it can be hidden (QoL > Hide).
-
-### Changed
-- QoL options re-sorted by topic: Group, Crafting & Vendors, Hide, Character, Quests, Logs, Reminder (Misc, Filter and LFG are gone; all settings are kept).
-- Game versions: 12.0.7 dropped, only 12.1 and 12.1.5 are marked as supported.
-
----
-
-## 3.1.3 (alpha 3)
-
-### Changed
-- Profiles use RollAway's own database (same saved data, nothing is lost); all bundled libraries are gone, the addon is much smaller.
-
----
-
-## 3.1.3 (alpha 2)
-
-### New
-- Crafting: material list for the salvage slot (click the red text in the Professions window): only items you tick are used. The slot swaps its own pick when an earlier item arrives or the list changes.
-
-### Changed
-- Windows (What's New, material list, popups, teleport reminder, portal overview, debug log), scroll bars and sliders use the game's current UI style.
-- Options: checkboxes and dropdowns use the game's current style too; AceGUI is no longer needed (smaller addon).
-- ElvUI: skin rebuilt for the new windows, checkboxes, dropdowns, sliders and scroll bars.
-
----
-
-## 3.1.3 (alpha 1)
-
-### New
-- Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own and refills when the stack is used up. Off by default (QoL > Crafting & Vendors); a checkbox with a warning in the Professions window switches it on and off.
-
-### Changed
-- ElvUI: loot roll buttons are read from ElvUI's own fields; the new checkbox has the ElvUI skin.
+- Windows no longer draw through each other when they overlap; clicking or opening one brings it to the front.
+- Debug log: timestamps stay in order, and character frame button lines no longer flood it (e.g. with Baganator).
 
 ---
 

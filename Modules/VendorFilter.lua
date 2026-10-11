@@ -1,7 +1,7 @@
 -- RollAway - VendorFilter.lua
 -- "Vendor Filter Light": dims merchant items the player already owns (recipes, toys,
 -- mounts, heirlooms, housing decor, pets at the maximum, items whose appearance is
--- collected). Toggle + alpha in Options > QoL > Filter.
+-- collected). Toggle + alpha in Options > QoL > Crafting & Vendors.
 
 local RA  = _G["RollAway"]
 local DBG = RA.DBG
