@@ -5,7 +5,7 @@
 ## 3.1.3 (alpha 2)
 
 ### New
-- Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own and refills when the stack is used up. Only items you tick in a list (click the red text in the Professions window) are used. Off by default (QoL > Misc); a checkbox in the Professions window switches it on and off.
+- Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own, swaps when an earlier one arrives and refills when the stack is used up. Only items you tick in a list (click the red text in the Professions window) are used. Off by default (QoL > Misc); a checkbox in the Professions window switches it on and off.
 
 ### Changed
 - ElvUI: skin rebuilt for the new windows, checkboxes, dropdowns, sliders and scroll bars; loot roll buttons are read from ElvUI's own fields.

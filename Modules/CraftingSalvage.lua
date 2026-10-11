@@ -1,7 +1,8 @@
 -- RollAway - CraftingSalvage.lua
 -- Professions: fills the slot of salvage recipes (e.g. Cooking fish -> fillets) with the
 -- first owned item that is ticked in the material list (Blizzard's order: name, item ID)
--- and has a big enough stack; refills when the stack is used up. Nothing ticked = nothing
+-- and has a big enough stack; refills when the stack is used up and swaps its own pick when
+-- an earlier item arrives or the list changes (never a manual pick). Nothing ticked = nothing
 -- filled. Next to "Reagents:": checkbox (on/off) + red text that opens the list.
 -- Runs one frame after Blizzard's code and only sets what the slot's click handler sets.
 
@@ -296,18 +297,32 @@ local function TryFill(fromInit)
     currentRecipeID = schematic.recipeID
     SetToggle(form, true)
     if not RollAwayDB.salvageSlotActive then return end
-    if transaction:GetSalvageAllocation() then return end
-    -- Empty slot after our own fill: refill only when that stack is gone.
-    if not fromInit and autoGUID and C_Item.IsItemGUIDInInventory(autoGUID) then return end
+
+    local current = transaction:GetSalvageAllocation()
+    if current then
+        -- Only our own pick is re-evaluated (a new fish, a ticked or unticked item); an
+        -- item the player put in by hand stays.
+        if not (autoGUID and current:GetItemGUID() == autoGUID) then return end
+    elseif not fromInit and autoGUID and C_Item.IsItemGUIDInInventory(autoGUID) then
+        -- Emptied by the player while our stack still exists: no refill until the recipe
+        -- is selected again.
+        return
+    end
 
     local item = PickItem(schematic)
+    if current and item and item:GetItemGUID() == autoGUID then return end  -- still the first
     autoGUID = item and item:GetItemGUID() or nil
-    if not item then return end
+    if not item and not current then return end
 
-    transaction:SetSalvageAllocation(item)
-    slot:SetItem(item)
+    if item then
+        transaction:SetSalvageAllocation(item)
+        slot:SetItem(item)
+    else
+        transaction:ClearSalvageAllocations()  -- our item is no longer allowed
+        slot:ClearReagent()
+    end
     form:TriggerEvent(ProfessionsRecipeSchematicFormMixin.Event.AllocationsModified)
-    DBG("[Salvage] slot filled: " .. tostring(item:GetItemID()))
+    DBG("[Salvage] slot " .. (item and ("filled: " .. tostring(item:GetItemID())) or "cleared"))
 end
 
 function Schedule(fromInit)
