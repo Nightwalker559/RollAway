@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.3 (alpha 4)
+
+### Changed
+- Game versions: 12.0.7 dropped, only 12.1 and 12.1.5 are marked as supported.
+
+---
+
 ## 3.1.3 (alpha 3)
 
 ### Changed
