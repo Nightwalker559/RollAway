@@ -20,8 +20,8 @@ For World of Warcraft: Midnight (Season 2, game versions 12.1 and 12.1.5). Engli
 
 ### Bonus roll auto-pass
 Passes the bonus roll prompt for the content you ticked:
-- **Dungeons** (Season 1 and 2, matched by map)
-- **Delves** (Season 1 and 2)
+- **Dungeons** (matched by map)
+- **Delves**
 - **Raid bosses**: per boss, or a whole raid difficulty at once. Both can be combined.
 - **Prey hunts** in the open world (Midnight zones only)
 - World bosses and lairs fought as raid instances (e.g. Tidebound Grotto) count as normal raid bosses.
