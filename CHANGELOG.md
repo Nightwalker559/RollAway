@@ -7,6 +7,7 @@
 ### Changed
 - Minimap button: right click closes the options window again.
 - Addon icon in the title of the options and feature windows.
+- Loot & Rolls page: tab list on the left like QoL; options window is wider.
 
 ### Fixed
 - Debug log: character frame button lines no longer flood the log (e.g. with Baganator).

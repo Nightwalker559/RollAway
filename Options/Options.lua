@@ -90,7 +90,7 @@ function RA.InitOptions()
 
     -- Own options window: page list on the left (Main, QoL, Profile, Developer), the
     -- selected page on the right. No entry in the game's Settings panel.
-    local win = RA.CreatePanelWindow("RollAwayOptionsFrame", UIParent, 860, 640, RA_L["addon_title"])
+    local win = RA.CreatePanelWindow("RollAwayOptionsFrame", UIParent, 940, 640, RA_L["addon_title"])
     RA.AddTitleIcon(win)
     win:SetPoint("CENTER")
     win:SetFrameStrata("HIGH")
@@ -180,9 +180,11 @@ function RA.InitOptions()
     local tabButtons = {}
     local ShowTab = UI.MakeTabSelector(tabPanels, tabButtons)
 
+    -- Like the QoL page: the tab list runs down the left, the selected tab fills the rest.
+    local MAIN_NAV_W = 130
     for _, def in ipairs(tabDefs) do
         local p = CreateFrame("Frame", nil, panel)
-        p:SetPoint("TOPLEFT",     panel, "TOPLEFT",     16,  -44)
+        p:SetPoint("TOPLEFT",     panel, "TOPLEFT",     16 + MAIN_NAV_W + 14,  -4)
         p:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16,  16)
         p:Hide()
         tabPanels[def.key] = p
@@ -207,7 +209,7 @@ function RA.InitOptions()
     for _, def in ipairs(tabDefs) do
         local key = def.key
         local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-        btn:SetSize(90, 26)
+        btn:SetSize(MAIN_NAV_W, 24)
         btn:SetText(def.label)
         tabButtonOrder[#tabButtonOrder + 1] = btn
 
@@ -226,12 +228,18 @@ function RA.InitOptions()
         end
     end
 
-    -- Re-anchors the visible tabs left to right (no gaps); re-run when debug shows/hides tabs.
-    local function PlaceTopTab(btn)
-        btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -8)
-    end
+    -- Re-anchors the visible tabs top to bottom (no gaps); re-run when debug shows/hides tabs.
     local function ReflowTopTabButtons()
-        UI.ReflowTabRow(tabButtonOrder, TAB_GAP, PlaceTopTab, PlaceTopTab)
+        local prevVisible
+        for _, btn in ipairs(tabButtonOrder) do
+            btn:ClearAllPoints()
+            if btn:IsShown() and prevVisible then
+                btn:SetPoint("TOP", prevVisible, "BOTTOM", 0, -TAB_GAP)
+            else
+                btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -8)
+            end
+            if btn:IsShown() then prevVisible = btn end
+        end
     end
     ReflowTopTabButtons()
 
