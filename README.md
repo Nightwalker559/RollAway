@@ -37,6 +37,7 @@ Cleans up and controls visibility of the Group Loot History frame — auto-hide 
 - **Automatic Combat Logging** — enables `LoggingCombat` based on zone/difficulty (Scenarios & Delves, M+/Mythic dungeons, raid difficulties), individually togglable, optionally for the current season's raids only (read from the game). Makes MRT's logging unnecessary.
 - **Tank marker** — in current-season Mythic dungeons a popup offers to put a raid marker (default: square) on your group's tank. It needs your click: since 12.0 addons cannot set markers themselves. Off by default.
 - **Automatic quests** — accepts regular / daily / weekly quests and turns in finished ones at NPCs (never quests that cost gold or currency or have several rewards to choose from), optional modifier key to pause or require.
+- **Crafting salvage slot** — fills the slot of salvage recipes (e.g. Cooking fish -> fillets) with the first item you own and refills it when the stack is used up.
 - **Hide Blizzard UI elements** — red error text (important errors stay visible, optionally the yellow quest-progress messages too), Talking Head, boss banner, event toasts (incl. the bonus objective banner), alert pop-ups (loot, achievements), world map trackers (bounty board, faction button, eye), crafting output log. Everything is off by default.
 - **Auction House filter** — keeps "Current Expansion Only" enforced.
 - Durability warning, Omniumfoliant & Great Vault character frame buttons, and more.

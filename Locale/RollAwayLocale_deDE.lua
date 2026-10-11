@@ -293,6 +293,8 @@ L["qol_map_activity_label"]     = "Bounty-Board, Fraktions-Button und Auge der K
 L["qol_map_activity_info"]      = "Blendet das Bounty-Board, den Button zum Wechseln bzw. Beenden der Aktivitäten einer verfolgten Fraktion und das N'Zoth-Auge unten links auf der Weltkarte aus. Experimentell — kann nach einem Blizzard-UI-Update aufhören zu funktionieren."
 L["qol_crafting_output_log_label"] = "Handwerksergebnisse-Fenster ausblenden"
 L["qol_crafting_output_log_info"]  = "Blendet das kleine Popup aus, in dem deine hergestellten Gegenstände angezeigt werden, während du einen Beruf ausübst."
+L["qol_salvage_slot_label"]     = "Handwerk: Verwerten-Slot automatisch füllen"
+L["qol_salvage_slot_info"]      = "Bei Verwerten-Rezepten wie Fisch zu Filet in Kochkunst: legt den ersten Gegenstand, den du hast, in den Slot – in der Reihenfolge der Spiel-Liste, sobald der Stapel groß genug ist. Füllt neu, wenn der Stapel aufgebraucht ist."
 L["qol_vault_button_tooltip"]   = "Große Schatzkammer öffnen"
 
 -- Auto Combat Logging
@@ -547,16 +549,7 @@ L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Gro�
 ------------------------------------------------------------------------
 -- What's New (3.1.2)
 ------------------------------------------------------------------------
-L["whatsnew_pass_title"]         = "Legacy-Auto-Roll: Passen"
-L["whatsnew_pass_desc"]          = "Neue Checkbox Passen neben Bedarf, Gier und Transmog: passt auf alles aus den angehakten Raids und schaltet die anderen drei ab. Ohne gewählte Würfelart wird nicht mehr automatisch gewürfelt."
-L["whatsnew_pass_location"]      = "Legacy"
-L["whatsnew_map_title"]          = "Aufgeräumte Weltkarte"
-L["whatsnew_map_desc"]           = "Die Karten-Option blendet jetzt auch das Bounty-Board und das N'Zoth-Auge unten links aus, nicht nur den Fraktions-Button."
-L["whatsnew_map_location"]       = "QoL > Ausblenden"
-L["whatsnew_info_title"]         = "Gelbe Meldungen ausblenden"
-L["whatsnew_info_desc"]          = "Neue Unteroption bei den roten Fehlermeldungen: blendet auch die gelben Meldungen wie den Questfortschritt aus. \"Ihr könnt nicht noch mehr davon tragen\" wird jetzt ebenfalls von der Fehler-Option ausgeblendet."
-L["whatsnew_info_location"]      = "QoL > Ausblenden"
-L["whatsnew_log_title"]          = "Nur Raids der aktuellen Season loggen"
-L["whatsnew_log_desc"]           = "Neue Checkbox beim automatischen Kampflog: Raids außerhalb der laufenden Season werden nicht geloggt. Die Season wird aus dem Spiel gelesen und wechselt mit der nächsten Season von selbst."
-L["whatsnew_log_location"]       = "QoL > Logs"
+L["whatsnew_salvage_title"]       = "Verwerten-Slot füllt sich selbst"
+L["whatsnew_salvage_desc"]        = "Rezepte wie Kochkunst Fisch -> Filet brauchen einen Gegenstand im Slot. RollAway legt jetzt den ersten ein, den du hast (Reihenfolge der Spiel-Liste), und füllt nach, wenn der Stapel aufgebraucht ist."
+L["whatsnew_salvage_location"]    = "QoL > Filter"
 L["whatsnew_options_label"]      = "Optionen:"

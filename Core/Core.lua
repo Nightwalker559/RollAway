@@ -154,6 +154,7 @@ RA.defaults = {
         vaultButtonCharFrame     = false,
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
+        autoSalvageSlot          = true,
         hideErrorMessages        = false,
         hideInfoMessages         = false,
         hideTalkingHead          = false,
@@ -532,7 +533,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitQuests", "InitTankMarker", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitQuests", "InitTankMarker", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 

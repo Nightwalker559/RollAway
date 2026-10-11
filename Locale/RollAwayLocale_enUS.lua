@@ -292,6 +292,8 @@ L["qol_map_activity_label"]     = "Hide bounty board, faction button and eye on 
 L["qol_map_activity_info"]      = "Hides the bounty board, the button used to cycle/untrack a Major Faction's activities and the N'Zoth eye in the bottom-left of the World Map. Experimental — may stop working after a Blizzard UI update."
 L["qol_crafting_output_log_label"] = "Hide Crafting Results window"
 L["qol_crafting_output_log_info"]  = "Hides the small popup that lists your crafted items while using a profession."
+L["qol_salvage_slot_label"]     = "Crafting: fill salvage slot automatically"
+L["qol_salvage_slot_info"]      = "For salvage recipes such as Cooking fish -> fillets: puts the first item you own into the slot, in the order of the game's list, once the stack is big enough. Refills when the stack is used up."
 L["qol_vault_button_tooltip"]   = "Open Great Vault"
 
 -- Auto Combat Logging
@@ -546,16 +548,7 @@ L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 ------------------------------------------------------------------------
 -- What's New (3.1.2)
 ------------------------------------------------------------------------
-L["whatsnew_pass_title"]         = "Legacy auto-roll: Pass"
-L["whatsnew_pass_desc"]          = "New Pass checkbox next to Need, Greed and Transmog: passes on everything from the checked raids and switches the other three off. With no roll type selected, nothing is rolled automatically any more."
-L["whatsnew_pass_location"]      = "Legacy"
-L["whatsnew_map_title"]          = "Cleaner World Map"
-L["whatsnew_map_desc"]           = "The map option now also hides the bounty board and the N'Zoth eye at the bottom left, not just the faction button."
-L["whatsnew_map_location"]       = "QoL > Hide"
-L["whatsnew_info_title"]         = "Hide yellow messages"
-L["whatsnew_info_desc"]          = "New sub-option under the red error messages: also hides the yellow messages such as quest progress. \"You can't carry any more of these\" is now hidden by the error option too."
-L["whatsnew_info_location"]      = "QoL > Hide"
-L["whatsnew_log_title"]          = "Log only the current season's raids"
-L["whatsnew_log_desc"]           = "New checkbox for the automatic combat log: raids outside the running season are not logged. The season is read from the game, so it follows the next season by itself."
-L["whatsnew_log_location"]       = "QoL > Logs"
+L["whatsnew_salvage_title"]       = "Salvage slot fills itself"
+L["whatsnew_salvage_desc"]        = "Recipes like Cooking fish -> fillets need an item in the slot. RollAway now puts in the first one you own (game list order) and refills it when the stack is used up."
+L["whatsnew_salvage_location"]    = "QoL > Filter"
 L["whatsnew_options_label"]      = "Options:"

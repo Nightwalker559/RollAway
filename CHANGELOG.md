@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.3
+
+### New
+- Crafting: salvage slot (e.g. Cooking fish -> fillets) fills itself with the first item you own, and refills when the stack is used up.
+
+---
+
 ## 3.1.2
 
 ### New

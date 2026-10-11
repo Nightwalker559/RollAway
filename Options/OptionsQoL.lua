@@ -363,6 +363,12 @@ function RA.BuildQoLOptions(category, S, classColor)
         label = RA_L["qol_expansion_filter_label"], info = RA_L["qol_expansion_filter_info"], dbKey = "expansionFilterAH",
     })
 
+    -- Salvage slot (Cooking fish -> fillets etc.)
+    filterChain.Add({
+        label = RA_L["qol_salvage_slot_label"], info = RA_L["qol_salvage_slot_info"],
+        dbKey = "autoSalvageSlot", onChange = RA.ApplyCraftingSalvageFeature,
+    })
+
     -- Vendor filter: dims known items (reset when turned off)
     filterChain.Add({
         label = RA_L["qol_vendor_filter_label"], info = RA_L["qol_vendor_filter_info"],

@@ -5,30 +5,15 @@ local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
 -- Bump with the entries below.
-local WHATS_NEW_VERSION = "3.1.2"
+local WHATS_NEW_VERSION = "3.1.3"
 
 -- Entry: { title, description, location }, all from RA_L (enUS + deDE). Only the
 -- CURRENT version's entries belong here; replace them when the version bumps.
 local FEATURES = {
     {
-        title       = RA_L["whatsnew_pass_title"],
-        description = RA_L["whatsnew_pass_desc"],
-        location    = RA_L["whatsnew_pass_location"],
-    },
-    {
-        title       = RA_L["whatsnew_map_title"],
-        description = RA_L["whatsnew_map_desc"],
-        location    = RA_L["whatsnew_map_location"],
-    },
-    {
-        title       = RA_L["whatsnew_info_title"],
-        description = RA_L["whatsnew_info_desc"],
-        location    = RA_L["whatsnew_info_location"],
-    },
-    {
-        title       = RA_L["whatsnew_log_title"],
-        description = RA_L["whatsnew_log_desc"],
-        location    = RA_L["whatsnew_log_location"],
+        title       = RA_L["whatsnew_salvage_title"],
+        description = RA_L["whatsnew_salvage_desc"],
+        location    = RA_L["whatsnew_salvage_location"],
     },
 }
 
