@@ -295,6 +295,7 @@ L["qol_crafting_output_log_label"] = "Handwerksergebnisse-Fenster ausblenden"
 L["qol_crafting_output_log_info"]  = "Blendet das kleine Popup aus, in dem deine hergestellten Gegenstände angezeigt werden, während du einen Beruf ausübst."
 L["qol_salvage_slot_label"]     = "Handwerk: Verwerten-Slot automatisch füllen"
 L["qol_salvage_slot_info"]      = "Bei Verwerten-Rezepten wie Fisch zu Filet in Kochkunst: legt den ersten Gegenstand, den du hast, in den Slot – in der Reihenfolge der Spiel-Liste, sobald der Stapel groß genug ist. Füllt neu, wenn der Stapel aufgebraucht ist. |cffff4040Benutzung auf eigene Gefahr: Mit Pech werden auch teure Materialien (z. B. teurer frischer Fisch) verbraucht.|r"
+L["qol_salvage_slot_warning"]  = "RollAway: Auto-Slot aktiv – Material prüfen!"
 L["qol_vault_button_tooltip"]   = "Große Schatzkammer öffnen"
 
 -- Auto Combat Logging

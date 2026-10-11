@@ -2,12 +2,14 @@
 -- Professions: salvage recipes (e.g. Cooking "Thalassian Filet", fish -> fillets)
 -- need an item put into the slot by hand. This fills the slot with the first item
 -- you own, in the order of Blizzard's own list (name, then item ID), once a stack
--- is big enough. Refills when the stack is used up. Only the crafting page.
+-- is big enough. Refills when the stack is used up. Only the crafting page, with a
+-- red note next to "Reagents:" while it is active.
 -- Everything runs one frame after Blizzard's code and only sets what the slot's
 -- own click handler sets.
 
-local RA  = _G["RollAway"]
-local DBG = RA.DBG
+local RA   = _G["RollAway"]
+local RA_L = RA.RA_L
+local DBG  = RA.DBG
 
 local pending = false
 local autoGUID  -- item GUID we put in the slot (to tell "used up" from "removed by the player")
@@ -37,12 +39,34 @@ local function PickItem(schematic)
     return best
 end
 
+-- Red note next to "Reagents:" while the option is on and the recipe has a salvage slot.
+local warning
+local function SetWarning(form, show)
+    if not show then
+        if warning then warning:Hide() end
+        return
+    end
+    local container = form.Reagents
+    if not container or not container.Label then return end
+    if not warning then
+        warning = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        warning:SetTextColor(1, 0.25, 0.25)
+        warning:SetText(RA_L["qol_salvage_slot_warning"])
+    end
+    warning:ClearAllPoints()
+    warning:SetPoint("LEFT", container.Label, "LEFT", container.Label:GetStringWidth() + 10, 0)
+    warning:Show()
+end
+
 -- fromInit: the recipe was just (re)selected, so fill even if the player cleared the slot.
 local function TryFill(fromInit)
     pending = false
-    if not (RollAwayDB and RollAwayDB.autoSalvageSlot) then return end
-
     local form = GetForm()
+    if not (RollAwayDB and RollAwayDB.autoSalvageSlot) then
+        if form then SetWarning(form, false) end
+        return
+    end
+
     if not form or not form:IsVisible() then return end
     local transaction = form:GetTransaction()
     local schematic = transaction and transaction:GetRecipeSchematic()
@@ -50,8 +74,10 @@ local function TryFill(fromInit)
     if not schematic or schematic.recipeType ~= Enum.TradeskillRecipeType.Salvage
         or not slot or not slot:IsShown() then
         autoGUID = nil
+        SetWarning(form, false)
         return
     end
+    SetWarning(form, true)
     if transaction:GetSalvageAllocation() then return end
     -- Empty slot after our own fill: refill only when that stack is gone.
     if not fromInit and autoGUID and C_Item.IsItemGUIDInInventory(autoGUID) then return end
