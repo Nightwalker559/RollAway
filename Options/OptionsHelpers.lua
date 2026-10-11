@@ -4,8 +4,9 @@
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
--- Width of an options page's content (up to the scroll bar); two grid columns + gap fill it.
-local PAGE_W = 580
+-- Width of an options page's content: the scroll area (580) minus 4, so the scroll bar (which
+-- starts 6px right of the area) keeps 10px of air. Two grid columns + gap fill it.
+local PAGE_W = 576
 
 -- Grid layout constants (all tabs)
 local COL_GAP = 24

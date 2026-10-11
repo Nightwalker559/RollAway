@@ -176,7 +176,7 @@ function RA.InitOptions()
     local mainHeaderLine = panel:CreateTexture(nil, "ARTWORK")
     mainHeaderLine:SetHeight(1)
     mainHeaderLine:SetPoint("TOPLEFT", mainInfo, "BOTTOMLEFT", 0, -10)
-    mainHeaderLine:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
+    mainHeaderLine:SetPoint("RIGHT", panel, "RIGHT", -32, 0)
     mainHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
     RA.AddHeaderLogo(panel, mainHeaderLine)
 

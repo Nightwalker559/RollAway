@@ -105,7 +105,7 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     local qolHeaderLine = qolPanel:CreateTexture(nil, "ARTWORK")
     qolHeaderLine:SetHeight(1)
     qolHeaderLine:SetPoint("TOPLEFT", qolPanelInfo, "BOTTOMLEFT", 0, -10)
-    qolHeaderLine:SetPoint("RIGHT", qolPanel, "RIGHT", 0, 0)
+    qolHeaderLine:SetPoint("RIGHT", qolPanel, "RIGHT", -16, 0)
     qolHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
     RA.AddHeaderLogo(qolPanel, qolHeaderLine)
 
