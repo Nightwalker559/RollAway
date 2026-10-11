@@ -138,6 +138,11 @@ function RA.SkinPopupButton(btn)
     if SkinsEnabled() then Handle("HandleButton", btn) end
 end
 
+-- Checkbox added to a Blizzard frame (e.g. the Professions salvage toggle).
+function RA.SkinCheckBox(cb)
+    if SkinsEnabled() then Handle("HandleCheckBox", cb) end
+end
+
 -- Dropdown lists (RA.OptionsUI.MakeDropdown): ElvUI skins the box and the list but not the
 -- entries (Blizzard's gold tick and yellow highlight): flat gold square, soft white hover.
 

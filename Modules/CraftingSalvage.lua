@@ -64,6 +64,7 @@ local function SetToggle(form, show)
     if not toggle then
         toggle = CreateFrame("CheckButton", nil, container, "UICheckButtonTemplate")
         toggle:SetSize(22, 22)
+        if RA.SkinCheckBox then RA.SkinCheckBox(toggle) end
         toggle.Text:SetText(RA_L["qol_salvage_slot_warning"])
         toggle:SetScript("OnClick", function(self)
             RollAwayDB.salvageSlotActive = self:GetChecked() and true or false
