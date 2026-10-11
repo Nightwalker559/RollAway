@@ -10,6 +10,7 @@
 
 ### Fixed
 - Debug log: character frame button lines no longer flood the log (e.g. with Baganator).
+- Feature overview: description text no longer runs under the checkbox / "On".
 
 ---
 

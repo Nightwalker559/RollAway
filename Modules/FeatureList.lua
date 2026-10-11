@@ -214,7 +214,7 @@ local function CreateFrameOnce()
                     if item.info then
                         local info = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
                         info:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -3)
-                        info:SetWidth(CONTENT_W - 16)
+                        info:SetWidth(CONTENT_W - 70)   -- same as the name: ends before the checkbox / "On"
                         info:SetJustifyH("LEFT")
                         info:SetTextColor(0.7, 0.7, 0.7)
                         info:SetText(RA_L[item.info])
