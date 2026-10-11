@@ -1,3 +1,8 @@
+## 3.1.3 (alpha 6)
+
+### Changed
+- Minimap button: right click closes the options window again.
+
 ## 3.1.3 (alpha 5)
 
 ### Changed

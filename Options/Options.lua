@@ -139,6 +139,11 @@ function RA.InitOptions()
         if key and pages[key] then ShowPage(key) end
     end
 
+    -- Opens or closes the window (/raw, minimap button right click).
+    function RA.ToggleOptions()
+        if win:IsShown() then win:Hide() else RA.OpenOptions() end
+    end
+
     -- /raw, /rollaway → options window; "/raw features" → feature overview
     SLASH_ROLLAWAY1 = "/raw"
     SLASH_ROLLAWAY2 = "/rollaway"
@@ -146,10 +151,8 @@ function RA.InitOptions()
         local arg = strtrim(msg or ""):lower()
         if arg == "features" or arg == "funktionen" then
             RA.ToggleFeatureList()
-        elseif win:IsShown() then
-            win:Hide()
         else
-            RA.OpenOptions()
+            RA.ToggleOptions()
         end
     end
 

@@ -74,7 +74,7 @@ local function CreateButton()
 
     b:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == "RightButton" then
-            RA.OpenOptions()
+            RA.ToggleOptions()
         else
             RA.ToggleFeatureList()
         end
