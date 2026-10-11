@@ -4,10 +4,13 @@
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
+-- Width of an options page's content (up to the scroll bar); two grid columns + gap fill it.
+local PAGE_W = 580
+
 -- Grid layout constants (all tabs)
-local ENTRY_W = 255
-local ENTRY_H = 26
 local COL_GAP = 24
+local ENTRY_W = (PAGE_W - COL_GAP) / 2
+local ENTRY_H = 26
 local ROW_GAP = 6
 
 -- Tab label colors (active / inactive), also used by ElvUI_Skin.lua.
@@ -22,8 +25,8 @@ local function MakeSectionHeader(parent, anchorFrame, anchorOffsetY, text)
     lbl:SetText(text)
     local line = parent:CreateTexture(nil, "ARTWORK")
     line:SetHeight(1)
-    line:SetWidth(560)
     line:SetPoint("TOPLEFT", lbl, "BOTTOMLEFT", 0, -6)
+    line:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
     line:SetColorTexture(0.3, 0.3, 0.3, 0.8)
     return lbl, line
 end
@@ -182,7 +185,7 @@ local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
 end
 
 -- Width of a QoL category's content (between nav and scrollbar); descriptions are indented 20.
-local QOL_CONTENT_W = 470
+local QOL_CONTENT_W = PAGE_W
 local QOL_INFO_W    = QOL_CONTENT_W - 20
 
 -- Checkboxes the feature overview can switch, by saved key (MakeToggle registers its own).
@@ -309,7 +312,7 @@ end
 local function MakeHintText(parent, anchorLine, text)
     local hint = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", anchorLine, "BOTTOMLEFT", 0, -8)
-    hint:SetWidth(560)
+    hint:SetWidth(PAGE_W)
     hint:SetJustifyH("LEFT")
     hint:SetNonSpaceWrap(true)
     hint:SetText(text)
@@ -374,7 +377,7 @@ local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf
     gap = gap or 20
     local row = CreateFrame("Frame", nil, parent)
     row:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -8)
-    row:SetSize(560, 24)
+    row:SetSize(PAGE_W, 24)
 
     local checkboxes = {}
     local prevFrame = nil
@@ -614,6 +617,7 @@ end
 -- Public exports (Options, OptionsQoL, OptionsDev, OptionsProfile)
 RA.OptionsUI = {
     MakeCategoryPage  = MakeCategoryPage,
+    PAGE_W            = PAGE_W,
     ENTRY_W           = ENTRY_W,
     COL_GAP           = COL_GAP,
     GOLD              = GOLD,

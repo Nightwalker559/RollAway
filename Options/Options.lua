@@ -16,6 +16,7 @@ local SEASON2_RAIDS        = RA.RAIDS[2]
 
 -- Shared helpers/constants (OptionsHelpers.lua)
 local UI                = RA.OptionsUI
+local PAGE_W             = UI.PAGE_W
 local ENTRY_W            = UI.ENTRY_W
 local COL_GAP            = UI.COL_GAP
 local MakeSectionHeader  = UI.MakeSectionHeader
@@ -173,8 +174,9 @@ function RA.InitOptions()
     local mainInfo = MakeInfoText(panel, mainTitle, 0, -6, 510, RA_L["main_panel_info"])
 
     local mainHeaderLine = panel:CreateTexture(nil, "ARTWORK")
-    mainHeaderLine:SetHeight(1); mainHeaderLine:SetWidth(560)
+    mainHeaderLine:SetHeight(1)
     mainHeaderLine:SetPoint("TOPLEFT", mainInfo, "BOTTOMLEFT", 0, -10)
+    mainHeaderLine:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
     mainHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
     RA.AddHeaderLogo(panel, mainHeaderLine)
 
@@ -278,7 +280,7 @@ function RA.InitOptions()
     genScroll:SetPoint("BOTTOMRIGHT", tabPanels["general"], "BOTTOMRIGHT", -12, 0)
 
     local gen = CreateFrame("Frame", nil, genScroll)
-    gen:SetWidth(580)
+    gen:SetWidth(PAGE_W)
     gen:SetHeight(1) -- placeholder; recalculated dynamically once content is laid out
     genScroll:SetScrollChild(gen)
 
@@ -288,7 +290,7 @@ function RA.InitOptions()
     visMainLabel:SetPoint("TOPLEFT", 0, -10)
     visMainLabel:SetText(RA_L["visibility_section_title"])
 
-    local visMainInfo = MakeInfoText(gen, visMainLabel, 0, -6, 560, RA_L["visibility_info"])
+    local visMainInfo = MakeInfoText(gen, visMainLabel, 0, -6, PAGE_W, RA_L["visibility_info"])
 
     -- Master switch: turns the Group Loot History auto-close/auto-hide off (timer,
     -- watchdog, hide-in-raid): plain default WoW. Wired up below, once the controls it
@@ -344,7 +346,7 @@ function RA.InitOptions()
     hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", -19, -20)  -- the min label sits 19px in
     hideLabel:SetText(RA_L["hide_in_raid_label"])
 
-    local hideInfo = MakeInfoText(gen, hideLabel, 0, -4, 480, RA_L["hide_in_raid_info"])
+    local hideInfo = MakeInfoText(gen, hideLabel, 0, -4, PAGE_W, RA_L["hide_in_raid_info"])
 
     local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideInfo, RAID_DIFF_ITEMS,
         RollAwayDB.hideInRaidBuckets, function(k, checked)
@@ -357,7 +359,7 @@ function RA.InitOptions()
         RollAwayDB.hideInLegacyRaids = checked
     end)
     cbHideLegacy.frame:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
-    local hideLegacyInfo = MakeInfoText(gen, cbHideLegacy.frame, 20, -6, 460, RA_L["hide_in_legacy_info"])
+    local hideLegacyInfo = MakeInfoText(gen, cbHideLegacy.frame, 20, -6, PAGE_W - 20, RA_L["hide_in_legacy_info"])
 
     -- Master switch logic and initial state.
     SetLootFrameFeatureEnabled = function(enabled)
@@ -392,7 +394,7 @@ function RA.InitOptions()
     cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -10)
     RA.ToggleControls["showReminder"] = cbReminder
 
-    local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, 480, RA_L["reminder_info"])
+    local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, PAGE_W - 20, RA_L["reminder_info"])
 
     -- Safety net: warns when entering content with an active auto-pass.
     local cbWarn = MakeCB(gen, RA_L["autopass_warning_label"], RollAwayDB.autoPassWarning, function(checked)
@@ -400,7 +402,7 @@ function RA.InitOptions()
     end)
     cbWarn.frame:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -10)
     RA.ToggleControls["autoPassWarning"] = cbWarn
-    local warnInfo = MakeInfoText(gen, cbWarn.frame, 20, -6, 480, RA_L["autopass_warning_info"])
+    local warnInfo = MakeInfoText(gen, cbWarn.frame, 20, -6, PAGE_W - 20, RA_L["autopass_warning_info"])
 
     -- Hidden without bonus rolls or below max level (like the tabs above).
     local showBonusRollReminder = RA.BONUS_ROLLS_ENABLED and not belowMaxLevel
@@ -473,10 +475,10 @@ function RA.InitOptions()
     end)
     dngAllCB.frame:SetPoint("TOPLEFT", dngHint, "BOTTOMLEFT", 0, -10)
 
-    -- Full-width (560) anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
+    -- Full-width anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local dngSeasonAnchor = CreateFrame("Frame", nil, dng)
     dngSeasonAnchor:SetPoint("TOPLEFT", dngAllCB.frame, "BOTTOMLEFT", 0, 0)
-    dngSeasonAnchor:SetSize(560, 1)
+    dngSeasonAnchor:SetSize(PAGE_W, 1)
 
     local dngSeasons = MakeSeasonTabs(dng, dngSeasonAnchor, SeasonTabDefs())
 
@@ -600,10 +602,10 @@ function RA.InitOptions()
             RollAwayDBChar.raidAutoPassDifficulty[k] = checked
         end)
 
-    -- Full-width (560) anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
+    -- Full-width anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local raidSeasonAnchor = CreateFrame("Frame", nil, raidPanel)
     raidSeasonAnchor:SetPoint("TOPLEFT", raidDiffRow, "BOTTOMLEFT", 0, 0)
-    raidSeasonAnchor:SetSize(560, 1)
+    raidSeasonAnchor:SetSize(PAGE_W, 1)
 
     local raidSeasons = MakeSeasonTabs(raidPanel, raidSeasonAnchor, SeasonTabDefs())
 
@@ -730,7 +732,7 @@ function RA.InitOptions()
 
     local legacyRaidLine = legacyPanel:CreateTexture(nil, "ARTWORK")
     legacyRaidLine:SetHeight(1)
-    legacyRaidLine:SetWidth(560)
+    legacyRaidLine:SetWidth(PAGE_W)
     legacyRaidLine:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -44)
     legacyRaidLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 

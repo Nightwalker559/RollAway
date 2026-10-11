@@ -63,8 +63,9 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     local panelInfo = MakeInfoText(panel, title, 0, -6, 510, RA_L["dev_panel_info"])
 
     local headerLine = panel:CreateTexture(nil, "ARTWORK")
-    headerLine:SetHeight(1); headerLine:SetWidth(560)
+    headerLine:SetHeight(1)
     headerLine:SetPoint("TOPLEFT", panelInfo, "BOTTOMLEFT", 0, -10)
+    headerLine:SetPoint("RIGHT", panel, "RIGHT", 0, 0)
     headerLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
     RA.AddHeaderLogo(panel, headerLine)
 
