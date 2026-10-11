@@ -6,9 +6,12 @@
 local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
-local WIDTH, HEIGHT, CONTENT_W = 400, 640, 340
--- Name / description of a row end here, left of the checkbox or the "On/Off" text.
-local TEXT_W = CONTENT_W - 44
+-- CONTENT_W: rows run up to the scroll frame's right edge (frame width 400 - 12 - 30 = 358, 4 margin
+-- on the left); checkbox and On/Off sit 4px from there, i.e. 10px from the scroll bar.
+local WIDTH, HEIGHT, CONTENT_W = 400, 640, 354
+-- Name / description of a row end 10px left of the checkbox (22px, 4px from the edge); the text
+-- starts 6px in.
+local TEXT_W = CONTENT_W - 6 - 4 - 22 - 10
 
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
@@ -163,7 +166,7 @@ local function CreateFrameOnce()
     scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30,  12)
 
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(CONTENT_W + 8, 1)
+    content:SetSize(CONTENT_W + 4, 1)
     scroll:SetScrollChild(content)
 
     local y = -4
@@ -209,7 +212,7 @@ local function CreateFrameOnce()
                         end)
                     else
                         state = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-                        state:SetPoint("TOPRIGHT", row, "TOPRIGHT", -6, -4)
+                        state:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -4)
                     end
 
                     local height = 4 + name:GetStringHeight() + 6
