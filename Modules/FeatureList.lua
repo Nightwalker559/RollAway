@@ -271,6 +271,7 @@ local function CreateFrameOnce()
     f:SetScript("OnShow", function()
         for _, refresh in ipairs(refreshers) do refresh() end
     end)
+    f:Hide()   -- a new frame is shown; the first toggle must open it, not close it
     return f
 end
 
