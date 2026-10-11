@@ -39,12 +39,36 @@ function Skin.CheckBox(box)  Handle("HandleCheckBox", box) end
 function Skin.EditBox(box)   Handle("HandleEditBox", box) end
 function Skin.ScrollBar(bar) Handle("HandleTrimScrollBar", bar) end
 
--- MinimalSliderWithSteppersTemplate. ElvUI sizes the track from the frame height (40 =
--- the game's default); `minimal` is for low frames (about 24): a slim track.
-function Skin.StepSlider(slider, minimal) Handle("HandleStepSlider", slider, minimal) end
+-- MinimalSliderWithSteppersTemplate in ElvUI's own slider look (the one of its options):
+-- thin dark track, small gold thumb, no stepper arrows. The track keeps the template's
+-- 19px side margins, the value label (TopText) sits right above it.
+function Skin.StepSlider(frame)
+    if not Enabled() then return end
+    local bar = frame.Slider
+    if not bar then return end
+    if frame.Back then frame.Back:Hide() end
+    if frame.Forward then frame.Forward:Hide() end
+    bar:ClearAllPoints()
+    bar:SetPoint("LEFT", frame, "LEFT", 19, 0)
+    bar:SetPoint("RIGHT", frame, "RIGHT", -19, 0)
+    Handle("HandleSliderFrame", bar)
+    if frame.TopText then
+        frame.TopText:ClearAllPoints()
+        frame.TopText:SetPoint("BOTTOM", bar, "TOP", 0, 4)
+    end
+end
 
--- Dropdown button (WowStyle1DropdownTemplate); ElvUI forces the width.
-function Skin.Dropdown(dropdown, width) Handle("HandleDropDownBox", dropdown, width) end
+-- Dropdown button (WowStyle1DropdownTemplate); ElvUI forces the width. Its arrow is
+-- tinted gold like in ElvUI's own options.
+function Skin.Dropdown(dropdown, width)
+    if not Enabled() then return end
+    Handle("HandleDropDownBox", dropdown, width)
+    for _, region in ipairs({ dropdown:GetRegions() }) do
+        if region.GetTexture and region:GetTexture() == E.Media.Textures.ArrowUp then
+            region:SetVertexColor(1, 0.82, 0)
+        end
+    end
+end
 
 function Skin.StatusBar(bar, r, g, b, a)
     if not Enabled() then return end
