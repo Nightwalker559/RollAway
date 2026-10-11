@@ -6,7 +6,7 @@ _G["RollAwayLocale"] = L
 ------------------------------------------------------------------------
 -- General
 ------------------------------------------------------------------------
-L["addon_title"]              = "RollAway"
+L["addon_title"]              = "RollAway & Tools"
 
 -- Tabs
 L["options_nav_main"]          = "Loot & Rolls"
@@ -561,7 +561,7 @@ L["whatsnew_salvage_location"]    = "QoL > Crafting & Vendors"
 L["whatsnew_options_label"]      = "Options:"
 
 -- Feature overview (/raw features)
-L["feat_title"]               = "RollAway - Features"
+L["feat_title"]               = "RollAway & Tools - Features"
 L["feat_hint"]                = "Tick a box to switch a feature; click a row to open its settings."
 L["feat_on"]                  = "On"
 L["feat_off"]                 = "Off"

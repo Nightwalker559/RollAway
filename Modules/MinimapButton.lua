@@ -39,7 +39,7 @@ end
 
 local function ShowTooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:AddLine("RollAway")
+    GameTooltip:AddLine(RA_L["addon_title"])
     GameTooltip:AddLine(RA_L["feat_mm_left"], 1, 1, 1)
     GameTooltip:AddLine(RA_L["feat_mm_right"], 1, 1, 1)
     GameTooltip:AddLine(RA_L["feat_mm_drag"], 0.6, 0.6, 0.6)

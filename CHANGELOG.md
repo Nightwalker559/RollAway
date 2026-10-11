@@ -1,10 +1,11 @@
-# RollAway – Changelog
+# RollAway & Tools – Changelog
 
 ---
 
 ## 3.1.3 (alpha 6)
 
 ### Changed
+- New name: RollAway & Tools (addon folder, settings and commands stay the same).
 - Minimap button: right click closes the options window again.
 - Addon logo in the header of every options page.
 - Loot & Rolls page: tab list on the left like QoL; options window is wider.

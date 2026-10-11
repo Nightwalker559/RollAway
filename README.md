@@ -1,4 +1,4 @@
-# RollAway
+# RollAway & Tools
 
 Bonus Roll automation, loot history cleanup, and group quality-of-life tools for World of Warcraft (Midnight, Season 2).
 

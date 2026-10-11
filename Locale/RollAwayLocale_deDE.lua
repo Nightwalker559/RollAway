@@ -7,7 +7,7 @@ local L = _G["RollAwayLocale"]
 ------------------------------------------------------------------------
 -- General
 ------------------------------------------------------------------------
-L["addon_title"]              = "RollAway"
+L["addon_title"]              = "RollAway & Tools"
 
 -- Tabs
 L["options_nav_main"]          = "Loot & Rolls"
@@ -562,7 +562,7 @@ L["whatsnew_salvage_location"]    = "QoL > Handwerk & Händler"
 L["whatsnew_options_label"]      = "Optionen:"
 
 -- Funktionsübersicht (/raw features)
-L["feat_title"]               = "RollAway - Funktionen"
+L["feat_title"]               = "RollAway & Tools - Funktionen"
 L["feat_hint"]                = "Häkchen schaltet die Funktion, Klick auf die Zeile öffnet ihre Einstellungen."
 L["feat_on"]                  = "An"
 L["feat_off"]                 = "Aus"

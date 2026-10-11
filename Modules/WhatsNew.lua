@@ -33,7 +33,7 @@ local frame
 
 local function CreateWhatsNewFrame()
     local f = RA.CreatePanelWindow("RollAwayWhatsNewFrame", UIParent, 440, 340,
-        "RollAway - What's New  |cFFAA8830v" .. WHATS_NEW_VERSION .. "|r")
+        RA_L["addon_title"] .. " - What's New  |cFFAA8830v" .. WHATS_NEW_VERSION .. "|r")
     f:SetPoint("CENTER")
     f:SetFrameStrata("HIGH")
     RA.MakeDraggable(f)
