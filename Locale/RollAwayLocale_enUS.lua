@@ -293,8 +293,14 @@ L["qol_map_activity_info"]      = "Hides the bounty board, the button used to cy
 L["qol_crafting_output_log_label"] = "Hide Crafting Results window"
 L["qol_crafting_output_log_info"]  = "Hides the small popup that lists your crafted items while using a profession."
 L["qol_salvage_slot_label"]     = "Crafting: fill salvage slot automatically"
-L["qol_salvage_slot_info"]      = "For salvage recipes such as Cooking fish -> fillets: puts the first item you own into the slot, in the order of the game's list, once the stack is big enough. Refills when the stack is used up. A checkbox in the Professions window switches it on and off. |cffff4040Use at your own risk: with bad luck expensive materials (e.g. costly fresh fish) get used as well.|r"
-L["qol_salvage_slot_warning"]  = "RollAway: auto slot – check materials!"
+L["qol_salvage_slot_info"]      = "For salvage recipes such as Cooking fish -> fillets: puts the first item you own into the slot, in the order of the game's list, once the stack is big enough. Refills when the stack is used up. Only items you tick in the list work (click the red text in the Professions window); a checkbox there switches it on and off. |cffff4040Use at your own risk: with bad luck expensive materials (e.g. costly fresh fish) get used as well.|r"
+L["qol_salvage_slot_warning"]  = "RollAway: auto slot – choose materials (%d)"
+L["salvage_panel_title"]       = "Auto slot: materials"
+L["salvage_panel_hint"]        = "Only ticked items are put in automatically. Be careful with expensive materials!"
+L["salvage_panel_tip"]         = "Click: allow / forbid"
+L["salvage_panel_link_tip"]    = "Click: choose which materials may be used"
+L["salvage_panel_all"]         = "All"
+L["salvage_panel_none"]        = "None"
 L["qol_vault_button_tooltip"]   = "Open Great Vault"
 
 -- Auto Combat Logging
@@ -550,6 +556,6 @@ L["greatvault_none"]               = "No unclaimed Great Vault rewards."
 -- What's New (3.1.2)
 ------------------------------------------------------------------------
 L["whatsnew_salvage_title"]       = "Salvage slot fills itself"
-L["whatsnew_salvage_desc"]        = "Recipes like Cooking fish -> fillets need an item in the slot. RollAway now puts in the first one you own (game list order) and refills it when the stack is used up."
+L["whatsnew_salvage_desc"]        = "Recipes like Cooking fish -> fillets need an item in the slot. RollAway now puts in the first one you own and ticked in a list (click the red text in the Professions window) and refills it when the stack is used up."
 L["whatsnew_salvage_location"]    = "QoL > Misc"
 L["whatsnew_options_label"]      = "Options:"

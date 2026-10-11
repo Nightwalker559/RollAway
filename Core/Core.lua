@@ -156,6 +156,7 @@ RA.defaults = {
         hideCraftingOutputLog    = false,
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
+        salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
         hideErrorMessages        = false,
         hideInfoMessages         = false,
         hideTalkingHead          = false,

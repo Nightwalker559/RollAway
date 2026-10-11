@@ -294,8 +294,14 @@ L["qol_map_activity_info"]      = "Blendet das Bounty-Board, den Button zum Wech
 L["qol_crafting_output_log_label"] = "Handwerksergebnisse-Fenster ausblenden"
 L["qol_crafting_output_log_info"]  = "Blendet das kleine Popup aus, in dem deine hergestellten Gegenstände angezeigt werden, während du einen Beruf ausübst."
 L["qol_salvage_slot_label"]     = "Handwerk: Verwerten-Slot automatisch füllen"
-L["qol_salvage_slot_info"]      = "Bei Verwerten-Rezepten wie Fisch zu Filet in Kochkunst: legt den ersten Gegenstand, den du hast, in den Slot – in der Reihenfolge der Spiel-Liste, sobald der Stapel groß genug ist. Füllt neu, wenn der Stapel aufgebraucht ist. Eine Checkbox im Berufe-Fenster schaltet es an und aus. |cffff4040Benutzung auf eigene Gefahr: Mit Pech werden auch teure Materialien (z. B. teurer frischer Fisch) verbraucht.|r"
-L["qol_salvage_slot_warning"]  = "RollAway: Auto-Slot – Material prüfen!"
+L["qol_salvage_slot_info"]      = "Bei Verwerten-Rezepten wie Fisch zu Filet in Kochkunst: legt den ersten Gegenstand, den du hast, in den Slot – in der Reihenfolge der Spiel-Liste, sobald der Stapel groß genug ist. Füllt neu, wenn der Stapel aufgebraucht ist. Es werden nur Gegenstände benutzt, die du in der Liste anhakst (roten Text im Berufe-Fenster anklicken); eine Checkbox dort schaltet es an und aus. |cffff4040Benutzung auf eigene Gefahr: Mit Pech werden auch teure Materialien (z. B. teurer frischer Fisch) verbraucht.|r"
+L["qol_salvage_slot_warning"]  = "RollAway: Auto-Slot – Material wählen (%d)"
+L["salvage_panel_title"]       = "Auto-Slot: Materialien"
+L["salvage_panel_hint"]        = "Nur angehakte Gegenstände werden automatisch eingelegt. Vorsicht bei teuren Materialien!"
+L["salvage_panel_tip"]         = "Klick: erlauben / sperren"
+L["salvage_panel_link_tip"]    = "Klick: Materialien wählen, die benutzt werden dürfen"
+L["salvage_panel_all"]         = "Alle"
+L["salvage_panel_none"]        = "Keine"
 L["qol_vault_button_tooltip"]   = "Große Schatzkammer öffnen"
 
 -- Auto Combat Logging
@@ -551,6 +557,6 @@ L["greatvault_none"]               = "Keine unabgeholten Belohnungen in der Gro�
 -- What's New (3.1.2)
 ------------------------------------------------------------------------
 L["whatsnew_salvage_title"]       = "Verwerten-Slot füllt sich selbst"
-L["whatsnew_salvage_desc"]        = "Rezepte wie Kochkunst Fisch -> Filet brauchen einen Gegenstand im Slot. RollAway legt jetzt den ersten ein, den du hast (Reihenfolge der Spiel-Liste), und füllt nach, wenn der Stapel aufgebraucht ist."
+L["whatsnew_salvage_desc"]        = "Rezepte wie Kochkunst Fisch -> Filet brauchen einen Gegenstand im Slot. RollAway legt jetzt den ersten ein, den du hast und in einer Liste angehakt hast (roten Text im Berufe-Fenster anklicken), und füllt nach, wenn der Stapel aufgebraucht ist."
 L["whatsnew_salvage_location"]    = "QoL > Misc"
 L["whatsnew_options_label"]      = "Optionen:"

@@ -146,6 +146,13 @@ function RA.SkinCheckBox(cb)
     if SkinsEnabled() then Handle("HandleCheckBox", cb) end
 end
 
+-- Material list of the Professions salvage slot (CraftingSalvage.lua).
+function RA.SkinSalvagePanel(panel, ...)
+    if not SkinsEnabled() then return end
+    Handle("HandleFrame", panel)
+    for _, btn in ipairs({ ... }) do Handle("HandleButton", btn) end
+end
+
 -- Dropdown lists (RA.OptionsUI.MakeDropdown): ElvUI skins the box and the list but not the
 -- entries (Blizzard's gold tick and yellow highlight): flat gold square, soft white hover.
 
