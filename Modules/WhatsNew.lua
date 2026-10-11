@@ -20,6 +20,11 @@ local FEATURES = {
         description = RA_L["whatsnew_salvage_desc"],
         location    = RA_L["whatsnew_salvage_location"],
     },
+    {
+        title       = RA_L["whatsnew_window_title"],
+        description = RA_L["whatsnew_window_desc"],
+        location    = RA_L["whatsnew_window_location"],
+    },
 }
 
 -- Frame

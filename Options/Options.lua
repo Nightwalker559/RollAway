@@ -166,6 +166,18 @@ function RA.InitOptions()
     panel:SetAllPoints(content)
     RegisterPage("main", RA_L["options_nav_main"], panel)
 
+    -- Fixed header (like the QoL page)
+    local mainTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    mainTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -10)
+    mainTitle:SetText(RA_L["options_nav_main"])
+
+    local mainInfo = MakeInfoText(panel, mainTitle, 0, -6, 560, RA_L["main_panel_info"])
+
+    local mainHeaderLine = panel:CreateTexture(nil, "ARTWORK")
+    mainHeaderLine:SetHeight(1); mainHeaderLine:SetWidth(560)
+    mainHeaderLine:SetPoint("TOPLEFT", mainInfo, "BOTTOMLEFT", 0, -10)
+    mainHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+
     -- Tab definitions
     local tabDefs = {
         { key = "general",  label = RA_L["tab_general"]  },
@@ -184,7 +196,7 @@ function RA.InitOptions()
     local MAIN_NAV_W = 130
     for _, def in ipairs(tabDefs) do
         local p = CreateFrame("Frame", nil, panel)
-        p:SetPoint("TOPLEFT",     panel, "TOPLEFT",     16 + MAIN_NAV_W + 14,  -4)
+        p:SetPoint("TOPLEFT",     mainHeaderLine, "BOTTOMLEFT", MAIN_NAV_W + 16, -14)
         p:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16,  16)
         p:Hide()
         tabPanels[def.key] = p
@@ -229,25 +241,25 @@ function RA.InitOptions()
     end
 
     -- Re-anchors the visible tabs top to bottom (no gaps); re-run when debug shows/hides tabs.
-    local function ReflowTopTabButtons()
+    local function ReflowMainTabButtons()
         local prevVisible
         for _, btn in ipairs(tabButtonOrder) do
             btn:ClearAllPoints()
             if btn:IsShown() and prevVisible then
                 btn:SetPoint("TOP", prevVisible, "BOTTOM", 0, -TAB_GAP)
             else
-                btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -8)
+                btn:SetPoint("TOPLEFT", mainHeaderLine, "BOTTOMLEFT", 0, -14)
             end
             if btn:IsShown() then prevVisible = btn end
         end
     end
-    ReflowTopTabButtons()
+    ReflowMainTabButtons()
 
     RA.SeasonTabReflows = RA.SeasonTabReflows or {}
-    table.insert(RA.SeasonTabReflows, ReflowTopTabButtons)
+    table.insert(RA.SeasonTabReflows, ReflowMainTabButtons)
 
     -- General tab if debug turns off while a now hidden bonus roll tab is active.
-    local function EnsureValidTopTabSelected()
+    local function EnsureValidMainTabSelected()
         if not devLiveGate then return end
         if RollAwayDB.debug then return end
         for key in pairs(BONUS_ROLL_TABS) do
@@ -258,7 +270,7 @@ function RA.InitOptions()
         end
     end
     RA.SeasonTabDebugChecks = RA.SeasonTabDebugChecks or {}
-    table.insert(RA.SeasonTabDebugChecks, EnsureValidTopTabSelected)
+    table.insert(RA.SeasonTabDebugChecks, EnsureValidMainTabSelected)
 
     -- Tab: General (in a ScrollFrame)
     local genScroll = UI.MakeScrollFrame(tabPanels["general"], "RollAwayGenScroll")

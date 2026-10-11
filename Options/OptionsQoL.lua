@@ -1,5 +1,5 @@
 -- RollAway - Options/OptionsQoL.lua
--- The "QoL" settings subcategory, built once from RA.InitOptions(). Left nav (sorted by the
+-- The "QoL" page of the options window, built once from RA.InitOptions(). Left nav (sorted by the
 -- shown label): Character / Crafting & Vendors / Group / Hide / Logs / Quests / Reminder.
 -- Keep RA.FEATURES (Modules/FeatureList.lua) in step when an option moves or is added.
 

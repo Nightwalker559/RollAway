@@ -11,6 +11,7 @@ L["addon_title"]              = "RollAway"
 
 -- Tabs
 L["options_nav_main"]          = "Loot & Rolls"
+L["main_panel_info"]           = "Loot-Verlauf, Bonusroll-Auto-Pass, Roll-Bestätigung und Legacy-Raid-Würfe."
 L["tab_general"]              = "Allgemein"
 L["tab_dungeons"]             = "Dungeons"
 L["tab_raids"]                = "Raids"
@@ -477,7 +478,7 @@ L["profile_migration_keep"]       = "Aktuelle Einstellungen übernehmen"
 L["profile_migration_default"]    = "Auf Standard zurücksetzen"
 
 ------------------------------------------------------------------------
--- Profil-Unterkategorie (3.0.1)
+-- Profil-Seite (3.0.1)
 ------------------------------------------------------------------------
 L["profile_section_title"]     = "Profil"
 L["profile_panel_title"]       = "Profil"
@@ -587,6 +588,9 @@ L["feat_button"]              = "Funktionen"
 L["whatsnew_features_title"]      = "Funktionsübersicht"
 L["whatsnew_features_desc"]       = "Ein Fenster listet jede Funktion mit Beschreibung auf; dort kannst du sie auch ein- und ausschalten. Öffnen über den neuen Minimap-Button (Linksklick) oder /raw features. Die QoL-Optionen sind jetzt nach Themen sortiert."
 L["whatsnew_features_location"]   = "Minimap, /raw features"
+L["whatsnew_window_title"]         = "Eigenes Optionsfenster"
+L["whatsnew_window_desc"]          = "RollAway steht nicht mehr im Einstellungsfenster des Spiels: /raw oder ein Rechtsklick auf den Minimap-Button öffnet ein eigenes Fenster, auch im Kampf. Die Funktionsübersicht öffnet sich daneben."
+L["whatsnew_window_location"]      = "Minimap, /raw"
 L["feat_combat"]                  = "Im Kampf nicht möglich."
 L["feat_mm_left"]                 = "Linksklick: Funktionsübersicht"
 L["feat_mm_right"]                = "Rechtsklick: Optionen"

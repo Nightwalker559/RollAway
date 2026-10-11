@@ -565,7 +565,7 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
     return prevAnchor, prevOffsetY
 end
 
--- One page of a left-nav settings panel (QoL, Developer): a scrolling area next to the
+-- One page of a left-nav options page (QoL, Developer): a scrolling area next to the
 -- nav. Its height hugs the lowest element, measured on every show (a hidden page has no
 -- layout; checkboxes settle a few frames after creation).
 --   panel, headerLine  the panel and the line under its header
@@ -632,7 +632,6 @@ RA.OptionsUI = {
     MakeHintText      = MakeHintText,
     MakeScrollFrame   = MakeScrollFrame,
     MakeTabSelector   = MakeTabSelector,
-    ReflowTabRow      = ReflowTabRow,
     MakeCheckboxRow   = MakeCheckboxRow,
     MakeSeasonTabs    = MakeSeasonTabs,
     CreateGridEntry   = CreateGridEntry,

@@ -10,6 +10,7 @@ L["addon_title"]              = "RollAway"
 
 -- Tabs
 L["options_nav_main"]          = "Loot & Rolls"
+L["main_panel_info"]           = "Group loot history, bonus roll auto-pass, roll confirmation and legacy raid rolls."
 L["tab_general"]              = "General"
 L["tab_dungeons"]             = "Dungeons"
 L["tab_raids"]                = "Raids"
@@ -476,7 +477,7 @@ L["profile_migration_keep"]       = "Keep current settings"
 L["profile_migration_default"]    = "Reset to defaults"
 
 ------------------------------------------------------------------------
--- Profile subcategory (3.0.1)
+-- Profile page (3.0.1)
 ------------------------------------------------------------------------
 L["profile_section_title"]     = "Profile"
 L["profile_panel_title"]       = "Profile"
@@ -586,6 +587,9 @@ L["feat_button"]              = "Features"
 L["whatsnew_features_title"]      = "Feature overview"
 L["whatsnew_features_desc"]       = "A window lists every feature with its description; switch features on and off right there. Open it with the new minimap button (left click) or /raw features. The QoL options are now sorted by topic."
 L["whatsnew_features_location"]   = "Minimap, /raw features"
+L["whatsnew_window_title"]         = "Own options window"
+L["whatsnew_window_desc"]          = "RollAway no longer sits in the game's Settings panel: /raw or a right click on the minimap button opens its own window, also in combat. The feature overview opens next to it."
+L["whatsnew_window_location"]      = "Minimap, /raw"
 L["feat_combat"]                  = "Not possible in combat."
 L["feat_mm_left"]                 = "Left click: feature overview"
 L["feat_mm_right"]                = "Right click: options"
