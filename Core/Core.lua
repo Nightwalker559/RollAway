@@ -155,6 +155,7 @@ RA.defaults = {
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
         autoSalvageSlot          = false,
+        salvageSlotActive        = true,
         hideErrorMessages        = false,
         hideInfoMessages         = false,
         hideTalkingHead          = false,

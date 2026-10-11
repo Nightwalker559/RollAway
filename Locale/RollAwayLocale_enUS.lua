@@ -293,8 +293,8 @@ L["qol_map_activity_info"]      = "Hides the bounty board, the button used to cy
 L["qol_crafting_output_log_label"] = "Hide Crafting Results window"
 L["qol_crafting_output_log_info"]  = "Hides the small popup that lists your crafted items while using a profession."
 L["qol_salvage_slot_label"]     = "Crafting: fill salvage slot automatically"
-L["qol_salvage_slot_info"]      = "For salvage recipes such as Cooking fish -> fillets: puts the first item you own into the slot, in the order of the game's list, once the stack is big enough. Refills when the stack is used up. |cffff4040Use at your own risk: with bad luck expensive materials (e.g. costly fresh fish) get used as well.|r"
-L["qol_salvage_slot_warning"]  = "RollAway: auto slot on – check materials!"
+L["qol_salvage_slot_info"]      = "For salvage recipes such as Cooking fish -> fillets: puts the first item you own into the slot, in the order of the game's list, once the stack is big enough. Refills when the stack is used up. A checkbox in the Professions window switches it on and off. |cffff4040Use at your own risk: with bad luck expensive materials (e.g. costly fresh fish) get used as well.|r"
+L["qol_salvage_slot_warning"]  = "RollAway: auto slot – check materials!"
 L["qol_vault_button_tooltip"]   = "Open Great Vault"
 
 -- Auto Combat Logging

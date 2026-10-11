@@ -3,7 +3,7 @@
 -- need an item put into the slot by hand. This fills the slot with the first item
 -- you own, in the order of Blizzard's own list (name, then item ID), once a stack
 -- is big enough. Refills when the stack is used up. Only the crafting page, with a
--- red note next to "Reagents:" while it is active.
+-- checkbox (with a red warning as its label) next to "Reagents:" to switch it on/off.
 -- Everything runs one frame after Blizzard's code and only sets what the slot's
 -- own click handler sets.
 
@@ -39,23 +39,42 @@ local function PickItem(schematic)
     return best
 end
 
--- Red note next to "Reagents:" while the option is on and the recipe has a salvage slot.
-local warning
-local function SetWarning(form, show)
+-- Checkbox next to "Reagents:" (the red warning is its label) while the option is
+-- on and the recipe has a salvage slot. Unchecked = nothing is filled.
+local Schedule
+local toggle
+
+local function UpdateToggleLook()
+    local on = RollAwayDB.salvageSlotActive
+    toggle:SetChecked(on)
+    if on then
+        toggle.Text:SetTextColor(1, 0.25, 0.25)
+    else
+        toggle.Text:SetTextColor(0.5, 0.5, 0.5)
+    end
+end
+
+local function SetToggle(form, show)
     if not show then
-        if warning then warning:Hide() end
+        if toggle then toggle:Hide() end
         return
     end
     local container = form.Reagents
     if not container or not container.Label then return end
-    if not warning then
-        warning = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        warning:SetTextColor(1, 0.25, 0.25)
-        warning:SetText(RA_L["qol_salvage_slot_warning"])
+    if not toggle then
+        toggle = CreateFrame("CheckButton", nil, container, "UICheckButtonTemplate")
+        toggle:SetSize(22, 22)
+        toggle.Text:SetText(RA_L["qol_salvage_slot_warning"])
+        toggle:SetScript("OnClick", function(self)
+            RollAwayDB.salvageSlotActive = self:GetChecked() and true or false
+            UpdateToggleLook()
+            Schedule(true)
+        end)
     end
-    warning:ClearAllPoints()
-    warning:SetPoint("LEFT", container.Label, "LEFT", container.Label:GetStringWidth() + 10, 0)
-    warning:Show()
+    toggle:ClearAllPoints()
+    toggle:SetPoint("LEFT", container.Label, "LEFT", container.Label:GetStringWidth() + 6, 0)
+    UpdateToggleLook()
+    toggle:Show()
 end
 
 -- fromInit: the recipe was just (re)selected, so fill even if the player cleared the slot.
@@ -63,7 +82,7 @@ local function TryFill(fromInit)
     pending = false
     local form = GetForm()
     if not (RollAwayDB and RollAwayDB.autoSalvageSlot) then
-        if form then SetWarning(form, false) end
+        if form then SetToggle(form, false) end
         return
     end
 
@@ -74,10 +93,11 @@ local function TryFill(fromInit)
     if not schematic or schematic.recipeType ~= Enum.TradeskillRecipeType.Salvage
         or not slot or not slot:IsShown() then
         autoGUID = nil
-        SetWarning(form, false)
+        SetToggle(form, false)
         return
     end
-    SetWarning(form, true)
+    SetToggle(form, true)
+    if not RollAwayDB.salvageSlotActive then return end
     if transaction:GetSalvageAllocation() then return end
     -- Empty slot after our own fill: refill only when that stack is gone.
     if not fromInit and autoGUID and C_Item.IsItemGUIDInInventory(autoGUID) then return end
@@ -92,7 +112,7 @@ local function TryFill(fromInit)
     DBG("[Salvage] slot filled: " .. tostring(item:GetItemID()))
 end
 
-local function Schedule(fromInit)
+function Schedule(fromInit)
     if pending and not fromInit then return end
     pending = true
     RunNextFrame(function() TryFill(fromInit) end)
