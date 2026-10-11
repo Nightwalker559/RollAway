@@ -151,7 +151,7 @@ function RA.AddTitleIcon(window)
     local parent = container or window
     local icon = parent:CreateTexture(nil, "OVERLAY")
     icon:SetSize(18, 18)
-    icon:SetTexture("Interface\AddOns\RollAway\Media\Icon")
+    icon:SetTexture("Interface\\AddOns\\RollAway\\Media\\Icon")
     icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
     local width = title and title:GetStringWidth() or 0
     if width > 0 then
