@@ -6,7 +6,7 @@
 local RA   = _G.RollAway
 local RA_L = RA.RA_L
 
-local WIDTH, CONTENT_W = 560, 500
+local WIDTH, HEIGHT, CONTENT_W = 400, 640, 340
 
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
@@ -144,18 +144,19 @@ local function StateText(on)
 end
 
 local function CreateFrameOnce()
-    local f = RA.CreatePanelWindow("RollAwayFeatureListFrame", UIParent, WIDTH, 560, RA_L["feat_title"])
-    f:SetPoint("CENTER")
+    local f = RA.CreatePanelWindow("RollAwayFeatureListFrame", UIParent, WIDTH, HEIGHT, RA_L["feat_title"])
     f:SetFrameStrata("HIGH")
     RA.MakeDraggable(f)
     tinsert(UISpecialFrames, "RollAwayFeatureListFrame")
 
     local hint = f:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     hint:SetPoint("TOPLEFT", f, "TOPLEFT", 18, -34)
+    hint:SetWidth(WIDTH - 36)
+    hint:SetJustifyH("LEFT")
     hint:SetText(RA_L["feat_hint"])
 
     local scroll = RA.OptionsUI.MakeScrollFrame(f, "RollAwayFeatureListScroll")
-    scroll:SetPoint("TOPLEFT",     f, "TOPLEFT",      12, -52)
+    scroll:SetPoint("TOPLEFT",     f, "TOPLEFT",      12, -64)
     scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30,  12)
 
     local content = CreateFrame("Frame", nil, scroll)
@@ -223,10 +224,7 @@ local function CreateFrameOnce()
                     local hl = row:CreateTexture(nil, "HIGHLIGHT")
                     hl:SetAllPoints()
                     hl:SetColorTexture(1, 1, 1, 0.06)
-                    row:SetScript("OnClick", function()
-                        f:Hide()
-                        OpenFeature(item.open)
-                    end)
+                    row:SetScript("OnClick", function() OpenFeature(item.open) end)
 
                     refreshers[#refreshers + 1] = function()
                         if box then
@@ -270,16 +268,34 @@ local function CreateFrameOnce()
     return f
 end
 
--- Toggles the window; the options window closes when this one opens (they overlap).
+-- Next to the options window when that is open (right of it, left if the screen has no
+-- room), else in the screen center.
+local function AnchorFrame()
+    local opt = _G.RollAwayOptionsFrame
+    frame:ClearAllPoints()
+    if opt and opt:IsShown() then
+        local right = opt:GetRight()
+        if right and right + WIDTH + 4 > UIParent:GetRight() then
+            frame:SetPoint("TOPRIGHT", opt, "TOPLEFT", -4, 0)
+        else
+            frame:SetPoint("TOPLEFT", opt, "TOPRIGHT", 4, 0)
+        end
+    else
+        frame:SetPoint("CENTER")
+    end
+end
+
+-- Toggles the window.
 function RA.ToggleFeatureList()
     if not frame then frame = CreateFrameOnce() end
     local show = not frame:IsShown()
-    if show and RA.CloseOptions then RA.CloseOptions() end
+    if show then AnchorFrame() end
     frame:SetShown(show)
 end
 
-function RA.CloseFeatureList()
-    if frame then frame:Hide() end
+-- The options window just opened: an open overview moves next to it.
+function RA.ReanchorFeatureList()
+    if frame and frame:IsShown() then AnchorFrame() end
 end
 
 function RA.InitFeatureList()

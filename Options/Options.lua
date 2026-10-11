@@ -133,14 +133,10 @@ function RA.InitOptions()
 
     -- Opens the window, optionally on page `key`.
     function RA.OpenOptions(key)
-        if RA.CloseFeatureList then RA.CloseFeatureList() end   -- the two windows overlap
         win:Show()
+        if RA.ReanchorFeatureList then RA.ReanchorFeatureList() end   -- the overview sits next to us
         win:Raise()
         if key and pages[key] then ShowPage(key) end
-    end
-
-    function RA.CloseOptions()
-        win:Hide()
     end
 
     -- /raw, /rollaway → options window; "/raw features" → feature overview
