@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.4
+
+### Fixed
+- Labyrinth of Kindo'jan (12.1.5) is selectable now; checked on the PTR. German name corrected.
+
+---
+
 ## 3.1.3
 
 ### New
