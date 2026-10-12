@@ -6,6 +6,7 @@
 
 ### Fixed
 - Labyrinth of Kindo'jan (12.1.5) is selectable now; checked on the PTR. German name corrected.
+- The Unbinding of Kith'ix (12.1.5): boss is selectable now; checked on the PTR.
 
 ---
 

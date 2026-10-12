@@ -38,7 +38,7 @@ RA.RAIDS[2] = {
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
     { key = "nymrissa_wavecaller", encounterID = 3379, raid = "tidebound_grotto" }
 
--- The Unbinding of Kith'ix (12.1.5, PTR): single-boss mid-season raid, encounterID from
--- DungeonEncounter.db2 (wago.tools); pendingTest until verified in the game.
+-- The Unbinding of Kith'ix (12.1.5, mapID 3095): single-boss mid-season raid;
+-- encounterID 3513 confirmed on the PTR (Developer > raid dump).
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
-    { key = "kithix", encounterID = 3513, raid = "unbinding_of_kithix", pendingTest = true }
+    { key = "kithix", encounterID = 3513, raid = "unbinding_of_kithix" }

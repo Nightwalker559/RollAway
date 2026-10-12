@@ -464,7 +464,7 @@ L["prey_toggle_label"]        = "Auto-Pass für Beutejagd aktivieren"
 
 L["raid_tidebound_grotto"]    = "Die Gezeitengebundene Grotte"
 L["boss_nymrissa_wavecaller"] = "Nymrissa Wellenruferin"
-L["raid_unbinding_of_kithix"] = "Die Entfesselung von Kith'ix" -- 12.1.5
+L["raid_unbinding_of_kithix"] = "Die Entfesslung von Kith'ix" -- 12.1.5
 L["boss_kithix"]              = "Kith'ix"
 
 ------------------------------------------------------------------------
