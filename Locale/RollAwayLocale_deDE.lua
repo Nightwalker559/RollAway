@@ -449,7 +449,7 @@ L["delve_the_darkway"]           = "Der Düsterweg"
 L["delve_ring_of_glory"]         = "Ring des Ruhms"
 L["delve_gnarldor_isle"]         = "Knardorinsel"
 L["delve_venomfall_deeps"]      = "Giftfalltiefen"
-L["delve_labyrinth_of_kindojan"] = "Das Labyrinth von Kindo'Jan" -- 12.1.5
+L["delve_labyrinth_of_kindojan"] = "Das Labyrinth von Kindo'jan" -- 12.1.5
 
 L["nemesis_delve_label"]         = "(Nemesis-Tiefe)"
 L["label_removed"]               = "(entfernt)"

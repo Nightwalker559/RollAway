@@ -28,6 +28,7 @@ RA.DELVES[2] = {
     { key = "gnarldor_isle",    mapID = 3038 },
     -- Venomfall Deeps (Nemesis Delve) – mapID not yet known
     { key = "venomfall_deeps" },
-    -- Labyrinth of Kindo'jan (12.1.5) – mega-delve, own tiered floors ("Tiefen"/Depths)
-    { key = "labyrinth_of_kindojan", mapID = 3043, pendingTest = true },
+    -- Labyrinth of Kindo'jan (12.1.5) – mega-delve; confirmed on the 12.1.5 PTR:
+    -- instanceType "scenario", instanceID 3043, difficultyID 208
+    { key = "labyrinth_of_kindojan", mapID = 3043 },
 }
