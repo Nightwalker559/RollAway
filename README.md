@@ -83,4 +83,4 @@ Red error text (important errors stay visible), Talking Head, boss banner, event
 
 ---
 
-The full version history is in `CHANGELOG.md`. Bugs and suggestions: CurseForge or Wago.
+The full version history is in the [changelog](https://github.com/Nightwalker559/RollAway/blob/main/CHANGELOG.md). Bugs and suggestions: CurseForge or Wago.
