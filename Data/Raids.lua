@@ -34,7 +34,7 @@ RA.RAIDS[2] = {
     { key = "ulatek",                 encounterID = 3492, raid = "venomous_abyss" },
 }
 
--- Season 2 lair (Tidebound Grotto, one boss), matched like a regular raid boss.
+-- Season 2 lair (Tidebound Grotto, mapID 2987, one boss), matched like a regular raid boss.
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
     { key = "nymrissa_wavecaller", encounterID = 3379, raid = "tidebound_grotto" }
 
