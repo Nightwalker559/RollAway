@@ -573,13 +573,21 @@ end
 function RA.SetPortalSpell(btn, spellID)
     btn.spellID = spellID
     btn:SetAttribute("spell", spellID)
-    btn.iconTexture:SetTexture(C_Spell.GetSpellTexture(spellID))
+    btn.iconTexture:SetTexture(C_Spell.GetSpellTexture(spellID) or 134400)  -- 134400: question mark
 end
 
 -- Unlearned portals look locked; learned ones show their cooldown.
 function RA.UpdatePortalButtonState(btn, isKnown, unknownAlpha)
-    btn.iconTexture:SetDesaturated(not isKnown)
-    btn:SetAlpha(isKnown and 1 or unknownAlpha)
+    if btn.raElvSkinned then
+        -- ElvUI: the icon is only darkened (tint); the button's backdrop and border stay
+        -- as they are, no button alpha or desaturation.
+        local shade = isKnown and 1 or 0.4
+        btn.iconTexture:SetVertexColor(shade, shade, shade)
+        btn:SetAlpha(1)
+    else
+        btn.iconTexture:SetDesaturated(not isKnown)
+        btn:SetAlpha(isKnown and 1 or unknownAlpha)
+    end
 
     local start, duration
     if isKnown then start, duration = RA.GetPortalCooldown(btn.spellID) end
