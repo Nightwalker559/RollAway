@@ -28,6 +28,7 @@ local DEV_COMMANDS = {
     { "/rawdungeons",      "cmd_rawdungeons_info"    },
     { "/rawbosses",        "cmd_rawbosses_info"      },
     { "/rawseason",        "cmd_rawseason_info"      },
+    { "/rawnames",         "cmd_rawnames_info"       },
     { "/rawtest",          "cmd_rawtest_info"        },
     { "/rawreminder",      "cmd_rawreminder_info"    },
     { "/rawreset",         "cmd_rawreset_info"       },

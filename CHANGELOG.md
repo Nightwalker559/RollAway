@@ -9,6 +9,9 @@
 - Crafting: the "[N]" next to a salvage recipe in the recipe list counts only the materials you ticked.
 - Portal overview: new "Options" tab for icon size, gap, icons per row and short name size, with a Default button.
 
+### Developer
+- `/rawnames`: the game's names for dungeons, raids, bosses, delves and expansions into the log (for checking the locale texts).
+
 ### Fixed
 - Labyrinth of Kindo'jan (12.1.5) is selectable now; checked on the PTR. German name corrected.
 - The Unbinding of Kith'ix (12.1.5): boss is selectable now; checked on the PTR.

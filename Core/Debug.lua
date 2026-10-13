@@ -656,6 +656,66 @@ local function DumpSeasonData()
     restore()
 end
 
+-- /rawnames: the game's own names for every locale key that holds a game name, one line
+-- each (`[Names] <key> | <id> | <name>`), in the client's language. Run it in deDE and enUS,
+-- save both logs (Claude Tools\RollAway\locale_data) and compare with locale_names_check.lua.
+-- Dungeons without a map ID in the data (Data/LegacyDungeonTeleports.lua) are checked
+-- against `ejdungeon` lines: every journal dungeon (map ID | name).
+local function DumpNames()
+    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
+    local function Line(key, id, name)
+        Log(string.format("[Names] %s | %s | %s", key, tostring(id or "-"), tostring(name or "?")))
+    end
+    local function ZoneName(mapID)
+        local name = mapID and GetRealZoneText(mapID)
+        return (name and name ~= "") and name or nil
+    end
+
+    Log("[Names] locale | " .. GetLocale() .. " | build " .. tostring((select(2, GetBuildInfo()))))
+
+    for i, key in ipairs(EXPANSION_KEYS) do
+        if key ~= "classic" then Line("expansion_" .. key, i - 1, _G["EXPANSION_NAME" .. (i - 1)]) end
+    end
+    for _, list in pairs(RA.DUNGEONS) do
+        for _, d in ipairs(list) do Line("dungeon_" .. d.key, d.mapID, ZoneName(d.mapID)) end
+    end
+    for mapID, raidKey in pairs(RA.REMINDER_RAID_MAP_IDS) do Line("raid_" .. raidKey, mapID, ZoneName(mapID)) end
+    for mapID, raidKey in pairs(RA.LEGACY_RAID_INSTANCES) do Line("legacy_raid_" .. raidKey, mapID, ZoneName(mapID)) end
+    for _, list in pairs(RA.DELVES) do
+        for _, d in ipairs(list) do Line("delve_" .. d.key, d.mapID, ZoneName(d.mapID)) end
+    end
+
+    -- Journal: every dungeon (name per map ID) and the encounter names of every raid.
+    local restore = SaveJournalSelection()
+    local seenMap, seenBoss = {}, {}
+    for tier = 1, EJ_GetNumTiers() do
+        EJ_SelectTier(tier)
+        local index = 1
+        while true do
+            local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, false)
+            if not journalID then break end
+            if mapID and not seenMap[mapID] then
+                seenMap[mapID] = true
+                Line("ejdungeon", mapID, name)
+            end
+            index = index + 1
+        end
+        index = 1
+        while true do
+            local journalID = EJ_GetInstanceByIndex(index, true)
+            if not journalID then break end
+            for _, boss in ipairs(JournalBosses(journalID)) do
+                if boss.encounterID and not seenBoss[boss.encounterID] then
+                    seenBoss[boss.encounterID] = true
+                    Line("ejboss", boss.encounterID, boss.name)
+                end
+            end
+            index = index + 1
+        end
+    end
+    restore()
+end
+
 local function RegisterSlashCommands()
     -- Dev/tester characters only.
     if not RA.DEV_CHARS[UnitName("player")] then return end
@@ -692,6 +752,12 @@ local function RegisterSlashCommands()
     RegisterDevCommand("RAWBOSSES", function(msg)
         local ok, err = pcall(DumpRaidBosses, strtrim(msg or ""):lower())
         RA.Print(ok and RA.RA_L["cmd_rawbosses_done"] or ("/rawbosses: " .. tostring(err)))
+    end, true)
+
+    -- /rawnames → the game's names for every locale key that holds one (see DumpNames)
+    RegisterDevCommand("RAWNAMES", function()
+        local ok, err = pcall(DumpNames)
+        RA.Print(ok and RA.RA_L["cmd_rawnames_done"] or ("/rawnames: " .. tostring(err)))
     end, true)
 
     -- /rawdungeons → Encounter Journal tiers, dungeons and the Mythic+ pool into the log

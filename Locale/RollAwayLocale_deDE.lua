@@ -98,6 +98,8 @@ L["cmd_rawdungeons_info"]     = "Encounter-Journal-Tiers, Dungeons und M+-Pool i
 L["cmd_rawdungeons_done"]     = "Dungeon-Tiers ins Debug-Log geschrieben (/rawlog)."
 L["cmd_rawbosses_info"]       = "[Tier|all]: Raid-Bosse mit Encounter-IDs ins Log"
 L["cmd_rawbosses_done"]       = "Raid-Bosse ins Debug-Log geschrieben (/rawlog)."
+L["cmd_rawnames_info"]        = "Die Namen des Spiels für Dungeons, Raids, Bosse, Tiefen und Erweiterungen ins Log (für den Locale-Check)"
+L["cmd_rawnames_done"]        = "Namen ins Debug-Log geschrieben (/rawlog)."
 L["cmd_rawseason_info"]       = "Fertiges Lua für die laufende Season (Dungeons und Raid-Bosse) ins Log"
 L["cmd_rawseason_done"]       = "Season-Daten ins Debug-Log geschrieben (/rawlog)."
 L["cmd_rawcharbtn_info"]      = "Zustand der Charakterfenster-Buttons ins Log schreiben"
@@ -148,7 +150,7 @@ L["dev_tool_charbtn"]         = "Charakterfenster-Buttons"
 L["dev_tool_chonky_hint"]     = "Chonky-Button-Abstand: /rawchonkyoffset <Pixel> (siehe Befehle)."
 L["dev_commands_public"]      = "Für alle"
 L["dev_commands_dev"]         = "Entwickler-Charaktere"
-L["dev_commands_note"]        = "Die meisten Entwickler-Befehle brauchen den Debug-Modus; /rawlog, /rawcharbtn, /rawraids, /rawdungeons, /rawbosses und /rawseason gehen auch ohne."
+L["dev_commands_note"]        = "Die meisten Entwickler-Befehle brauchen den Debug-Modus; /rawlog, /rawcharbtn, /rawraids, /rawdungeons, /rawbosses, /rawnames und /rawseason gehen auch ohne."
 
 
 -- QoL

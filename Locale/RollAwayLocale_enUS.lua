@@ -97,6 +97,8 @@ L["cmd_rawdungeons_info"]     = "Encounter Journal tiers, dungeons and the Mythi
 L["cmd_rawdungeons_done"]     = "Dungeon tiers written to the debug log (/rawlog)."
 L["cmd_rawbosses_info"]       = "[tier|all]: raid bosses with their encounter IDs into the log"
 L["cmd_rawbosses_done"]       = "Raid bosses written to the debug log (/rawlog)."
+L["cmd_rawnames_info"]        = "The game's names for dungeons, raids, bosses, delves and expansions into the log (for the locale check)"
+L["cmd_rawnames_done"]        = "Names written to the debug log (/rawlog)."
 L["cmd_rawseason_info"]       = "Paste-ready Lua for the running season (dungeons and raid bosses) into the log"
 L["cmd_rawseason_done"]       = "Season data written to the debug log (/rawlog)."
 L["cmd_rawcharbtn_info"]      = "State of the Character panel buttons into the log"
@@ -147,7 +149,7 @@ L["dev_tool_charbtn"]         = "Character panel buttons"
 L["dev_tool_chonky_hint"]     = "Chonky button offset: /rawchonkyoffset <pixels> (see Commands)."
 L["dev_commands_public"]      = "Everyone"
 L["dev_commands_dev"]         = "Developer characters"
-L["dev_commands_note"]        = "Most developer commands need debug mode on; /rawlog, /rawcharbtn, /rawraids, /rawdungeons, /rawbosses and /rawseason work without it."
+L["dev_commands_note"]        = "Most developer commands need debug mode on; /rawlog, /rawcharbtn, /rawraids, /rawdungeons, /rawbosses, /rawnames and /rawseason work without it."
 
 
 -- QoL

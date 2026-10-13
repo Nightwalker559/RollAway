@@ -20,6 +20,8 @@ local REMINDER_RAID_MAP_IDS = {
     [3095] = "unbinding_of_kithix", -- The Unbinding of Kith'ix (12.1.5, one boss)
 }
 
+RA.REMINDER_RAID_MAP_IDS = REMINDER_RAID_MAP_IDS   -- also read by /rawnames (Core/Debug.lua)
+
 local TIMER_DURATION = 20
 
 -- State
