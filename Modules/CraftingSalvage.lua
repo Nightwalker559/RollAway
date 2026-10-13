@@ -325,10 +325,59 @@ local function TryFill(fromInit)
     DBG("[Salvage] slot " .. (item and ("filled: " .. tostring(item:GetItemID())) or "cleared"))
 end
 
+------------------------------------------------------------------------
+-- Recipe list: the "[76]" next to a salvage recipe counts only the ticked materials.
+-- Blizzard counts every salvageable stack; the share of the unticked ones is taken off
+-- (so with everything ticked Blizzard's own number stays).
+------------------------------------------------------------------------
+
+local function AdjustedCraftCount(recipeID, total)
+    if not (RollAwayDB.autoSalvageSlot and RollAwayDB.salvageSlotActive) then return total end
+    local schematic = C_TradeSkillUI.GetRecipeSchematic(recipeID, false)
+    local need = schematic and schematic.quantityMax
+    local itemIDs = C_TradeSkillUI.GetSalvagableItemIDs(recipeID)
+    if not need or need < 1 or not itemIDs then return total end
+
+    local allowed, excluded = Allowed(), 0
+    for _, target in ipairs(C_TradeSkillUI.GetCraftingTargetItems(itemIDs)) do
+        if not allowed[target.itemID] then
+            excluded = excluded + math.floor(target.quantity / need)
+        end
+    end
+    return math.max(0, total - excluded)
+end
+
+-- Runs after the list laid out its rows (ScrollBox Update) and after every change of the
+-- ticks; only writes the row's own count text.
+local function UpdateListCounts()
+    local page = ProfessionsFrame and ProfessionsFrame.CraftingPage
+    local scrollBox = page and page.RecipeList and page.RecipeList.ScrollBox
+    if not scrollBox then return end
+    scrollBox:ForEachFrame(function(row)
+        local node = row.GetElementData and row:GetElementData()
+        local data = node and node.GetData and node:GetData()
+        local info = data and data.recipeInfo
+        if not (info and info.isSalvageRecipe and row.Count) then return end
+        info = Professions.GetHighestLearnedRecipe(info) or info
+        local total = C_TradeSkillUI.GetCraftableCount(info.recipeID)
+        if total <= 0 then return end  -- Blizzard shows no count either
+        local count = AdjustedCraftCount(info.recipeID, total)
+        if count > 0 then
+            row.Count:SetFormattedText(" [%d] ", count)
+            row.Count:Show()
+        else
+            row.Count:Hide()
+        end
+    end)
+end
+
 function Schedule(fromInit)
     if pending and not fromInit then return end
     pending = true
-    RunNextFrame(function() TryFill(fromInit) end)
+    RunNextFrame(function()
+        TryFill(fromInit)
+        UpdateListCounts()
+    end)
 end
 
 function RA.ApplyCraftingSalvageFeature()
@@ -342,6 +391,15 @@ function RA.InitCraftingSalvage()
 
         -- Recipe selected / page refreshed.
         hooksecurefunc(form, "Init", function() Schedule(true) end)
+
+        -- Recipe list rows (re)built: adjust the craftable counts of salvage recipes.
+        local list = ProfessionsFrame.CraftingPage.RecipeList
+        local scrollBox = list and list.ScrollBox
+        if scrollBox then
+            for _, method in ipairs({ "Update", "FullUpdate" }) do
+                if scrollBox[method] then hooksecurefunc(scrollBox, method, UpdateListCounts) end
+            end
+        end
 
         -- Items used up by crafting; only while the window is open.
         local ev = CreateFrame("Frame")

@@ -6,6 +6,7 @@
 
 ### New
 - Portal buttons (portal overview, join reminder) show the dungeon's short name (e.g. WS, AOF, RLP); can be switched off.
+- Crafting: the "[N]" next to a salvage recipe in the recipe list counts only the materials you ticked.
 - Portal overview: new "Options" tab for icon size, gap, icons per row and short name size, with a Default button.
 
 ### Fixed
