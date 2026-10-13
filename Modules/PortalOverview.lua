@@ -248,6 +248,7 @@ end
 
 local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
     btn.nameKey = entry.nameKey
+    RA.SetPortalLabel(btn, entry.key)
     RA.SetPortalSpell(btn, entry.spellID)
     RA.UpdatePortalButtonState(btn, isKnown, 0.4)
     btn.keyBorder:SetShown(entry.lfgID ~= nil and entry.lfgID == ownedLfgID)

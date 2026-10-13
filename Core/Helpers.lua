@@ -478,6 +478,23 @@ function RA.CreatePortalButton(globalName, parent, size)
     return btn
 end
 
+-- Short dungeon name (RA.DUNGEON_SHORT_NAMES) along the button's bottom edge, above the
+-- cooldown swipe; cleared when the dungeon has none.
+function RA.SetPortalLabel(btn, dungeonKey)
+    local text = RA.DUNGEON_SHORT_NAMES[dungeonKey]
+    if not btn.label then
+        if not text then return end
+        local holder = CreateFrame("Frame", nil, btn)
+        holder:SetAllPoints()
+        holder:SetFrameLevel(btn.cooldown:GetFrameLevel() + 1)
+        local fs = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        fs:SetFont((fs:GetFont()), math.max(9, math.floor(btn:GetWidth() / 4.5)), "OUTLINE")
+        fs:SetPoint("BOTTOM", btn, "BOTTOM", 0, 2)
+        btn.label = fs
+    end
+    btn.label:SetText(text or "")
+end
+
 -- Not in combat (SetAttribute is protected).
 function RA.SetPortalSpell(btn, spellID)
     btn.spellID = spellID

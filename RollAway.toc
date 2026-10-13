@@ -20,6 +20,7 @@ Data\Delves.lua
 Data\Raids.lua
 Data\LegacyRaids.lua
 Data\LegacyDungeonTeleports.lua
+Data\DungeonShortNames.lua
 Core\Core.lua
 Core\DB.lua
 Core\Helpers.lua

@@ -24,6 +24,7 @@ local function CreatePortalButtons(parent, dungeons)
         local btn = RA.CreatePortalButton("RollAwayTeleportButton"..i, parent, BUTTON_SIZE)
         RA.SetPortalSpell(btn, dungeon.portalSpellID)
         btn.nameKey = "dungeon_"..dungeon.key
+        RA.SetPortalLabel(btn, dungeon.key)
 
         btn:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
