@@ -109,12 +109,25 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     local toolsPage    = CreateCategoryPanel("tools",    "Tools")
     local commandsPage = CreateCategoryPanel("commands", "Commands")
 
-    -- Dev command buttons: greyed out while unusable (most need debug mode); refreshed on
-    -- open and when debug mode changes.
+    -- Everything below the debug mode switch only works with debug mode on: dev command
+    -- buttons, log window buttons and test switches are greyed out otherwise (the test
+    -- switches are also reset). Refreshed on open and when debug mode changes.
     local actionButtons = {}
+    local gatedButtons  = {}
+    local gatedChecks   = {}
     local function RefreshActionButtons()
+        local debugOn = RollAwayDB.debug == true
+        if not debugOn then
+            if RA.IsTankMarkerTest() then RA.SetTankMarkerTest(false) end
+            RA.devTest.oldRaidAutoPass = false
+        end
         for _, entry in ipairs(actionButtons) do
             entry.btn:SetEnabled(RA.DevCommandAvailable(entry.command))
+        end
+        for _, btn in ipairs(gatedButtons) do btn:SetEnabled(debugOn) end
+        for _, entry in ipairs(gatedChecks) do
+            entry.cb:SetValue(entry.get())
+            entry.cb:SetDisabled(not debugOn)
         end
     end
 
@@ -163,6 +176,9 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     local resetBtn = MakeSkinnedButton(logPage, RA_L["dev_log_reset"], 190)
     resetBtn:SetPoint("LEFT", clearBtn, "RIGHT", 8, 0)
     resetBtn:SetScript("OnClick", RA.ResetDebugLogWindow)
+    gatedButtons[#gatedButtons + 1] = openBtn
+    gatedButtons[#gatedButtons + 1] = clearBtn
+    gatedButtons[#gatedButtons + 1] = resetBtn
 
     local logHint = MakeInfoText(logPage, openBtn, 0, -6, QOL_INFO_W, RA_L["dev_log_hint"])
 
@@ -213,6 +229,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     end)
     tankTestCB.frame:SetPoint("TOPLEFT", testsAnchor, "BOTTOMLEFT", 0, -22)
     local tankTestInfo = MakeInfoText(testsPage, tankTestCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_tank_test_info"])
+    gatedChecks[#gatedChecks + 1] = { cb = tankTestCB, get = RA.IsTankMarkerTest }
 
     -- Session-only switch (RA.devTest): bonus roll auto-pass in old content (e.g. MoP).
     local oldRaidCB = MakeCB(testsPage, RA_L["dev_oldraid_test_label"], RA.devTest.oldRaidAutoPass, function(checked)
@@ -220,6 +237,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     end)
     oldRaidCB.frame:SetPoint("TOPLEFT", tankTestInfo, "BOTTOMLEFT", -20, -22)
     MakeInfoText(testsPage, oldRaidCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_oldraid_test_info"])
+    gatedChecks[#gatedChecks + 1] = { cb = oldRaidCB, get = function() return RA.devTest.oldRaidAutoPass end }
 
     -- Tools: diagnostics into the log
     local toolsAnchor
@@ -246,10 +264,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
 
     -- The commands are registered after the options and the tank test mode can change by
     -- slash command: sync on every open.
-    panel:HookScript("OnShow", function()
-        RefreshActionButtons()
-        tankTestCB:SetValue(RA.IsTankMarkerTest())
-    end)
+    panel:HookScript("OnShow", RefreshActionButtons)
 
     ShowCategory(navDefs[1].key)
 end

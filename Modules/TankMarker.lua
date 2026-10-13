@@ -292,7 +292,7 @@ function RA.SetTankMarkerTest(on)
 end
 
 local function SlashHandler(msg)
-    if strtrim(msg or ""):lower() == "test" and RA.DEV_CHARS[UnitName("player")] then
+    if strtrim(msg or ""):lower() == "test" and RA.DEV_CHARS[UnitName("player")] and RollAwayDB.debug then
         RA.SetTankMarkerTest(not testMode)
     else
         Check(true)

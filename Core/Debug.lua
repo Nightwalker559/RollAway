@@ -326,19 +326,18 @@ end
 -- Slash commands
 ------------------------------------------------------------------------
 
--- Registers a dev-only slash command. Most also need debug mode on;
--- `alwaysOn` commands (log window, diagnostics) only need a dev character.
+-- Registers a dev-only slash command; it only runs with debug mode on.
 -- Also kept in RA.DevCommands so the Developer settings panel can run the
 -- same command from a button (RA.RunDevCommand).
 RA.DevCommands = {}
 
-local function RegisterDevCommand(name, handler, alwaysOn)
+local function RegisterDevCommand(name, handler)
     _G["SLASH_"..name.."1"] = "/"..name:lower()
     local function Run(msg)
-        if alwaysOn or RollAwayDB.debug then handler(msg) end
+        if RollAwayDB.debug then handler(msg) end
     end
     SlashCmdList[name] = Run
-    RA.DevCommands[name] = { run = Run, alwaysOn = alwaysOn and true or false }
+    RA.DevCommands[name] = { run = Run }
 end
 
 -- Runs a dev command by name with the same debug-mode check as typing it; false if unknown.
@@ -349,10 +348,9 @@ function RA.RunDevCommand(name, msg)
     return true
 end
 
--- Does the command work right now? Most need debug mode on.
+-- Does the command work right now? It needs debug mode on.
 function RA.DevCommandAvailable(name)
-    local command = RA.DevCommands[name]
-    return command ~= nil and (command.alwaysOn or RollAwayDB.debug == true)
+    return RA.DevCommands[name] ~= nil and RollAwayDB.debug == true
 end
 
 -- Runs fn() with RollAwayDB[key] = value for each pair in `overrides`, then
@@ -745,31 +743,31 @@ local function RegisterSlashCommands()
     RegisterDevCommand("RAWRAIDS", function()
         local ok, err = pcall(DumpJournalTiers, true)
         RA.Print(ok and RA.RA_L["cmd_rawraids_done"] or ("/rawraids: " .. tostring(err)))
-    end, true)
+    end)
 
     -- /rawseason → paste-ready Lua for the running season's dungeons and raid bosses
     RegisterDevCommand("RAWSEASON", function()
         local ok, err = pcall(DumpSeasonData)
         RA.Print(ok and RA.RA_L["cmd_rawseason_done"] or ("/rawseason: " .. tostring(err)))
-    end, true)
+    end)
 
     -- /rawbosses [tier|all] → raid bosses with their encounter IDs into the log
     RegisterDevCommand("RAWBOSSES", function(msg)
         local ok, err = pcall(DumpRaidBosses, strtrim(msg or ""):lower())
         RA.Print(ok and RA.RA_L["cmd_rawbosses_done"] or ("/rawbosses: " .. tostring(err)))
-    end, true)
+    end)
 
     -- /rawnames → the game's names for every locale key that holds one (see DumpNames)
     RegisterDevCommand("RAWNAMES", function()
         local ok, err = pcall(DumpNames)
         RA.Print(ok and RA.RA_L["cmd_rawnames_done"] or ("/rawnames: " .. tostring(err)))
-    end, true)
+    end)
 
     -- /rawdungeons → Encounter Journal tiers, dungeons and the Mythic+ pool into the log
     RegisterDevCommand("RAWDUNGEONS", function()
         local ok, err = pcall(DumpJournalTiers, false)
         RA.Print(ok and RA.RA_L["cmd_rawdungeons_done"] or ("/rawdungeons: " .. tostring(err)))
-    end, true)
+    end)
 
     -- /rawreset → reset reminder state
     RegisterDevCommand("RAWRESET", function()
@@ -780,8 +778,8 @@ local function RegisterSlashCommands()
     RegisterDevCommand("RAWQOL", TestQoLReminders)
     RegisterDevCommand("RAWWHATS", function() RA.ShowWhatsNew() end)
 
-    -- /rawlog → open/toggle the log window (works with debug logging off)
-    RegisterDevCommand("RAWLOG", RA.ToggleDebugLogWindow, true)
+    -- /rawlog → open/toggle the log window
+    RegisterDevCommand("RAWLOG", RA.ToggleDebugLogWindow)
 
     -- /rawchonkyoffset <n> → live-tune the button offset next to Chonky Character Sheet
     RegisterDevCommand("RAWCHONKYOFFSET", function(msg)
@@ -799,7 +797,7 @@ local function RegisterSlashCommands()
         for _, line in ipairs(RA.DescribeCharFrameButtons()) do
             RA.AppendDebugLogUnfiltered("[CharFrameButtons] " .. line)
         end
-    end, true)
+    end)
 end
 
 ------------------------------------------------------------------------
