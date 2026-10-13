@@ -43,9 +43,10 @@ function Skin.ScrollBar(bar) Handle("HandleTrimScrollBar", bar) end
 -- bottom right corner, light gray, gold while hovered.
 function Skin.ResizeGrip(grip)
     if not grip or not Enabled() or not E.Media.Textures.ArrowUp then return end
-    grip:SetNormalTexture(nil)
-    grip:SetPushedTexture(nil)
-    grip:SetHighlightTexture(nil)
+    for _, getter in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetHighlightTexture" }) do
+        local tex = grip[getter](grip)
+        if tex then tex:SetAlpha(0) end
+    end
     grip:SetSize(24, 24)
     grip:ClearAllPoints()
     grip:SetPoint("BOTTOMRIGHT", grip:GetParent(), "BOTTOMRIGHT", 1, -1)
