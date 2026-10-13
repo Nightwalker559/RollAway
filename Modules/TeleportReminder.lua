@@ -115,6 +115,65 @@ local function LayoutAndUpdate(visibleButtons)
     end
 end
 
+-- Key level of a joined group (title unreadable). Members who run BigWigs (or any addon
+-- with LibKeystone) share their keystone in the party; the key for the listed dungeon is
+-- the group's. Optional: without LibKeystone nothing happens.
+
+local partyKeys = {}        -- short name -> { level, mapID } (LibKeystone: mapID = cmID)
+local keyOwner  = {}        -- the table LibKeystone wants as "addon" for Register
+local keyRegistered = false
+local shown = {}            -- what the open reminder shows: name, dungeon, keyLevel
+
+local function RenderMessage()
+    reminderFrame.msg:SetText(shown.name
+        and ("|cffFFFFFF"..RA.FormatInstanceWithKey(shown.name, shown.keyLevel).."|r")
+        or RA_L["teleport_reminder_generic"])
+end
+
+-- The party leader's key for the dungeon, else the only member key for it, else nil.
+local function FindGroupKeyLevel(dungeon)
+    local onlyLevel, matches = nil, 0
+    for i = 1, 4 do
+        local unit = "party"..i
+        local full = UnitExists(unit) and GetUnitName(unit, true)
+        local key = full and partyKeys[Ambiguate(full, "none")]
+        if key and key.mapID == dungeon.cmID and key.level > 0 then
+            if UnitIsGroupLeader(unit) then return key.level end
+            matches, onlyLevel = matches + 1, key.level
+        end
+    end
+    if matches == 1 then return onlyLevel end
+end
+
+local function RefreshGroupKey()
+    if not (reminderFrame and reminderFrame:IsShown() and shown.dungeon) or shown.keyLevel then return end
+    local level = FindGroupKeyLevel(shown.dungeon)
+    if level then
+        DBG("Teleport reminder: key level from the group's shared keystones:", level)
+        shown.keyLevel = level
+        RenderMessage()
+    end
+end
+
+local function RequestGroupKey()
+    local LKS = LibStub and LibStub("LibKeystone", true)  -- looked up late: BigWigs may load after us
+    if not LKS or not IsInGroup() then return end
+    if not keyRegistered then
+        keyRegistered = true
+        LKS.Register(keyOwner, function(level, mapID, _, name, channel)
+            if channel ~= "PARTY" then return end
+            partyKeys[name] = { level = level, mapID = mapID }
+            RefreshGroupKey()
+        end)
+    end
+    LKS.Request("PARTY")
+    -- The group may not be fully formed yet / the request throttled: once more.
+    C_Timer.After(3, function()
+        RefreshGroupKey()
+        if reminderFrame:IsShown() and not shown.keyLevel and IsInGroup() then LKS.Request("PARTY") end
+    end)
+end
+
 -- Show reminder
 -- instanceName: localized dungeon name (nil = generic message).
 -- dungeon: season entry; only its portal is shown, nil shows all portals.
@@ -141,11 +200,12 @@ function RA.ShowTeleportReminder(instanceName, dungeon, keyLevel)
     DBG("Showing teleport reminder | instance:", instanceName or "n/a",
         "| dungeon:", dungeon and dungeon.key or "all")
 
-    reminderFrame.msg:SetText(instanceName
-        and ("|cffFFFFFF"..RA.FormatInstanceWithKey(instanceName, keyLevel).."|r")
-        or RA_L["teleport_reminder_generic"])
+    shown.name, shown.dungeon, shown.keyLevel = instanceName, dungeon, keyLevel
+    RenderMessage()
 
     LayoutAndUpdate(dungeonButton and { dungeonButton } or portalButtons)
 
     RA.SafeSetShown(reminderFrame, true)
+
+    if not keyLevel and dungeon then RequestGroupKey() end
 end

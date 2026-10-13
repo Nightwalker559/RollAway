@@ -10,7 +10,7 @@
 # one-time migration in Core\Core.lua - remove it once everyone has migrated.
 ## SavedVariables: RollAwayDB, RollAwayDBAccount
 ## SavedVariablesPerCharacter: RollAwayDBChar
-## OptionalDeps: ElvUI
+## OptionalDeps: ElvUI, BigWigs
 ## IconTexture: Interface\AddOns\RollAway\Media\Icon
 
 Locale\RollAwayLocale_enUS.lua
