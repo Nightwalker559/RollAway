@@ -455,7 +455,7 @@ L["delve_the_darkway"]           = "Der Düsterweg"
 ------------------------------------------------------------------------
 -- Season 2 Tiefen (12.1)
 ------------------------------------------------------------------------
-L["delve_ring_of_glory"]         = "Ring des Ruhms"
+L["delve_ring_of_glory"]         = "Der Ring des Ruhms"
 L["delve_gnarldor_isle"]         = "Knardorinsel"
 L["delve_venomfall_deeps"]      = "Giftfalltiefen"
 L["delve_labyrinth_of_kindojan"] = "Das Labyrinth von Kindo'jan" -- 12.1.5
@@ -472,7 +472,7 @@ L["prey_hint"]                = "Wenn aktiviert, wird der Bonus Roll bei Beuteja
 L["prey_toggle_label"]        = "Auto-Pass für Beutejagd aktivieren"
 
 L["raid_tidebound_grotto"]    = "Die Gezeitengebundene Grotte"
-L["boss_nymrissa_wavecaller"] = "Nymrissa Wellenruferin"
+L["boss_nymrissa_wavecaller"] = "Nymrissa Wellenrufer"
 L["raid_unbinding_of_kithix"] = "Die Entfesslung von Kith'ix" -- 12.1.5
 L["boss_kithix"]              = "Kith'ix"
 
@@ -525,11 +525,11 @@ L["profile_reload_now"]        = "UI neu laden"
 L["legacy_col_dragonflight"]           = "Dragonflight"
 L["legacy_col_tww"]                    = "The War Within"
 
-L["legacy_raid_vault_of_incarnates"]   = "Gewölbe der Inkarnate"
-L["legacy_raid_aberrus"]               = "Aberrus, die Schattenschmiede"
-L["legacy_raid_amirdrassil"]           = "Amirdrassil, die Hoffnung des Traums"
-L["legacy_raid_nerubar_palace"]        = "Nerub-ar-Palast"
-L["legacy_raid_liberation_undermine"]  = "Befreiung von Untermeins"
+L["legacy_raid_vault_of_incarnates"]   = "Gewölbe der Inkarnationen"
+L["legacy_raid_aberrus"]               = "Aberrus, Schmelztiegel der Schatten"
+L["legacy_raid_amirdrassil"]           = "Amirdrassil, Hoffnung des Traums"
+L["legacy_raid_nerubar_palace"]        = "Palast der Nerub'ar"
+L["legacy_raid_liberation_undermine"]  = "Befreiung von Lorenhall"
 L["legacy_raid_manaforge_omega"]       = "Manaschmiede Omega"
 
 ------------------------------------------------------------------------
