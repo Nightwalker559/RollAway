@@ -96,6 +96,36 @@ function Skin.TabRow(tabs)
 end
 
 ------------------------------------------------------------------------
+-- Portal buttons: ElvUI's flat action button look (1px template border, cropped icon,
+-- hover tint) instead of the game's rounded icon frame. The border carries the
+-- keystone highlight (gold).
+------------------------------------------------------------------------
+
+-- btn: RA.CreatePortalButton button; icon / highlight: its icon and hover textures.
+-- Returns true when skinned (the caller then skips the game's own frame art).
+function Skin.PortalButton(btn, icon, highlight)
+    if not Enabled() or not btn.SetTemplate then return false end
+    btn:SetTemplate("Default")
+    if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
+    if icon.SetInside then icon:SetInside(btn) end
+    highlight:Hide()
+    if btn.StyleButton then btn:StyleButton(false, true, true) end -- hover tint only
+    btn.raElvSkinned = true
+    return true
+end
+
+-- Gold border while `shown`, else ElvUI's normal border. False for an unskinned button.
+function Skin.PortalKeyHighlight(btn, shown)
+    if not btn.raElvSkinned then return false end
+    if shown then
+        btn:SetBackdropBorderColor(1, 0.82, 0)
+    else
+        btn:SetBackdropBorderColor(unpack(E.media.bordercolor))
+    end
+    return true
+end
+
+------------------------------------------------------------------------
 -- Options tabs / category buttons (class-colored when active)
 ------------------------------------------------------------------------
 

@@ -466,7 +466,9 @@ function RA.CreatePortalButton(globalName, parent, size)
 
     local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
 
-    if C_Texture.GetAtlasInfo(PORTAL_FRAME_ATLAS) then
+    if RA.Skin.PortalButton(btn, tex, highlight) then
+        -- ElvUI's flat look (Core/ElvUI_Skin.lua): nothing more to build.
+    elseif C_Texture.GetAtlasInfo(PORTAL_FRAME_ATLAS) then
         -- The action buttons' own look: rounded icon (mask) with the game's icon frame on
         -- top; the frame atlas is 46x45 and sits at the top left like on an action button.
         tex:SetAllPoints()
@@ -540,8 +542,10 @@ end
 
 -- Gold highlight (e.g. the dungeon's keystone is in the bags), like the game's own
 -- action button states: the icon frame's border atlas tinted gold plus the additive
--- "spell highlight" glow (UI-HUD-ActionBar-IconFrame-Border / -Mouseover, 40%).
+-- "spell highlight" glow (UI-HUD-ActionBar-IconFrame-Border / -Mouseover, 40%); with
+-- ElvUI a gold button border.
 function RA.SetPortalKeyHighlight(btn, shown)
+    if RA.Skin.PortalKeyHighlight(btn, shown) then return end  -- ElvUI: gold border
     if not btn.keyHighlight then
         if not shown then return end
         local border = btn:CreateTexture(nil, "ARTWORK", nil, 2)
