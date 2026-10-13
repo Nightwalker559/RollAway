@@ -458,8 +458,14 @@ function RA.CreatePortalButton(globalName, parent, size)
     local btn = CreateFrame("Button", globalName, parent, "SecureActionButtonTemplate")
     btn:SetSize(size, size)
 
+    -- 1px gray frame: a filled square behind the icon, the icon inset by 1px.
+    local border = btn:CreateTexture(nil, "BACKGROUND", nil, -1)
+    border:SetAllPoints()
+    border:SetColorTexture(0.45, 0.45, 0.45, 1)
+
     local tex = btn:CreateTexture(nil, "BACKGROUND")
-    tex:SetAllPoints()
+    tex:SetPoint("TOPLEFT", 1, -1)
+    tex:SetPoint("BOTTOMRIGHT", -1, 1)
     tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     btn.iconTexture = tex
 
