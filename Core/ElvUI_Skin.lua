@@ -76,11 +76,18 @@ function Skin.StatusBar(bar, r, g, b, a)
     bar:SetStatusBarColor(r, g, b, a)
 end
 
--- Row of PanelTabButtonTemplate tabs (tabs[1] is the left one). S:HandleTab does not
--- touch anchoring: it insets the tab backdrop, so the tabs need a matching negative gap.
+-- Row of PanelTabButtonTemplate tabs (tabs[1] is the left one, anchored below a window).
+-- S:HandleTab does not touch anchoring: it insets the tab backdrop, so the tabs need a
+-- matching negative gap and the row starts 3px left of the window edge so it lines up
+-- flush with it (same values as ElvUI's own tab skins).
 function Skin.TabRow(tabs)
     if not Enabled() then return end
     for _, tab in ipairs(tabs) do Handle("HandleTab", tab) end
+    local point, relativeTo, relativePoint = tabs[1]:GetPoint(1)
+    if relativeTo then
+        tabs[1]:ClearAllPoints()
+        tabs[1]:SetPoint(point, relativeTo, relativePoint, -3, 0)
+    end
     local gap = (E.Modern or E.Retail) and -5 or -19
     for i = 2, #tabs do
         tabs[i]:ClearAllPoints()
