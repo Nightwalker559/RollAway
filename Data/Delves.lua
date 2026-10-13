@@ -26,8 +26,8 @@ RA.DELVES[1] = {
 RA.DELVES[2] = {
     { key = "ring_of_glory",    mapID = 3077 },
     { key = "gnarldor_isle",    mapID = 3038 },
-    -- Venomfall Deeps (Nemesis Delve) – mapID not yet known
-    { key = "venomfall_deeps" },
+    -- Venomfall Deeps (Nemesis Delve); mapID 3079 per wago.tools, not yet confirmed in game
+    { key = "venomfall_deeps", mapID = 3079 },
     -- Labyrinth of Kindo'jan (12.1.5) – mega-delve; confirmed on the 12.1.5 PTR:
     -- instanceType "scenario", instanceID 3043, difficultyID 208
     { key = "labyrinth_of_kindojan", mapID = 3043 },
