@@ -659,7 +659,7 @@ end
 -- /rawnames: the game's own names for every locale key that holds a game name, one line
 -- each (`[Names] <key> | <id> | <name>`), in the client's language. Run it in deDE and enUS,
 -- save both logs (Claude Tools\RollAway\locale_data) and compare with locale_names_check.lua.
--- Dungeons without a map ID in the data (Data/LegacyDungeonTeleports.lua) are checked
+-- Dungeons without a map ID in the data are checked
 -- against `ejdungeon` lines: every journal dungeon (map ID | name).
 local function DumpNames()
     local function Log(...) RA.AppendDebugLogUnfiltered(...) end
@@ -678,6 +678,9 @@ local function DumpNames()
     end
     for _, list in pairs(RA.DUNGEONS) do
         for _, d in ipairs(list) do Line("dungeon_" .. d.key, d.mapID, ZoneName(d.mapID)) end
+    end
+    for _, d in ipairs(RA.LEGACY_DUNGEON_TELEPORTS) do
+        if d.mapID then Line("dungeon_" .. d.key, d.mapID, ZoneName(d.mapID)) end
     end
     for mapID, raidKey in pairs(RA.REMINDER_RAID_MAP_IDS) do Line("raid_" .. raidKey, mapID, ZoneName(mapID)) end
     for mapID, raidKey in pairs(RA.LEGACY_RAID_INSTANCES) do Line("legacy_raid_" .. raidKey, mapID, ZoneName(mapID)) end
