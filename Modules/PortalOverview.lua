@@ -9,12 +9,12 @@
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
-local BUTTON_GAP   = 8
+local buttonGap    = 2   -- between the icon edges, set by ApplyMetrics()
 local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
 
 local MIN_FRAME_WIDTH = 300  -- the three tabs need the room
-local FRAME_HEIGHT    = 260  -- fixed, content scrolls
+local FRAME_HEIGHT    = 290  -- fixed, content scrolls (the options tab needs the room)
 local MARGINS         = 20   -- both sides together (the scrollbar is hidden)
 
 -- Icon size / row layout from the saved options (clamped); refreshed by ApplyMetrics().
@@ -44,8 +44,9 @@ local function ApplyMetrics()
     buttonSize = Clamp(db.portalIconSize, 32, 64, 48)
     perRow     = Clamp(db.portalPerRow, 3, 8, 4)
     labelSize  = Clamp(db.portalLabelSize, 8, 16, 10)
-    rowStep    = buttonSize + BUTTON_GAP
-    local rowWidth = perRow * buttonSize + (perRow - 1) * BUTTON_GAP
+    buttonGap  = Clamp(db.portalGap, 0, 16, 2)
+    rowStep    = buttonSize + buttonGap
+    local rowWidth = perRow * buttonSize + (perRow - 1) * buttonGap
     -- Tab 3 keeps the minimum width so the sliders stay put while they are dragged.
     frameWidth   = math.max(MIN_FRAME_WIDTH, rowWidth + MARGINS + 8)
     contentWidth = frameWidth - MARGINS
@@ -180,8 +181,9 @@ local function CreateSettingsPanel()
         return slider
     end
     local s1 = AddSlider(cb.frame, "portalIconSize",  32, 64, 2, "portal_cfg_iconsize")
-    local s2 = AddSlider(s1,       "portalPerRow",     3,  8, 1, "portal_cfg_perrow")
-    AddSlider(s2,                  "portalLabelSize",  8, 16, 1, "portal_cfg_labelsize")
+    local s2 = AddSlider(s1,       "portalGap",        0, 16, 1, "portal_cfg_gap")
+    local s3 = AddSlider(s2,       "portalPerRow",     3,  8, 1, "portal_cfg_perrow")
+    AddSlider(s3,                  "portalLabelSize",  8, 16, 1, "portal_cfg_labelsize")
 
     -- Back to the defaults: the sliders' own callbacks save the values.
     local reset = UI.MakeSkinnedButton(settingsPanel, RA_L["portal_cfg_default"], 100)
@@ -349,7 +351,7 @@ local function PlaceRows(entries, y, ownedLfgID, allKnown)
         local row = math.floor((i - 1) / perRow)
         local col = (i - 1) % perRow
         local rowCount = math.min(perRow, #entries - row * perRow)
-        local rowWidth = (rowCount * buttonSize) + ((rowCount - 1) * BUTTON_GAP)
+        local rowWidth = (rowCount * buttonSize) + ((rowCount - 1) * buttonGap)
         local startX = (contentWidth - rowWidth) / 2
 
         PlaceButton(btn, entry, allKnown or C_SpellBook.IsSpellInSpellBook(entry.spellID),
