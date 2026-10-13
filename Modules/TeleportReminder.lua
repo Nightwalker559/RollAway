@@ -27,10 +27,18 @@ local function CreatePortalButtons(parent, dungeons)
         btn.dungeonKey = dungeon.key
 
         btn:SetScript("OnEnter", function(self)
+            local locked = not C_SpellBook.IsSpellInSpellBook(self.spellID)
+            -- A single portal: its name is already in the window, the tooltip only
+            -- carries the "not learned" hint (and would cover the name).
+            if self.singlePortal and not locked then return end
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:SetText(RA_L[self.nameKey], 1, 0.82, 0)
-            if not C_SpellBook.IsSpellInSpellBook(self.spellID) then
-                GameTooltip:AddLine(RA_L["teleport_reminder_locked"], 1, 0, 0)
+            if self.singlePortal then
+                GameTooltip:SetText(RA_L["teleport_reminder_locked"], 1, 0, 0)
+            else
+                GameTooltip:SetText(RA_L[self.nameKey], 1, 0.82, 0)
+                if locked then
+                    GameTooltip:AddLine(RA_L["teleport_reminder_locked"], 1, 0, 0)
+                end
             end
             GameTooltip:Show()
         end)
@@ -101,6 +109,7 @@ local function LayoutAndUpdate(visibleButtons)
         -- Short name only when several portals show (a single one has its name in the title);
         -- set every time: the option may have changed.
         RA.SetPortalLabel(btn, count > 1 and btn.dungeonKey or nil)
+        btn.singlePortal = count == 1
         RA.UpdatePortalButtonState(btn, C_SpellBook.IsSpellInSpellBook(btn.spellID), 0.5)
         RA.SafeSetShown(btn, true)
     end
