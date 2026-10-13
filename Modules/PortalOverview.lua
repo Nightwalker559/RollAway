@@ -164,9 +164,11 @@ local function CreateSettingsPanel()
         end, MIN_FRAME_WIDTH - MARGINS)
     cb.frame:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 0, 0)
 
-    local function AddSlider(anchor, dbKey, min, max, step, default, labelKey)
+    local defaults = RA.defaults.profile
+    local sliders  = {}   -- [dbKey] = slider frame, for the default button
+    local function AddSlider(anchor, dbKey, min, max, step, labelKey)
         local slider = UI.MakeValueSlider(settingsPanel, anchor, 0, -6, {
-            min = min, max = max, step = step, value = Clamp(RollAwayDB[dbKey], min, max, default),
+            min = min, max = max, step = step, value = Clamp(RollAwayDB[dbKey], min, max, defaults[dbKey]),
             formatLabel = function(v) return string.format(RA_L[labelKey], v) end,
             onChange = function(v)
                 RollAwayDB[dbKey] = v
@@ -174,11 +176,25 @@ local function CreateSettingsPanel()
             end,
         })
         slider:SetWidth(MIN_FRAME_WIDTH - MARGINS)
+        sliders[dbKey] = slider
         return slider
     end
-    local s1 = AddSlider(cb.frame, "portalIconSize",  32, 64, 2, 48, "portal_cfg_iconsize")
-    local s2 = AddSlider(s1,       "portalPerRow",     3,  8, 1,  4, "portal_cfg_perrow")
-    AddSlider(s2,                  "portalLabelSize",  8, 16, 1, 10, "portal_cfg_labelsize")
+    local s1 = AddSlider(cb.frame, "portalIconSize",  32, 64, 2, "portal_cfg_iconsize")
+    local s2 = AddSlider(s1,       "portalPerRow",     3,  8, 1, "portal_cfg_perrow")
+    AddSlider(s2,                  "portalLabelSize",  8, 16, 1, "portal_cfg_labelsize")
+
+    -- Back to the defaults: the sliders' own callbacks save the values.
+    local reset = UI.MakeSkinnedButton(settingsPanel, RA_L["portal_cfg_default"], 100)
+    reset:SetPoint("BOTTOMLEFT", settingsPanel, "BOTTOMLEFT", 0, 0)
+    reset:SetScript("OnClick", function()
+        RollAwayDB.portalLabels = defaults.portalLabels
+        cb:SetValue(defaults.portalLabels)
+        for dbKey, slider in pairs(sliders) do
+            RollAwayDB[dbKey] = defaults[dbKey]
+            slider.Slider:SetValue(defaults[dbKey])
+        end
+        RA.RefreshPortalOverview()
+    end)
 end
 
 local function SelectTab(index)
