@@ -525,6 +525,33 @@ function RA.SetPortalLabel(btn, dungeonKey, fontSize)
     btn.label:SetText(text or "")
 end
 
+-- Gold highlight (e.g. the dungeon's keystone is in the bags), like the game's own
+-- action button states: the icon frame's border atlas tinted gold plus the additive
+-- "spell highlight" glow (UI-HUD-ActionBar-IconFrame-Border / -Mouseover, 40%).
+function RA.SetPortalKeyHighlight(btn, shown)
+    if not btn.keyHighlight then
+        if not shown then return end
+        local border = btn:CreateTexture(nil, "ARTWORK", nil, 2)
+        local glow   = btn:CreateTexture(nil, "OVERLAY", nil, 1)
+        if C_Texture.GetAtlasInfo(PORTAL_FRAME_ATLAS) then
+            border:SetAtlas("UI-HUD-ActionBar-IconFrame-Border")
+            border:SetVertexColor(1, 0.82, 0)
+            border:SetPoint("TOPLEFT")
+            border:SetPoint("BOTTOMRIGHT", 1, 0)
+            glow:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+            glow:SetBlendMode("ADD")
+            glow:SetAlpha(0.4)
+            glow:SetPoint("TOPLEFT")
+            glow:SetPoint("BOTTOMRIGHT", 1, 0)
+        else
+            glow:SetAllPoints()
+            glow:SetColorTexture(1, 0.82, 0, 0.38)
+        end
+        btn.keyHighlight = { border, glow }
+    end
+    for _, tex in ipairs(btn.keyHighlight) do tex:SetShown(shown) end
+end
+
 -- Not in combat (SetAttribute is protected).
 function RA.SetPortalSpell(btn, spellID)
     btn.spellID = spellID

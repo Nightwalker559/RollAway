@@ -113,14 +113,6 @@ local function AcquireButton(i, parent)
 
     btn = RA.CreatePortalButton("RollAwayPortalOverviewButton"..i, parent, buttonSize)
 
-    -- Gold overlay while this dungeon's keystone is in the bags (same as the
-    -- Quick Select glow in LFGQuickCreate.lua).
-    local keyBorder = btn:CreateTexture(nil, "OVERLAY", nil, 1)
-    keyBorder:SetAllPoints()
-    keyBorder:SetColorTexture(1, 0.82, 0, 0.38)
-    keyBorder:Hide()
-    btn.keyBorder = keyBorder
-
     btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText(RA_L[self.nameKey] or self.nameKey, 1, 0.82, 0)
@@ -334,7 +326,8 @@ local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
     RA.SetPortalLabel(btn, entry.key, labelSize)
     RA.SetPortalSpell(btn, entry.spellID)
     RA.UpdatePortalButtonState(btn, isKnown, 0.4)
-    btn.keyBorder:SetShown(entry.lfgID ~= nil and entry.lfgID == ownedLfgID)
+    -- Gold highlight while this dungeon's keystone is in the bags.
+    RA.SetPortalKeyHighlight(btn, entry.lfgID ~= nil and entry.lfgID == ownedLfgID)
 
     btn:ClearAllPoints()
     btn:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", x, y)
