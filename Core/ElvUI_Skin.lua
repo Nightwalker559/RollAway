@@ -158,6 +158,40 @@ local function SetTextColor(btn, color)
     if text then text:SetTextColor(color.r, color.g, color.b, 1) end
 end
 
+-- ElvUI button with a fill a shade lighter than the panel (so it reads as a button); the
+-- border takes classColor while `highlight` is true (hover / active tab).
+local function PaintLifted(btn, highlight, classColor)
+    local bg, bd = ElvColors()
+    local border = (highlight and classColor) and { classColor.r, classColor.g, classColor.b, 1 } or bd
+    SetBackdropColors(btn, {
+        math.min((bg[1] or 0.1) + 0.08, 1),
+        math.min((bg[2] or 0.1) + 0.08, 1),
+        math.min((bg[3] or 0.1) + 0.08, 1),
+        bg[4] or 1,
+    }, border)
+end
+
+local function StripButtonArt(btn)
+    btn:SetNormalTexture("")
+    btn:SetHighlightTexture("")
+    btn:SetPushedTexture("")
+    btn:SetDisabledTexture("")
+end
+
+-- Plain action button (Features, Default, ...) in the lifted tab look: lighter fill,
+-- class-colored border on hover.
+function Skin.LiftedButton(btn, classColor)
+    if not Enabled() then return end
+    S:HandleButton(btn)
+    StripButtonArt(btn)
+    PaintLifted(btn, false, classColor)
+    btn:HookScript("OnEnter", function(self)
+        if self.IsEnabled and not self:IsEnabled() then return end
+        PaintLifted(self, true, classColor)
+    end)
+    btn:HookScript("OnLeave", function(self) PaintLifted(self, false, classColor) end)
+end
+
 -- btn: UIPanelButtonTemplate button that shows panels[key] on click. The fill stays ElvUI's
 -- (a shade lighter than the panel so tabs read as buttons); the border takes classColor on
 -- hover and while the tab is active, and the text turns gold. Adds btn.RA_ApplyActive /
@@ -165,22 +199,10 @@ end
 function Skin.OptionTab(btn, panels, key, classColor)
     if not Enabled() then return end
     S:HandleButton(btn)
-    btn:SetNormalTexture("")
-    btn:SetHighlightTexture("")
-    btn:SetPushedTexture("")
-    btn:SetDisabledTexture("")
+    StripButtonArt(btn)
 
     -- highlight: class-colored border instead of ElvUI's default one.
-    local function Paint(highlight)
-        local bg, bd = ElvColors()
-        local border = (highlight and classColor) and { classColor.r, classColor.g, classColor.b, 1 } or bd
-        SetBackdropColors(btn, {
-            math.min((bg[1] or 0.1) + 0.08, 1),
-            math.min((bg[2] or 0.1) + 0.08, 1),
-            math.min((bg[3] or 0.1) + 0.08, 1),
-            bg[4] or 1,
-        }, border)
-    end
+    local function Paint(highlight) PaintLifted(btn, highlight, classColor) end
     Paint(false)
 
     -- Disabled tabs (season tabs without debug mode) get no border; the gold text still

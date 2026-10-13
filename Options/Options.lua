@@ -160,6 +160,7 @@ function RA.InitOptions()
     local featuresBtn = UI.MakeSkinnedButton(win, RA_L["feat_button"], NAV_W)
     featuresBtn:SetPoint("BOTTOMLEFT", win, "BOTTOMLEFT", 14, 16)
     featuresBtn:SetScript("OnClick", RA.ToggleFeatureList)
+    RA.Skin.LiftedButton(featuresBtn, classColor)
 
     -- Main page: tabs General / Dungeons / Raids / Delves / Prey / Legacy
     local panel = CreateFrame("Frame", nil, content)

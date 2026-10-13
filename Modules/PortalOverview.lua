@@ -180,6 +180,7 @@ local function CreateSettingsPanel()
     -- Back to the defaults: the sliders' own callbacks save the values.
     local reset = UI.MakeSkinnedButton(settingsPanel, RA_L["portal_cfg_default"], 100)
     reset:SetPoint("BOTTOMLEFT", settingsPanel, "BOTTOMLEFT", 0, 0)
+    RA.Skin.LiftedButton(reset, RA.Skin.ClassColor())
     reset:SetScript("OnClick", function()
         RollAwayDB.portalLabels = defaults.portalLabels
         cb:SetValue(defaults.portalLabels)
