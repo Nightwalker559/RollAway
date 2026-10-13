@@ -15,7 +15,7 @@
 
 ### Fixed
 - German texts say "Schlachtzug" and "Erweitertes Kampflog" like the game instead of "Raid" and "Advanced Combat Logging".
-- Venomfall Deeps is recognized for the delve auto-pass (map ID 3079, not yet tested in game).
+- Venomfall Deeps is recognized for the delve auto-pass (map ID 3079, confirmed in game).
 - Names now match the game: seven delves, three dungeons/raids and two bosses in English; five legacy raids, five dungeons, Ring of Glory and Nymrissa in German.
 - Labyrinth of Kindo'jan (12.1.5) is selectable now; checked on the PTR. German name corrected.
 - The Unbinding of Kith'ix (12.1.5): boss is selectable now; checked on the PTR.
