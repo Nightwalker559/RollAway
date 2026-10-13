@@ -13,6 +13,7 @@
 - `/rawnames`: the game's names for dungeons, raids, bosses, delves and expansions into the log (for checking the locale texts).
 
 ### Fixed
+- German texts say "Schlachtzug" like the game instead of "Raid".
 - Venomfall Deeps is recognized for the delve auto-pass (map ID 3079, not yet tested in game).
 - Names now match the game: seven delves, three dungeons/raids and two bosses in English; five legacy raids, five dungeons, Ring of Glory and Nymrissa in German.
 - Labyrinth of Kindo'jan (12.1.5) is selectable now; checked on the PTR. German name corrected.

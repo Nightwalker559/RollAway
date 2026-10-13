@@ -210,6 +210,8 @@ function RA.ShowReminder()
     -- Update content
     currentTabKey = tabKey
     reminderFrame.btn:SetText(RA_L["reminder_btn_"..tabKey])
+    -- At least 130px, wider when the label needs it ("Schlachtzüge öffnen").
+    reminderFrame.btn:SetWidth(math.max(130, reminderFrame.btn:GetTextWidth() + 24))
 
     -- Only the safety-net warning: just the "auto-pass ACTIVE" text.
     local warnOnly = not RollAwayDB.showReminder
