@@ -453,25 +453,46 @@ function RA.IsPortalOnCooldown(spellID)
     return RA.GetPortalCooldown(spellID) ~= nil
 end
 
+local PORTAL_FRAME_ATLAS = "UI-HUD-ActionBar-IconFrame"
+
 -- Secure spell button; the caller adds the tooltip and calls RA.SetPortalSpell().
 function RA.CreatePortalButton(globalName, parent, size)
     local btn = CreateFrame("Button", globalName, parent, "SecureActionButtonTemplate")
     btn:SetSize(size, size)
 
-    -- 1px gray frame: a filled square behind the icon, the icon inset by 1px.
-    local border = btn:CreateTexture(nil, "BACKGROUND", nil, -1)
-    border:SetAllPoints()
-    border:SetColorTexture(0.45, 0.45, 0.45, 1)
-
     local tex = btn:CreateTexture(nil, "BACKGROUND")
-    tex:SetPoint("TOPLEFT", 1, -1)
-    tex:SetPoint("BOTTOMRIGHT", -1, 1)
     tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     btn.iconTexture = tex
 
     local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetAllPoints()
-    highlight:SetColorTexture(1, 1, 1, 0.25)
+
+    if C_Texture.GetAtlasInfo(PORTAL_FRAME_ATLAS) then
+        -- The action buttons' own look: rounded icon (mask) with the game's icon frame on
+        -- top; the frame atlas is 46x45 and sits at the top left like on an action button.
+        tex:SetAllPoints()
+        local mask = btn:CreateMaskTexture()
+        mask:SetAtlas("UI-HUD-ActionBar-IconFrame-Mask")
+        mask:SetAllPoints(tex)
+        tex:AddMaskTexture(mask)
+
+        local frameTex = btn:CreateTexture(nil, "ARTWORK", nil, 1)
+        frameTex:SetAtlas(PORTAL_FRAME_ATLAS)
+        frameTex:SetPoint("TOPLEFT")
+        frameTex:SetPoint("BOTTOMRIGHT", 1, 0)
+
+        highlight:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+        highlight:SetPoint("TOPLEFT")
+        highlight:SetPoint("BOTTOMRIGHT", 1, 0)
+    else
+        -- Fallback without the atlas: 1px gray frame, the icon inset by 1px.
+        local border = btn:CreateTexture(nil, "BACKGROUND", nil, -1)
+        border:SetAllPoints()
+        border:SetColorTexture(0.45, 0.45, 0.45, 1)
+        tex:SetPoint("TOPLEFT", 1, -1)
+        tex:SetPoint("BOTTOMRIGHT", -1, 1)
+        highlight:SetAllPoints()
+        highlight:SetColorTexture(1, 1, 1, 0.25)
+    end
 
     btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
     btn.cooldown:SetAllPoints()
