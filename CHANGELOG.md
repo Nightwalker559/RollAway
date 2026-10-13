@@ -4,6 +4,9 @@
 
 ## 3.1.5 (alpha 1)
 
+### Changed
+- Teleport reminder: a single portal no longer shows the short name (the dungeon name is already in the title).
+
 ### Developer
 - All developer commands (also `/rawlog`), the log window buttons and the test switches only work with debug mode on.
 

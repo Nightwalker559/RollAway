@@ -98,7 +98,9 @@ local function LayoutAndUpdate(visibleButtons)
 
     for i, btn in ipairs(visibleButtons) do
         btn:SetPoint("TOP", reminderFrame, "TOP", startX + ((i - 1) * (BUTTON_SIZE + BUTTON_GAP)), -62)
-        RA.SetPortalLabel(btn, btn.dungeonKey)  -- every time: the option may have changed
+        -- Short name only when several portals show (a single one has its name in the title);
+        -- set every time: the option may have changed.
+        RA.SetPortalLabel(btn, count > 1 and btn.dungeonKey or nil)
         RA.UpdatePortalButtonState(btn, C_SpellBook.IsSpellInSpellBook(btn.spellID), 0.5)
         RA.SafeSetShown(btn, true)
     end
