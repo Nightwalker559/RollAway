@@ -479,19 +479,22 @@ function RA.CreatePortalButton(globalName, parent, size)
 end
 
 -- Short dungeon name (RA.DUNGEON_SHORT_NAMES) along the button's bottom edge, above the
--- cooldown swipe; cleared when the dungeon has none.
-function RA.SetPortalLabel(btn, dungeonKey)
+-- cooldown swipe; empty when the dungeon has none or the option (portalLabels) is off.
+-- fontSize: nil = by button size (at least 9).
+function RA.SetPortalLabel(btn, dungeonKey, fontSize)
     local text = RA.DUNGEON_SHORT_NAMES[dungeonKey]
+    if RollAwayDB and RollAwayDB.portalLabels == false then text = nil end
     if not btn.label then
         if not text then return end
         local holder = CreateFrame("Frame", nil, btn)
         holder:SetAllPoints()
         holder:SetFrameLevel(btn.cooldown:GetFrameLevel() + 1)
         local fs = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        fs:SetFont((fs:GetFont()), math.max(9, math.floor(btn:GetWidth() / 4.5)), "OUTLINE")
+        btn.labelFontPath = (fs:GetFont())
         fs:SetPoint("BOTTOM", btn, "BOTTOM", 0, 2)
         btn.label = fs
     end
+    btn.label:SetFont(btn.labelFontPath, fontSize or math.max(9, math.floor(btn:GetWidth() / 4.5)), "OUTLINE")
     btn.label:SetText(text or "")
 end
 

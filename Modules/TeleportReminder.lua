@@ -24,7 +24,7 @@ local function CreatePortalButtons(parent, dungeons)
         local btn = RA.CreatePortalButton("RollAwayTeleportButton"..i, parent, BUTTON_SIZE)
         RA.SetPortalSpell(btn, dungeon.portalSpellID)
         btn.nameKey = "dungeon_"..dungeon.key
-        RA.SetPortalLabel(btn, dungeon.key)
+        btn.dungeonKey = dungeon.key
 
         btn:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -98,6 +98,7 @@ local function LayoutAndUpdate(visibleButtons)
 
     for i, btn in ipairs(visibleButtons) do
         btn:SetPoint("TOP", reminderFrame, "TOP", startX + ((i - 1) * (BUTTON_SIZE + BUTTON_GAP)), -62)
+        RA.SetPortalLabel(btn, btn.dungeonKey)  -- every time: the option may have changed
         RA.UpdatePortalButtonState(btn, C_SpellBook.IsSpellInSpellBook(btn.spellID), 0.5)
         RA.SafeSetShown(btn, true)
     end

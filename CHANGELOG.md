@@ -5,7 +5,8 @@
 ## 3.1.4
 
 ### New
-- Portal buttons (portal overview, join reminder) show the dungeon's short name (e.g. WS, AOF, RLP).
+- Portal buttons (portal overview, join reminder) show the dungeon's short name (e.g. WS, AOF, RLP); can be switched off.
+- Portal overview: new "Options" tab for icon size, icons per row and short name size.
 
 ### Fixed
 - Labyrinth of Kindo'jan (12.1.5) is selectable now; checked on the PTR. German name corrected.

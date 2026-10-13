@@ -3,21 +3,28 @@
 -- only (/rat); Group Finder joins are handled by TeleportReminder.lua.
 -- Tabs: 1) current season (RA.DUNGEONS[RA.ACTIVE_SEASON]), same look as the join
 -- reminder; 2) all learned dungeon teleports (RA.DUNGEONS[*] + LegacyDungeonTeleports),
--- grouped by expansion, unlearned ones and empty groups hidden.
+-- grouped by expansion, unlearned ones and empty groups hidden; 3) options (icon size,
+-- icons per row, short name labels; RollAwayDB.portal*).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
-local BUTTON_SIZE  = 48
 local BUTTON_GAP   = 8
-local ROW_STEP     = BUTTON_SIZE + BUTTON_GAP
-local BUTTONS_PER_ROW = 4
 local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
 
-local FRAME_WIDTH   = 260
-local FRAME_HEIGHT  = 260  -- fixed, content scrolls
-local CONTENT_WIDTH = FRAME_WIDTH - 20 -- minus margins (the scrollbar is hidden)
+local MIN_FRAME_WIDTH = 300  -- the three tabs need the room
+local FRAME_HEIGHT    = 260  -- fixed, content scrolls
+local MARGINS         = 20   -- both sides together (the scrollbar is hidden)
+
+-- Icon size / row layout from the saved options (clamped); refreshed by ApplyMetrics().
+local buttonSize, perRow, labelSize = 48, 4, 10
+local rowStep, contentWidth, frameWidth = 56, 240, MIN_FRAME_WIDTH
+
+local function Clamp(value, lo, hi, default)
+    value = tonumber(value) or default
+    return math.max(lo, math.min(hi, math.floor(value)))
+end
 
 -- Tab 2 header order, newest first.
 local CATEGORY_ORDER = {
@@ -28,7 +35,25 @@ local CATEGORY_ORDER = {
 -- State
 
 local overviewFrame
+local settingsPanel          -- tab 3
 local activeTab   = 1
+local TAB_SETTINGS = 3
+
+local function ApplyMetrics()
+    local db = RollAwayDB or {}
+    buttonSize = Clamp(db.portalIconSize, 32, 64, 48)
+    perRow     = Clamp(db.portalPerRow, 3, 8, 4)
+    labelSize  = Clamp(db.portalLabelSize, 8, 16, 10)
+    rowStep    = buttonSize + BUTTON_GAP
+    local rowWidth = perRow * buttonSize + (perRow - 1) * BUTTON_GAP
+    -- Tab 3 keeps the minimum width so the sliders stay put while they are dragged.
+    frameWidth   = math.max(MIN_FRAME_WIDTH, rowWidth + MARGINS + 8)
+    contentWidth = frameWidth - MARGINS
+    if overviewFrame then
+        overviewFrame:SetWidth(activeTab == TAB_SETTINGS and MIN_FRAME_WIDTH or frameWidth)
+        overviewFrame.content:SetWidth(contentWidth)
+    end
+end
 local portalPool  = {}   -- icon button pool
 local headerPool  = {}   -- category header pool
 local usedButtons = 0    -- pool slots used in the current layout pass
@@ -85,7 +110,7 @@ local function AcquireButton(i, parent)
     local btn = portalPool[i]
     if btn then return btn end
 
-    btn = RA.CreatePortalButton("RollAwayPortalOverviewButton"..i, parent, BUTTON_SIZE)
+    btn = RA.CreatePortalButton("RollAwayPortalOverviewButton"..i, parent, buttonSize)
 
     -- Gold overlay while this dungeon's keystone is in the bags (same as the
     -- Quick Select glow in LFGQuickCreate.lua).
@@ -122,6 +147,40 @@ end
 
 -- Frame creation
 
+-- Tab 3: the options widgets of the options window (RA.OptionsUI, loaded later but
+-- available by the time the frame is first opened). Every change saves to the profile and
+-- re-lays-out; the frame resizes when you switch back to a portal tab.
+local function CreateSettingsPanel()
+    local UI = RA.OptionsUI
+    settingsPanel = CreateFrame("Frame", nil, overviewFrame)
+    settingsPanel:SetPoint("TOPLEFT", overviewFrame, "TOPLEFT", 10, -36)
+    settingsPanel:SetPoint("BOTTOMRIGHT", overviewFrame, "BOTTOMRIGHT", -10, 12)
+    settingsPanel:Hide()
+
+    local cb = UI.MakeCB(settingsPanel, RA_L["portal_cfg_labels"], RollAwayDB.portalLabels ~= false,
+        function(checked)
+            RollAwayDB.portalLabels = checked
+            RA.RefreshPortalOverview()
+        end, MIN_FRAME_WIDTH - MARGINS)
+    cb.frame:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 0, 0)
+
+    local function AddSlider(anchor, dbKey, min, max, step, default, labelKey)
+        local slider = UI.MakeValueSlider(settingsPanel, anchor, 0, -6, {
+            min = min, max = max, step = step, value = Clamp(RollAwayDB[dbKey], min, max, default),
+            formatLabel = function(v) return string.format(RA_L[labelKey], v) end,
+            onChange = function(v)
+                RollAwayDB[dbKey] = v
+                RA.RefreshPortalOverview()
+            end,
+        })
+        slider:SetWidth(MIN_FRAME_WIDTH - MARGINS)
+        return slider
+    end
+    local s1 = AddSlider(cb.frame, "portalIconSize",  32, 64, 2, 48, "portal_cfg_iconsize")
+    local s2 = AddSlider(s1,       "portalPerRow",     3,  8, 1,  4, "portal_cfg_perrow")
+    AddSlider(s2,                  "portalLabelSize",  8, 16, 1, 10, "portal_cfg_labelsize")
+end
+
 local function SelectTab(index)
     activeTab = index
     PanelTemplates_SetTab(overviewFrame, index)
@@ -131,7 +190,8 @@ end
 local function CreateOverviewFrame()
     if overviewFrame then return end
 
-    overviewFrame = RA.CreatePanelWindow("RollAwayPortalOverviewFrame", UIParent, FRAME_WIDTH, FRAME_HEIGHT,
+    ApplyMetrics()
+    overviewFrame = RA.CreatePanelWindow("RollAwayPortalOverviewFrame", UIParent, frameWidth, FRAME_HEIGHT,
         RA_L["portal_overview_title"])
     local pos = RollAwayDB and RollAwayDB.portalOverviewPos
     if pos then
@@ -157,6 +217,7 @@ local function CreateOverviewFrame()
     local tabLabels = {
         RA_L["portal_overview_tab_season"],
         RA_L["portal_overview_tab_dungeons"],
+        RA_L["portal_overview_tab_settings"],
     }
     overviewFrame.numTabs = #tabLabels
     local prevTab
@@ -165,7 +226,7 @@ local function CreateOverviewFrame()
         local tab = CreateFrame("Button", frameName.."Tab"..i, overviewFrame, "PanelTabButtonTemplate")
         tab:SetID(i)
         tab:SetText(label)
-        PanelTemplates_TabResize(tab, 14)
+        PanelTemplates_TabResize(tab, 8)
         if prevTab then
             tab:SetPoint("LEFT", prevTab, "RIGHT", 4, 0)
         else
@@ -186,9 +247,12 @@ local function CreateOverviewFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", overviewFrame, "BOTTOMRIGHT", -10, 12)
 
     local content = CreateFrame("Frame", frameName.."Content", scrollFrame)
-    content:SetSize(CONTENT_WIDTH, 1)
+    content:SetSize(contentWidth, 1)
     scrollFrame:SetScrollChild(content)
-    overviewFrame.content = content
+    overviewFrame.content     = content
+    overviewFrame.scrollFrame = scrollFrame
+
+    CreateSettingsPanel()
 
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
@@ -248,7 +312,8 @@ end
 
 local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
     btn.nameKey = entry.nameKey
-    RA.SetPortalLabel(btn, entry.key)
+    btn:SetSize(buttonSize, buttonSize)
+    RA.SetPortalLabel(btn, entry.key, labelSize)
     RA.SetPortalSpell(btn, entry.spellID)
     RA.UpdatePortalButtonState(btn, isKnown, 0.4)
     btn.keyBorder:SetShown(entry.lfgID ~= nil and entry.lfgID == ownedLfgID)
@@ -258,23 +323,23 @@ local function PlaceButton(btn, entry, isKnown, x, y, ownedLfgID)
     RA.SafeSetShown(btn, true)
 end
 
--- Places `entries` as icon rows of BUTTONS_PER_ROW (last row centered), first row at y.
+-- Places `entries` as icon rows of `perRow` (last row centered), first row at y.
 -- allKnown: all entries are learned spells (tab 2), else each is checked. Returns the height.
 local function PlaceRows(entries, y, ownedLfgID, allKnown)
     for i, entry in ipairs(entries) do
         usedButtons = usedButtons + 1
         local btn = AcquireButton(usedButtons, overviewFrame.content)
 
-        local row = math.floor((i - 1) / BUTTONS_PER_ROW)
-        local col = (i - 1) % BUTTONS_PER_ROW
-        local rowCount = math.min(BUTTONS_PER_ROW, #entries - row * BUTTONS_PER_ROW)
-        local rowWidth = (rowCount * BUTTON_SIZE) + ((rowCount - 1) * BUTTON_GAP)
-        local startX = (CONTENT_WIDTH - rowWidth) / 2
+        local row = math.floor((i - 1) / perRow)
+        local col = (i - 1) % perRow
+        local rowCount = math.min(perRow, #entries - row * perRow)
+        local rowWidth = (rowCount * buttonSize) + ((rowCount - 1) * BUTTON_GAP)
+        local startX = (contentWidth - rowWidth) / 2
 
         PlaceButton(btn, entry, allKnown or C_SpellBook.IsSpellInSpellBook(entry.spellID),
-            startX + col * ROW_STEP, y - row * ROW_STEP, ownedLfgID)
+            startX + col * rowStep, y - row * rowStep, ownedLfgID)
     end
-    return math.ceil(#entries / BUTTONS_PER_ROW) * ROW_STEP
+    return math.ceil(#entries / perRow) * rowStep
 end
 
 -- Tab 1: one season header, then all entries.
@@ -324,6 +389,17 @@ function RA.RefreshPortalOverview()
     if not overviewFrame or not overviewFrame:IsShown() then return end
     -- Secure buttons: no re-layout in combat (a deferred Show refreshes via OnShow).
     if InCombatLockdown() then return end
+
+    -- Tab 3 shows the options instead of the scrolling portal list.
+    local isSettings = activeTab == TAB_SETTINGS
+    RA.SafeSetShown(overviewFrame.scrollFrame, not isSettings)
+    RA.SafeSetShown(settingsPanel, isSettings)
+    ApplyMetrics()
+    if isSettings then
+        HideAllButtons()
+        overviewFrame.emptyText:Hide()
+        return
+    end
 
     if activeTab == 1 then
         local entries = CollectEntries({}, RA.DUNGEONS[RA.ACTIVE_SEASON] or {}, "midnight")

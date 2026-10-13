@@ -173,6 +173,10 @@ RA.defaults = {
         tankMarkIcon             = 6,   -- raid marker 1-8 (6 = square)
         minimapButtonHide        = false,
         minimapAngle             = 225,   -- degrees around the minimap
+        portalLabels             = true,  -- short dungeon names on the portal buttons
+        portalIconSize           = 48,    -- Portal overview: icon size (32-64), icons per row (3-8),
+        portalPerRow             = 4,     --   label font size (8-16)
+        portalLabelSize          = 10,
         paragonAlert            = false,
         greatVaultAlert          = false,
         talentFontSize     = 20,
