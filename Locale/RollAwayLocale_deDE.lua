@@ -564,16 +564,13 @@ L["greatvault_none"]        = "Keine unabgeholten Belohnungen in der Großen Sch
 ------------------------------------------------------------------------
 -- What's New
 ------------------------------------------------------------------------
-L["whatsnew_salvage_title"]     = "Verwerten-Slot füllt sich selbst"
-L["whatsnew_salvage_desc"]      = "Rezepte wie Kochkunst Fisch -> Filet brauchen einen Gegenstand im Slot. RollAway legt jetzt den ersten ein, den du hast und in einer Liste angehakt hast (roten Text im Berufe-Fenster anklicken), und füllt nach, wenn der Stapel aufgebraucht ist."
-L["whatsnew_salvage_location"]  = "QoL > Handwerk & Händler"
+L["whatsnew_portal_title"]      = "Portalübersicht: Kurznamen und Optionen"
+L["whatsnew_portal_desc"]       = "Die Portal-Buttons zeigen den Kurznamen des Dungeons (z.B. WS, AOF). Ein neuer Reiter Optionen stellt Symbolgröße, Abstand, Symbole pro Reihe und die Kurznamen ein; mit Standard setzt du alles zurück."
+L["whatsnew_portal_location"]   = "Portalübersicht (/rat) > Optionen"
+L["whatsnew_salvage_title"]     = "Zahl in der Verwerten-Liste"
+L["whatsnew_salvage_desc"]      = "Die Zahl in Klammern neben einem Verwerten-Rezept in der Rezeptliste zählt jetzt nur die Materialien, die du angehakt hast, auch die in deiner Kriegsmeutenbank."
+L["whatsnew_salvage_location"]  = "Berufe-Fenster"
 L["whatsnew_options_label"]     = "Optionen:"
-L["whatsnew_features_title"]    = "Funktionsübersicht"
-L["whatsnew_features_desc"]     = "Ein Fenster listet jede Funktion mit Beschreibung auf; dort kannst du sie auch ein- und ausschalten. Öffnen über den neuen Minimap-Button (Linksklick) oder /raw features. Die QoL-Optionen sind jetzt nach Themen sortiert."
-L["whatsnew_features_location"] = "Minimap, /raw features"
-L["whatsnew_window_title"]      = "Eigenes Optionsfenster"
-L["whatsnew_window_desc"]       = "RollAway steht nicht mehr im Einstellungsfenster des Spiels: /raw oder ein Rechtsklick auf den Minimap-Button öffnet ein eigenes Fenster, auch im Kampf. Die Funktionsübersicht öffnet sich daneben."
-L["whatsnew_window_location"]   = "Minimap, /raw"
 
 ------------------------------------------------------------------------
 -- Funktionsübersicht (/raw features)

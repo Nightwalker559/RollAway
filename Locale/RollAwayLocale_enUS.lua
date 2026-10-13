@@ -563,16 +563,13 @@ L["greatvault_none"]        = "No unclaimed Great Vault rewards."
 ------------------------------------------------------------------------
 -- What's New
 ------------------------------------------------------------------------
-L["whatsnew_salvage_title"]     = "Salvage slot fills itself"
-L["whatsnew_salvage_desc"]      = "Recipes like Cooking fish -> fillets need an item in the slot. RollAway now puts in the first one you own and ticked in a list (click the red text in the Professions window) and refills it when the stack is used up."
-L["whatsnew_salvage_location"]  = "QoL > Crafting & Vendors"
+L["whatsnew_portal_title"]      = "Portal overview: short names and options"
+L["whatsnew_portal_desc"]       = "The portal buttons show the dungeon's short name (e.g. WS, AOF). A new Options tab sets icon size, gap, icons per row and the short names; the Default button resets it."
+L["whatsnew_portal_location"]   = "Portal overview (/rat) > Options"
+L["whatsnew_salvage_title"]     = "Salvage list count"
+L["whatsnew_salvage_desc"]      = "The number in brackets next to a salvage recipe in the recipe list now counts only the materials you ticked, including those in your warband bank."
+L["whatsnew_salvage_location"]  = "Professions window"
 L["whatsnew_options_label"]     = "Options:"
-L["whatsnew_features_title"]    = "Feature overview"
-L["whatsnew_features_desc"]     = "A window lists every feature with its description; switch features on and off right there. Open it with the new minimap button (left click) or /raw features. The QoL options are now sorted by topic."
-L["whatsnew_features_location"] = "Minimap, /raw features"
-L["whatsnew_window_title"]      = "Own options window"
-L["whatsnew_window_desc"]       = "RollAway no longer sits in the game's Settings panel: /raw or a right click on the minimap button opens its own window, also in combat. The feature overview opens next to it."
-L["whatsnew_window_location"]   = "Minimap, /raw"
 
 ------------------------------------------------------------------------
 -- Feature overview (/raw features)
