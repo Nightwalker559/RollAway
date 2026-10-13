@@ -472,8 +472,21 @@ function RA.CreatePortalButton(globalName, parent, size)
         tex:SetAllPoints()
         local mask = btn:CreateMaskTexture()
         mask:SetAtlas("UI-HUD-ActionBar-IconFrame-Mask")
-        mask:SetAllPoints(tex)
+        mask:SetPoint("CENTER", tex)
         tex:AddMaskTexture(mask)
+        -- Like the action button: the mask keeps its atlas size (larger than the icon, so it
+        -- only rounds the corners), scaled with the button (the game's button is 45px).
+        local maskInfo = C_Texture.GetAtlasInfo("UI-HUD-ActionBar-IconFrame-Mask")
+        local function FitMask()
+            local scale = btn:GetWidth() / 45
+            mask:SetSize(maskInfo.width * scale, maskInfo.height * scale)
+        end
+        if maskInfo then
+            FitMask()
+            btn:HookScript("OnSizeChanged", FitMask)
+        else
+            mask:SetAllPoints(tex)
+        end
 
         local frameTex = btn:CreateTexture(nil, "ARTWORK", nil, 1)
         frameTex:SetAtlas(PORTAL_FRAME_ATLAS)
