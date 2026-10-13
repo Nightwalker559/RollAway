@@ -257,6 +257,18 @@ local function ParseKeyLevel(info)
     return nil
 end
 
+-- Own listing: the title may be unreadable (secret), but the listing uses the player's own
+-- keystone for that dungeon, so its level is known. Others' listings have no such source.
+local function OwnKeyLevel(entryInfo, activityID)
+    local level = ParseKeyLevel(entryInfo)
+    if level then return level end
+    if activityID and C_LFGList.GetKeystoneForActivity then
+        level = C_LFGList.GetKeystoneForActivity(activityID)
+        if type(level) == "number" and RA.IsAccessible(level) and level >= 2 then return level end
+    end
+    return nil
+end
+
 -- Teleport reminder for M+ when selected, else the instance-name reminder (raids
 -- always that one). keyLevel is for M+ only.
 local function DispatchJoinReminder(name, isMythicPlus, dungeon, keyLevel)
@@ -367,7 +379,8 @@ function RA.InitJoinReminder()
         if name then
             resolvedEntryID = entryID
             StopPoll()
-            DispatchJoinReminder(name, isMythicPlus, dungeon, ParseKeyLevel(entryInfo))
+            DispatchJoinReminder(name, isMythicPlus, dungeon,
+                UnitIsGroupLeader("player") and OwnKeyLevel(entryInfo, entryID) or ParseKeyLevel(entryInfo))
         end
     end
 
@@ -413,7 +426,7 @@ function RA.InitJoinReminder()
                 -- Teleport reminder first (no companion addon bookkeeping, no timer).
                 if isMythicPlus and RollAwayDB and RollAwayDB.joinReminderKeyAddon == "teleport" then
                     DBG("[QoL] Own M+ listing created – showing teleport reminder:", name or "nil")
-                    RA.ShowTeleportReminder(name, dungeon, ParseKeyLevel(entryInfo))
+                    RA.ShowTeleportReminder(name, dungeon, OwnKeyLevel(entryInfo, activityID))
                     return
                 end
 

@@ -7,6 +7,8 @@
 ### Changed
 - Teleport reminder: a single portal shows neither the short name nor a name tooltip (the dungeon name is already in the window); the tooltip stays only for a portal you haven't learned.
 
+- Join reminder for your own listing: the key level also comes from your own keystone when the title can't be read (other groups' levels stay unreadable).
+
 ### Developer
 - All developer commands (also `/rawlog`), the log window buttons and the test switches only work with debug mode on.
 
