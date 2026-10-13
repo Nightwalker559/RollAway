@@ -194,6 +194,8 @@ end
 local function SelectTab(index)
     activeTab = index
     PanelTemplates_SetTab(overviewFrame, index)
+    -- Every tab starts at the top (the other tab's scroll position would be past the end here).
+    overviewFrame.scrollFrame:SetVerticalScroll(0)
     RA.RefreshPortalOverview()
 end
 
@@ -428,6 +430,7 @@ function RA.ShowPortalOverview()
     CreateOverviewFrame()
     activeTab = 1
     PanelTemplates_SetTab(overviewFrame, 1)
+    overviewFrame.scrollFrame:SetVerticalScroll(0)
     RA.SafeSetShown(overviewFrame, true)  -- OnShow lays it out
 end
 
