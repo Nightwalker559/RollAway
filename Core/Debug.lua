@@ -4,6 +4,7 @@
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
+local RA_L = RA.RA_L
 
 ------------------------------------------------------------------------
 -- Debug log window: scrollable, copyable EditBox for DBG() output. Created and
@@ -16,8 +17,8 @@ local debugLogEditBox
 local debugLogScrollFrame
 local debugLogTitle
 
-local LOG_TITLE        = "|cff33ff99RollAway|r Debug Log"
-local LOG_TITLE_PAUSED = LOG_TITLE .. " |cffff8800(paused while selecting - press Esc)|r"
+local LOG_TITLE        = "|cff33ff99RollAway|r " .. RA_L["dev_log_title"]
+local LOG_TITLE_PAUSED = LOG_TITLE .. " |cffff8800" .. RA_L["dev_log_paused"] .. "|r"
 
 -- The log lives in this table; the EditBox is only a view of it (writing into
 -- the EditBox would overwrite the player's selection). Only Clear drops lines.
@@ -103,7 +104,7 @@ local function CreateDebugLogFrame()
     local selectAllBtn = CreateFrame("Button", "RollAwayDebugLogSelectAll", f, "UIPanelButtonTemplate")
     selectAllBtn:SetSize(100, 22)
     selectAllBtn:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 16, 14)
-    selectAllBtn:SetText("Select All")
+    selectAllBtn:SetText(RA_L["dev_log_select_all"])
     RA.Skin.Button(selectAllBtn)
     selectAllBtn:SetScript("OnClick", function()
         editBox:SetFocus()
@@ -113,7 +114,7 @@ local function CreateDebugLogFrame()
     local clearBtn = CreateFrame("Button", "RollAwayDebugLogClear", f, "UIPanelButtonTemplate")
     clearBtn:SetSize(80, 22)
     clearBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 14)
-    clearBtn:SetText("Clear")
+    clearBtn:SetText(RA_L["dev_log_clear"])
     RA.Skin.Button(clearBtn)
     clearBtn:SetScript("OnClick", function() RA.ClearDebugLog() end)
 
@@ -129,6 +130,7 @@ local function CreateDebugLogFrame()
         f:StopMovingOrSizing()
         RollAwayDB.debugLogSize = { w = math.floor(f:GetWidth() + 0.5), h = math.floor(f:GetHeight() + 0.5) }
     end)
+    RA.Skin.ResizeGrip(grip)
 
     -- Re-wrap on resize.
     f:SetScript("OnSizeChanged", function()
@@ -658,7 +660,7 @@ end
 
 -- /rawnames: the game's own names for every locale key that holds a game name, one line
 -- each (`[Names] <key> | <id> | <name>`), in the client's language. Run it in deDE and enUS,
--- save both logs (Claude Tools\RollAway\locale_data) and compare with locale_names_check.lua.
+-- save both logs (Claude Tools\RollAway\locale/data) and compare with locale_names_check.lua.
 -- Dungeons without a map ID in the data are checked
 -- against `ejdungeon` lines: every journal dungeon (map ID | name).
 local function DumpNames()

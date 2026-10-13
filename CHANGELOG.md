@@ -11,6 +11,7 @@
 
 ### Developer
 - `/rawnames`: the game's names for dungeons, raids, bosses, delves and expansions into the log (for checking the locale texts).
+- Debug log window: buttons and title are translated now; with ElvUI the resize corner uses ElvUI's arrow.
 
 ### Fixed
 - German texts say "Schlachtzug" and "Erweitertes Kampflog" like the game instead of "Raid" and "Advanced Combat Logging".

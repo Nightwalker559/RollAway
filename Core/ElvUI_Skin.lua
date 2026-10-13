@@ -39,6 +39,27 @@ function Skin.CheckBox(box)  Handle("HandleCheckBox", box) end
 function Skin.EditBox(box)   Handle("HandleEditBox", box) end
 function Skin.ScrollBar(bar) Handle("HandleTrimScrollBar", bar) end
 
+-- Resize corner like ElvUI's own config window: its arrow texture turned towards the
+-- bottom right corner, light gray, gold while hovered.
+function Skin.ResizeGrip(grip)
+    if not grip or not Enabled() or not E.Media.Textures.ArrowUp then return end
+    grip:SetNormalTexture(nil)
+    grip:SetPushedTexture(nil)
+    grip:SetHighlightTexture(nil)
+    grip:SetSize(24, 24)
+    grip:ClearAllPoints()
+    grip:SetPoint("BOTTOMRIGHT", grip:GetParent(), "BOTTOMRIGHT", 1, -1)
+    grip:SetFrameLevel(grip:GetParent():GetFrameLevel() + 20)
+
+    local arrow = grip:CreateTexture(nil, "OVERLAY")
+    arrow:SetTexture(E.Media.Textures.ArrowUp)
+    arrow:SetRotation(-2.35)
+    arrow:SetAllPoints()
+    arrow:SetVertexColor(1, 1, 1, 0.8)
+    grip:HookScript("OnEnter", function() arrow:SetVertexColor(1, 0.82, 0, 1) end)
+    grip:HookScript("OnLeave", function() arrow:SetVertexColor(1, 1, 1, 0.8) end)
+end
+
 -- MinimalSliderWithSteppersTemplate in ElvUI's own slider look (the one of its options):
 -- thin dark track, small gold thumb, no stepper arrows. The track keeps the template's
 -- 19px side margins, the value label (TopText) sits right above it.
