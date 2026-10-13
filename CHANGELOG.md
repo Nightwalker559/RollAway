@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.5 (alpha 1)
+
+### Developer
+- All developer commands (also `/rawlog`), the log window buttons and the test switches only work with debug mode on.
+
+---
+
 ## 3.1.4
 
 ### New
