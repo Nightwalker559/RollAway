@@ -137,7 +137,8 @@ local function Layout(recipeID)
     for i, e in ipairs(entries) do
         local b = GetItemButton(i)
         b.itemID = e.id
-        b.owned  = C_Item.GetItemCount(e.id) or 0
+        -- Everything you own: bags, bank, reagent bank and the warband bank.
+        b.owned  = C_Item.GetItemCount(e.id, true, false, true, true) or 0
         b.icon:SetTexture(C_Item.GetItemIconByID(e.id))
         b.count:SetText(b.owned > 0 and b.owned or "")
         b:ClearAllPoints()
