@@ -106,6 +106,9 @@ end
 function Skin.PortalButton(btn, icon, highlight)
     if not Enabled() or not btn.SetTemplate then return false end
     btn:SetTemplate("Default")
+    -- The template's backdrop fill is a BACKGROUND texture too, created after the icon:
+    -- on the same layer it can end up on top and hide the icon.
+    icon:SetDrawLayer("ARTWORK")
     if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
     if icon.SetInside then icon:SetInside(btn) end
     highlight:Hide()
