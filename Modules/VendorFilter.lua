@@ -39,7 +39,30 @@ if _G.ITEM_SPELL_KNOWN then table.insert(KNOWN_RECIPE_STRINGS, _G.ITEM_SPELL_KNO
 table.insert(KNOWN_RECIPE_STRINGS, "Bereits bekannt") -- deDE fallback
 table.insert(KNOWN_RECIPE_STRINGS, "Already Known")   -- enUS fallback
 
-local function IsRecipeKnownViaTooltip(index)
+-- "Collected (1/3)" line of pets (ITEM_PET_KNOWN): known once n >= max.
+local PET_KNOWN_PATTERNS = {}
+local function AddPetPattern(fmt)
+    if not fmt then return end
+    local pat = "^" .. fmt:gsub("[%(%)%.%+%-%*%?%[%]%^%$]", "%%%0"):gsub("%%d", "(%%d+)") .. "$"
+    table.insert(PET_KNOWN_PATTERNS, pat)
+end
+AddPetPattern(_G.ITEM_PET_KNOWN)
+AddPetPattern("Gesammelt (%d/%d)") -- deDE fallback
+AddPetPattern("Collected (%d/%d)") -- enUS fallback
+
+local function IsLineKnown(text)
+    for _, known in ipairs(KNOWN_RECIPE_STRINGS) do
+        if known and text == known then return true end
+    end
+    for _, pat in ipairs(PET_KNOWN_PATTERNS) do
+        local have, max = text:match(pat)
+        if have and max then return tonumber(have) >= tonumber(max) end
+    end
+    return false
+end
+
+-- Any merchant item: "Already Known" line (recipes, ensembles, ...) or a maxed pet count.
+local function IsKnownViaTooltip(index)
     if not index then return false end
     local tt = GetScanTooltip()
     tt:ClearLines()
@@ -49,11 +72,7 @@ local function IsRecipeKnownViaTooltip(index)
     for i = 1, tt:NumLines() do
         local line = _G["RollAwayVendorScanTooltipTextLeft"..i]
         local text = line and line:GetText()
-        if text then
-            for _, known in ipairs(KNOWN_RECIPE_STRINGS) do
-                if known and text == known then return true end
-            end
-        end
+        if text and IsLineKnown(text) then return true end
     end
     return false
 end
@@ -64,7 +83,7 @@ local function IsRecipeKnown(itemID, index)
     if classID ~= Enum.ItemClass.Recipe then return false end
 
     -- Tooltip scan first; spell/TradeSkillUI check as fallback.
-    if IsRecipeKnownViaTooltip(index) then return true end
+    if IsKnownViaTooltip(index) then return true end
     return IsRecipeKnownViaSpellCheck(itemID)
 end
 
@@ -122,6 +141,10 @@ local function IsMerchantItemKnown(itemID, index)
     if IsHeirloomKnown(itemID) then return true end
     if IsTransmogKnown(itemID) then return true end
     if IsHousingDecorKnown(itemID) then return true end
+    -- Last resort for what the APIs miss (transmog ensembles, pets with a unique limit):
+    -- Blizzard's own tooltip line. Recipes were already scanned above.
+    local classID = select(6, C_Item.GetItemInfoInstant(itemID))
+    if classID ~= Enum.ItemClass.Recipe and IsKnownViaTooltip(index) then return true end
     return false
 end
 

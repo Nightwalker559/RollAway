@@ -4,6 +4,9 @@
 
 ## 3.1.5 (alpha 1)
 
+### Fixed
+- Vendor filter: also dims transmog ensembles ("Already Known") and pets at their collection limit ("Collected 1/1") that the APIs missed.
+
 ### Changed
 - Teleport reminder: a single portal shows neither the short name nor a name tooltip (the dungeon name is already in the window); the tooltip stays only for a portal you haven't learned.
 
