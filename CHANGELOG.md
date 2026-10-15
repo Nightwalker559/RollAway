@@ -2,7 +2,7 @@
 
 ---
 
-## 3.1.5 (alpha 1)
+## 3.1.5
 
 ### Fixed
 - Join reminder: a second search in a group that stays together (the random left) shows the reminder again for group members.
@@ -10,7 +10,6 @@
 
 ### Changed
 - Teleport reminder: a single portal shows neither the short name nor a name tooltip (the dungeon name is already in the window); the tooltip stays only for a portal you haven't learned.
-
 - Teleport reminder: for a group you join, the key level comes from the keystones its members share (BigWigs / LibKeystone), if the leader or the only matching member runs it.
 - Join reminder for your own listing: the key level also comes from your own keystone when the title can't be read (other groups' levels stay unreadable).
 
