@@ -408,13 +408,13 @@ function RA.InitJoinReminder()
             local activityID = entryInfo and entryInfo.activityIDs and entryInfo.activityIDs[1]
 
             if activityID then
-                if joinedViaApplication then
-                    DBG("[QoL] Listing update ignored – joined via application, not own listing")
-                    return
-                end
-                -- Only a leader (or someone alone) owns a listing; members see it too.
-                if IsInGroup() and not UnitIsGroupLeader("player") then
-                    DBG("[QoL] Listing update ignored – member of someone else's group")
+                -- Not our own listing (joined via application, or a member of someone else's
+                -- group): treat it as a join. TryResolveAndShow skips it while the group's
+                -- current listing was already shown, so a re-posted listing in a group that
+                -- stays together (listing removed -> resolvedEntryID reset) shows again.
+                if joinedViaApplication or (IsInGroup() and not UnitIsGroupLeader("player")) then
+                    DBG("[QoL] Listing update – not an own listing, resolving as join")
+                    TryResolveAndShow()
                     return
                 end
                 -- Own listing created or updated
@@ -439,6 +439,9 @@ function RA.InitJoinReminder()
             else
                 -- Listing removed (cancelled or full). joinedViaApplication stays until
                 -- you leave: a re-posted listing is still not ours.
+                -- The group's listing is gone: the next one (group stays together, the
+                -- fifth member leaves, a new one is searched) gets its own reminder.
+                resolvedEntryID = nil
                 if not keyAddonOpenedByCreation then return end
                 keyAddonOpenedByCreation = false
                 keyAddonSafetyTimer.Stop()

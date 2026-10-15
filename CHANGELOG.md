@@ -5,6 +5,7 @@
 ## 3.1.5 (alpha 1)
 
 ### Fixed
+- Join reminder: a second search in a group that stays together (the random left) shows the reminder again for group members.
 - Vendor filter: also dims transmog ensembles ("Already Known") and pets at their collection limit ("Collected 1/1") that the APIs missed.
 
 ### Changed
