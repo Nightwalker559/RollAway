@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.6
+
+### Fixed
+- Great Vault reminder: shows once per reset on every character, no longer only on the first one that logs in.
+
+---
+
 ## 3.1.5
 
 ### Fixed

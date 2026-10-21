@@ -65,9 +65,10 @@ local function CheckAndShow()
     if not HasUnclaimedRewards() then return end
 
     local period = GetRewardPeriod()
-    if period and RollAwayDB.lastVaultAlertPeriod == period then return end
+    -- Per character: the profile (RollAwayDB) is account-wide and would silence the alts.
+    if period and RollAwayDBChar and RollAwayDBChar.lastVaultAlertPeriod == period then return end
 
-    RollAwayDB.lastVaultAlertPeriod   = period
+    if RollAwayDBChar then RollAwayDBChar.lastVaultAlertPeriod = period end
     RA.vaultAlertShownThisSession = true
     RA.ShowGreatVaultFrame()
 end
