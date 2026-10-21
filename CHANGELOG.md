@@ -6,6 +6,7 @@
 
 ### Fixed
 - Great Vault reminder: shows once per reset on every character, no longer only on the first one that logs in.
+- Profile reset keeps the "already shown" marks (Great Vault, migration question), so those popups don't come back.
 
 ---
 
