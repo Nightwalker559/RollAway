@@ -10,9 +10,6 @@
 - Profile reset keeps the "already asked" mark of the profile migration question.
 - Great Vault reminder: no longer pops up when you open the vault; once opened, it stays away until the next login.
 
-### Changed
-- Options: all tab lists (pages, Loot & Rolls, QoL, Developer) show a gray watermark icon in front of the label.
-
 ---
 
 ## 3.1.5
