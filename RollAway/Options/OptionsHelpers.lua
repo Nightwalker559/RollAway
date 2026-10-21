@@ -352,7 +352,7 @@ end
 -- Gray, watermark-like icon in front of the tab label (see AddTabIcons): dim by default,
 -- brighter on the active or hovered tab.
 local TAB_ICON_SIZE, TAB_ICON_GAP = 16, 6
-local TAB_ICON_DIM, TAB_ICON_LIT  = 0.25, 0.55
+local TAB_ICON_DIM, TAB_ICON_LIT  = 0.6, 1.0
 
 local function SetTabIconLit(btn, lit)
     if btn.RA_Icon then btn.RA_Icon:SetAlpha(lit and TAB_ICON_LIT or TAB_ICON_DIM) end
@@ -397,7 +397,7 @@ local function AddTabIcons(list)
             tex:SetTexture(e.icon)
             tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)   -- without the icon's own border
             tex:SetDesaturated(true)
-            tex:SetVertexColor(0.8, 0.8, 0.8)
+            tex:SetVertexColor(0.9, 0.9, 0.9)
             btn.RA_Icon = tex
 
             fs:ClearAllPoints()
