@@ -115,6 +115,13 @@ function RA.InitOptions()
 
     -- Adds a page to the list: key, button label, page frame (child of `content`). Pages
     -- register in call order.
+    local NAV_ICONS = {
+        main    = "Interface\\Icons\\INV_Misc_Dice_02",
+        qol     = "Interface\\Icons\\INV_Misc_Gear_03",
+        profile = "Interface\\Icons\\INV_Misc_Note_01",
+        dev     = "Interface\\Icons\\INV_Misc_Wrench_01",
+    }
+    local navIconList = {}
     local prevNavButton
     local function RegisterPage(key, label, page)
         pages[key] = page
@@ -130,6 +137,7 @@ function RA.InitOptions()
         btn:SetScript("OnClick", function() ShowPage(key) end)
         RA.Skin.OptionTab(btn, pages, key, classColor)
         navButtons[key] = btn
+        navIconList[#navIconList + 1] = { btn = btn, icon = NAV_ICONS[key] }
     end
 
     -- Opens the window, optionally on page `key`.
@@ -183,12 +191,12 @@ function RA.InitOptions()
 
     -- Tab definitions
     local tabDefs = {
-        { key = "general",  label = RA_L["tab_general"]  },
-        { key = "dungeons", label = RA_L["tab_dungeons"] },
-        { key = "raids",    label = RA_L["tab_raids"]    },
-        { key = "delves",   label = RA_L["tab_delves"]   },
-        { key = "prey",     label = RA_L["tab_prey"]     },
-        { key = "legacy",   label = RA_L["tab_legacy"]   },
+        { key = "general",  label = RA_L["tab_general"],  icon = "Interface\\Icons\\INV_Misc_Gear_01" },
+        { key = "dungeons", label = RA_L["tab_dungeons"], icon = "Interface\\Icons\\INV_Misc_Key_03" },
+        { key = "raids",    label = RA_L["tab_raids"],    icon = "Interface\\Icons\\INV_Misc_Head_Dragon_01" },
+        { key = "delves",   label = RA_L["tab_delves"],   icon = "Interface\\Icons\\INV_Misc_Map_01" },
+        { key = "prey",     label = RA_L["tab_prey"],     icon = "Interface\\Icons\\Ability_Hunter_SniperShot" },
+        { key = "legacy",   label = RA_L["tab_legacy"],   icon = "Interface\\Icons\\INV_Misc_Book_09" },
     }
 
     local tabPanels  = {}
@@ -221,12 +229,14 @@ function RA.InitOptions()
     -- Tab buttons
     local TAB_GAP = 4
     local tabButtonOrder = {}
+    local tabIconList = {}
     for _, def in ipairs(tabDefs) do
         local key = def.key
         local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
         btn:SetSize(MAIN_NAV_W, 24)
         btn:SetText(def.label)
         tabButtonOrder[#tabButtonOrder + 1] = btn
+        tabIconList[#tabIconList + 1] = { btn = btn, icon = def.icon }
 
         -- Bonus roll tabs: disabled or below max level
         local hidden = BONUS_ROLL_TABS[key] and (not RA.BONUS_ROLLS_ENABLED or belowMaxLevel)
@@ -242,6 +252,8 @@ function RA.InitOptions()
             table.insert(RA.DevOnlyTabButtons, btn)
         end
     end
+
+    UI.AddTabIcons(tabIconList)
 
     -- Re-anchors the visible tabs top to bottom (no gaps); re-run when debug shows/hides tabs.
     local function ReflowMainTabButtons()
@@ -790,6 +802,7 @@ function RA.InitOptions()
     RA.BuildQoLOptions(content, RegisterPage, classColor)
     RA.BuildProfileOptions(content, RegisterPage)
     if isDevChar then RA.BuildDevOptions(content, RegisterPage, classColor) end
+    UI.AddTabIcons(navIconList)
 
     ShowTab("general")
     ShowPage("main")

@@ -8,6 +8,10 @@
 - Great Vault reminder: shows on every login until the rewards are claimed, on every character (it used to be silenced account-wide after the first one).
 - Great Vault reminder: checks right after login (next frame); the 3 s check stays as a fallback.
 - Profile reset keeps the "already asked" mark of the profile migration question.
+- Great Vault reminder: no longer pops up when you open the vault; once opened, it stays away until the next login.
+
+### Changed
+- Options: all tab lists (pages, Loot & Rolls, QoL, Developer) show a gray watermark icon in front of the label.
 
 ---
 

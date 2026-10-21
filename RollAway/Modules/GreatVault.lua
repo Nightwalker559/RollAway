@@ -61,6 +61,13 @@ local function CheckAndShow()
     RA.ShowGreatVaultFrame()
 end
 
+-- The vault was opened (or changed): the reminder has done its job for this session,
+-- so it hides and stays away until the next login.
+local function VaultHandled()
+    RA.vaultAlertShownThisSession = true
+    if vaultFrame and vaultFrame:IsShown() then vaultFrame:Hide() end
+end
+
 -- Manual check, independent of the greatVaultAlert setting.
 local function ManualCheck()
     if HasUnclaimedRewards() then
@@ -73,25 +80,37 @@ end
 -- Initialization
 
 function RA.InitGreatVault()
+    -- Login window: WEEKLY_REWARDS_UPDATE retries the check while the data loads. After
+    -- it, the event means the vault was opened or claimed from.
+    local loginWindow = false
+
     local f = CreateFrame("Frame")
     f:RegisterEvent("PLAYER_ENTERING_WORLD")
     f:RegisterEvent("WEEKLY_REWARDS_UPDATE")
+    f:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 
-    f:SetScript("OnEvent", function(_, event, isInitialLogin)
+    f:SetScript("OnEvent", function(_, event, arg1)
         if event == "PLAYER_ENTERING_WORLD" then
-            -- Only on a real login.
-            if not isInitialLogin then return end
+            -- Only on a real login (arg1 = isInitialLogin).
+            if not arg1 then return end
 
             -- Next frame, with a 3s fallback in case the weekly rewards data isn't
-            -- there yet (the session flag in CheckAndShow() prevents a double show);
-            -- WEEKLY_REWARDS_UPDATE below retries as well.
+            -- there yet (the session flag in CheckAndShow() prevents a double show).
+            loginWindow = true
             RunNextFrame(CheckAndShow)
             C_Timer.After(3, CheckAndShow)
+            C_Timer.After(10, function() loginWindow = false end)
 
         elseif event == "WEEKLY_REWARDS_UPDATE" then
-            -- Retries the login check and fires on claims; the session flag in
-            -- CheckAndShow() shows the reminder once per session.
-            CheckAndShow()
+            if loginWindow then
+                CheckAndShow()
+            else
+                VaultHandled()
+            end
+
+        elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+            local wr = Enum.PlayerInteractionType and Enum.PlayerInteractionType.WeeklyRewards
+            if wr and arg1 == wr then VaultHandled() end
         end
     end)
 

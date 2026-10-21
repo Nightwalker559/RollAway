@@ -349,9 +349,20 @@ local function ReflowTabRow(order, gap, placeFirst, placeHidden)
     end
 end
 
+-- Gray, watermark-like icon in front of the tab label (see AddTabIcons): dim by default,
+-- brighter on the active or hovered tab.
+local TAB_ICON_SIZE, TAB_ICON_GAP = 16, 6
+local TAB_ICON_DIM, TAB_ICON_LIT  = 0.25, 0.55
+
+local function SetTabIconLit(btn, lit)
+    if btn.RA_Icon then btn.RA_Icon:SetAlpha(lit and TAB_ICON_LIT or TAB_ICON_DIM) end
+end
+
 -- Gold label for the active tab, gray for the others (ElvUI-skinned buttons restyle the
 -- backdrop too, via RA_ApplyActive/RA_ApplyInactive).
 local function SetTabButtonActive(btn, active)
+    btn.RA_TabActive = active
+    SetTabIconLit(btn, active)
     if active and btn.RA_ApplyActive then
         btn.RA_ApplyActive()
     elseif not active and btn.RA_ApplyInactive then
@@ -360,6 +371,43 @@ local function SetTabButtonActive(btn, active)
         local color = active and GOLD or GRAY
         local text = btn:GetFontString()
         if text then text:SetTextColor(color.r, color.g, color.b, 1) end
+    end
+end
+
+-- Icons in front of the labels of one tab list: list = { { btn = button, icon = texture }, ... }.
+-- Icon and label form one block, centered in the button; the labels start at the same x
+-- in every button (left-aligned) so they line up under each other. Call after SetText.
+local function AddTabIcons(list)
+    local textW = 0
+    for _, e in ipairs(list) do
+        local fs = e.btn:GetFontString()
+        if fs then textW = math.max(textW, fs:GetStringWidth()) end
+    end
+    local blockW = TAB_ICON_SIZE + TAB_ICON_GAP + textW
+
+    for _, e in ipairs(list) do
+        local btn = e.btn
+        local fs  = btn:GetFontString()
+        if e.icon and fs and not btn.RA_Icon then
+            local x = math.max(6, math.floor((btn:GetWidth() - blockW) / 2))
+
+            local tex = btn:CreateTexture(nil, "OVERLAY")
+            tex:SetSize(TAB_ICON_SIZE, TAB_ICON_SIZE)
+            tex:SetPoint("LEFT", btn, "LEFT", x, 0)
+            tex:SetTexture(e.icon)
+            tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)   -- without the icon's own border
+            tex:SetDesaturated(true)
+            tex:SetVertexColor(0.8, 0.8, 0.8)
+            btn.RA_Icon = tex
+
+            fs:ClearAllPoints()
+            fs:SetPoint("LEFT", btn, "LEFT", x + TAB_ICON_SIZE + TAB_ICON_GAP, 0)
+            fs:SetJustifyH("LEFT")
+
+            SetTabIconLit(btn, btn.RA_TabActive)
+            btn:HookScript("OnEnter", function(self) SetTabIconLit(self, true) end)
+            btn:HookScript("OnLeave", function(self) SetTabIconLit(self, self.RA_TabActive) end)
+        end
     end
 end
 
@@ -637,6 +685,7 @@ RA.OptionsUI = {
     MakeHintText      = MakeHintText,
     MakeScrollFrame   = MakeScrollFrame,
     MakeTabSelector   = MakeTabSelector,
+    AddTabIcons       = AddTabIcons,
     MakeCheckboxRow   = MakeCheckboxRow,
     MakeSeasonTabs    = MakeSeasonTabs,
     CreateGridEntry   = CreateGridEntry,

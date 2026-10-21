@@ -72,10 +72,10 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
 
     -- Left nav in working order.
     local navDefs = {
-        { key = "log",      label = RA_L["dev_nav_log"]      },
-        { key = "tests",    label = RA_L["dev_nav_tests"]    },
-        { key = "tools",    label = RA_L["dev_nav_tools"]    },
-        { key = "commands", label = RA_L["dev_nav_commands"] },
+        { key = "log",      label = RA_L["dev_nav_log"],      icon = "Interface\\Icons\\INV_Misc_Note_03" },
+        { key = "tests",    label = RA_L["dev_nav_tests"],    icon = "Interface\\Icons\\Trade_Engineering" },
+        { key = "tools",    label = RA_L["dev_nav_tools"],    icon = "Interface\\Icons\\INV_Misc_Wrench_01" },
+        { key = "commands", label = RA_L["dev_nav_commands"], icon = "Interface\\Icons\\INV_Letter_15" },
     }
 
     local catPanels  = {}
@@ -83,6 +83,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     local ShowCategory = UI.MakeTabSelector(catPanels, navButtons)
 
     local prevNavBtn
+    local iconList = {}
     for _, def in ipairs(navDefs) do
         local key = def.key
         local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
@@ -97,7 +98,9 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
         btn:SetScript("OnClick", function() ShowCategory(key) end)
         RA.Skin.OptionTab(btn, catPanels, key, classColor)
         navButtons[key] = btn
+        iconList[#iconList + 1] = { btn = btn, icon = def.icon }
     end
+    UI.AddTabIcons(iconList)
 
     -- A scroll frame per category (UI.MakeCategoryPage).
     local function CreateCategoryPanel(key, name)

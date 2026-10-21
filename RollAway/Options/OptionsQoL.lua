@@ -115,13 +115,14 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     local isMaxLevel = RA.IsMaxLevel()
 
     local qolNavDefs = {
-        { key = "character", label = RA_L["qol_nav_character"], show = isMaxLevel },
-        { key = "craft",     label = RA_L["qol_nav_craft"]        },
-        { key = "group",     label = RA_L["qol_nav_group"]        },
-        { key = "hide",      label = RA_L["qol_nav_hide"]         },
-        { key = "logs",      label = RA_L["qol_nav_logs"]         },
-        { key = "quests",    label = RA_L["qol_nav_quests"]       },
-        { key = "reminder",  label = RA_L["qol_reminder_section"] },
+        { key = "character", label = RA_L["qol_nav_character"], show = isMaxLevel,
+          icon = "Interface\\Icons\\INV_Misc_Head_Human_01" },
+        { key = "craft",     label = RA_L["qol_nav_craft"],        icon = "Interface\\Icons\\Trade_BlackSmithing" },
+        { key = "group",     label = RA_L["qol_nav_group"],        icon = "Interface\\Icons\\INV_Misc_GroupLooking" },
+        { key = "hide",      label = RA_L["qol_nav_hide"],         icon = "Interface\\Icons\\INV_Misc_Eye_01" },
+        { key = "logs",      label = RA_L["qol_nav_logs"],         icon = "Interface\\Icons\\INV_Misc_Note_02" },
+        { key = "quests",    label = RA_L["qol_nav_quests"],       icon = "Interface\\Icons\\INV_Scroll_03" },
+        { key = "reminder",  label = RA_L["qol_reminder_section"], icon = "Interface\\Icons\\INV_Misc_Bell_01" },
     }
     for i = #qolNavDefs, 1, -1 do
         if qolNavDefs[i].show == false then table.remove(qolNavDefs, i) end
@@ -133,6 +134,7 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     local ShowQolCategory = UI.MakeTabSelector(qolCatPanels, qolNavButtons)
 
     local prevNavBtn
+    local qolIconList = {}
     for _, def in ipairs(qolNavDefs) do
         local key = def.key
         local btn = CreateFrame("Button", nil, qolPanel, "UIPanelButtonTemplate")
@@ -147,7 +149,9 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         btn:SetScript("OnClick", function() ShowQolCategory(key) end)
         RA.Skin.OptionTab(btn, qolCatPanels, key, classColor)
         qolNavButtons[key] = btn
+        qolIconList[#qolIconList + 1] = { btn = btn, icon = def.icon }
     end
+    UI.AddTabIcons(qolIconList)
 
     -- A ScrollFrame per category (UI.MakeCategoryPage).
     local function CreateQolCategoryPanel(key, name)
