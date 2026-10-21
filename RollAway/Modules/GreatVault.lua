@@ -94,7 +94,10 @@ function RA.InitGreatVault()
             -- Only on a real login.
             if not isInitialLogin then return end
 
-            -- Wait for the weekly rewards data; WEEKLY_REWARDS_UPDATE below retries.
+            -- Next frame, with a 3s fallback in case the weekly rewards data isn't
+            -- there yet (the session flag in CheckAndShow() prevents a double show);
+            -- WEEKLY_REWARDS_UPDATE below retries as well.
+            RunNextFrame(CheckAndShow)
             C_Timer.After(3, CheckAndShow)
 
         elseif event == "WEEKLY_REWARDS_UPDATE" then
