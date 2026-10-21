@@ -50,25 +50,13 @@ local function HasUnclaimedRewards()
     return ok and result or false
 end
 
--- Weekly reward period ID: the reminder shows once per reset, not on every login.
-local function GetRewardPeriod()
-    local remaining = C_DateAndTime.GetSecondsUntilWeeklyReset()
-    if remaining then
-        return math.floor((time() + remaining) / 604800)
-    end
-end
-
+-- Shows on every login (once per session) until the vault is emptied.
 local function CheckAndShow()
     if not (RollAwayDB and RollAwayDB.greatVaultAlert) then return end
     if not RA.IsMaxLevel() then return end  -- no Great Vault rewards below max level
     if RA.vaultAlertShownThisSession then return end  -- already handled this session
     if not HasUnclaimedRewards() then return end
 
-    local period = GetRewardPeriod()
-    -- Per character: the profile (RollAwayDB) is account-wide and would silence the alts.
-    if period and RollAwayDBChar and RollAwayDBChar.lastVaultAlertPeriod == period then return end
-
-    if RollAwayDBChar then RollAwayDBChar.lastVaultAlertPeriod = period end
     RA.vaultAlertShownThisSession = true
     RA.ShowGreatVaultFrame()
 end

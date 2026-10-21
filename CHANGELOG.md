@@ -5,9 +5,9 @@
 ## 3.1.6
 
 ### Fixed
-- Great Vault reminder: shows once per reset on every character, no longer only on the first one that logs in.
-- Profile reset keeps the "already shown" marks (Great Vault, migration question), so those popups don't come back.
-- Great Vault reminder: checks right after login (next frame) instead of after 3 s; the 3 s check stays as a fallback.
+- Great Vault reminder: shows on every login until the rewards are claimed, on every character (it used to be silenced account-wide after the first one).
+- Great Vault reminder: checks right after login (next frame); the 3 s check stays as a fallback.
+- Profile reset keeps the "already asked" mark of the profile migration question.
 
 ---
 

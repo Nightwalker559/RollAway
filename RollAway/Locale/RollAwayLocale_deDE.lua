@@ -557,7 +557,7 @@ L["paragon_zone_93566"] = "Amani'zar"
 -- Great Vault
 ------------------------------------------------------------------------
 L["greatvault_alert_label"] = "Hinweis bei offenen Belohnungen der Großen Schatzkammer"
-L["greatvault_alert_info"]  = "Zeigt beim Login ein Popup, wenn unabgeholte Belohnungen in der Großen Schatzkammer vorhanden sind. Wird nur einmal pro wöchentlichem Reset angezeigt. Mit /rawvault manuell prüfen."
+L["greatvault_alert_info"]  = "Zeigt beim Login ein Popup, wenn unabgeholte Belohnungen in der Großen Schatzkammer vorhanden sind. Erscheint bei jedem Login, bis die Belohnungen abgeholt sind. Mit /rawvault manuell prüfen."
 L["greatvault_alert_msg"]   = "Du hast unabgeholte Belohnungen in der Großen Schatzkammer!"
 L["greatvault_none"]        = "Keine unabgeholten Belohnungen in der Großen Schatzkammer."
 

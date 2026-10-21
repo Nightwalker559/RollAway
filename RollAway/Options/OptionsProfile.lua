@@ -117,11 +117,11 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
     OnAccept = function()
         RA.db:ResetProfile()
         -- The Dungeons/Raids/Delves/Prey selections (RollAwayDBChar) are not part of the profile:
-        -- reset them too, at once. The "already shown/asked" marks stay (no vault or
-        -- migration popup again after a reset).
+        -- reset them too, at once. The "already shown/asked" marks stay (no migration
+        -- question again after a reset).
         local keep = {}
-        for _, k in ipairs({ "profileMigrationAsked", "lastVaultAlertPeriod",
-                             "lastReminderInstID", "lastAdvLogReminderInstID" }) do
+        for _, k in ipairs({ "profileMigrationAsked", "lastReminderInstID",
+                             "lastAdvLogReminderInstID" }) do
             keep[k] = RollAwayDBChar[k]
         end
         wipe(RollAwayDBChar)

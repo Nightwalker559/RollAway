@@ -556,7 +556,7 @@ L["paragon_zone_93566"] = "Amani'Zar Village"
 -- Great Vault
 ------------------------------------------------------------------------
 L["greatvault_alert_label"] = "Notify when Great Vault rewards are unclaimed"
-L["greatvault_alert_info"]  = "Shows a popup on login if you have unclaimed Great Vault rewards. Only shown once per weekly reset. Use /rawvault to check manually."
+L["greatvault_alert_info"]  = "Shows a popup on login if you have unclaimed Great Vault rewards. Shown on every login until the rewards are claimed. Use /rawvault to check manually."
 L["greatvault_alert_msg"]   = "You have unclaimed rewards in your Great Vault!"
 L["greatvault_none"]        = "No unclaimed Great Vault rewards."
 
