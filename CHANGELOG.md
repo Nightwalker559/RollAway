@@ -5,10 +5,13 @@
 ## 3.1.6
 
 ### Fixed
-- Great Vault reminder: shows on every login until the rewards are claimed, on every character (it used to be silenced account-wide after the first one).
-- Great Vault reminder: checks right after login (next frame); the 3 s check stays as a fallback.
-- Profile reset keeps the "already asked" mark of the profile migration question.
+- Great Vault reminder: shows on every character (it was silenced account-wide after the first one).
 - Great Vault reminder: no longer pops up when you open the vault; once opened, it stays away until the next login.
+- Profile reset keeps the "already asked" mark of the profile migration question.
+
+### Changed
+- Great Vault reminder: shows on every login until the rewards are claimed (no longer only once per weekly reset).
+- Great Vault reminder: checks right after login instead of after 3 s; the 3 s check stays as a fallback.
 
 ---
 
