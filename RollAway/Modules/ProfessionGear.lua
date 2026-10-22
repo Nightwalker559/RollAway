@@ -26,7 +26,8 @@ local GEAR_AURAS = {
     [394006] = true,  -- Rockin' Mining Gear (Mining)
     [394011] = true,  -- Dressed To Kill (Skinning)
 }
-local FISHING_AURA = 394009  -- Fishing for Attention
+-- Fishing for Attention ("Kleider machen Beute"): two spells, same name
+local FISHING_AURAS = { 394009, 1303610 }
 
 local UNIT_EVENTS  = { "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_CHANNEL_STOP" }
 local WORLD_EVENTS = { "PLAYER_REGEN_ENABLED", "PLAYER_ENTERING_WORLD" }
@@ -47,7 +48,9 @@ end
 local function RemoveGear(includeFishing)
     if InCombatLockdown() then return end
     for spellID in pairs(GEAR_AURAS) do CancelBySpell(spellID) end
-    if includeFishing then CancelBySpell(FISHING_AURA) end
+    if includeFishing then
+        for _, spellID in ipairs(FISHING_AURAS) do CancelBySpell(spellID) end
+    end
 end
 
 -- UNIT_AURA only while it is needed: instant mode, or until the first full update after
