@@ -195,6 +195,21 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         dbKey = "hideCraftingOutputLog", onChange = RA.ApplyCraftingOutputLogFeature,
     })
 
+    -- Profession gear appearance (ProfessionGear.lua); the sub-option follows the toggle
+    local gearInstantCB
+    craftChain.Add({
+        label = RA_L["qol_profession_gear_label"], info = RA_L["qol_profession_gear_info"],
+        dbKey = "hideProfessionGear",
+        onChange = function(checked)
+            RA.ApplyProfessionGearFeature()
+            if gearInstantCB then gearInstantCB:SetDisabled(not checked) end
+        end,
+    })
+    gearInstantCB = craftChain.AddSub({
+        label = RA_L["qol_profession_gear_instant_label"], dbKey = "hideProfessionGearInstant",
+        onChange = RA.ApplyProfessionGearFeature,
+    }, "hideProfessionGear")
+
     craftChain.Add({
         label = RA_L["qol_expansion_filter_label"], info = RA_L["qol_expansion_filter_info"], dbKey = "expansionFilterAH",
     })
