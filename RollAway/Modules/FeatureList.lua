@@ -78,7 +78,6 @@ local function BuildSections()
         { title = "qol_nav_craft", items = {
             Qol("craft", "qol_salvage_slot_label", "qol_salvage_slot_info", "autoSalvageSlot"),
             Qol("craft", "qol_crafting_output_log_label", "qol_crafting_output_log_info", "hideCraftingOutputLog"),
-            Qol("craft", "qol_profession_gear_label", "qol_profession_gear_info", "hideProfessionGear"),
             Qol("craft", "qol_expansion_filter_label", "qol_expansion_filter_info", "expansionFilterAH"),
             Qol("craft", "qol_autorepair_label",   "qol_autorepair_info",
                 function() return (RollAwayDB.autoRepairMode or "none") ~= "none" end),

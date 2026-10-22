@@ -154,8 +154,6 @@ RA.defaults = {
         vaultButtonCharFrame     = false,
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
-        hideProfessionGear       = false,
-        hideProfessionGearInstant = false,
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
@@ -581,7 +579,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitProfessionGear", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 

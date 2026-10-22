@@ -2,13 +2,6 @@
 
 ---
 
-## 3.1.7
-
-### Added
-- Crafting & Vendors: hide the profession gear appearance (outfit and tool while gathering or crafting). Off by default; optional "hide instantly".
-
----
-
 ## 3.1.6
 
 ### Fixed
