@@ -455,6 +455,60 @@ end
 
 local PORTAL_FRAME_ATLAS = "UI-HUD-ActionBar-IconFrame"
 
+-- Compact cooldown text ("8h"): the Cooldown frame's own countdown puts a space between
+-- number and unit. The units come from the game's own strings (right in every client
+-- language), spaces removed. ElvUI buttons keep ElvUI's cooldown timers.
+local COOLDOWN_UNITS = {   -- seconds per unit, game string, fallback
+    { 86400, "COOLDOWN_DURATION_DAYS", "%dd" },
+    { 3600,  "COOLDOWN_DURATION_HOURS", "%dh" },
+    { 60,    "COOLDOWN_DURATION_MIN", "%dm" },
+    { 1,     "COOLDOWN_DURATION_SEC", "%ds" },
+}
+
+local function FormatCooldownTime(seconds)
+    for _, unit in ipairs(COOLDOWN_UNITS) do
+        if seconds >= unit[1] or unit[1] == 1 then
+            local fmt = _G[unit[2]]
+            if type(fmt) ~= "string" or not fmt:find("%%d") then fmt = unit[3] end
+            return (fmt:gsub("\194\160", ""):gsub("%s", "")):format(math.ceil(seconds / unit[1]))
+        end
+    end
+end
+
+local function RefreshCooldownText(btn)
+    local remaining = btn.cooldownEnd - GetTime()
+    if remaining > 0 then
+        btn.cooldownText:SetText(FormatCooldownTime(remaining))
+    else
+        btn.cooldownTextHolder:Hide()
+    end
+end
+
+-- Created on first use, above the cooldown swipe. Refreshed once a second, only while shown.
+local function ShowCooldownText(btn, start, duration)
+    if not btn.cooldownTextHolder then
+        local holder = CreateFrame("Frame", nil, btn)
+        holder:SetAllPoints()
+        holder:SetFrameLevel(btn.cooldown:GetFrameLevel() + 1)
+        local fs = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        fs:SetPoint("CENTER")
+        btn.cooldownText, btn.cooldownTextHolder = fs, holder
+        btn.cooldownTextFont = (fs:GetFont())
+
+        local elapsed = 0
+        holder:SetScript("OnUpdate", function(_, dt)
+            elapsed = elapsed + dt
+            if elapsed < 1 then return end
+            elapsed = 0
+            RefreshCooldownText(btn)
+        end)
+    end
+    btn.cooldownText:SetFont(btn.cooldownTextFont, math.max(10, math.floor(btn:GetWidth() * 0.36)), "OUTLINE")
+    btn.cooldownEnd = start + duration
+    btn.cooldownTextHolder:Show()
+    RefreshCooldownText(btn)
+end
+
 -- Secure spell button; the caller adds the tooltip and calls RA.SetPortalSpell().
 function RA.CreatePortalButton(globalName, parent, size)
     local btn = CreateFrame("Button", globalName, parent, "SecureActionButtonTemplate")
@@ -512,6 +566,7 @@ function RA.CreatePortalButton(globalName, parent, size)
     btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
     btn.cooldown:SetAllPoints()
     btn.cooldown:SetDrawEdge(false)
+    if not btn.raElvSkinned then btn.cooldown:SetHideCountdownNumbers(true) end  -- own text, see ShowCooldownText
 
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
@@ -593,8 +648,10 @@ function RA.UpdatePortalButtonState(btn, isKnown, unknownAlpha)
     if isKnown then start, duration = RA.GetPortalCooldown(btn.spellID) end
     if start then
         btn.cooldown:SetCooldown(start, duration)
+        if not btn.raElvSkinned then ShowCooldownText(btn, start, duration) end
     else
         btn.cooldown:Clear()
+        if btn.cooldownTextHolder then btn.cooldownTextHolder:Hide() end
     end
 end
 

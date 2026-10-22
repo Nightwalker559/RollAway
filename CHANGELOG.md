@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.7
+
+### Changed
+- Portal buttons: the cooldown time is shown compact ("8h" instead of "8 h"); with ElvUI its own cooldown timers stay.
+
+---
+
 ## 3.1.6
 
 ### Fixed
