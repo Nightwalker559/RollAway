@@ -4,7 +4,7 @@
 
 ## 3.1.7
 
-### Added
+### New
 - Class page (hunters only): pet reminder when entering a current dungeon or raid ("Re-summon your pet."). Off by default.
 
 ### Changed
