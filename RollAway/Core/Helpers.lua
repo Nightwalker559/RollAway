@@ -461,7 +461,8 @@ local PORTAL_FRAME_ATLAS = "UI-HUD-ActionBar-IconFrame"
 
 -- Compact cooldown text ("8h"): the Cooldown frame's own countdown puts a space between
 -- number and unit. The units come from the game's own strings (right in every client
--- language), spaces removed. ElvUI buttons keep ElvUI's cooldown timers.
+-- language), spaces removed. Also on ElvUI buttons (ElvUI's own timer is switched off,
+-- its font is used).
 local COOLDOWN_UNITS = {   -- seconds per unit, game string, fallback
     { 86400, "COOLDOWN_DURATION_DAYS", "%dd" },
     { 3600,  "COOLDOWN_DURATION_HOURS", "%dh" },
@@ -497,7 +498,7 @@ local function ShowCooldownText(btn, start, duration)
         local fs = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         fs:SetPoint("CENTER")
         btn.cooldownText, btn.cooldownTextHolder = fs, holder
-        btn.cooldownTextFont = (fs:GetFont())
+        btn.cooldownTextFont = btn.raElvSkinned and (RA.GetQoLFont()) or (fs:GetFont())
 
         local elapsed = 0
         holder:SetScript("OnUpdate", function(_, dt)
@@ -570,7 +571,8 @@ function RA.CreatePortalButton(globalName, parent, size)
     btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
     btn.cooldown:SetAllPoints()
     btn.cooldown:SetDrawEdge(false)
-    if not btn.raElvSkinned then btn.cooldown:SetHideCountdownNumbers(true) end  -- own text, see ShowCooldownText
+    btn.cooldown:SetHideCountdownNumbers(true)  -- own text, see ShowCooldownText
+    btn.cooldown.noCooldownCount = true         -- ElvUI's cooldown timer stays off too
 
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
@@ -652,7 +654,7 @@ function RA.UpdatePortalButtonState(btn, isKnown, unknownAlpha)
     if isKnown then start, duration = RA.GetPortalCooldown(btn.spellID) end
     if start then
         btn.cooldown:SetCooldown(start, duration)
-        if not btn.raElvSkinned then ShowCooldownText(btn, start, duration) end
+        ShowCooldownText(btn, start, duration)
     else
         btn.cooldown:Clear()
         if btn.cooldownTextHolder then btn.cooldownTextHolder:Hide() end

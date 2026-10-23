@@ -8,7 +8,7 @@
 - Class page (hunters only): pet reminder when entering a current dungeon or raid ("Re-summon your pet."). Off by default.
 
 ### Changed
-- Portal buttons: the cooldown time is shown compact ("8h" instead of "8 h"); with ElvUI its own cooldown timers stay.
+- Portal buttons: the cooldown time is shown compact ("8h" instead of "8 h"), with ElvUI too.
 
 ---
 
