@@ -510,7 +510,6 @@ local function FullReset(reason)
     if RollAwayDBChar then
         RollAwayDBChar.lastReminderInstID = nil
         RollAwayDBChar.lastAdvLogReminderInstID = nil
-        RollAwayDBChar.lastPetReminderInstID = nil
         DBG("Reminder reset: FullReset triggered by:", reason)
     end
     HideHistoryFrame()
@@ -746,8 +745,9 @@ f:SetScript("OnEvent", function(_, event, ...)
         if arg1 and RollAwayDBChar then  -- arg1 = isInitialLogin
             RollAwayDBChar.lastReminderInstID = nil
             RollAwayDBChar.lastAdvLogReminderInstID = nil
-            RollAwayDBChar.lastPetReminderInstID = nil
         end
+        -- Pet reminder: once per loading screen, not on /reload (2nd arg = isReloadingUi).
+        if event == "PLAYER_ENTERING_WORLD" then RA.petReminderArmed = not select(2, ...) end
         LogInstanceSummary()
         if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
         -- Both events fire for one zone change: the newest request wins (token),

@@ -373,8 +373,9 @@ function RA.StackPopupFrame(frame)
 end
 
 -- "Once per instance" popup lifecycle: hides on pull and GROUP_LEFT; the dedup key
--- is cleared on GROUP_LEFT/GROUP_JOINED. GROUP_JOINED does not hide: a Dungeon
--- Finder group is merged right around entering, and the reminder still applies.
+-- is cleared on GROUP_LEFT/GROUP_JOINED (no dedupKey: nothing saved to clear). GROUP_JOINED
+-- does not hide: a Dungeon Finder group is merged right around entering, and the
+-- reminder still applies.
 function RA.SetupInstanceReminderLifecycle(frame, dedupKey)
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
     frame:RegisterEvent("GROUP_LEFT")
@@ -384,7 +385,7 @@ function RA.SetupInstanceReminderLifecycle(frame, dedupKey)
             self:Hide()
         end
         if event == "GROUP_LEFT" or event == "GROUP_JOINED" then
-            if RollAwayDBChar then RollAwayDBChar[dedupKey] = nil end
+            if dedupKey and RollAwayDBChar then RollAwayDBChar[dedupKey] = nil end
         end
     end)
 end
