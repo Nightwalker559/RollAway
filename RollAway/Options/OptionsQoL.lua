@@ -187,6 +187,12 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     if classPage then
         local classChain = NewToggleChain(classPage)
 
+        -- Heading: the class name (game string), the options below belong to it
+        local hunterLabel = classPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        hunterLabel:SetPoint("TOPLEFT", classPage, "TOPLEFT", 0, -8)
+        hunterLabel:SetText(LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter")
+        classChain.Set(hunterLabel, 0, -10)
+
         -- Pet reminder on entering a dungeon / raid (PetReminder.lua)
         classChain.Add({
             label = RA_L["qol_pet_reminder_label"], info = RA_L["qol_pet_reminder_info"],
