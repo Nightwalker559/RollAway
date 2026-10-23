@@ -154,6 +154,7 @@ RA.defaults = {
         vaultButtonCharFrame     = false,
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
+        hunterPetReminder        = false,
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
@@ -509,6 +510,7 @@ local function FullReset(reason)
     if RollAwayDBChar then
         RollAwayDBChar.lastReminderInstID = nil
         RollAwayDBChar.lastAdvLogReminderInstID = nil
+        RollAwayDBChar.lastPetReminderInstID = nil
         DBG("Reminder reset: FullReset triggered by:", reason)
     end
     HideHistoryFrame()
@@ -744,6 +746,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if arg1 and RollAwayDBChar then  -- arg1 = isInitialLogin
             RollAwayDBChar.lastReminderInstID = nil
             RollAwayDBChar.lastAdvLogReminderInstID = nil
+            RollAwayDBChar.lastPetReminderInstID = nil
         end
         LogInstanceSummary()
         if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
@@ -756,10 +759,12 @@ f:SetScript("OnEvent", function(_, event, ...)
             RA.reminderShowTimer = nil
             if RA.reminderShowToken ~= myReminderToken then return end  -- superseded
             if RA.ShowReminder then RA.ShowReminder() end
+            if RA.ShowPetReminder then RA.ShowPetReminder() end
         end
         -- Now, and again after 1.5s: instance info and the Voidcore currency can be
         -- stale right after a fast zone / login. ShowReminder is idempotent.
         if RA.ShowReminder then RA.ShowReminder() end
+        if RA.ShowPetReminder then RA.ShowPetReminder() end
         RA.reminderShowTimer = C_Timer.NewTimer(1.5, FireReminder)
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then

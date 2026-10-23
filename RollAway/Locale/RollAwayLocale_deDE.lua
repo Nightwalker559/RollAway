@@ -415,6 +415,7 @@ L["qol_nav_group"]                 = "Gruppe"
 L["qol_nav_craft"]                 = "Handwerk & Händler"
 L["qol_nav_quests"]                = "Quests"
 L["qol_nav_character"]             = "Charakter"
+L["qol_nav_class"]                 = "Klasse"
 L["qol_nav_hide"]                  = "Ausblenden"
 L["qol_hide_talkinghead_label"]    = "Talking Head ausblenden"
 L["qol_hide_talkinghead_info"]     = "Blendet das vertonte Dialogfenster am oberen Bildschirmrand aus. Die Questtexte bleiben im Questlog lesbar."
@@ -484,6 +485,9 @@ L["qol_crafting_output_log_info"]  = "Blendet das kleine Popup aus, in dem deine
 L["qol_vault_button_tooltip"]      = "Große Schatzkammer öffnen"
 L["qol_fontsize_label"]            = "Schriftgröße"
 L["qol_check_talents"]             = "Talente prüfen"
+L["qol_pet_reminder_label"]        = "Pet-Erinnerung in Dungeons und Schlachtzügen"
+L["qol_pet_reminder_info"]         = "Zeigt beim Betreten eines aktuellen Dungeons oder Schlachtzugs kurz den Hinweis „Pet neu beschwören.“ – als Absicherung gegen den Pet-Bug nach dem Tod des Pets (wiederbeleben, freilassen und neu beschwören). Erscheint einmal pro Besuch, egal ob dein Pet gerade lebt."
+L["qol_pet_reminder_text"]         = "Pet neu beschwören."
 L["qol_check_talents_fmt"]         = "Talente prüfen (%s)"
 
 ------------------------------------------------------------------------

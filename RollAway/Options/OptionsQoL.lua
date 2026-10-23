@@ -113,9 +113,11 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     -- tab below max level.
     local QOL_NAV_W = 130
     local isMaxLevel = RA.IsMaxLevel()
+    local isHunter   = RA.IsHunter()
 
     local qolNavDefs = {
         { key = "character", label = RA_L["qol_nav_character"], show = isMaxLevel },
+        { key = "class",     label = RA_L["qol_nav_class"],     show = isHunter },
         { key = "craft",     label = RA_L["qol_nav_craft"] },
         { key = "group",     label = RA_L["qol_nav_group"] },
         { key = "hide",      label = RA_L["qol_nav_hide"] },
@@ -155,6 +157,7 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     end
 
     local character = isMaxLevel and CreateQolCategoryPanel("character", "Character") or nil
+    local classPage = isHunter and CreateQolCategoryPanel("class", "Class") or nil
     local craft     = CreateQolCategoryPanel("craft",    "Craft")
     local group     = CreateQolCategoryPanel("group",    "Group")
     local hide      = CreateQolCategoryPanel("hide",     "Hide")
@@ -178,6 +181,17 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
             label = RA_L["qol_vault_currency_label"], info = RA_L["qol_vault_currency_info"],
             dbKey = "vaultCurrencyDisplay",
         }, RA.BONUS_ROLLS_ENABLED and true or false)
+    end
+
+    -- ── Category: Class (hunters; further classes get their own options here) ──
+    if classPage then
+        local classChain = NewToggleChain(classPage)
+
+        -- Pet reminder on entering a dungeon / raid (PetReminder.lua)
+        classChain.Add({
+            label = RA_L["qol_pet_reminder_label"], info = RA_L["qol_pet_reminder_info"],
+            dbKey = "hunterPetReminder",
+        })
     end
 
     -- ── Category: Crafting & Vendors ─────────────────────────────────────

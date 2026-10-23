@@ -121,7 +121,7 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
         -- question again after a reset).
         local keep = {}
         for _, k in ipairs({ "profileMigrationAsked", "lastReminderInstID",
-                             "lastAdvLogReminderInstID" }) do
+                             "lastAdvLogReminderInstID", "lastPetReminderInstID" }) do
             keep[k] = RollAwayDBChar[k]
         end
         wipe(RollAwayDBChar)

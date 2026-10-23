@@ -60,6 +60,10 @@ function RA.IsMaxLevel()
     return UnitLevel("player") >= GetMaxPlayerLevel()
 end
 
+function RA.IsHunter()
+    return select(2, UnitClass("player")) == "HUNTER"
+end
+
 -- Instance name plus the keystone level ("+14", gold) when known.
 function RA.FormatInstanceWithKey(name, keyLevel)
     if not keyLevel then return name end

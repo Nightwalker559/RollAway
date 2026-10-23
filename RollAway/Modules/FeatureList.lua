@@ -75,6 +75,9 @@ local function BuildSections()
             Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", "lfgAutoMythicPlus"),
             Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", "lfgAutoPlaystyle"),
         } },
+        { title = "qol_nav_class", show = RA.IsHunter(), items = {
+            Qol("class", "qol_pet_reminder_label", "qol_pet_reminder_info", "hunterPetReminder"),
+        } },
         { title = "qol_nav_craft", items = {
             Qol("craft", "qol_salvage_slot_label", "qol_salvage_slot_info", "autoSalvageSlot"),
             Qol("craft", "qol_crafting_output_log_label", "qol_crafting_output_log_info", "hideCraftingOutputLog"),
