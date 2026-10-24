@@ -156,6 +156,13 @@ function Skin.IconButton(btn, icon)
     if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
     if icon.SetInside then icon:SetInside(btn) end
     if btn.StyleButton then btn:StyleButton(false, true, true) end -- hover tint only
+    -- Class-colored border while hovered, like ElvUI's own buttons and the options tabs
+    -- (HookScript: the buttons' own OnEnter/OnLeave are set later with SetScript).
+    local classColor = Skin.ClassColor()
+    if classColor then
+        btn:HookScript("OnEnter", function(self) self:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b) end)
+        btn:HookScript("OnLeave", function(self) self:SetBackdropBorderColor(0.55, 0.55, 0.55) end)
+    end
     return true
 end
 
