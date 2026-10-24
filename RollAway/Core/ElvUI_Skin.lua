@@ -139,20 +139,18 @@ function Skin.PortalButton(btn, icon, highlight)
     return true
 end
 
--- Small icon button (Character panel: Great Vault / Omniumfoliant): ElvUI's 1px template
--- border around the cropped icon, hover tint. The icon would otherwise float borderless
--- on the dark ElvUI panel. Returns true when skinned (the caller then skips the game's
+-- Small icon button (Character panel: Great Vault / Omniumfoliant): the cropped icon on
+-- ElvUI's transparent template, class-colored border while hovered. Without the template
+-- fill the icon would float on the dark ElvUI panel. Returns true when skinned (the caller then skips the game's
 -- Quickslot art).
 function Skin.IconButton(btn, icon)
     if not Enabled() or not btn.SetTemplate then return false end
     btn:SetNormalTexture("")
     btn:SetPushedTexture("")
     btn:SetHighlightTexture("")
-    btn:SetTemplate("Default")
-    -- ElvUI's normal border is near black, invisible on the dark panel and around the
-    -- icons' own black backdrop: ElvUI's value color (the one of its own highlights) instead.
-    local function ValueBorder() return unpack(E.media.rgbvaluecolor or E.media.bordercolor) end
-    btn:SetBackdropBorderColor(ValueBorder())
+    -- Transparent template: its fill sets the button off the panel, the border (ElvUI's
+    -- normal one) only takes the class color while hovered.
+    btn:SetTemplate("Transparent")
     icon:SetDrawLayer("ARTWORK")
     if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
     if icon.SetInside then icon:SetInside(btn) end
@@ -162,7 +160,7 @@ function Skin.IconButton(btn, icon)
     local classColor = Skin.ClassColor()
     if classColor then
         btn:HookScript("OnEnter", function(self) self:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b) end)
-        btn:HookScript("OnLeave", function(self) self:SetBackdropBorderColor(ValueBorder()) end)
+        btn:HookScript("OnLeave", function(self) self:SetBackdropBorderColor(unpack(E.media.bordercolor)) end)
     end
     return true
 end

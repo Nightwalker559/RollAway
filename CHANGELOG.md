@@ -9,7 +9,7 @@
 
 ### Changed
 - Portal buttons: the cooldown time is shown compact ("8h" instead of "8 h"), with ElvUI too.
-- Character panel buttons (Great Vault, Omniumfoliant): with ElvUI they get a border in ElvUI's value color (class color on hover) and a flat icon.
+- Character panel buttons (Great Vault, Omniumfoliant): with ElvUI they get ElvUI's transparent button look, class-colored border on hover.
 
 ---
 
