@@ -288,3 +288,75 @@ function Skin.ClassColor()
     local _, className = UnitClass("player")
     return RAID_CLASS_COLORS and RAID_CLASS_COLORS[className]
 end
+
+------------------------------------------------------------------------
+-- TEMPORARY DRAFT (/rawbtndraft): style variants for the Character panel buttons, to pick
+-- one in game. Remove together with the slash command once decided.
+------------------------------------------------------------------------
+
+local DRAFT_ICONS = { 7554214, 2744751 }  -- Omniumfoliant, Great Vault (CharFrameButtons.lua)
+
+local DRAFT_STYLES = {
+    { name = "A  ElvUI Standard (schwarzer Rand)",   template = "Default" },
+    { name = "B  Transparent-Template",              template = "Transparent" },
+    { name = "C  dunkelgrau 0.25, 2px Abstand",      template = "Default", border = { 0.25, 0.25, 0.25 }, pad = 2 },
+    { name = "D  ElvUI-Wertefarbe als Rand",         template = "Default", valueColor = true },
+    { name = "E  Klassenfarbe immer, Hover weiss",   template = "Default", classAlways = true },
+}
+
+local function DraftButton(parent, style, iconID)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(24, 24)
+    btn:SetTemplate(style.template)
+    local classColor = Skin.ClassColor() or { r = 1, g = 0.82, b = 0 }
+    local normal = style.border or E.media.bordercolor
+    if style.valueColor and E.media.rgbvaluecolor then normal = E.media.rgbvaluecolor end
+    if style.classAlways then normal = { classColor.r, classColor.g, classColor.b } end
+    local function Paint(hover)
+        if style.classAlways then
+            if hover then btn:SetBackdropBorderColor(1, 1, 1) else btn:SetBackdropBorderColor(unpack(normal)) end
+        elseif hover then
+            btn:SetBackdropBorderColor(classColor.r, classColor.g, classColor.b)
+        else
+            btn:SetBackdropBorderColor(unpack(normal))
+        end
+    end
+    Paint(false)
+    local pad = style.pad or 1
+    local tex = btn:CreateTexture(nil, "ARTWORK")
+    tex:SetTexture(iconID)
+    tex:SetPoint("TOPLEFT", pad, -pad)
+    tex:SetPoint("BOTTOMRIGHT", -pad, pad)
+    tex:SetTexCoord(unpack(E.TexCoords))
+    btn:SetScript("OnEnter", function() Paint(true) end)
+    btn:SetScript("OnLeave", function() Paint(false) end)
+    return btn
+end
+
+SLASH_RABTNDRAFT1 = "/rawbtndraft"
+SlashCmdList["RABTNDRAFT"] = function()
+    if not Enabled() then print("RollAway: ElvUI-Skin ist aus.") return end
+    local f = _G["RollAwayBtnDraft"]
+    if f then f:SetShown(not f:IsShown()) return end
+    f = CreateFrame("Frame", "RollAwayBtnDraft", UIParent)
+    f:SetSize(340, 20 + #DRAFT_STYLES * 38)
+    f:SetPoint("CENTER")
+    f:SetFrameStrata("DIALOG")
+    f:SetTemplate("Transparent")
+    f:EnableMouse(true)
+    f:SetMovable(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    tinsert(UISpecialFrames, "RollAwayBtnDraft")
+    for i, style in ipairs(DRAFT_STYLES) do
+        local y = -10 - (i - 1) * 38
+        local label = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        label:SetPoint("TOPLEFT", 12, y - 6)
+        label:SetText(style.name)
+        local b2 = DraftButton(f, style, DRAFT_ICONS[2])
+        b2:SetPoint("TOPRIGHT", -12, y)
+        local b1 = DraftButton(f, style, DRAFT_ICONS[1])
+        b1:SetPoint("RIGHT", b2, "LEFT", -4, 0)
+    end
+end

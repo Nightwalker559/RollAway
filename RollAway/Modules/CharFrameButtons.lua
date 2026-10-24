@@ -57,7 +57,12 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     tex:SetTexture(icon)
     btn.icon = tex
 
-    -- ElvUI: bordered, flat icon button (Core/ElvUI_Skin.lua); otherwise the game's Quickslot art.
+    btn:SetScript("OnClick", onClick)
+    btn:SetScript("OnEnter", onEnter)
+    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- After the SetScripts (they would drop the skin's hover hooks). ElvUI: bordered, flat
+    -- icon button (Core/ElvUI_Skin.lua); otherwise the game's Quickslot art.
     if not RA.Skin.IconButton(btn, tex) then
         btn:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
         btn:GetNormalTexture():SetAllPoints()
@@ -66,10 +71,6 @@ local function CreateButton(globalName, icon, onClick, onEnter)
         tex:SetPoint("TOPLEFT", 3, -3)
         tex:SetPoint("BOTTOMRIGHT", -3, 3)
     end
-
-    btn:SetScript("OnClick", onClick)
-    btn:SetScript("OnEnter", onEnter)
-    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     -- Diagnostics: only a hide we did not do ourselves that is still in effect
     -- shortly after (OnHide also fires in brief cycles while Blizzard opens the panel).
     btn:HookScript("OnHide", function(self)
