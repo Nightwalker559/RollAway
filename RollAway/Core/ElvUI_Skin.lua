@@ -139,6 +139,23 @@ function Skin.PortalButton(btn, icon, highlight)
     return true
 end
 
+-- Small icon button (Character panel: Great Vault / Omniumfoliant): ElvUI's 1px template
+-- border around the cropped icon, hover tint. The icon would otherwise float borderless
+-- on the dark ElvUI panel. Returns true when skinned (the caller then skips the game's
+-- Quickslot art).
+function Skin.IconButton(btn, icon)
+    if not Enabled() or not btn.SetTemplate then return false end
+    btn:SetNormalTexture("")
+    btn:SetPushedTexture("")
+    btn:SetHighlightTexture("")
+    btn:SetTemplate("Default")
+    icon:SetDrawLayer("ARTWORK")
+    if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
+    if icon.SetInside then icon:SetInside(btn) end
+    if btn.StyleButton then btn:StyleButton(false, true, true) end -- hover tint only
+    return true
+end
+
 -- Gold border while `shown`, else ElvUI's normal border. False for an unskinned button.
 function Skin.PortalKeyHighlight(btn, shown)
     if not btn.raElvSkinned then return false end

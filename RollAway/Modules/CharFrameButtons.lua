@@ -53,18 +53,19 @@ local function CreateButton(globalName, icon, onClick, onEnter)
     btn:SetFrameStrata("DIALOG")
     btn:SetFrameLevel(PaperDollFrame:GetFrameLevel() + 10)
 
-    btn:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
-    btn:GetNormalTexture():SetAllPoints()
-    btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
-    btn:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-
     local tex = btn:CreateTexture(nil, "ARTWORK")
-    tex:SetPoint("TOPLEFT", 3, -3)
-    tex:SetPoint("BOTTOMRIGHT", -3, 3)
     tex:SetTexture(icon)
     btn.icon = tex
 
-    RA.Skin.Button(btn)
+    -- ElvUI: bordered, flat icon button (Core/ElvUI_Skin.lua); otherwise the game's Quickslot art.
+    if not RA.Skin.IconButton(btn, tex) then
+        btn:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
+        btn:GetNormalTexture():SetAllPoints()
+        btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+        btn:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+        tex:SetPoint("TOPLEFT", 3, -3)
+        tex:SetPoint("BOTTOMRIGHT", -3, 3)
+    end
 
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnEnter", onEnter)
