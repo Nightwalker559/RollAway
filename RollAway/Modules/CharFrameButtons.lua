@@ -12,7 +12,7 @@ local DBG      = RA.DBG
 local DBGError = RA.DBGError
 
 local OMNI_ICON_FILEID       = 7554214  -- Omniumfoliant minimap icon
-local GREATVAULT_ICON_FILEID = 2744751  -- Great Vault chest icon
+local GREATVAULT_ICON_PATH   = "Interface\\AddOns\\RollAway\\Media\\VaultIcon.png"  -- own vault medallion, fills the whole image
 
 -- Extra X nudge while Chonky is loaded (tune live with /rawchonkyoffset).
 local chonkyXOffsetBonus = -260
@@ -47,7 +47,8 @@ local function PlaceButton(btn, xOffset)
     btn:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", xOffset + bonus, 8)
 end
 
-local function CreateButton(globalName, icon, onClick, onEnter)
+-- uncropped: the icon art fills the whole image (ElvUI's icon crop would cut its edges).
+local function CreateButton(globalName, icon, onClick, onEnter, uncropped)
     local btn = CreateFrame("Button", globalName, PaperDollFrame)
     btn:SetSize(24, 24)
     btn:SetFrameStrata("DIALOG")
@@ -63,7 +64,7 @@ local function CreateButton(globalName, icon, onClick, onEnter)
 
     -- After the SetScripts (they would drop the skin's hover hooks). ElvUI: bordered, flat
     -- icon button (Core/ElvUI_Skin.lua); otherwise the game's Quickslot art.
-    if not RA.Skin.IconButton(btn, tex) then
+    if not RA.Skin.IconButton(btn, tex, uncropped) then
         btn:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
         btn:GetNormalTexture():SetAllPoints()
         btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
@@ -159,13 +160,13 @@ local function ToggleGreatVault()
 end
 
 local function CreateVaultButton()
-    return CreateButton("RollAwayVaultButton", GREATVAULT_ICON_FILEID,
+    return CreateButton("RollAwayVaultButton", GREATVAULT_ICON_PATH,
         ToggleGreatVault,
         function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:SetText(RA_L["qol_vault_button_tooltip"])
             GameTooltip:Show()
-        end)
+        end, true)
 end
 
 -- Refresh

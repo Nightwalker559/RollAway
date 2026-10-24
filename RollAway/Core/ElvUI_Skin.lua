@@ -143,7 +143,7 @@ end
 -- ElvUI's transparent template, class-colored border while hovered. Without the template
 -- fill the icon would float on the dark ElvUI panel. Returns true when skinned (the caller then skips the game's
 -- Quickslot art).
-function Skin.IconButton(btn, icon)
+function Skin.IconButton(btn, icon, uncropped)
     if not Enabled() or not btn.SetTemplate then return false end
     btn:SetNormalTexture("")
     btn:SetPushedTexture("")
@@ -152,7 +152,9 @@ function Skin.IconButton(btn, icon)
     -- normal one) only takes the class color while hovered.
     btn:SetTemplate("Transparent")
     icon:SetDrawLayer("ARTWORK")
-    if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
+    if not uncropped then
+        if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
+    end
     if icon.SetInside then icon:SetInside(btn) end
     if btn.StyleButton then btn:StyleButton(false, true, true) end -- hover tint only
     -- Class-colored border while hovered, like ElvUI's own buttons and the options tabs
