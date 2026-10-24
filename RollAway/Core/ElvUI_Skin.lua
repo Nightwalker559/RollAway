@@ -149,6 +149,9 @@ function Skin.IconButton(btn, icon)
     btn:SetPushedTexture("")
     btn:SetHighlightTexture("")
     btn:SetTemplate("Default")
+    -- ElvUI's normal border is near black, invisible on the dark panel and around the
+    -- icons' own black backdrop: a light gray one (like the portal button fallback frame).
+    btn:SetBackdropBorderColor(0.55, 0.55, 0.55)
     icon:SetDrawLayer("ARTWORK")
     if icon.SetTexCoords then icon:SetTexCoords() else icon:SetTexCoord(unpack(E.TexCoords)) end
     if icon.SetInside then icon:SetInside(btn) end
