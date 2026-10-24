@@ -62,6 +62,7 @@ Closes the loot history window once the last roll is finished, with your delay a
 - **Great Vault** popup on login at max level when rewards are unclaimed (`/rawvault` checks by hand).
 - **Paragon bag** popup when Paragon quests are available, with turn-in NPC and zone (`/rawparagon`).
 - **Durability warning**, Great Vault and Omniumfoliant buttons on the character frame.
+- **Hunter pet reminder** (QoL page "Class"): "Re-summon your pet." on every entry of a current dungeon or raid. Off by default.
 - Reminder positions can be locked or reset.
 
 ## Hide clutter

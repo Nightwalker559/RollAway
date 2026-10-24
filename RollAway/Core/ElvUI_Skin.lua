@@ -141,8 +141,9 @@ end
 
 -- Small icon button (Character panel: Great Vault / Omniumfoliant): the cropped icon on
 -- ElvUI's transparent template, class-colored border while hovered. Without the template
--- fill the icon would float on the dark ElvUI panel. Returns true when skinned (the caller then skips the game's
--- Quickslot art).
+-- fill the icon would float on the dark ElvUI panel. uncropped: keep the icon's full
+-- texture (art that fills the image). Returns true when skinned (the caller then skips
+-- the game's Quickslot art).
 function Skin.IconButton(btn, icon, uncropped)
     if not Enabled() or not btn.SetTemplate then return false end
     btn:SetNormalTexture("")

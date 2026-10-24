@@ -486,7 +486,7 @@ L["qol_vault_button_tooltip"]      = "Große Schatzkammer öffnen"
 L["qol_fontsize_label"]            = "Schriftgröße"
 L["qol_check_talents"]             = "Talente prüfen"
 L["qol_pet_reminder_label"]        = "Pet-Erinnerung in Dungeons und Schlachtzügen"
-L["qol_pet_reminder_info"]         = "Zeigt beim Betreten eines aktuellen Dungeons oder Schlachtzugs kurz den Hinweis „Pet neu beschwören.“ – als Absicherung gegen den Pet-Bug nach dem Tod des Pets (wiederbeleben, freilassen und neu beschwören). Erscheint einmal pro Besuch, egal ob dein Pet gerade lebt."
+L["qol_pet_reminder_info"]         = "Zeigt beim Betreten eines aktuellen Dungeons oder Schlachtzugs kurz den Hinweis „Pet neu beschwören.“ – als Absicherung gegen den Pet-Bug nach dem Tod des Pets (wiederbeleben, freilassen und neu beschwören). Erscheint bei jedem Betreten, egal ob dein Pet gerade lebt."
 L["qol_pet_reminder_text"]         = "Pet neu beschwören."
 L["qol_check_talents_fmt"]         = "Talente prüfen (%s)"
 

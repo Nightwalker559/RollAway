@@ -485,7 +485,7 @@ L["qol_vault_button_tooltip"]      = "Open Great Vault"
 L["qol_fontsize_label"]            = "Reminder font size"
 L["qol_check_talents"]             = "Check Talents"
 L["qol_pet_reminder_label"]        = "Pet reminder in dungeons and raids"
-L["qol_pet_reminder_info"]         = "Briefly shows \"Re-summon your pet.\" when you enter a current dungeon or raid, as a safeguard against the pet bug after a pet has died (revive, dismiss and summon it again). Shown once per visit, whether or not your pet is alive."
+L["qol_pet_reminder_info"]         = "Briefly shows \"Re-summon your pet.\" when you enter a current dungeon or raid, as a safeguard against the pet bug after a pet has died (revive, dismiss and summon it again). Shown on every entry, whether or not your pet is alive."
 L["qol_pet_reminder_text"]         = "Re-summon your pet."
 L["qol_check_talents_fmt"]         = "Check Talents (%s)"
 

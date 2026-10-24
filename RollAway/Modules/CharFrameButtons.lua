@@ -12,7 +12,7 @@ local DBG      = RA.DBG
 local DBGError = RA.DBGError
 
 local OMNI_ICON_FILEID       = 7554214  -- Omniumfoliant minimap icon
-local GREATVAULT_ICON_PATH   = "Interface\\AddOns\\RollAway\\Media\\VaultIcon.png"  -- own vault medallion, fills the whole image
+local GREATVAULT_ICON_PATH   = "Interface\\AddOns\\RollAway\\Media\\VaultIcon.png"  -- own medallion art
 
 -- Extra X nudge while Chonky is loaded (tune live with /rawchonkyoffset).
 local chonkyXOffsetBonus = -260
