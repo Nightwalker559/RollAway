@@ -1,9 +1,5 @@
 package-as: RollAway
 
-externals:
-  RollAway/Libs/LibStub: https://github.com/BigWigsMods/LibKeystone.git/LibStub
-  RollAway/Libs/LibKeystone: https://github.com/BigWigsMods/LibKeystone.git/LibKeystone
-
 move-folders:
   RollAway/RollAway: RollAway
 
