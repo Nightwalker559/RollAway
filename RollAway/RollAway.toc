@@ -13,6 +13,9 @@
 ## OptionalDeps: ElvUI, BigWigs
 ## IconTexture: Interface\AddOns\RollAway\Media\Icon
 
+Libs\LibStub\LibStub.lua
+Libs\LibKeystone\LibKeystone.lua
+
 Locale\RollAwayLocale_enUS.lua
 Locale\RollAwayLocale_deDE.lua
 Data\Dungeons.lua
