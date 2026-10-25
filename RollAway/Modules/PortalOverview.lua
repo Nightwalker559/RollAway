@@ -184,7 +184,7 @@ local function AcquireKeyRow(i, parent)
     return row
 end
 
--- Group keys: only while the option is on, in a party (LibKeystone shares in the party only).
+-- Group keys: only while the option is on, in a party (the keys are shared in the party channel only).
 local function ShowGroupKeys()
     return RollAwayDB.portalGroupKeys and IsInGroup() and not IsInRaid()
 end
