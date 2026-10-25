@@ -15,7 +15,9 @@ local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
 
 local MIN_FRAME_WIDTH = 300  -- the three tabs need the room
-local FRAME_HEIGHT    = 316  -- fixed, content scrolls (the options tab needs the room)
+local FRAME_HEIGHT    = 316  -- maximum, content scrolls; the options tab always uses all of it
+local MIN_HEIGHT      = 110
+local CHROME_HEIGHT   = 46   -- scroll frame inset: 34 above, 12 below the content
 local MARGINS         = 20   -- both sides together (the scrollbar is hidden)
 
 -- Icon size / row layout from the saved options (clamped); refreshed by ApplyMetrics().
@@ -544,6 +546,7 @@ function RA.RefreshPortalOverview()
     if isSettings then
         HideAllButtons()
         overviewFrame.emptyText:Hide()
+        overviewFrame:SetHeight(FRAME_HEIGHT)
         return
     end
 
@@ -557,6 +560,8 @@ function RA.RefreshPortalOverview()
         end
         LayoutGroupedButtons(GroupByExpansion(known))
     end
+    -- The portal tabs are as high as their content (up to the maximum).
+    overviewFrame:SetHeight(math.min(FRAME_HEIGHT, math.max(MIN_HEIGHT, overviewFrame.content:GetHeight() + CHROME_HEIGHT)))
 end
 
 function RA.ShowPortalOverview()
