@@ -175,6 +175,7 @@ RA.defaults = {
         minimapButtonHide        = false,
         minimapAngle             = 225,   -- degrees around the minimap
         portalLabels             = true,  -- short dungeon names on the portal buttons
+        portalGroupKeys          = false, -- Portal overview: the group's keystones below the season portals
         portalIconSize           = 48,    -- Portal overview: icon size 32-64
         portalGap                = 2,     --   gap between the icon edges 0-16
         portalPerRow             = 4,     --   icons per row 3-8

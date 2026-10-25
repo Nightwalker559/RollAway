@@ -4,7 +4,8 @@
 -- Tabs: 1) current season (RA.DUNGEONS[RA.ACTIVE_SEASON]), same look as the join
 -- reminder; 2) all learned dungeon teleports (RA.DUNGEONS[*] + LegacyDungeonTeleports),
 -- grouped by expansion, unlearned ones and empty groups hidden; 3) options (icon size,
--- icons per row, short name labels; RollAwayDB.portal*).
+-- icons per row, short name labels, group keystones; RollAwayDB.portal*).
+-- Tab 1 can list the group's keystones below the portals (GroupKeys.lua).
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -14,7 +15,7 @@ local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
 
 local MIN_FRAME_WIDTH = 300  -- the three tabs need the room
-local FRAME_HEIGHT    = 290  -- fixed, content scrolls (the options tab needs the room)
+local FRAME_HEIGHT    = 316  -- fixed, content scrolls (the options tab needs the room)
 local MARGINS         = 20   -- both sides together (the scrollbar is hidden)
 
 -- Icon size / row layout from the saved options (clamped); refreshed by ApplyMetrics().
@@ -57,7 +58,13 @@ local function ApplyMetrics()
 end
 local portalPool  = {}   -- icon button pool
 local headerPool  = {}   -- category header pool
+local keyRowPool  = {}   -- group key row pool: { name, level, dungeon } font strings
 local usedButtons = 0    -- pool slots used in the current layout pass
+
+local KEY_ROW_HEIGHT = 15
+local KEY_LEVEL_X    = 112   -- columns of a key row: name | +level | dungeon
+local KEY_DUNGEON_X  = 146
+local GROUP_UNITS    = { "player", "party1", "party2", "party3", "party4" }
 
 -- Data sources
 
@@ -105,6 +112,30 @@ local function GroupByExpansion(entries)
     return groups
 end
 
+-- The group's shared keystones, highest level first (GroupKeys.lua; members without a key left out).
+local function CollectGroupKeys()
+    local rows = {}
+    for _, unit in ipairs(GROUP_UNITS) do
+        local key = UnitExists(unit) and RA.GetGroupKey(unit)
+        if key and key.level > 0 then
+            local _, class = UnitClass(unit)
+            rows[#rows + 1] = { name = UnitName(unit), class = class, level = key.level, mapID = key.mapID }
+        end
+    end
+    table.sort(rows, function(a, b)
+        if a.level ~= b.level then return a.level > b.level end
+        return a.name < b.name
+    end)
+    return rows
+end
+
+local function KeyDungeonName(mapID)
+    for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
+        if d.cmID == mapID then return RA_L["dungeon_"..d.key] or d.key end
+    end
+    return C_ChallengeMode.GetMapUIInfo(mapID)
+end
+
 -- Pools
 
 local function AcquireButton(i, parent)
@@ -138,6 +169,44 @@ local function AcquireHeader(i, parent)
     return fs
 end
 
+local function AcquireKeyRow(i, parent)
+    local row = keyRowPool[i]
+    if row then return row end
+    local function NewText()
+        local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        fs:SetJustifyH("LEFT")
+        fs:SetWordWrap(false)
+        return fs
+    end
+    row = { name = NewText(), level = NewText(), dungeon = NewText() }
+    keyRowPool[i] = row
+    return row
+end
+
+-- Group keys: only while the option is on, in a party (LibKeystone shares in the party only).
+local function ShowGroupKeys()
+    return RollAwayDB.portalGroupKeys and IsInGroup() and not IsInRaid()
+end
+
+local function RequestGroupKeys()
+    if ShowGroupKeys() then RA.RequestGroupKeys() end
+end
+
+-- Keys arrive one message per member and the roster changes in bursts: one refresh per frame.
+local refreshPending = false
+local function QueueRefresh()
+    if refreshPending then return end
+    refreshPending = true
+    RunNextFrame(function()
+        refreshPending = false
+        RA.RefreshPortalOverview()
+    end)
+end
+
+RA.OnGroupKeys(function()
+    if RollAwayDB and RollAwayDB.portalGroupKeys then QueueRefresh() end
+end)
+
 -- Frame creation
 
 -- Tab 3: the options widgets of the options window (RA.OptionsUI, loaded later but
@@ -157,6 +226,14 @@ local function CreateSettingsPanel()
         end, MIN_FRAME_WIDTH - MARGINS)
     cb.frame:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 0, 0)
 
+    local keysCB = UI.MakeCB(settingsPanel, RA_L["portal_cfg_groupkeys"], RollAwayDB.portalGroupKeys == true,
+        function(checked)
+            RollAwayDB.portalGroupKeys = checked
+            RequestGroupKeys()
+            RA.RefreshPortalOverview()
+        end, MIN_FRAME_WIDTH - MARGINS)
+    keysCB.frame:SetPoint("TOPLEFT", cb.frame, "BOTTOMLEFT", 0, -2)
+
     local defaults = RA.defaults.profile
     local sliders  = {}   -- [dbKey] = slider frame, for the default button
     local function AddSlider(anchor, dbKey, min, max, step, labelKey)
@@ -172,7 +249,7 @@ local function CreateSettingsPanel()
         sliders[dbKey] = slider
         return slider
     end
-    local s1 = AddSlider(cb.frame, "portalIconSize",  32, 64, 2, "portal_cfg_iconsize")
+    local s1 = AddSlider(keysCB.frame, "portalIconSize",  32, 64, 2, "portal_cfg_iconsize")
     local s2 = AddSlider(s1,       "portalGap",        0, 16, 1, "portal_cfg_gap")
     local s3 = AddSlider(s2,       "portalPerRow",     3,  8, 1, "portal_cfg_perrow")
     AddSlider(s3,                  "portalLabelSize",  8, 16, 1, "portal_cfg_labelsize")
@@ -184,6 +261,8 @@ local function CreateSettingsPanel()
     reset:SetScript("OnClick", function()
         RollAwayDB.portalLabels = defaults.portalLabels
         cb:SetValue(defaults.portalLabels)
+        RollAwayDB.portalGroupKeys = defaults.portalGroupKeys
+        keysCB:SetValue(defaults.portalGroupKeys)
         for dbKey, slider in pairs(sliders) do
             RollAwayDB[dbKey] = defaults[dbKey]
             slider.Slider:SetValue(defaults[dbKey])
@@ -280,23 +359,29 @@ local function CreateOverviewFrame()
     overviewFrame.emptyText:SetText(RA_L["portal_overview_empty"])
     overviewFrame.emptyText:Hide()
 
-    -- Bag changes (keystone highlight) and new teleports (SPELLS_CHANGED) only matter
-    -- while open; OnShow also covers a Show deferred until after combat.
+    -- Bag changes (keystone highlight), new teleports (SPELLS_CHANGED) and group changes
+    -- (key list) only matter while open; OnShow also covers a Show deferred until after combat.
     overviewFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     overviewFrame:HookScript("OnShow", function(self)
         self:RegisterEvent("BAG_UPDATE_DELAYED")
         self:RegisterEvent("SPELLS_CHANGED")
+        self:RegisterEvent("GROUP_ROSTER_UPDATE")
+        RequestGroupKeys()
         RA.RefreshPortalOverview()
     end)
     overviewFrame:SetScript("OnHide", function(self)
         self:UnregisterEvent("BAG_UPDATE_DELAYED")
         self:UnregisterEvent("SPELLS_CHANGED")
+        self:UnregisterEvent("GROUP_ROSTER_UPDATE")
     end)
     overviewFrame:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_REGEN_DISABLED" then
             RA.SafeSetShown(self, false)
         elseif event == "BAG_UPDATE_DELAYED" or event == "SPELLS_CHANGED" then
             RA.RefreshPortalOverview()
+        elseif event == "GROUP_ROSTER_UPDATE" then
+            RequestGroupKeys()
+            QueueRefresh()
         end
     end)
 end
@@ -312,6 +397,12 @@ local function HideAllButtons()
     for _, fs in pairs(headerPool) do
         fs:Hide()
         fs:ClearAllPoints()
+    end
+    for _, row in pairs(keyRowPool) do
+        for _, fs in pairs(row) do
+            fs:Hide()
+            fs:ClearAllPoints()
+        end
     end
 end
 
@@ -356,7 +447,45 @@ local function PlaceRows(entries, y, ownedLfgID, allKnown)
     return math.ceil(#entries / perRow) * rowStep
 end
 
--- Tab 1: one season header, then all entries.
+-- One key row at y: class-colored name, "+level", dungeon.
+local function PlaceKeyRow(i, y, entry)
+    local content = overviewFrame.content
+    local row = AcquireKeyRow(i, content)
+    local color = RAID_CLASS_COLORS[entry.class]
+    row.name:SetText(color and color:WrapTextInColorCode(entry.name) or entry.name)
+    row.level:SetText("|cffFFD100+"..entry.level.."|r")
+    row.dungeon:SetText(KeyDungeonName(entry.mapID) or "")
+    row.name:SetPoint("TOPLEFT", content, "TOPLEFT", 0, y)
+    row.name:SetWidth(KEY_LEVEL_X - 6)
+    row.level:SetPoint("TOPLEFT", content, "TOPLEFT", KEY_LEVEL_X, y)
+    row.level:SetWidth(KEY_DUNGEON_X - KEY_LEVEL_X)
+    row.dungeon:SetPoint("TOPLEFT", content, "TOPLEFT", KEY_DUNGEON_X, y)
+    row.dungeon:SetWidth(contentWidth - KEY_DUNGEON_X)
+    row.name:Show()
+    row.level:Show()
+    row.dungeon:Show()
+end
+
+-- Header and key rows from y down (a grey hint when none arrived). Returns the height.
+local function PlaceGroupKeys(y)
+    PlaceHeader(2, y, RA_L["portal_groupkeys_header"])
+    y = y - HEADER_HEIGHT
+    local rows = CollectGroupKeys()
+    if #rows == 0 then
+        local row = AcquireKeyRow(1, overviewFrame.content)
+        row.name:SetText("|cff999999"..RA_L["portal_groupkeys_none"].."|r")
+        row.name:SetPoint("TOPLEFT", overviewFrame.content, "TOPLEFT", 0, y)
+        row.name:SetWidth(contentWidth)
+        row.name:Show()
+        return HEADER_HEIGHT + KEY_ROW_HEIGHT
+    end
+    for i, entry in ipairs(rows) do
+        PlaceKeyRow(i, y - (i - 1) * KEY_ROW_HEIGHT, entry)
+    end
+    return HEADER_HEIGHT + #rows * KEY_ROW_HEIGHT
+end
+
+-- Tab 1: one season header, then all entries, then the group's keys (option).
 local function LayoutFlatButtons(entries)
     HideAllButtons()
 
@@ -370,8 +499,11 @@ local function LayoutFlatButtons(entries)
     end
     overviewFrame.emptyText:Hide()
 
-    local usedHeight = PlaceRows(entries, -HEADER_HEIGHT, RA.GetOwnedKeystone(), false)
-    overviewFrame.content:SetHeight(HEADER_HEIGHT + usedHeight)
+    local height = HEADER_HEIGHT + PlaceRows(entries, -HEADER_HEIGHT, RA.GetOwnedKeystone(), false)
+    if ShowGroupKeys() then
+        height = height + HEADER_GAP + PlaceGroupKeys(-(height + HEADER_GAP))
+    end
+    overviewFrame.content:SetHeight(height)
 end
 
 -- Tab 2: one header per expansion, its portals in rows below (known spells only).
