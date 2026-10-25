@@ -152,7 +152,7 @@ end
 RA.OnGroupKeys(RefreshGroupKey)
 
 local function RequestGroupKey()
-    if not RA.GroupKeysAvailable() or not IsInGroup() then return end
+    if not IsInGroup() then return end
     RA.RequestGroupKeys()
     -- The group may not be fully formed yet / the request throttled: once more.
     C_Timer.After(3, function()
