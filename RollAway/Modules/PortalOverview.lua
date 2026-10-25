@@ -15,9 +15,6 @@ local HEADER_HEIGHT   = 18
 local HEADER_GAP      = 4
 
 local MIN_FRAME_WIDTH = 300  -- the three tabs need the room
-local FRAME_HEIGHT    = 316  -- maximum, content scrolls; the options tab always uses all of it
-local MIN_HEIGHT      = 110
-local CHROME_HEIGHT   = 46   -- scroll frame inset: 34 above, 12 below the content
 local MARGINS         = 20   -- both sides together (the scrollbar is hidden)
 
 -- Icon size / row layout from the saved options (clamped); refreshed by ApplyMetrics().
@@ -54,7 +51,9 @@ local function ApplyMetrics()
     frameWidth   = math.max(MIN_FRAME_WIDTH, rowWidth + MARGINS + 8)
     contentWidth = frameWidth - MARGINS
     if overviewFrame then
-        overviewFrame:SetWidth(activeTab == TAB_SETTINGS and MIN_FRAME_WIDTH or frameWidth)
+        -- Square; content that does not fit scrolls.
+        local size = activeTab == TAB_SETTINGS and MIN_FRAME_WIDTH or frameWidth
+        overviewFrame:SetSize(size, size)
         overviewFrame.content:SetWidth(contentWidth)
     end
 end
@@ -239,7 +238,7 @@ local function CreateSettingsPanel()
     local defaults = RA.defaults.profile
     local sliders  = {}   -- [dbKey] = slider frame, for the default button
     local function AddSlider(anchor, dbKey, min, max, step, labelKey)
-        local slider = UI.MakeValueSlider(settingsPanel, anchor, 0, -6, {
+        local slider = UI.MakeValueSlider(settingsPanel, anchor, 0, -4, {
             min = min, max = max, step = step, value = Clamp(RollAwayDB[dbKey], min, max, defaults[dbKey]),
             formatLabel = function(v) return string.format(RA_L[labelKey], v) end,
             onChange = function(v)
@@ -285,7 +284,7 @@ local function CreateOverviewFrame()
     if overviewFrame then return end
 
     ApplyMetrics()
-    overviewFrame = RA.CreatePanelWindow("RollAwayPortalOverviewFrame", UIParent, frameWidth, FRAME_HEIGHT,
+    overviewFrame = RA.CreatePanelWindow("RollAwayPortalOverviewFrame", UIParent, frameWidth, frameWidth,
         RA_L["portal_overview_title"])
     local pos = RollAwayDB and RollAwayDB.portalOverviewPos
     if pos then
@@ -546,7 +545,6 @@ function RA.RefreshPortalOverview()
     if isSettings then
         HideAllButtons()
         overviewFrame.emptyText:Hide()
-        overviewFrame:SetHeight(FRAME_HEIGHT)
         return
     end
 
@@ -560,8 +558,6 @@ function RA.RefreshPortalOverview()
         end
         LayoutGroupedButtons(GroupByExpansion(known))
     end
-    -- The portal tabs are as high as their content (up to the maximum).
-    overviewFrame:SetHeight(math.min(FRAME_HEIGHT, math.max(MIN_HEIGHT, overviewFrame.content:GetHeight() + CHROME_HEIGHT)))
 end
 
 function RA.ShowPortalOverview()
