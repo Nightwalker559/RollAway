@@ -1,4 +1,4 @@
-## Interface: 120100, 120105
+## Interface: 120100, 120105, 120107
 ## Title: RollAway & Tools
 ## Notes: Auto-pass bonus rolls, confirm or auto-roll loot, tidy the loot history, plus small helpers for groups, crafting and vendors. Switch every feature on or off in one window.
 ## Notes-deDE: Bonusrolls automatisch passen, Loot bestätigen oder automatisch würfeln, den Loot-Verlauf aufräumen – dazu kleine Helfer für Gruppe, Handwerk und Händler. Jede Funktion lässt sich in einem Fenster ein- und ausschalten.

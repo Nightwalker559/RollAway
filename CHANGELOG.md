@@ -9,6 +9,7 @@
 
 ### Changed
 - Portal window: square (as high as wide).
+- TOC: 12.1.7 added.
 
 ---
 
