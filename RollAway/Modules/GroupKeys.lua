@@ -1,95 +1,74 @@
 -- RollAway - Modules/GroupKeys.lua
 -- The party's keystones, kept per player. Used by the teleport reminder (key level of a
 -- joined group) and the portal overview (key list under the season portals).
--- Transport: the LibKeystone protocol (addon prefix "LibKS"), which BigWigs, Details!
--- Keystones and others speak. With LibKeystone loaded we use it; without it we speak the
--- protocol ourselves (below), so it works without BigWigs.
+-- Our own implementation, no library. Only the wire format matches the one BigWigs and
+-- other keystone addons use (addon prefix "LibKS"), so they and we see each other:
+--   "<level>,<challengeMapID>,<rating>"  a member's key        "R"  please send yours
 
 local RA = _G["RollAway"]
 
-local PREFIX   = "LibKS"
-local THROTTLE = 3   -- seconds between our sends (same as the library)
+local PREFIX = "LibKS"
+local MIN_GAP = 3        -- seconds between two messages of the same kind
 
-local keys      = {}   -- short name -> { level, mapID } (mapID = challenge mode ID = a dungeon's cmID)
-local owner     = {}   -- the table LibKeystone wants as "addon" for Register
-local listeners = {}   -- fn() called whenever a key arrives
-local libRegistered = false
+local keys      = {}     -- short name -> { level, mapID } (mapID = challenge mode ID = a dungeon's cmID)
+local listeners = {}     -- fn() called whenever a key arrives
+local lastSent  = { key = 0, ask = 0 }
+local eventFrame
 
 -- fn() runs whenever a member's key arrives (also our own, on every request).
 function RA.OnGroupKeys(fn)
     listeners[#listeners + 1] = fn
 end
 
-local function Deliver(name, level, mapID)
+local function Store(name, level, mapID)
     keys[name] = { level = level, mapID = mapID }
     for i = 1, #listeners do listeners[i]() end
 end
 
--- Own protocol (no LibKeystone): "level,mapID,rating" to PARTY, "R" asks everyone to send theirs.
-
-local ownFrame
-local lastSend, lastRequest = 0, 0
-
--- Our own keystone: level, challenge map ID, season rating (0 = none).
-local function GetOwnKey()
-    local level = C_MythicPlus.GetOwnedKeystoneLevel()
-    local mapID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
-    local summary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
-    local rating = summary and summary.currentSeasonScore
-    return type(level) == "number" and level or 0,
-           type(mapID) == "number" and mapID or 0,
-           type(rating) == "number" and rating or 0
+-- True when a message of this kind may go out now (and remembers the time).
+local function MaySend(kind)
+    local now = GetTime()
+    if now - lastSent[kind] < MIN_GAP then return false end
+    lastSent[kind] = now
+    return true
 end
 
-local function SendOwnKey()
-    if not IsInGroup() or GetTime() - lastSend < THROTTLE then return end
-    lastSend = GetTime()
-    C_ChatInfo.SendAddonMessage(PREFIX, string.format("%d,%d,%d", GetOwnKey()), "PARTY")
+-- Our own keystone: level, challenge map ID, season rating (0 where there is none).
+local function OwnKey()
+    local level  = C_MythicPlus.GetOwnedKeystoneLevel()
+    local mapID  = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
+    local rating = C_PlayerInfo.GetPlayerMythicPlusRatingSummary("player")
+    rating = rating and rating.currentSeasonScore
+    return tonumber(level) or 0, tonumber(mapID) or 0, tonumber(rating) or 0
 end
 
-local function OnAddonMessage(_, _, prefix, msg, channel, sender)
+local function OnAddonMessage(_, _, prefix, text, channel, sender)
     if prefix ~= PREFIX or channel ~= "PARTY" then return end
-    if msg == "R" then
-        -- Only share ours while the feature is on (BigWigs users get it unasked).
-        if RollAwayDB and RollAwayDB.portalGroupKeys then SendOwnKey() end
+    if text == "R" then
+        -- Others only get ours while the feature is on.
+        if RollAwayDB and RollAwayDB.portalGroupKeys and IsInGroup() and MaySend("key") then
+            C_ChatInfo.SendAddonMessage(PREFIX, string.format("%d,%d,%d", OwnKey()), "PARTY")
+        end
         return
     end
-    local level, mapID = msg:match("^(%d+),(%d+),%d+$")
-    if level then Deliver(Ambiguate(sender, "none"), tonumber(level), tonumber(mapID)) end
+    local level, mapID = text:match("^(%d+),(%d+),%d+$")
+    if level then Store(Ambiguate(sender, "none"), tonumber(level), tonumber(mapID)) end
 end
 
-local function RequestOwnProtocol()
-    if not ownFrame then
-        ownFrame = CreateFrame("Frame")
-        ownFrame:RegisterEvent("CHAT_MSG_ADDON")
-        ownFrame:SetScript("OnEvent", OnAddonMessage)
+-- Asks the party for their keys; the answers come in over the next moments. Our own key
+-- counts as received right away, also when ungrouped.
+function RA.RequestGroupKeys()
+    if not eventFrame then
+        eventFrame = CreateFrame("Frame")
+        eventFrame:SetScript("OnEvent", OnAddonMessage)
+        eventFrame:RegisterEvent("CHAT_MSG_ADDON")
         C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
     end
-    -- Our own key counts as received, also when ungrouped.
-    local level, mapID = GetOwnKey()
-    Deliver(UnitName("player"), level, mapID)
-    if IsInGroup() and GetTime() - lastRequest >= THROTTLE then
-        lastRequest = GetTime()
+    local level, mapID = OwnKey()
+    Store(UnitName("player"), level, mapID)
+    if IsInGroup() and MaySend("ask") then
         C_ChatInfo.SendAddonMessage(PREFIX, "R", "PARTY")
     end
-end
-
--- Asks the party for their keys; the answers come in over the next moments. Our own key is
--- delivered right away, also when ungrouped.
-function RA.RequestGroupKeys()
-    -- Looked up late: BigWigs may load after us.
-    local LKS = LibStub and LibStub("LibKeystone", true)
-    if not LKS then
-        RequestOwnProtocol()
-        return
-    end
-    if not libRegistered then
-        libRegistered = true
-        LKS.Register(owner, function(level, mapID, _, name, channel)
-            if channel == "PARTY" then Deliver(name, level, mapID) end
-        end)
-    end
-    LKS.Request("PARTY")
 end
 
 -- The shared key of a group unit ("player", "party1" ...): { level, mapID }, nil when none
