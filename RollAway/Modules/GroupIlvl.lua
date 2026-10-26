@@ -7,8 +7,8 @@
 -- token behind. The step timer only runs while somebody still needs an inspect.
 --
 -- Active only with ElvUI and RollAwayDB.groupIlvl (QoL page "Group"); the events are
--- registered only then (RA.ApplyGroupIlvl). Thresholds: RollAwayDB.groupIlvlBands.
--- /gilvl: thresholds, rescan, status.
+-- registered only then (RA.ApplyGroupIlvl). The color steps are ours (BANDS), not a setting.
+-- /gilvl: rescan, status.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -20,11 +20,12 @@ local RANGE_RETRY   = 10   -- out of inspect range / offline: look again later, 
 local MAX_AGE       = 3600 -- cache entries older than this are dropped when the roster changes
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
--- purple, orange, gold. Seasons move the thresholds.
+-- purple, orange, gold.
 local COLORS = { "|cff9d9d9d", "|cffffffff", "|cff1eff00", "|cff3d9bff", "|cffa335ee",
     "|cffff8000", "|cffe6cc80" }
--- Offsets from your own item level for the automatic thresholds: you land on gold.
-local AUTO_OFFSETS = { -80, -55, -35, -20, -10, 0 }
+-- Item level where each color step starts (six ascending numbers). Every season moves them:
+-- adjust here (see SEASON_WECHSEL.md).
+local BANDS = { 250, 275, 295, 310, 320, 330 }
 
 local PARTY_UNITS, RAID_UNITS = {}, {}
 for i = 1, 4 do PARTY_UNITS[i] = "party" .. i end
@@ -90,54 +91,21 @@ local function PruneCache()
     end
 end
 
--- Thresholds and colors
-
--- Six ascending numbers.
-local function ValidBands(bands)
-    if type(bands) ~= "table" or #bands ~= #COLORS - 1 then return false end
-    for i = 1, #bands do
-        if type(bands[i]) ~= "number" or (i > 1 and bands[i] <= bands[i - 1]) then return false end
-    end
-    return true
-end
-
-local function GetBands()
-    local bands = RollAwayDB.groupIlvlBands
-    return ValidBands(bands) and bands or RA.defaults.profile.groupIlvlBands
-end
+-- Colors
 
 local function ColorFor(ilvl)
-    local bands = GetBands()
     local step = 1
-    for i = 1, #bands do
-        if ilvl >= bands[i] then step = i + 1 else break end
+    for i = 1, #BANDS do
+        if ilvl >= BANDS[i] then step = i + 1 else break end
     end
     return COLORS[step]
 end
 
 -- The scale in its own colors, for the options and /gilvl status.
 function RA.GetGroupIlvlLegend()
-    local bands = GetBands()
-    local parts = { COLORS[1] .. "<" .. bands[1] .. "|r" }
-    for i = 1, #bands do parts[i + 1] = COLORS[i + 1] .. bands[i] .. "+|r" end
+    local parts = { COLORS[1] .. "<" .. BANDS[1] .. "|r" }
+    for i = 1, #BANDS do parts[i + 1] = COLORS[i + 1] .. BANDS[i] .. "+|r" end
     return table.concat(parts, " ")
-end
-
--- Thresholds from your own item level (nil while it is not known yet).
-function RA.AutoGroupIlvlBands()
-    local entry = playerGUID and cache[playerGUID]
-    if not entry then return nil end
-    local bands = {}
-    for i, offset in ipairs(AUTO_OFFSETS) do bands[i] = entry.ilvl + offset end
-    return bands
-end
-
--- Saves new thresholds (false when they are not six ascending numbers).
-function RA.SetGroupIlvlBands(bands)
-    if not ValidBands(bands) then return false end
-    RollAwayDB.groupIlvlBands = bands
-    NotifyAll()
-    return true
 end
 
 -- The text of a tag for `unit`; nil, never "", when there is nothing to show: oUF prints a
@@ -162,7 +130,7 @@ function RA.OnGroupIlvlChanged(fn)
     listeners[#listeners + 1] = fn
 end
 
--- Re-reads the colors after the "colored" switch or the thresholds changed.
+-- Redraws the tags after the "colored" switch changed.
 function RA.RefreshGroupIlvlTags()
     NotifyAll()
 end
@@ -354,34 +322,13 @@ local function Print(text)
     print("|cff33ccffRollAway|r " .. text)
 end
 
-local function SetBandsFromText(args)
-    local bands
-    if args == "auto" then
-        bands = RA.AutoGroupIlvlBands()
-        if not bands then
-            Print(RA_L["gilvl_unknown_level"])
-            return
-        end
-    else
-        bands = {}
-        for number in args:gmatch("%d+") do bands[#bands + 1] = tonumber(number) end
-    end
-    if not RA.SetGroupIlvlBands(bands) then
-        Print(RA_L["gilvl_bands_invalid"])
-        return
-    end
-    Print(string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
-end
-
 function RA.InitGroupIlvl()
     RA.ApplyGroupIlvl()
 
     SLASH_ROLLAWAYGILVL1 = "/gilvl"
     SlashCmdList["ROLLAWAYGILVL"] = function(msg)
-        local cmd, rest = msg:lower():match("^%s*(%S*)%s*(.-)%s*$")
-        if cmd == "bands" then
-            SetBandsFromText(rest)
-        elseif cmd == "scan" then
+        local cmd = msg:lower():match("^%s*(%S*)")
+        if cmd == "scan" then
             if IsActive() then
                 Rescan()
                 Print(RA_L["gilvl_rescan"])

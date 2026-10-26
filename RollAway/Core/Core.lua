@@ -157,7 +157,6 @@ RA.defaults = {
         hunterPetReminder        = false,
         groupIlvl                = false,  -- ElvUI [gilvl] tags: item level of group members (GroupIlvl.lua)
         groupIlvlColored         = true,
-        groupIlvlBands           = { 250, 275, 295, 310, 320, 330 },  -- item level where each color step starts
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
