@@ -8,7 +8,7 @@
 - Portal window: option "Show group keystones" lists the group's keys (name, level, dungeon) under the season portals. Works with or without BigWigs (same key sharing as BigWigs, so both see each other), off by default.
 - Class page (hunters only): the pet reminder also shows when you revive your pet in a current dungeon or raid.
 - Profile page: button "Apply to all characters" puts every other character on the active profile (with a confirmation).
-- Group page (ElvUI only): item level of group members in ElvUI's unit frames via the tags [gilvl], [gilvl:plain], [gilvl:brackets], with color thresholds and `/gilvl`. Off by default. Replaces the separate GroupIlvl addon.
+- Group page (ElvUI only): item level of group members in ElvUI's unit frames via the tags [gilvl], [gilvl:plain], [gilvl:brackets], with color thresholds and `/gilvl`. Off by default.
 
 ### Fixed
 - Teleport reminder: no longer shows a key level the group did not list (it was guessed from the members' keystones). Only the level from the listing is shown.
