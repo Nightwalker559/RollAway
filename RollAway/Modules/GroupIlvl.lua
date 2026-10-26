@@ -4,7 +4,8 @@
 -- inspected one at a time: pick the first member who has no level yet (or whose gear
 -- changed), send NotifyInspect, wait for INSPECT_READY, store the result, repeat. A member
 -- is scanned once and the level stays cached while he is in the group: no periodic asking.
--- The cache is also kept per character (RollAwayDBChar.groupIlvlCache) and survives /reload.
+-- The cache is also kept per character (RollAwayDBChar.groupIlvlCache) and survives /reload;
+-- it is dropped when a member leaves, when you leave the group and on a fresh login.
 -- There is no queue: each step rescans the (at most 40) roster tokens, so a roster change
 -- cannot leave a stale unit token behind. The step timer only runs while somebody still
 -- needs an inspect.
@@ -20,7 +21,6 @@ local DBG  = RA.DBG
 local STEP_DELAY    = 2    -- spacing between inspects; the server throttles faster requests
 local REPLY_TIMEOUT = 5    -- no INSPECT_READY after this long counts as a failure
 local RANGE_RETRY   = 5    -- out of inspect range / offline: look again later, not a failure
-local MAX_AGE       = 3600 -- levels of players who left the group are dropped after this long; saved ones older than this are not loaded
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
 -- purple, orange, gold.
@@ -34,7 +34,7 @@ local PARTY_UNITS, RAID_UNITS = {}, {}
 for i = 1, 4 do PARTY_UNITS[i] = "party" .. i end
 for i = 1, 40 do RAID_UNITS[i] = "raid" .. i end
 
-local cache = {}               -- guid -> { ilvl = number, at = GetTime() }
+local cache = {}               -- guid -> item level
 local listeners = {}           -- fn(guid) when a level changed
 local retryAt, fails, dirty = {}, {}, {}
 local loggedRange = {}         -- guid -> true once "cannot be inspected" was logged (once per spell out of range)
@@ -70,8 +70,7 @@ local function Notify(guid)
     for i = 1, #listeners do listeners[i](guid) end
 end
 
--- The saved copy of the cache (per character): guid -> { ilvl, at = time() }. GetTime() starts
--- over with every session, so the saved entries carry the wall clock.
+-- The saved copy of the cache (per character): guid -> item level.
 local function Saved()
     local saved = RollAwayDBChar and RollAwayDBChar.groupIlvlCache
     return type(saved) == "table" and saved or nil
@@ -79,29 +78,21 @@ end
 
 local function SetIlvl(guid, ilvl)
     ilvl = math.floor(ilvl + 0.5)
-    local entry = cache[guid]
-    local changed = not entry or entry.ilvl ~= ilvl
-    if not entry then
-        entry = {}
-        cache[guid] = entry
-    end
-    entry.ilvl = ilvl
-    entry.at = GetTime()
+    local changed = cache[guid] ~= ilvl
+    cache[guid] = ilvl
     -- Your own level is read from the character sheet at once, no need to save it.
     local saved = guid ~= playerGUID and Saved()
-    if saved then saved[guid] = { ilvl = ilvl, at = time() } end
+    if saved then saved[guid] = ilvl end
     if changed then Notify(guid) end
 end
 
--- Takes the saved levels that are still young enough into the cache (older ones are dropped).
+-- Takes the saved levels into the cache (damaged entries are dropped).
 local function LoadSaved()
     local saved = Saved()
     if not saved then return end
-    local wall, now = time(), GetTime()
-    for guid, e in pairs(saved) do
-        local age = type(e) == "table" and type(e.ilvl) == "number" and type(e.at) == "number" and wall - e.at
-        if age and age >= 0 and age <= MAX_AGE then
-            if not cache[guid] then cache[guid] = { ilvl = e.ilvl, at = now - age } end
+    for guid, ilvl in pairs(saved) do
+        if type(ilvl) == "number" then
+            if not cache[guid] then cache[guid] = ilvl end
         else
             saved[guid] = nil
         end
@@ -119,23 +110,31 @@ local function GroupUnits()
     return PARTY_UNITS, GetNumSubgroupMembers()
 end
 
--- Drops the levels of players who are not in the group any more and were last read long ago
--- (a short break, e.g. a re-invite into the same dungeon, keeps them).
-local present = {}
+-- Drops every level (saved copy included) except yours and those of the guids in `keep`.
+local function Drop(keep)
+    for guid in pairs(cache) do
+        if guid ~= playerGUID and not keep[guid] then cache[guid] = nil end
+    end
+    local saved = Saved()
+    if saved then
+        for guid in pairs(saved) do
+            if not keep[guid] then saved[guid] = nil end
+        end
+    end
+end
+
+-- Forgets the levels of everybody who is not in the group (any more). A member whose identity
+-- is not readable yet could not be told from a stranger: keep everything until it is.
+local present, NONE = {}, {}
 local function PruneCache()
     wipe(present)
     local units, count = GroupUnits()
     for i = 1, count do
         local guid = UnitGUIDSafe(units[i])
-        if guid then present[guid] = true end
+        if not guid then return end
+        present[guid] = true
     end
-    local now, saved = GetTime(), Saved()
-    for guid, entry in pairs(cache) do
-        if guid ~= playerGUID and not present[guid] and now - entry.at > MAX_AGE then
-            cache[guid] = nil
-            if saved then saved[guid] = nil end
-        end
-    end
+    Drop(present)
 end
 
 -- Colors
@@ -161,13 +160,13 @@ end
 function RA.FormatGroupIlvl(unit, mode)
     if not IsActive() then return nil end
     local guid = UnitGUIDSafe(unit)
-    local entry = guid and cache[guid]
-    if not entry then return nil end
+    local ilvl = guid and cache[guid]
+    if not ilvl then return nil end
 
-    local text = tostring(entry.ilvl)
+    local text = tostring(ilvl)
     if mode == "brackets" then text = "[" .. text .. "]" end
     if mode ~= "plain" and RollAwayDB.groupIlvlColored then
-        text = ColorFor(entry.ilvl) .. text .. "|r"
+        text = ColorFor(ilvl) .. text .. "|r"
     end
     return text
 end
@@ -339,6 +338,7 @@ local function OnEvent(_, event, arg1)
         Kick()
     elseif event == "PLAYER_ENTERING_WORLD" then
         playerGUID = UnitGUIDSafe("player")
+        if arg1 then Drop(NONE) end   -- arg1 = isInitialLogin: only a /reload keeps the levels
         UpdateSelf()
         wipe(retryAt)   -- a zone change usually brings the group together: look at once
         OnGroupChanged()
@@ -366,6 +366,7 @@ function RA.ApplyGroupIlvl()
         eventFrame:UnregisterAllEvents()
         generation = generation + 1   -- a scheduled step does nothing any more
         pending = nil
+        Drop(NONE)
         wipe(retryAt)
         wipe(fails)
         wipe(dirty)
