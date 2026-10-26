@@ -17,7 +17,7 @@ local DBG  = RA.DBG
 local TTL           = 600  -- seconds until a known level is inspected again
 local STEP_DELAY    = 2    -- spacing between inspects; the server throttles faster requests
 local REPLY_TIMEOUT = 5    -- no INSPECT_READY after this long counts as a failure
-local RANGE_RETRY   = 10   -- out of inspect range / offline: look again later, not a failure
+local RANGE_RETRY   = 5    -- out of inspect range / offline: look again later, not a failure
 local MAX_AGE       = 3600 -- cache entries older than this are dropped when the roster changes
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
@@ -35,6 +35,7 @@ for i = 1, 40 do RAID_UNITS[i] = "raid" .. i end
 local cache = {}               -- guid -> { ilvl = number, at = GetTime() }
 local listeners = {}           -- fn(guid) when a level changed
 local retryAt, fails, dirty = {}, {}, {}
+local loggedRange = {}         -- guid -> true once "cannot be inspected" was logged (once per spell out of range)
 local pending                  -- { guid, unit } while an inspect request is in flight
 local generation = 0           -- the latest scheduled step wins
 local playerGUID
@@ -161,7 +162,7 @@ local function Fail(guid)
 end
 
 local function Succeed(guid)
-    fails[guid], retryAt[guid], dirty[guid] = nil, nil, nil
+    fails[guid], retryAt[guid], dirty[guid], loggedRange[guid] = nil, nil, nil, nil
 end
 
 local function Inspectable(unit)
@@ -214,7 +215,10 @@ function Step()
                         NotifyInspect(unit)
                         return Schedule(REPLY_TIMEOUT)
                     end
-                    DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / out of range)")
+                    if not loggedRange[guid] then
+                        loggedRange[guid] = true
+                        DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / out of range), checking again every", RANGE_RETRY, "s")
+                    end
                     wake = now + RANGE_RETRY
                     retryAt[guid] = wake
                 end
@@ -261,6 +265,7 @@ local function OnGroupChanged()
         wipe(retryAt)
         wipe(fails)
         wipe(dirty)
+        wipe(loggedRange)
         return
     end
     Kick()
@@ -297,6 +302,7 @@ local function OnEvent(_, event, arg1)
     elseif event == "PLAYER_ENTERING_WORLD" then
         playerGUID = UnitGUIDSafe("player")
         UpdateSelf()
+        wipe(retryAt)   -- a zone change usually brings the group together: look at once
         OnGroupChanged()
     else -- PLAYER_EQUIPMENT_CHANGED, PLAYER_AVG_ITEM_LEVEL_UPDATE
         UpdateSelf()
@@ -324,6 +330,7 @@ function RA.ApplyGroupIlvl()
         wipe(retryAt)
         wipe(fails)
         wipe(dirty)
+        wipe(loggedRange)
     end
     NotifyAll()
 end
