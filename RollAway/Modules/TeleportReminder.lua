@@ -115,56 +115,11 @@ local function LayoutAndUpdate(visibleButtons)
     end
 end
 
--- Key level of a joined group (title unreadable): the keys the members share (GroupKeys.lua).
-
-local shown = {}            -- what the open reminder shows: name, dungeon, keyLevel
-
-local function RenderMessage()
-    reminderFrame.msg:SetText(shown.name
-        and ("|cffFFFFFF"..RA.FormatInstanceWithKey(shown.name, shown.keyLevel).."|r")
-        or RA_L["teleport_reminder_generic"])
-end
-
--- The party leader's key for the dungeon, else the only member key for it, else nil.
-local function FindGroupKeyLevel(dungeon)
-    local onlyLevel, matches = nil, 0
-    for i = 1, 4 do
-        local unit = "party"..i
-        local key = RA.GetGroupKey(unit)
-        if key and key.mapID == dungeon.cmID and key.level > 0 then
-            if UnitIsGroupLeader(unit) then return key.level end
-            matches, onlyLevel = matches + 1, key.level
-        end
-    end
-    if matches == 1 then return onlyLevel end
-end
-
-local function RefreshGroupKey()
-    if not (reminderFrame and reminderFrame:IsShown() and shown.dungeon) or shown.keyLevel then return end
-    local level = FindGroupKeyLevel(shown.dungeon)
-    if level then
-        DBG("Teleport reminder: key level from the group's shared keystones:", level)
-        shown.keyLevel = level
-        RenderMessage()
-    end
-end
-
-RA.OnGroupKeys(RefreshGroupKey)
-
-local function RequestGroupKey()
-    if not IsInGroup() then return end
-    RA.RequestGroupKeys()
-    -- The group may not be fully formed yet / the request throttled: once more.
-    C_Timer.After(3, function()
-        RefreshGroupKey()
-        if reminderFrame:IsShown() and not shown.keyLevel and IsInGroup() then RA.RequestGroupKeys() end
-    end)
-end
-
 -- Show reminder
 -- instanceName: localized dungeon name (nil = generic message).
 -- dungeon: season entry; only its portal is shown, nil shows all portals.
--- keyLevel: listed key level or nil, shown as "+N".
+-- keyLevel: the level the group is listed with (read from its listing) or nil, shown as "+N".
+-- Never guessed from keys in the bags: a key does not say which one the group plays.
 function RA.ShowTeleportReminder(instanceName, dungeon, keyLevel)
     if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
     if RollAwayDB.joinReminderKeyAddon ~= "teleport" then return end
@@ -187,12 +142,11 @@ function RA.ShowTeleportReminder(instanceName, dungeon, keyLevel)
     DBG("Showing teleport reminder | instance:", instanceName or "n/a",
         "| dungeon:", dungeon and dungeon.key or "all")
 
-    shown.name, shown.dungeon, shown.keyLevel = instanceName, dungeon, keyLevel
-    RenderMessage()
+    reminderFrame.msg:SetText(instanceName
+        and ("|cffFFFFFF"..RA.FormatInstanceWithKey(instanceName, keyLevel).."|r")
+        or RA_L["teleport_reminder_generic"])
 
     LayoutAndUpdate(dungeonButton and { dungeonButton } or portalButtons)
 
     RA.SafeSetShown(reminderFrame, true)
-
-    if not keyLevel and dungeon then RequestGroupKey() end
 end

@@ -9,6 +9,9 @@
 - Class page (hunters only): the pet reminder also shows when you revive your pet in a current dungeon or raid.
 - Profile page: button "Apply to all characters" puts every other character on the active profile (with a confirmation).
 
+### Fixed
+- Teleport reminder: no longer shows a key level the group did not list (it was guessed from the members' keystones). Only the level from the listing is shown.
+
 ### Changed
 - Portal window: square (as high as wide).
 - TOC: 12.1.7 added.

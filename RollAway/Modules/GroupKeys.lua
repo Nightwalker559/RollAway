@@ -1,6 +1,6 @@
 -- RollAway - Modules/GroupKeys.lua
--- The party's keystones, kept per player. Used by the teleport reminder (key level of a
--- joined group) and the portal overview (key list under the season portals).
+-- The party's keystones, kept per player, for the portal overview (key list under the season
+-- portals).
 -- Our own implementation, no library. Only the wire format matches the one BigWigs and
 -- other keystone addons use (addon prefix "LibKS"), so they and we see each other:
 --   "<level>,<challengeMapID>,<rating>"  a member's key        "R"  please send yours
