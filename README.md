@@ -4,7 +4,7 @@ Auto-pass bonus rolls, confirm or auto-roll loot, tidy the loot history, plus sm
 
 For World of Warcraft: Midnight (Season 2, game versions 12.1 and 12.1.5). English and German. Optional dependency: ElvUI (native skin).
 
-**Author:** Nightwalker559 · **License:** MIT
+**Author:** Nightwalker559 · **License:** MIT with AI restriction
 
 ---
 
