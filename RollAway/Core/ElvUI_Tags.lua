@@ -15,6 +15,9 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local oUF  = E.oUF
 
+-- The group in ElvUI's "Available Tags" list; the same in every language, all our tags go here.
+local TAG_CATEGORY = "RollAway"
+
 -- Tag bodies run in oUF's environment, so they reach everything through upvalues.
 -- GROUP_ROSTER_UPDATE is one of oUF's unitless events: it re-evaluates the tag when
 -- the unit behind a frame changes. UNIT_NAME_UPDATE covers units that appear later.
@@ -31,7 +34,7 @@ for _, tag in ipairs(TAGS) do
     E:AddTag(name, EVENTS, function(unit)
         return RA.FormatGroupIlvl(unit, mode)
     end)
-    E:AddTagInfo(name, RA_L["gilvl_tag_category"], RA_L[descriptionKey])
+    E:AddTagInfo(name, TAG_CATEGORY, RA_L[descriptionKey])
 end
 
 -- New levels arrive one at a time during an inspect sweep. Bursts are merged into a
