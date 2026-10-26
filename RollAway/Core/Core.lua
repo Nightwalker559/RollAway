@@ -155,6 +155,8 @@ RA.defaults = {
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
         hunterPetReminder        = false,
+        groupIlvl                = false,  -- ElvUI [gilvl] tags: item level of group members (GroupIlvl.lua)
+        groupIlvlColored         = true,
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
@@ -175,6 +177,7 @@ RA.defaults = {
         minimapButtonHide        = false,
         minimapAngle             = 225,   -- degrees around the minimap
         portalLabels             = true,  -- short dungeon names on the portal buttons
+        portalGroupKeys          = false, -- Portal overview: the group's keystones below the season portals
         portalIconSize           = 48,    -- Portal overview: icon size 32-64
         portalGap                = 2,     --   gap between the icon edges 0-16
         portalPerRow             = 4,     --   icons per row 3-8
@@ -217,6 +220,7 @@ RA.defaultsChar = {
     raidAutoPassDifficulty = { lfr = false, normal = false, heroic = false, mythic = false },
     legacy_raids = {},
     prey         = false,
+    groupIlvlCache = {},   -- ElvUI [gilvl] tags: item levels of group members read before (GroupIlvl.lua)
 }
 
 -- Active Legacy Raids table: account-wide (RA.db.global) or per-character.
@@ -580,7 +584,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitGroupIlvl", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 

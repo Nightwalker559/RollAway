@@ -306,6 +306,31 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     }, { 0, 1, 2, 3, 4 }, "lfgDefaultPlaystyle", 0)
     SetPlaystyleEnabled(RollAwayDB.lfgAutoPlaystyle)
 
+    -- Item level of the group in ElvUI's unit frames (GroupIlvl.lua); only with ElvUI.
+    if ElvUI then
+        local SetIlvlEnabled  -- needs the controls created below
+        groupChain.Add({
+            label = RA_L["qol_gilvl_label"], info = RA_L["qol_gilvl_info"], dbKey = "groupIlvl",
+            onChange = function(checked)
+                RA.ApplyGroupIlvl()
+                SetIlvlEnabled(checked)
+            end,
+        })
+        local coloredCB = groupChain.AddSub({
+            label = RA_L["qol_gilvl_colored_label"], dbKey = "groupIlvlColored",
+            onChange = RA.RefreshGroupIlvlTags,
+        }, "groupIlvl")
+
+        local legend = MakeInfoText(group, coloredCB.frame, 4, -10, QOL_INFO_W,
+            string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
+
+        function SetIlvlEnabled(enabled)
+            coloredCB:SetDisabled(not enabled)
+        end
+        SetIlvlEnabled(RollAwayDB.groupIlvl)
+        groupChain.Set(legend, 24)
+    end
+
     -- ── Category: Hide (Blizzard UI elements) ───────────────────────────
     local hideChain = NewToggleChain(hide)
 

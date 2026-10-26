@@ -173,6 +173,7 @@ RA.DEBUG_CATEGORIES = {
     { key = "logs",     prefixes = { "Auto-log" } },
     { key = "lfg",      prefixes = { "[LFGQuickCreate]" } },
     { key = "tank",     prefixes = { "[TankMarker" } },
+    { key = "gilvl",    prefixes = { "[GroupIlvl]" } },
     { key = "qol",      prefixes = { "[QoL]", "[Misc]", "[VendorFilter]", "[Quests]", "[GreatVault]",
                                      "[Paragon]", "[CharFrameButtons]", "QoL" } },
     { key = "events",   prefixes = { "[Event]" } },

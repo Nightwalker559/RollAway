@@ -131,6 +131,18 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
     end,
 })
 
+RA.RegisterPopup("ROLLAWAY_PROFILE_ALL", {
+    text         = RA_L["profile_all_confirm"],
+    button1      = ACCEPT,
+    button2      = CANCEL,
+    OnAccept = function()
+        local count = RA.db:UseProfileForAllCharacters()
+        UIErrorsFrame:AddMessage(string.format(RA_L["profile_all_done"], RA.db:GetCurrentProfile(), count),
+            0.25, 1, 0.25, 1)
+        RA.RefreshProfileOptions()
+    end,
+})
+
 RA.RegisterPopup("ROLLAWAY_PROFILE_EXPORT", {
     text         = RA_L["profile_export_prompt"],
     button1      = OKAY,
@@ -271,6 +283,10 @@ function RA.BuildProfileOptions(parent, registerPage)
     local exportBtn = MakeButton(RA_L["profile_export_button"], 90)
     exportBtn:SetPoint("LEFT", importBtn, "RIGHT", 8, 0)
 
+    -- ── All characters (active profile for every other known character) ──
+    local allBtn = MakeButton(RA_L["profile_all_button"], 200)
+    allBtn:SetPoint("TOPLEFT", importBtn, "BOTTOMLEFT", 0, -24)
+
     -- ── Data wiring ───────────────────────────────────────────────────
 
     -- Rebuilds both dropdowns from RA.db (also called by the popups after a change).
@@ -315,6 +331,7 @@ function RA.BuildProfileOptions(parent, registerPage)
             otherDD:SetValue("")
         end
         otherDD:SetDisabled(not hasOther)
+        allBtn:SetEnabled(RA.db:HasOtherCharactersOffProfile())
         if hasOther then
             copyBtn:Enable()
             deleteBtn:Enable()
@@ -356,6 +373,10 @@ function RA.BuildProfileOptions(parent, registerPage)
         if selectedOther then
             StaticPopup_Show("ROLLAWAY_PROFILE_DELETE", selectedOther, nil, selectedOther)
         end
+    end)
+
+    allBtn:SetScript("OnClick", function()
+        StaticPopup_Show("ROLLAWAY_PROFILE_ALL", RA.db:GetCurrentProfile(), RA.db:CountOtherCharactersOffProfile())
     end)
 
     exportBtn:SetScript("OnClick", function()

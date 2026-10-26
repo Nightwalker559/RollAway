@@ -158,10 +158,7 @@ function RA.ShowAdvLogReminder()
     ShowAdvLogFrameNow()
 end
 
--- Re-evaluated on zone change with its own listener (the cache is refreshed first),
--- and again 1.5s later: GetInstanceInfo() can be stale right after a fast
--- instance-to-instance zone and would skip logging for the whole run.
--- Migration (3.0.9): delves are logged with scenarios, arena logging was dropped.
+-- Delves are logged with scenarios, arena logging is gone: old options are folded in.
 local function MigrateOldLogOptions()
     local db = RollAwayDB
     if db.autoLogDelve ~= nil then
@@ -171,6 +168,9 @@ local function MigrateOldLogOptions()
     db.autoLogArena = nil
 end
 
+-- Re-evaluated on zone change with its own listener (the cache is refreshed first),
+-- and again 1.5s later: GetInstanceInfo() can be stale right after a fast
+-- instance-to-instance zone and would skip logging for the whole run.
 local function CheckLogState()
     if not RA.initialized then return end
     MigrateOldLogOptions()
