@@ -102,6 +102,31 @@ function DB:DeleteProfile(name, silent)
     end
 end
 
+-- Other known characters that are not on the active profile (character keys, unsorted).
+local function OtherCharactersOffProfile(self)
+    local chars = {}
+    for char, profile in pairs(self.sv.profileKeys) do
+        if char ~= self.charKey and profile ~= self.profileName then chars[#chars + 1] = char end
+    end
+    return chars
+end
+
+function DB:HasOtherCharactersOffProfile()
+    return #OtherCharactersOffProfile(self) > 0
+end
+
+function DB:CountOtherCharactersOffProfile()
+    return #OtherCharactersOffProfile(self)
+end
+
+-- Puts every other known character on the active profile (they pick it up at their next
+-- login; their former profiles stay saved). Returns how many changed.
+function DB:UseProfileForAllCharacters()
+    local chars = OtherCharactersOffProfile(self)
+    for _, char in ipairs(chars) do self.sv.profileKeys[char] = self.profileName end
+    return #chars
+end
+
 -- svName: name of the SavedVariables table; defaults: { profile = {...}, global = {...} }.
 -- Every character starts on its own profile ("Name - Realm"). Set db.onProfileChange(db)
 -- to react to profile switch / copy / reset.
