@@ -1,10 +1,12 @@
 -- RollAway - Modules/GroupIlvl.lua
 -- Item level of the group's members for ElvUI's unit frames (the [gilvl] tags live in
 -- Core/ElvUI_Tags.lua). Your own level is read from the character sheet; everyone else is
--- inspected one at a time: pick the first member whose entry is missing or stale, send
--- NotifyInspect, wait for INSPECT_READY, store the result, repeat. There is no queue: each
--- step rescans the (at most 40) roster tokens, so a roster change cannot leave a stale unit
--- token behind. The step timer only runs while somebody still needs an inspect.
+-- inspected one at a time: pick the first member who has no level yet (or whose gear
+-- changed), send NotifyInspect, wait for INSPECT_READY, store the result, repeat. A member
+-- is scanned once and the level stays cached while he is in the group: no periodic asking.
+-- There is no queue: each step rescans the (at most 40) roster tokens, so a roster change
+-- cannot leave a stale unit token behind. The step timer only runs while somebody still
+-- needs an inspect.
 --
 -- Active only with ElvUI and RollAwayDB.groupIlvl (QoL page "Group"); the events are
 -- registered only then (RA.ApplyGroupIlvl). The color steps are ours (BANDS), not a setting.
@@ -14,11 +16,10 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
-local TTL           = 600  -- seconds until a known level is inspected again
 local STEP_DELAY    = 2    -- spacing between inspects; the server throttles faster requests
 local REPLY_TIMEOUT = 5    -- no INSPECT_READY after this long counts as a failure
 local RANGE_RETRY   = 5    -- out of inspect range / offline: look again later, not a failure
-local MAX_AGE       = 3600 -- cache entries older than this are dropped when the roster changes
+local MAX_AGE       = 3600 -- levels of players who left the group are dropped after this long
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
 -- purple, orange, gold.
@@ -86,10 +87,25 @@ local function NotifyAll()
     for guid in pairs(cache) do Notify(guid) end
 end
 
+-- The unit tokens and head count of the current group (party or raid).
+local function GroupUnits()
+    if IsInRaid() then return RAID_UNITS, GetNumGroupMembers() end
+    return PARTY_UNITS, GetNumSubgroupMembers()
+end
+
+-- Drops the levels of players who are not in the group any more and were last read long ago
+-- (a short break, e.g. a re-invite into the same dungeon, keeps them).
+local present = {}
 local function PruneCache()
+    wipe(present)
+    local units, count = GroupUnits()
+    for i = 1, count do
+        local guid = UnitGUIDSafe(units[i])
+        if guid then present[guid] = true end
+    end
     local now = GetTime()
     for guid, entry in pairs(cache) do
-        if guid ~= playerGUID and now - entry.at > MAX_AGE then cache[guid] = nil end
+        if guid ~= playerGUID and not present[guid] and now - entry.at > MAX_AGE then cache[guid] = nil end
     end
 end
 
@@ -183,12 +199,7 @@ function Step()
     -- Never steal the inspect target from the player's own inspect window.
     if InspectFrame and InspectFrame:IsShown() then return Schedule(3) end
 
-    local units, count
-    if IsInRaid() then
-        units, count = RAID_UNITS, GetNumGroupMembers()
-    else
-        units, count = PARTY_UNITS, GetNumSubgroupMembers()
-    end
+    local units, count = GroupUnits()
 
     local now = GetTime()
     local soonest
@@ -202,11 +213,9 @@ function Step()
             local wake = now + RANGE_RETRY
             soonest = soonest and math.min(soonest, wake) or wake
         elseif guid ~= playerGUID then
-            local entry = cache[guid]
-            -- Fresh entries still set the wake-up time of their own expiry.
-            local wake = entry and not dirty[guid] and entry.at + TTL
-            if not wake or wake <= now then
-                wake = retryAt[guid]
+            -- Already scanned (and the gear did not change): nothing to ask.
+            if not cache[guid] or dirty[guid] then
+                local wake = retryAt[guid]
                 if not wake or wake <= now then
                     local ok, usable = pcall(Inspectable, unit)
                     if ok and usable then
@@ -222,8 +231,8 @@ function Step()
                     wake = now + RANGE_RETRY
                     retryAt[guid] = wake
                 end
+                soonest = soonest and math.min(soonest, wake) or wake
             end
-            soonest = soonest and math.min(soonest, wake) or wake
         end
     end
 
