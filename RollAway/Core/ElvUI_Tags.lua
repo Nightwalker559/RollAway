@@ -17,8 +17,8 @@ local oUF  = E.oUF
 
 -- The group in ElvUI's "Available Tags" list; the same in every language, all our tags go here.
 -- ElvUI sorts the groups by name. The color code ("|") sorts after every letter, so the group
--- lands at the end of the list, next to other addons' groups, in our chat color.
-local TAG_CATEGORY = "|cff66ccffRollAway|r"
+-- lands at the end of the list, next to other addons' groups, in the gold of our option tabs.
+local TAG_CATEGORY = "|cffd9ba40RollAway|r"
 
 -- Tag bodies run in oUF's environment, so they reach everything through upvalues.
 -- GROUP_ROSTER_UPDATE is one of oUF's unitless events: it re-evaluates the tag when
