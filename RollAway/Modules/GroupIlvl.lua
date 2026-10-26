@@ -12,6 +12,7 @@
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
+local DBG  = RA.DBG
 
 local TTL           = 600  -- seconds until a known level is inspected again
 local STEP_DELAY    = 2    -- spacing between inspects; the server throttles faster requests
@@ -171,6 +172,7 @@ function Step()
     if not IsActive() or not IsInGroup() then return end
 
     if pending then -- the reply never came
+        DBG("[GroupIlvl] no reply from", pending.unit)
         Fail(pending.guid)
         pending = nil
     end
@@ -192,7 +194,13 @@ function Step()
     for i = 1, count do
         local unit = units[i]
         local guid = UnitGUIDSafe(unit)
-        if guid and guid ~= playerGUID then
+        if not guid then
+            -- Identity not readable (hidden in a restricted state, or the member is not loaded
+            -- yet): look again later, nothing else would wake us up for a group that stays as is.
+            DBG("[GroupIlvl] GUID of", unit, "not readable - retry later")
+            local wake = now + RANGE_RETRY
+            soonest = soonest and math.min(soonest, wake) or wake
+        elseif guid ~= playerGUID then
             local entry = cache[guid]
             -- Fresh entries still set the wake-up time of their own expiry.
             local wake = entry and not dirty[guid] and entry.at + TTL
@@ -201,10 +209,12 @@ function Step()
                 if not wake or wake <= now then
                     local ok, usable = pcall(Inspectable, unit)
                     if ok and usable then
+                        DBG("[GroupIlvl] inspecting", unit)
                         pending = { guid = guid, unit = unit }
                         NotifyInspect(unit)
                         return Schedule(REPLY_TIMEOUT)
                     end
+                    DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / out of range)")
                     wake = now + RANGE_RETRY
                     retryAt[guid] = wake
                 end
@@ -227,7 +237,9 @@ local function OnInspectReady(guid)
         and UnitGUIDSafe(unit) == guid then
         Succeed(guid)
         SetIlvl(guid, ilvl)
+        DBG("[GroupIlvl]", unit, "item level", ilvl)
     else
+        DBG("[GroupIlvl] no item level for", unit, "in the reply")
         Fail(guid)
     end
 
