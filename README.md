@@ -45,7 +45,8 @@ Closes the loot history window once the last roll is finished, with your delay a
 - **Tank marker**: in current-season Mythic dungeons, a popup offers to put a raid marker on your tank. It needs your click, since addons cannot set markers themselves. Off by default.
 - **Auto-accept invites** from guild members and friends.
 - **Instance join reminder** (Group Finder, Mythic+): shows the listed key level and can open your keystone addon (BigWigs Keystones, Details! Keystones, or the built-in teleport reminder with the exact dungeon portal).
-- **Portal overview** (`/rat`): all dungeon portals of the current season or by expansion.
+- **Portal overview** (`/rat`): all dungeon portals of the current season or by expansion, optionally with the keystones of your group.
+- **Group item level** (with ElvUI): the item level of your group members in ElvUI's unit frames through the tags `[gilvl]`, `[gilvl:plain]` and `[gilvl:brackets]`. Off by default.
 - **Ready check reminder** for your talents.
 - **Automatic combat logging** by zone and difficulty, optionally for the current season's raids only.
 
@@ -62,7 +63,7 @@ Closes the loot history window once the last roll is finished, with your delay a
 - **Great Vault** popup on login at max level when rewards are unclaimed (`/rawvault` checks by hand).
 - **Paragon bag** popup when Paragon quests are available, with turn-in NPC and zone (`/rawparagon`).
 - **Durability warning**, Great Vault and Omniumfoliant buttons on the character frame.
-- **Hunter pet reminder** (QoL page "Class"): "Re-summon your pet." on every entry of a current dungeon or raid. Off by default.
+- **Hunter pet reminder** (QoL page "Class"): "Re-summon your pet." on every entry of a current dungeon or raid and after you revive your pet there. Off by default.
 - Reminder positions can be locked or reset.
 
 ## Hide clutter

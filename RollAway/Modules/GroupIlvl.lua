@@ -377,10 +377,6 @@ end
 
 -- /gilvl
 
-local function Print(text)
-    print("|cff33ccffRollAway|r " .. text)
-end
-
 function RA.InitGroupIlvl()
     RA.ApplyGroupIlvl()
 
@@ -390,17 +386,17 @@ function RA.InitGroupIlvl()
         if cmd == "scan" then
             if IsActive() then
                 Rescan()
-                Print(RA_L["gilvl_rescan"])
+                RA.Print(RA_L["gilvl_rescan"])
             else
-                Print(RA_L["gilvl_inactive"])
+                RA.Print(RA_L["gilvl_inactive"])
             end
         elseif cmd == "status" then
             local count = 0
             for _ in pairs(cache) do count = count + 1 end
-            Print(string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
-            Print(string.format(RA_L["gilvl_status"], count, ElvUI and RA_L["gilvl_found"] or RA_L["gilvl_no_elvui"]))
+            RA.Print(string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
+            RA.Print(string.format(RA_L["gilvl_status"], count, ElvUI and RA_L["gilvl_found"] or RA_L["gilvl_no_elvui"]))
         else
-            Print(RA_L["gilvl_help"])
+            RA.Print(RA_L["gilvl_help"])
         end
     end
 end

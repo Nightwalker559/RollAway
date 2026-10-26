@@ -24,9 +24,6 @@ local function Handle(method, obj, ...)
     if obj and Enabled() and S[method] then S[method](S, obj, ...) end
 end
 
--- True while the ElvUI look applies (callers pick the game's own style otherwise).
-function Skin.IsActive() return Enabled() end
-
 ------------------------------------------------------------------------
 -- Windows and widgets
 ------------------------------------------------------------------------

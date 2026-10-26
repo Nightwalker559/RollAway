@@ -441,10 +441,6 @@ function RA.InitOptions()
             local contentHeight = (top - bottom) + 20 -- bottom padding
             gen:SetHeight(math.max(contentHeight, genScroll:GetHeight()))
         end
-        -- Re-check the scrollbar (OnScrollRangeChanged timing).
-        if scrollBar then
-            scrollBar:SetShown((genScroll:GetVerticalScrollRange() or 0) > 1)
-        end
     end
     -- Again later and on every show: checkboxes settle (wrapped labels) after a few frames; a
     -- hidden tab has no layout.

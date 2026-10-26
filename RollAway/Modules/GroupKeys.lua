@@ -43,6 +43,8 @@ local function OwnKey()
 end
 
 local function OnAddonMessage(_, _, prefix, text, channel, sender)
+    -- Secret values (restricted situations) cannot be compared or used as keys.
+    if not (RA.IsAccessible(prefix) and RA.IsAccessible(text) and RA.IsAccessible(sender)) then return end
     if prefix ~= PREFIX or channel ~= "PARTY" then return end
     if text == "R" then
         -- Others only get ours while the feature is on.
@@ -79,7 +81,7 @@ function RA.GetGroupKey(unit)
         name = UnitName("player")
     else
         local full = UnitExists(unit) and GetUnitName(unit, true)
-        name = full and Ambiguate(full, "none")
+        name = full and RA.IsAccessible(full) and Ambiguate(full, "none")
     end
     return name and keys[name] or nil
 end
