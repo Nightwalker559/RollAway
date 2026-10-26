@@ -220,6 +220,7 @@ RA.defaultsChar = {
     raidAutoPassDifficulty = { lfr = false, normal = false, heroic = false, mythic = false },
     legacy_raids = {},
     prey         = false,
+    groupIlvlCache = {},   -- ElvUI [gilvl] tags: item levels of group members read before (GroupIlvl.lua)
 }
 
 -- Active Legacy Raids table: account-wide (RA.db.global) or per-character.

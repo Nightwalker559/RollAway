@@ -4,6 +4,7 @@
 -- inspected one at a time: pick the first member who has no level yet (or whose gear
 -- changed), send NotifyInspect, wait for INSPECT_READY, store the result, repeat. A member
 -- is scanned once and the level stays cached while he is in the group: no periodic asking.
+-- The cache is also kept per character (RollAwayDBChar.groupIlvlCache) and survives /reload.
 -- There is no queue: each step rescans the (at most 40) roster tokens, so a roster change
 -- cannot leave a stale unit token behind. The step timer only runs while somebody still
 -- needs an inspect.
@@ -19,7 +20,7 @@ local DBG  = RA.DBG
 local STEP_DELAY    = 2    -- spacing between inspects; the server throttles faster requests
 local REPLY_TIMEOUT = 5    -- no INSPECT_READY after this long counts as a failure
 local RANGE_RETRY   = 5    -- out of inspect range / offline: look again later, not a failure
-local MAX_AGE       = 3600 -- levels of players who left the group are dropped after this long
+local MAX_AGE       = 3600 -- levels of players who left the group are dropped after this long; saved ones older than this are not loaded
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
 -- purple, orange, gold.
@@ -69,6 +70,13 @@ local function Notify(guid)
     for i = 1, #listeners do listeners[i](guid) end
 end
 
+-- The saved copy of the cache (per character): guid -> { ilvl, at = time() }. GetTime() starts
+-- over with every session, so the saved entries carry the wall clock.
+local function Saved()
+    local saved = RollAwayDBChar and RollAwayDBChar.groupIlvlCache
+    return type(saved) == "table" and saved or nil
+end
+
 local function SetIlvl(guid, ilvl)
     ilvl = math.floor(ilvl + 0.5)
     local entry = cache[guid]
@@ -79,7 +87,25 @@ local function SetIlvl(guid, ilvl)
     end
     entry.ilvl = ilvl
     entry.at = GetTime()
+    -- Your own level is read from the character sheet at once, no need to save it.
+    local saved = guid ~= playerGUID and Saved()
+    if saved then saved[guid] = { ilvl = ilvl, at = time() } end
     if changed then Notify(guid) end
+end
+
+-- Takes the saved levels that are still young enough into the cache (older ones are dropped).
+local function LoadSaved()
+    local saved = Saved()
+    if not saved then return end
+    local wall, now = time(), GetTime()
+    for guid, e in pairs(saved) do
+        local age = type(e) == "table" and type(e.ilvl) == "number" and type(e.at) == "number" and wall - e.at
+        if age and age >= 0 and age <= MAX_AGE then
+            if not cache[guid] then cache[guid] = { ilvl = e.ilvl, at = now - age } end
+        else
+            saved[guid] = nil
+        end
+    end
 end
 
 -- After a setting changed: every displayed level may look different now.
@@ -103,9 +129,12 @@ local function PruneCache()
         local guid = UnitGUIDSafe(units[i])
         if guid then present[guid] = true end
     end
-    local now = GetTime()
+    local now, saved = GetTime(), Saved()
     for guid, entry in pairs(cache) do
-        if guid ~= playerGUID and not present[guid] and now - entry.at > MAX_AGE then cache[guid] = nil end
+        if guid ~= playerGUID and not present[guid] and now - entry.at > MAX_AGE then
+            cache[guid] = nil
+            if saved then saved[guid] = nil end
+        end
     end
 end
 
@@ -330,6 +359,7 @@ function RA.ApplyGroupIlvl()
     if IsActive() then
         for _, event in ipairs(EVENTS) do eventFrame:RegisterEvent(event) end
         playerGUID = UnitGUIDSafe("player")
+        LoadSaved()
         UpdateSelf()
         OnGroupChanged()
     else
