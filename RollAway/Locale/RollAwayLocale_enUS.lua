@@ -587,12 +587,12 @@ L["greatvault_none"]        = "No unclaimed Great Vault rewards."
 ------------------------------------------------------------------------
 -- What's New
 ------------------------------------------------------------------------
-L["whatsnew_portal_title"]      = "Portal overview: short names and options"
-L["whatsnew_portal_desc"]       = "The portal buttons show the dungeon's short name (e.g. WS, AOF). A new Options tab sets icon size, gap, icons per row and the short names; the Default button resets it."
-L["whatsnew_portal_location"]   = "Portal overview (/rat) > Options"
-L["whatsnew_salvage_title"]     = "Salvage list count"
-L["whatsnew_salvage_desc"]      = "The number in brackets next to a salvage recipe in the recipe list now counts only the materials you ticked, including those in your warband bank."
-L["whatsnew_salvage_location"]  = "Professions window"
+L["whatsnew_groupkeys_title"]   = "Group keystones in the portal window"
+L["whatsnew_groupkeys_desc"]    = "The portal window can list your group's keystones (name, level, dungeon) below the season portals. Off by default."
+L["whatsnew_groupkeys_location"] = "Portal window (/rat) > Options"
+L["whatsnew_gilvl_title"]       = "Item level of group members (ElvUI)"
+L["whatsnew_gilvl_desc"]        = "ElvUI unit frames can show the item level of your group members with the tags [gilvl], [gilvl:plain] and [gilvl:brackets]. Off by default."
+L["whatsnew_gilvl_location"]    = "Options > QoL > Group"
 L["whatsnew_options_label"]     = "Options:"
 
 ------------------------------------------------------------------------

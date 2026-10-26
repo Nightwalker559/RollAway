@@ -588,12 +588,12 @@ L["greatvault_none"]        = "Keine unabgeholten Belohnungen in der Großen Sch
 ------------------------------------------------------------------------
 -- What's New
 ------------------------------------------------------------------------
-L["whatsnew_portal_title"]      = "Portalübersicht: Kurznamen und Optionen"
-L["whatsnew_portal_desc"]       = "Die Portal-Buttons zeigen den Kurznamen des Dungeons (z.B. WS, AOF). Ein neuer Reiter Optionen stellt Symbolgröße, Abstand, Symbole pro Reihe und die Kurznamen ein; mit Standard setzt du alles zurück."
-L["whatsnew_portal_location"]   = "Portalübersicht (/rat) > Optionen"
-L["whatsnew_salvage_title"]     = "Zahl in der Verwerten-Liste"
-L["whatsnew_salvage_desc"]      = "Die Zahl in Klammern neben einem Verwerten-Rezept in der Rezeptliste zählt jetzt nur die Materialien, die du angehakt hast, auch die in deiner Kriegsmeutenbank."
-L["whatsnew_salvage_location"]  = "Berufe-Fenster"
+L["whatsnew_groupkeys_title"]   = "Gruppen-Keys im Portalfenster"
+L["whatsnew_groupkeys_desc"]    = "Das Portalfenster kann unter den Season-Portalen die Keys deiner Gruppe auflisten (Name, Stufe, Dungeon). Standardmäßig aus."
+L["whatsnew_groupkeys_location"] = "Portalfenster (/rat) > Optionen"
+L["whatsnew_gilvl_title"]       = "Gegenstandsstufe der Gruppenmitglieder (ElvUI)"
+L["whatsnew_gilvl_desc"]        = "ElvUI-Einheitenfenster können die Gegenstandsstufe deiner Gruppenmitglieder mit den Tags [gilvl], [gilvl:plain] und [gilvl:brackets] anzeigen. Standardmäßig aus."
+L["whatsnew_gilvl_location"]    = "Optionen > QoL > Gruppe"
 L["whatsnew_options_label"]     = "Optionen:"
 
 ------------------------------------------------------------------------
