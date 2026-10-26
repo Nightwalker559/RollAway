@@ -74,6 +74,7 @@ local function BuildSections()
             Qol("group", "qol_lfgqc_label",        "qol_lfgqc_info",        "lfgQuickCreate"),
             Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", "lfgAutoMythicPlus"),
             Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", "lfgAutoPlaystyle"),
+            Qol("group", "qol_gilvl_label",        "qol_gilvl_info",        "groupIlvl", ElvUI ~= nil),
         } },
         { title = "qol_nav_class", show = RA.IsHunter(), items = {
             Qol("class", "qol_pet_reminder_label", "qol_pet_reminder_info", "hunterPetReminder"),

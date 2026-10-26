@@ -39,6 +39,7 @@ Modules\PetReminder.lua
 Modules\CraftingSalvage.lua
 Modules\Quests.lua
 Modules\TankMarker.lua
+Modules\GroupIlvl.lua
 Modules\CharFrameButtons.lua
 Modules\VendorFilter.lua
 Modules\Paragon.lua
@@ -54,3 +55,4 @@ Options\OptionsDev.lua
 Options\Options.lua
 Core\Debug.lua
 Core\ElvUI_Skin.lua
+Core\ElvUI_Tags.lua

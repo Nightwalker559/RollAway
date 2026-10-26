@@ -155,6 +155,9 @@ RA.defaults = {
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
         hunterPetReminder        = false,
+        groupIlvl                = false,  -- ElvUI [gilvl] tags: item level of group members (GroupIlvl.lua)
+        groupIlvlColored         = true,
+        groupIlvlBands           = { 250, 275, 295, 310, 320, 330 },  -- item level where each color step starts
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
@@ -581,7 +584,7 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitVendorFilter",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitGroupIlvl", "InitVendorFilter",
     "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
 }
 
