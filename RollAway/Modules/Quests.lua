@@ -1,4 +1,4 @@
--- RollAway - Quests.lua
+-- RollAway - Modules/Quests.lua
 -- Quest automation at NPCs: picks quests from the gossip / greeting list, accepts them
 -- (regular / daily / weekly separately) and turns in finished ones.
 -- Safety: no turn-in for quests that ask for gold or currency, and only with at most

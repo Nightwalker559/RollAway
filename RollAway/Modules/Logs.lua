@@ -1,4 +1,4 @@
--- RollAway - Logs.lua
+-- RollAway - Modules/Logs.lua
 -- Automatic combat logging (LoggingCombat) by zone and difficulty (replaces MRT's feature).
 
 local RA   = _G["RollAway"]
@@ -179,10 +179,18 @@ local function CheckLogState()
     RA.ShowAdvLogReminder()
 end
 
+-- Both zone events fire for one zone change: one delayed re-check covers them.
+local recheckPending = false
+
 local logsEventFrame = CreateFrame("Frame")
 logsEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 logsEventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 logsEventFrame:SetScript("OnEvent", function()
     CheckLogState()
-    C_Timer.After(1.5, CheckLogState)
+    if recheckPending then return end
+    recheckPending = true
+    C_Timer.After(1.5, function()
+        recheckPending = false
+        CheckLogState()
+    end)
 end)

@@ -1,4 +1,4 @@
--- RollAway - WhatsNew.lua
+-- RollAway - Modules/WhatsNew.lua
 -- "What's New" window, shown once per version on login (and via /rawwhats).
 
 local RA   = _G.RollAway

@@ -72,9 +72,9 @@ local LEGACY_ENCOUNTER_MAP = {}
 for _, d in ipairs(SEASON1_DUNGEONS)     do DUNGEON_MAP[d.mapID] = d.key ; DUNGEON_ENTRY_MAP[d.mapID] = d end
 for _, d in ipairs(SEASON2_DUNGEONS)     do DUNGEON_MAP[d.mapID] = d.key ; DUNGEON_ENTRY_MAP[d.mapID] = d end
 for _, d in ipairs(SEASON1_DELVES)       do DELVE_MAP[d.mapID]                = d.key  end
-for _, d in ipairs(SEASON2_DELVES)       do if d.mapID then DELVE_MAP[d.mapID] = d.key end end
+for _, d in ipairs(SEASON2_DELVES)       do DELVE_MAP[d.mapID]                = d.key  end
 for _, b in ipairs(SEASON1_RAIDS)        do RAID_ENCOUNTER_MAP[b.encounterID] = b.key  end
-for _, b in ipairs(SEASON2_RAIDS)        do if b.encounterID then RAID_ENCOUNTER_MAP[b.encounterID] = b.key end end
+for _, b in ipairs(SEASON2_RAIDS)        do RAID_ENCOUNTER_MAP[b.encounterID] = b.key  end
 for _, b in ipairs(SEASON1_LEGACY_RAIDS) do LEGACY_ENCOUNTER_MAP[b.encounterID] = b.raid end
 
 RA.DUNGEON_MAP          = DUNGEON_MAP
@@ -584,8 +584,10 @@ end
 
 -- Module Init functions, run in this order once the saved variables are ready.
 local INIT_ORDER = {
-    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests", "InitTankMarker", "InitGroupIlvl", "InitVendorFilter",
-    "InitParagon", "InitGreatVault", "InitLFGQuickCreate", "InitOptions", "InitDebug",
+    "InitWhatsNew", "InitAutoPass", "InitRollConfirm", "InitQoL", "InitHideUI", "InitJoinReminder",
+    "InitCharacterFrameButtons", "InitCraftingSalvage", "InitFeatureList", "InitMinimapButton", "InitQuests",
+    "InitTankMarker", "InitGroupIlvl", "InitVendorFilter", "InitParagon", "InitGreatVault", "InitLFGQuickCreate",
+    "InitOptions", "InitDevTools",
 }
 
 -- Adds `false` for every entry's key (entry[keyField]) missing from tbl.

@@ -1,4 +1,4 @@
--- RollAway - Misc.lua
+-- RollAway - Modules/Misc.lua
 -- Small standalone features of the "Misc" settings tab:
 -- Auto-accept invites from guild members, friends and Battle.net friends (autoAcceptInvite).
 -- Auto repair at any merchant with player or guild funds (autoRepairMode: none/player/guild).

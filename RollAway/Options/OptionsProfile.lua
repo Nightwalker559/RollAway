@@ -78,42 +78,44 @@ local function CloseDialog(editBox)
     editBox:GetParent():Hide()
 end
 
-local function IsValidProfileName(name)
-    return name and name ~= "" and not name:find("^%s+$")
+-- Accept (or def.button1) / Cancel popup.
+local function RegisterConfirmPopup(name, def)
+    def.button1 = def.button1 or ACCEPT
+    def.button2 = CANCEL
+    RA.RegisterPopup(name, def)
 end
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_NEW", {
-    text         = RA_L["profile_new_prompt"],
-    button1      = ACCEPT,
-    button2      = CANCEL,
-    hasEditBox   = true,
-    maxLetters   = 50,
-    OnShow       = ClearAndFocusEditBox,
+-- Accept / Cancel popup with an edit box: Enter accepts, Escape closes, empty on open.
+local function RegisterEditPopup(name, def)
+    def.hasEditBox = true
+    def.OnShow = def.OnShow or ClearAndFocusEditBox
+    def.EditBoxOnEnterPressed  = AcceptOnEnter
+    def.EditBoxOnEscapePressed = CloseDialog
+    RegisterConfirmPopup(name, def)
+end
+
+RegisterEditPopup("ROLLAWAY_PROFILE_NEW", {
+    text       = RA_L["profile_new_prompt"],
+    maxLetters = 50,
     OnAccept = function(dialog)
         local name = dialog:GetEditBox():GetText()
-        if IsValidProfileName(name) then
+        if RA.IsValidProfileName(name) then
             RA.db:SetProfile(name)
             RA.PromptProfileReload()
         end
     end,
-    EditBoxOnEnterPressed  = AcceptOnEnter,
-    EditBoxOnEscapePressed = CloseDialog,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_DELETE", {
+RegisterConfirmPopup("ROLLAWAY_PROFILE_DELETE", {
     text = RA_L["profile_delete_confirm"],
-    button1      = ACCEPT,
-    button2      = CANCEL,
     OnAccept = function(_, data)
         RA.db:DeleteProfile(data, true)
         RA.RefreshProfileOptions()
     end,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
+RegisterConfirmPopup("ROLLAWAY_PROFILE_RESET", {
     text         = RA_L["profile_reset_confirm"],
-    button1      = ACCEPT,
-    button2      = CANCEL,
     OnAccept = function()
         RA.db:ResetProfile()
         -- The Dungeons/Raids/Delves/Prey selections (RollAwayDBChar) are not part of the profile:
@@ -131,10 +133,8 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_RESET", {
     end,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_ALL", {
+RegisterConfirmPopup("ROLLAWAY_PROFILE_ALL", {
     text         = RA_L["profile_all_confirm"],
-    button1      = ACCEPT,
-    button2      = CANCEL,
     OnAccept = function()
         local count = RA.db:UseProfileForAllCharacters()
         UIErrorsFrame:AddMessage(string.format(RA_L["profile_all_done"], RA.db:GetCurrentProfile(), count),
@@ -168,14 +168,10 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_EXPORT", {
     EditBoxOnEscapePressed = CloseDialog,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_IMPORT", {
+RegisterEditPopup("ROLLAWAY_PROFILE_IMPORT", {
     text         = RA_L["profile_import_prompt"],
-    button1      = ACCEPT,
-    button2      = CANCEL,
-    hasEditBox   = true,
     editBoxWidth = 350,
     maxLetters   = 0,
-    OnShow       = ClearAndFocusEditBox,
     OnAccept = function(dialog)
         local imported = DecodeProfile(dialog:GetEditBox():GetText())
         if not imported then
@@ -185,36 +181,27 @@ RA.RegisterPopup("ROLLAWAY_PROFILE_IMPORT", {
         RA.pendingProfileImport = imported
         StaticPopup_Show("ROLLAWAY_PROFILE_IMPORT_NAME")
     end,
-    EditBoxOnEnterPressed  = AcceptOnEnter,
-    EditBoxOnEscapePressed = CloseDialog,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_IMPORT_NAME", {
-    text         = RA_L["profile_import_name_prompt"],
-    button1      = ACCEPT,
-    button2      = CANCEL,
-    hasEditBox   = true,
-    maxLetters   = 50,
-    OnShow       = ClearAndFocusEditBox,
+RegisterEditPopup("ROLLAWAY_PROFILE_IMPORT_NAME", {
+    text       = RA_L["profile_import_name_prompt"],
+    maxLetters = 50,
     OnAccept = function(dialog)
         local name = dialog:GetEditBox():GetText()
         local imported = RA.pendingProfileImport
         RA.pendingProfileImport = nil
-        if imported and IsValidProfileName(name) then
+        if imported and RA.IsValidProfileName(name) then
             RA.db:SetProfile(name)
             ApplyImportedProfile(RA.db.profile, RA.defaults.profile, imported)
             RA.PromptProfileReload()
         end
     end,
     OnCancel = function() RA.pendingProfileImport = nil end,
-    EditBoxOnEnterPressed  = AcceptOnEnter,
-    EditBoxOnEscapePressed = CloseDialog,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_RELOAD", {
+RegisterConfirmPopup("ROLLAWAY_PROFILE_RELOAD", {
     text         = RA_L["profile_reload_prompt"],
     button1      = RA_L["profile_reload_now"],
-    button2      = CANCEL,
     OnAccept = function() ReloadUI() end,
 })
 

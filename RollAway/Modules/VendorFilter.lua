@@ -1,4 +1,4 @@
--- RollAway - VendorFilter.lua
+-- RollAway - Modules/VendorFilter.lua
 -- "Vendor Filter Light": dims merchant items the player already owns (recipes, toys,
 -- mounts, heirlooms, housing decor, pets at the maximum, items whose appearance is
 -- collected). Toggle + alpha in Options > QoL > Crafting & Vendors.
@@ -34,30 +34,15 @@ local function GetScanTooltip()
     return scanTooltip
 end
 
-local KNOWN_RECIPE_STRINGS = {}
-if _G.ITEM_SPELL_KNOWN then table.insert(KNOWN_RECIPE_STRINGS, _G.ITEM_SPELL_KNOWN) end
-table.insert(KNOWN_RECIPE_STRINGS, "Bereits bekannt") -- deDE fallback
-table.insert(KNOWN_RECIPE_STRINGS, "Already Known")   -- enUS fallback
-
--- "Collected (1/3)" line of pets (ITEM_PET_KNOWN): known once n >= max.
-local PET_KNOWN_PATTERNS = {}
-local function AddPetPattern(fmt)
-    if not fmt then return end
-    local pat = "^" .. fmt:gsub("[%(%)%.%+%-%*%?%[%]%^%$]", "%%%0"):gsub("%%d", "(%%d+)") .. "$"
-    table.insert(PET_KNOWN_PATTERNS, pat)
-end
-AddPetPattern(_G.ITEM_PET_KNOWN)
-AddPetPattern("Gesammelt (%d/%d)") -- deDE fallback
-AddPetPattern("Collected (%d/%d)") -- enUS fallback
+-- The game's own lines (client language): ITEM_SPELL_KNOWN for recipes, ITEM_PET_KNOWN
+-- ("Collected (1/3)") for pets, known once n >= max.
+local PET_KNOWN_PATTERN = _G.ITEM_PET_KNOWN
+    and ("^" .. _G.ITEM_PET_KNOWN:gsub("[%(%)%.%+%-%*%?%[%]%^%$]", "%%%0"):gsub("%%d", "(%%d+)") .. "$")
 
 local function IsLineKnown(text)
-    for _, known in ipairs(KNOWN_RECIPE_STRINGS) do
-        if known and text == known then return true end
-    end
-    for _, pat in ipairs(PET_KNOWN_PATTERNS) do
-        local have, max = text:match(pat)
-        if have and max then return tonumber(have) >= tonumber(max) end
-    end
+    if text == _G.ITEM_SPELL_KNOWN then return true end
+    local have, max = text:match(PET_KNOWN_PATTERN or "^$")
+    if have and max then return tonumber(have) >= tonumber(max) end
     return false
 end
 
@@ -77,12 +62,9 @@ local function IsKnownViaTooltip(index)
     return false
 end
 
+-- Recipes only (the caller checked the item class): tooltip scan first, spell/TradeSkillUI
+-- check as fallback.
 local function IsRecipeKnown(itemID, index)
-    -- Item class first (no tooltip scan for non-recipes): the update fires often.
-    local classID = select(6, C_Item.GetItemInfoInstant(itemID))
-    if classID ~= Enum.ItemClass.Recipe then return false end
-
-    -- Tooltip scan first; spell/TradeSkillUI check as fallback.
     if IsKnownViaTooltip(index) then return true end
     return IsRecipeKnownViaSpellCheck(itemID)
 end
@@ -134,7 +116,9 @@ end
 
 local function IsMerchantItemKnown(itemID, index)
     if not itemID then return false end
-    if IsRecipeKnown(itemID, index) then return true end
+    -- Item class first: no tooltip scan for non-recipes, the update fires often.
+    local isRecipe = select(6, C_Item.GetItemInfoInstant(itemID)) == Enum.ItemClass.Recipe
+    if isRecipe and IsRecipeKnown(itemID, index) then return true end
     if IsToyKnown(itemID) then return true end
     if IsMountKnown(itemID) then return true end
     if IsPetKnown(itemID) then return true end
@@ -142,10 +126,8 @@ local function IsMerchantItemKnown(itemID, index)
     if IsTransmogKnown(itemID) then return true end
     if IsHousingDecorKnown(itemID) then return true end
     -- Last resort for what the APIs miss (transmog ensembles, pets with a unique limit):
-    -- Blizzard's own tooltip line. Recipes were already scanned above.
-    local classID = select(6, C_Item.GetItemInfoInstant(itemID))
-    if classID ~= Enum.ItemClass.Recipe and IsKnownViaTooltip(index) then return true end
-    return false
+    -- Blizzard's own tooltip line (recipes were scanned above).
+    return not isRecipe and IsKnownViaTooltip(index)
 end
 
 -- Applying the dim to merchant buttons

@@ -1,4 +1,4 @@
--- RollAway - Paragon.lua
+-- RollAway - Modules/Paragon.lua
 -- Paragon bag reminder (Midnight).
 
 local RA   = _G["RollAway"]

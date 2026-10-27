@@ -1,4 +1,4 @@
--- RollAway - CraftingSalvage.lua
+-- RollAway - Modules/CraftingSalvage.lua
 -- Professions: fills the slot of salvage recipes (e.g. Cooking fish -> fillets) with the
 -- first owned item that is ticked in the material list (Blizzard's order: name, item ID)
 -- and has a big enough stack; refills when the stack is used up and swaps its own pick when
@@ -21,7 +21,6 @@ end
 
 -- Ticked item IDs (profile-wide).
 local function Allowed()
-    if not RollAwayDB.salvageAllowed then RollAwayDB.salvageAllowed = {} end
     return RollAwayDB.salvageAllowed
 end
 

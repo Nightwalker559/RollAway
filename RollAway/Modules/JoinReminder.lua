@@ -1,4 +1,4 @@
--- RollAway - JoinReminder.lua
+-- RollAway - Modules/JoinReminder.lua
 -- Group Finder join detection: shows the instance name when you join an M+/raid
 -- group and either hands off to the Teleport Reminder (TeleportReminder.lua) or
 -- opens a keystone companion addon (BigWigs or Details! Keystones, one of them,
@@ -111,11 +111,7 @@ end
 
 -- Is spellID one of the current season's M+ portal spells?
 local function IsKnownPortalSpell(spellID)
-    if not RA.IsAccessible(spellID) then return false end
-    for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
-        if d.portalSpellID == spellID then return true end
-    end
-    return false
+    return RA.IsAccessible(spellID) and RA.FindSeasonDungeon("portalSpellID", spellID) ~= nil
 end
 
 -- Closes early when the player casts a portal, however it was started.
@@ -178,9 +174,7 @@ local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
     joinHideTimer.Stop()
     CancelGroupWait()
 
-    local fontPath, fontSize = RA.GetQoLFont()
-    joinFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
-    joinFrame.text:SetText("|cffFFFFFF" .. RA.FormatInstanceWithKey(instanceName, keyLevel) .. "|r")
+    RA.SetToastText(joinFrame, "|cffFFFFFF" .. RA.FormatInstanceWithKey(instanceName, keyLevel) .. "|r")
     joinFrame:Show()
 
     -- Companion addon: party only (no keystone teleports in raids), not if the listing opened it.
@@ -213,15 +207,8 @@ local function ShowJoinReminder(instanceName, forceTimer, keyLevel)
 end
 RA.ShowJoinReminder = ShowJoinReminder
 
--- Current-season dungeon entry for an LFG activity ID (activityID == dungeon.lfgID).
-local function GetDungeonEntryByLfgID(activityID)
-    for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
-        if d.lfgID == activityID then return d end
-    end
-    return nil
-end
-
--- name, isMythicPlus, dungeon for an LFG activity ID; nil if it is neither an M+
+-- name, isMythicPlus, dungeon (current-season entry, activityID == dungeon.lfgID) for an
+-- LFG activity ID; nil if it is neither an M+
 -- dungeon nor a current raid. M+ names come from RA_L (the addon's language).
 local function GetNameFromActivityID(activityID)
     local act = activityID and C_LFGList.GetActivityInfoTable(activityID)
@@ -233,7 +220,7 @@ local function GetNameFromActivityID(activityID)
 
     local blizzardName = act.fullName ~= "" and act.fullName or nil
     if act.isMythicPlusActivity then
-        local dungeon = GetDungeonEntryByLfgID(activityID)
+        local dungeon = RA.FindSeasonDungeon("lfgID", activityID)
         if dungeon then
             return RA_L["dungeon_"..dungeon.key], true, dungeon
         end

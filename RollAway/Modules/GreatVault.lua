@@ -1,4 +1,4 @@
--- RollAway - GreatVault.lua
+-- RollAway - Modules/GreatVault.lua
 -- Popup reminder when unclaimed Great Vault rewards are available.
 
 local RA   = _G["RollAway"]

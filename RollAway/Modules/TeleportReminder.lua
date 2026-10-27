@@ -1,4 +1,4 @@
--- RollAway - TeleportReminder.lua
+-- RollAway - Modules/TeleportReminder.lua
 -- Alternative join reminder (RollAwayDB.joinReminderKeyAddon == "teleport", see
 -- JoinReminder.lua): the season's portal button for the dungeon you joined, or all of
 -- them when it is unknown. Group Finder joins only. Stays open until a portal is
@@ -69,7 +69,7 @@ local function CreateReminderFrame()
     reminderFrame.msg:SetPoint("TOP", reminderFrame, "TOP", 0, -36)
     reminderFrame.msg:SetJustifyH("CENTER")
 
-    CreatePortalButtons(reminderFrame, RA.DUNGEONS[RA.ACTIVE_SEASON] or {})
+    CreatePortalButtons(reminderFrame, RA.GetActiveSeasonDungeons())
 
     -- Combat and GROUP_LEFT hide it. Not GROUP_JOINED: it fires when we join the very
     -- group the reminder is for.

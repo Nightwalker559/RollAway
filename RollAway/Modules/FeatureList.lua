@@ -1,7 +1,7 @@
--- RollAway - FeatureList.lua
+-- RollAway - Modules/FeatureList.lua
 -- Overview window of all features with their description and state (/raw features,
 -- /rawfeatures, button in the options). A click opens the feature's settings.
--- Keep RA.FEATURES in step with the options pages (Options.lua, OptionsQoL.lua).
+-- Keep BuildSections in step with the options pages (Options.lua, OptionsQoL.lua).
 
 local RA   = _G.RollAway
 local RA_L = RA.RA_L

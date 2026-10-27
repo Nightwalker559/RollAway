@@ -1,8 +1,8 @@
 -- RollAway - Modules/CharFrameButtons.lua
 -- Omniumfoliant and Great Vault buttons in the bottom-right corner of the Character
 -- panel (Stats view only). One idempotent RA.RefreshCharFrameButtons() decides from
--- the current state which buttons show; it is called from a few events (no timers,
--- no cached flags).
+-- the current state which buttons show; it is called from a few events and hooks (no
+-- cached flags; the only timer lets Blizzard's frame setup settle after a loading screen).
 -- Chonky Character Sheet: the buttons anchor to CharacterFrameBg and the Stats-only rule
 -- is skipped.
 
@@ -75,7 +75,7 @@ local function CreateButton(globalName, icon, onClick, onEnter, uncropped)
     -- Diagnostics: only a hide we did not do ourselves that is still in effect
     -- shortly after (OnHide also fires in brief cycles while Blizzard opens the panel).
     btn:HookScript("OnHide", function(self)
-        if self.RA_ownHide then return end
+        if self.raOwnHide then return end
         if not (RollAwayDB and (RollAwayDB.debug or RollAwayDB.debugErrorsOnly)) then return end
         local stack = (debugstack(2, 4, 0):gsub("\n", " <- "))
         C_Timer.After(0.5, function()
@@ -83,9 +83,9 @@ local function CreateButton(globalName, icon, onClick, onEnter, uncropped)
             DBGError("[CharFrameButtons]", globalName, "still hidden 0.5s after external hide | stack:", stack)
         end)
     end)
-    btn.RA_ownHide = true
+    btn.raOwnHide = true
     btn:Hide()
-    btn.RA_ownHide = nil
+    btn.raOwnHide = nil
     return btn
 end
 
@@ -109,8 +109,8 @@ end
 local function SetupOmniMinimapButton()
     local mm = GetOmniMinimapButton()
     if not mm then return nil end
-    if mm.RA_hooked then return mm end
-    mm.RA_hooked = true
+    if mm.raHooked then return mm end
+    mm.raHooked = true
 
     hooksecurefunc(mm, "Show", function(self)
         if OmniMinimapHidden() then self:Hide() end
@@ -184,6 +184,7 @@ local lastLogTime, skippedFlips = {}, {}  -- per key: time of the last log line,
 -- Normal debug channel (filter category QoL): other addons (Baganator's currency window)
 -- can flip the character frame many times a second. Real problems go to DBGError.
 local function LogState(key, wanted, featureOn, statsView, source, btn)
+    if not (RollAwayDB and RollAwayDB.debug) then return end  -- Apply runs on every panel event
     local state
     if wanted then
         state = "shown"
@@ -216,9 +217,9 @@ local function Apply(source)
     if mm then
         if OmniMinimapHidden() then
             mm:Hide()
-            mm.RA_forceHidden = true
-        elseif mm.RA_forceHidden then
-            mm.RA_forceHidden = false
+            mm.raForceHidden = true
+        elseif mm.raForceHidden then
+            mm.raForceHidden = false
             mm:Show()
         end
     end
@@ -237,9 +238,9 @@ local function Apply(source)
         end
         if btn then
             if wanted then PlaceButton(btn, def.x) end
-            btn.RA_ownHide = true
+            btn.raOwnHide = true
             btn:SetShown(wanted)
-            btn.RA_ownHide = nil
+            btn.raOwnHide = nil
         end
         LogState(def.key, wanted, featureOn, statsView, source, btn)
     end

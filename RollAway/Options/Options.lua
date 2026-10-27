@@ -65,7 +65,7 @@ end
 
 -- `list` sorted by the localized name RA_L[keyPrefix..entry.key].
 local function SortedByName(list, keyPrefix)
-    return RA.SortByLabel(list, function(e) return RA_L[keyPrefix..e.key] or e.key end)
+    return RA.SortByLabel(list, function(e) return RA_L[keyPrefix..e.key] end)
 end
 
 -- Debug mode was switched (Developer settings): dev-only tabs and season sub-tabs show
@@ -76,7 +76,7 @@ function RA.OnDebugModeChanged(checked)
     end
     for _, b in ipairs(RA.SeasonTabButtons or {}) do
         if checked then b:Enable() else b:Disable() end
-        if b.RA_Refresh then b.RA_Refresh() end
+        if b.raRefresh then b.raRefresh() end
     end
     for _, reflow in ipairs(RA.SeasonTabReflows or {}) do reflow() end
     for _, check in ipairs(RA.SeasonTabDebugChecks or {}) do check() end
@@ -351,7 +351,6 @@ function RA.InitOptions()
 
     local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideInfo, RAID_DIFF_ITEMS,
         RollAwayDB.hideInRaidBuckets, function(k, checked)
-            if type(RollAwayDB.hideInRaidBuckets) ~= "table" then RollAwayDB.hideInRaidBuckets = {} end
             RollAwayDB.hideInRaidBuckets[k] = checked
         end)
 
@@ -529,27 +528,21 @@ function RA.InitOptions()
         for i, item in ipairs(section.items) do
             local entry = CreateGridEntry(dlv, i, leftEntries, secLabel, -8)
             local labelText = RA_L["delve_"..item.key]
-            if item.key == "venomfall_deeps" or item.key == "torments_rise" then
+            if item.nemesis then
                 labelText = labelText .. " |cff888888" .. RA_L["nemesis_delve_label"] .. "|r"
             end
-            if item.key == "labyrinth_of_kindojan" then
-                labelText = labelText .. " |cff888888[12.1.5]|r"
+            if item.patch then
+                labelText = labelText .. " |cff888888[" .. item.patch .. "]|r"
             end
             local isRemoved = item.removedAfterS1 and RA.ACTIVE_SEASON >= 2
             if isRemoved then
                 labelText = labelText .. " |cff888888" .. RA_L["label_removed"] .. "|r"
-            end
-            local isPending = item.pendingTest
-            if isPending then
-                labelText = labelText .. " |cff888888" .. RA_L["label_coming_soon"] .. "|r"
-            end
-            if isRemoved or isPending then
                 section.dbTable[item.key] = false
             end
 
             local dlvCB = MakeGridCheckbox(entry, labelText, section.dbTable, item.key)
-            if isRemoved or isPending then
-                dlvCB:SetDisabled(true) -- permanently/temporarily disabled, not affected by the master lock
+            if isRemoved then
+                dlvCB:SetDisabled(true) -- left the game pool, not affected by the master lock
             else
                 table.insert(dlvAllCheckboxes, dlvCB)
             end
@@ -581,7 +574,6 @@ function RA.InitOptions()
         { key = "transmog", label = RA_L["confirm_type_transmog"] },
         { key = "pass",     label = RA_L["confirm_type_pass"] },
     }, RollAwayDB.confirmRoll, function(k, checked)
-        if type(RollAwayDB.confirmRoll) ~= "table" then RollAwayDB.confirmRoll = {} end
         RollAwayDB.confirmRoll[k] = checked
         RA.SetRollConfirmEnabled(k, checked)
     end)
@@ -595,7 +587,6 @@ function RA.InitOptions()
 
     local raidDiffRow = MakeCheckboxRow(raidPanel, raidDiffHint, RAID_DIFF_ITEMS,
         RollAwayDBChar.raidAutoPassDifficulty, function(k, checked)
-            if type(RollAwayDBChar.raidAutoPassDifficulty) ~= "table" then RollAwayDBChar.raidAutoPassDifficulty = {} end
             RollAwayDBChar.raidAutoPassDifficulty[k] = checked
         end)
 

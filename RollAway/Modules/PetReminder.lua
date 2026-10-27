@@ -1,4 +1,4 @@
--- RollAway - PetReminder.lua
+-- RollAway - Modules/PetReminder.lua
 -- Hunter: text-only toast "Re-summon your pet." in a current dungeon or raid, 1) when entering
 -- it and 2) when the dead pet was revived there. A pet that died has to be revived, dismissed
 -- and summoned again, or it is bugged; the bug cannot be detected, so the toast shows
@@ -31,9 +31,7 @@ local function ShowToast()
         petFrame, petTimer = RA.CreateToastFrame("RollAwayPetReminderFrame", 280, 36, 220)
         RA.SetupInstanceReminderLifecycle(petFrame)
     end
-    local fontPath, fontSize = RA.GetQoLFont()
-    petFrame.text:SetFont(fontPath, fontSize, "OUTLINE")
-    petFrame.text:SetText("|cffFFFFFF" .. RA_L["qol_pet_reminder_text"] .. "|r")
+    RA.SetToastText(petFrame, "|cffFFFFFF" .. RA_L["qol_pet_reminder_text"] .. "|r")
     petFrame:Show()
     petTimer.Start()
 end

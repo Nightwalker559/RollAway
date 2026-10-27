@@ -350,12 +350,12 @@ local function ReflowTabRow(order, gap, placeFirst, placeHidden)
 end
 
 -- Gold label for the active tab, gray for the others (ElvUI-skinned buttons restyle the
--- backdrop too, via RA_ApplyActive/RA_ApplyInactive).
+-- backdrop too, via raApplyActive/raApplyInactive).
 local function SetTabButtonActive(btn, active)
-    if active and btn.RA_ApplyActive then
-        btn.RA_ApplyActive()
-    elseif not active and btn.RA_ApplyInactive then
-        btn.RA_ApplyInactive()
+    if active and btn.raApplyActive then
+        btn.raApplyActive()
+    elseif not active and btn.raApplyInactive then
+        btn.raApplyInactive()
     else
         local color = active and GOLD or GRAY
         local text = btn:GetFontString()
@@ -554,13 +554,7 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
             local leftEntries = {}
             for i, b in ipairs(section.bosses) do
                 local entry = CreateGridEntry(parent, i, leftEntries, secLabel, -8)
-                local bossLabelText = RA_L["boss_"..b.key]
-                if b.pendingTest then
-                    bossLabelText = bossLabelText .. " |cff888888" .. RA_L["label_coming_soon"] .. "|r"
-                    dbTable[b.key] = false
-                end
-                local cb = MakeGridCheckbox(entry, bossLabelText, dbTable, b.key)
-                if b.pendingTest then cb:SetDisabled(true) end
+                MakeGridCheckbox(entry, RA_L["boss_"..b.key], dbTable, b.key)
             end
             prevAnchor  = leftEntries[math.floor((#section.bosses - 1) / 2)]
             prevOffsetY = -16

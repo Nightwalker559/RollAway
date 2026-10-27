@@ -1,4 +1,4 @@
--- RollAway - LFGQuickCreate.lua
+-- RollAway - Modules/LFGQuickCreate.lua
 -- Dungeon quick-select buttons in the Group Finder (Mythic+); dungeon data (cmID,
 -- lfgID) from RA.DUNGEONS[RA.ACTIVE_SEASON].
 
@@ -23,7 +23,7 @@ end
 
 -- The season's dungeons via GetMapTable() (full list if that is empty), sorted by name.
 local function ActiveDungeons()
-    local source = RA.DUNGEONS[RA.ACTIVE_SEASON]
+    local source = RA.GetActiveSeasonDungeons()
     if not C_ChallengeMode then return RA.SortByLabel(source, DungeonSortLabel) end
     local cmIDs = C_ChallengeMode.GetMapTable()
     if not cmIDs or #cmIDs == 0 then return RA.SortByLabel(source, DungeonSortLabel) end

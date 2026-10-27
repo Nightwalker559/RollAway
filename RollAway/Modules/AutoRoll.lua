@@ -1,4 +1,4 @@
--- RollAway - AutoRoll.lua
+-- RollAway - Modules/AutoRoll.lua
 -- Legacy raid auto-roll (Dragonflight + The War Within).
 
 local RA  = _G["RollAway"]

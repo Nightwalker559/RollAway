@@ -1,4 +1,4 @@
--- RollAway - Reminder.lua
+-- RollAway - Modules/Reminder.lua
 -- Popup reminder when entering Mythic dungeons or raids (Season 1 & 2).
 
 local RA   = _G["RollAway"]
@@ -61,7 +61,7 @@ local function BuildAutoPassStatus(tabKey, instanceID)
             for _, bosses in pairs(RA.RAIDS) do
                 for _, b in ipairs(bosses) do
                     if b.raid == raidKey and char.raids[b.key] then
-                        names[#names + 1] = RA_L["boss_" .. b.key] or b.key
+                        names[#names + 1] = RA_L["boss_" .. b.key]
                     end
                 end
             end

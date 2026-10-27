@@ -84,7 +84,7 @@ local function CollectEntries(list, dungeons, defaultExpansion)
 end
 
 local function EntryLabel(e)
-    return RA_L[e.nameKey] or e.key
+    return RA_L[e.nameKey]
 end
 
 -- All dungeon teleports ever handed out.
@@ -131,9 +131,8 @@ local function CollectGroupKeys()
 end
 
 local function KeyDungeonName(mapID)
-    for _, d in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
-        if d.cmID == mapID then return RA_L["dungeon_"..d.key] or d.key end
-    end
+    local dungeon = RA.FindSeasonDungeon("cmID", mapID)
+    if dungeon then return RA_L["dungeon_"..dungeon.key] end
     return C_ChallengeMode.GetMapUIInfo(mapID)
 end
 
@@ -147,7 +146,7 @@ local function AcquireButton(i, parent)
 
     btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText(RA_L[self.nameKey] or self.nameKey, 1, 0.82, 0)
+        GameTooltip:SetText(RA_L[self.nameKey], 1, 0.82, 0)
         GameTooltip:Show()
     end)
 
@@ -378,10 +377,9 @@ local function CreateOverviewFrame()
     overviewFrame:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_REGEN_DISABLED" then
             RA.SafeSetShown(self, false)
-        elseif event == "BAG_UPDATE_DELAYED" or event == "SPELLS_CHANGED" then
-            RA.RefreshPortalOverview()
-        elseif event == "GROUP_ROSTER_UPDATE" then
-            RequestGroupKeys()
+        else
+            -- SPELLS_CHANGED and group changes come in bursts: one relayout per frame.
+            if event == "GROUP_ROSTER_UPDATE" then RequestGroupKeys() end
             QueueRefresh()
         end
     end)
@@ -491,7 +489,7 @@ local function LayoutFlatButtons(entries)
     HideAllButtons()
 
     -- Same style and pool slot as tab 2's headers: rows start at the same Y in both tabs.
-    PlaceHeader(1, 0, string.format(RA_L["portal_overview_current_season"] or "Season %d", RA.ACTIVE_SEASON))
+    PlaceHeader(1, 0, string.format(RA_L["portal_overview_current_season"], RA.ACTIVE_SEASON))
 
     if #entries == 0 then
         overviewFrame.emptyText:Show()
@@ -522,7 +520,7 @@ local function LayoutGroupedButtons(groups)
     local y = 0
 
     for i, group in ipairs(groups) do
-        PlaceHeader(i, y, RA_L["expansion_"..group.expansion] or group.expansion)
+        PlaceHeader(i, y, RA_L["expansion_"..group.expansion])
         y = y - HEADER_HEIGHT
         y = y - PlaceRows(group.entries, y, ownedLfgID, true) - HEADER_GAP
     end
@@ -549,7 +547,7 @@ function RA.RefreshPortalOverview()
     end
 
     if activeTab == 1 then
-        local entries = CollectEntries({}, RA.DUNGEONS[RA.ACTIVE_SEASON] or {}, "midnight")
+        local entries = CollectEntries({}, RA.GetActiveSeasonDungeons(), "midnight")
         LayoutFlatButtons(RA.SortByLabel(entries, EntryLabel))
     else
         local known = {}

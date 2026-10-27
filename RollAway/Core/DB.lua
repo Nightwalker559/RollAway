@@ -30,9 +30,11 @@ function RA.StripDefaults(data, defaults)
     end
 end
 
+-- Profile names: 1-50 characters, not only whitespace (also checked by the name popups).
 local function IsValidName(name)
-    return type(name) == "string" and name ~= "" and strlenutf8(name) <= 50 and not name:find("^ +$")
+    return type(name) == "string" and name ~= "" and strlenutf8(name) <= 50 and not name:find("^%s+$")
 end
+RA.IsValidProfileName = IsValidName
 
 local DB = {}
 DB.__index = DB

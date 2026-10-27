@@ -1,4 +1,4 @@
--- RollAway - RollConfirm.lua
+-- RollAway - Modules/RollConfirm.lua
 -- Optional "are you sure?" popups before rolling Need, Greed, Transmog or Pass on group
 -- loot, for any roll frame; each type is toggled separately. On confirm the real roll
 -- button (native or ElvUI) is clicked, not RollOnLoot (the Transmog button may run

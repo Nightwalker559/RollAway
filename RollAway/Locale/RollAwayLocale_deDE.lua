@@ -107,7 +107,6 @@ L["patch_12_0"]          = "Patch 12.0"
 L["patch_12_1"]          = "Patch 12.1"
 L["nemesis_delve_label"] = "(Nemesis-Tiefe)"
 L["label_removed"]       = "(entfernt)"
-L["label_coming_soon"]   = "(demnächst)"
 
 ------------------------------------------------------------------------
 -- Reiter Dungeons

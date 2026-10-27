@@ -17,7 +17,7 @@ RA.DELVES[1] = {
     { key = "the_grudge_pit",        mapID = 2963 },
     { key = "gulf_of_memory",        mapID = 2964 },
     { key = "sunkiller_sanctum",     mapID = 2965 },
-    { key = "torments_rise",         mapID = 2966, removedAfterS1 = true }, -- Nemesis Delve; removed from the game pool as of Season 2 (12.1)
+    { key = "torments_rise",         mapID = 2966, nemesis = true, removedAfterS1 = true }, -- Nemesis Delve; removed from the game pool as of Season 2 (12.1)
     { key = "shadowguard_point",     mapID = 2979 },
     { key = "the_darkway",           mapID = 3003 },
 }
@@ -27,8 +27,8 @@ RA.DELVES[2] = {
     { key = "ring_of_glory",    mapID = 3077 },
     { key = "gnarldor_isle",    mapID = 3038 },
     -- Venomfall Deeps (Nemesis Delve); mapID 3079 per wago.tools, not yet confirmed in game
-    { key = "venomfall_deeps", mapID = 3079 },
+    { key = "venomfall_deeps", mapID = 3079, nemesis = true },
     -- Labyrinth of Kindo'jan (12.1.5) – mega-delve; confirmed on the 12.1.5 PTR:
     -- instanceType "scenario", instanceID 3043, difficultyID 208
-    { key = "labyrinth_of_kindojan", mapID = 3043 },
+    { key = "labyrinth_of_kindojan", mapID = 3043, patch = "12.1.5" },
 }

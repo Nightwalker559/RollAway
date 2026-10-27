@@ -1,7 +1,7 @@
 -- RollAway - Data/LegacyRaids.lua
 -- Legacy raid bosses (Dragonflight + The War Within) for old-content farming; append a
--- tier once it is superseded. At the end: RA.IsCurrentSeasonRaid, which asks the game
--- for the running season's raids and uses the legacy list as fallback.
+-- tier once it is superseded. RA.IsCurrentSeasonRaid (Core/Season.lua) uses the instance
+-- list as its fallback.
 
 _G["RollAway"] = _G["RollAway"] or {}
 local RA = _G["RollAway"]
@@ -74,43 +74,3 @@ RA.LEGACY_RAIDS = {
     { key = "nexus_king_salhadaar", encounterID = 3134, raid = "manaforge_omega"        },
     { key = "dimensius",            encounterID = 3135, raid = "manaforge_omega"        },
 }
-
--- Current season from the game: the Encounter Journal's last tier ("Current Season")
--- lists the running season's raids and dungeons by map ID (= instanceID of
--- GetInstanceInfo). Nothing to maintain; the legacy list is the fallback.
-local seasonInstances = {}  -- [isRaid] = { [mapID] = true }, filled once the journal answers
-
--- Map IDs of the current season's raids (isRaid) or dungeons; nil while the journal has no
--- data. The journal's selected tier is put back.
-function RA.GetCurrentSeasonInstances(isRaid)
-    isRaid = isRaid and true or false
-    if seasonInstances[isRaid] then return seasonInstances[isRaid] end
-    if not (EJ_GetNumTiers and EJ_SelectTier and EJ_GetInstanceByIndex) then return nil end
-
-    local lastTier = EJ_GetNumTiers()
-    if not lastTier or lastTier < 1 then return nil end
-    local previous = EJ_GetCurrentTier()
-    EJ_SelectTier(lastTier)
-
-    local set, index = {}, 1
-    while true do
-        local journalID, _, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, isRaid)
-        if not journalID then break end
-        if mapID then set[mapID] = true end
-        index = index + 1
-    end
-    if previous then EJ_SelectTier(previous) end
-
-    if next(set) then
-        seasonInstances[isRaid] = set
-        return set
-    end
-    return nil
-end
-
--- Is this raid in the current season? Without journal data: not on the legacy list.
-function RA.IsCurrentSeasonRaid(instanceID)
-    local set = RA.GetCurrentSeasonInstances(true)
-    if set then return set[instanceID] == true end
-    return RA.LEGACY_RAID_INSTANCES[instanceID] == nil
-end

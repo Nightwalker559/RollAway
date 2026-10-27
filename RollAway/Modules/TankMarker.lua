@@ -1,4 +1,4 @@
--- RollAway - TankMarker.lua
+-- RollAway - Modules/TankMarker.lua
 -- Offers to put a raid marker (default: square) on the group's tank. Since 12.0
 -- SetRaidTarget is protected: only a secure button running the "/tm" macro can set
 -- it, and it needs a real click, so a small popup with a "Mark" button is shown.
@@ -52,31 +52,29 @@ local function MacroFor(unit, icon)
     return ("/tm [@%s] 0\n/tm [@%s] %d"):format(unit, unit, icon)
 end
 
--- Does the unit carry any marker? In instances the number is secret but "none" is
--- nil, so anything but nil counts as marked.
-local function HasMarker(unit)
+-- The unit's marker: the number, "set" (in instances the number is secret, but "none" is
+-- still nil), "error", or nil for none.
+local function ReadMarker(unit)
     local ok, index = pcall(GetRaidTargetIndex, unit)
-    if not ok then return false end
-    if issecretvalue and issecretvalue(index) then return true end  -- set, number hidden
-    return index ~= nil
+    if not ok then return "error" end
+    if issecretvalue and issecretvalue(index) then return "set" end
+    return index
 end
 
--- The group's markers for the test log: "none", "set" (hidden) or the number.
+-- Does the unit carry any marker?
+local function HasMarker(unit)
+    local marker = ReadMarker(unit)
+    return marker ~= nil and marker ~= "error"
+end
+
+-- The group's markers for the test log: "none", "set" (hidden), "error" or the number.
 local function MarkerSummary()
     local parts = {}
     local units = { "player" }
     for i = 1, GetNumSubgroupMembers() do units[#units + 1] = "party" .. i end
     for _, unit in ipairs(units) do
-        local ok, index = pcall(GetRaidTargetIndex, unit)
-        local state
-        if not ok then
-            state = "error"
-        elseif issecretvalue and issecretvalue(index) then
-            state = "set"
-        else
-            state = index and tostring(index) or "none"
-        end
-        parts[#parts + 1] = unit .. "=" .. state
+        local marker = ReadMarker(unit)
+        parts[#parts + 1] = unit .. "=" .. (marker == nil and "none" or tostring(marker))
     end
     return table.concat(parts, " ")
 end
@@ -189,9 +187,7 @@ local function NotWorthMarking()
     if not RA.MYTHIC_DUNGEON_DIFFICULTY_IDS[RA.cachedDiffID] then
         return "Dungeon is not Mythic (difficulty " .. tostring(RA.cachedDiffID) .. ")."
     end
-    for _, dungeon in ipairs(RA.DUNGEONS[RA.ACTIVE_SEASON] or {}) do
-        if dungeon.mapID == RA.cachedInstanceID then return nil end
-    end
+    if RA.FindSeasonDungeon("mapID", RA.cachedInstanceID) then return nil end
     return "Not a dungeon of the current season (instance " .. tostring(RA.cachedInstanceID) .. ")."
 end
 
@@ -263,12 +259,15 @@ function ScheduleCheck(delay)
     end)
 end
 
+-- RAID_TARGET_UPDATE closes the popup once the tank is marked and feeds the test log.
+local EVENTS = { "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD",
+    "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED", "RAID_TARGET_UPDATE" }
+
 -- Events only while the option (or test mode) is on; at load and on option change.
 function RA.ApplyTankMarker()
     if not eventFrame then return end
     local on = testMode or (RollAwayDB and RollAwayDB.tankMarkEnabled)
-    -- RAID_TARGET_UPDATE: closes the popup once the tank is marked; feeds the test log.
-    for _, event in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ROLES_ASSIGNED", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED", "RAID_TARGET_UPDATE" }) do
+    for _, event in ipairs(EVENTS) do
         if on then
             eventFrame:RegisterEvent(event)
         else

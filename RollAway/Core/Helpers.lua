@@ -430,6 +430,13 @@ function RA.CreateToastFrame(globalName, width, height, yOffset)
     return frame, timer
 end
 
+-- Font (QoL setting) and text of a toast; `text` is complete, color codes included.
+function RA.SetToastText(frame, text)
+    local fontPath, fontSize = RA.GetQoLFont()
+    frame.text:SetFont(fontPath, fontSize, "OUTLINE")
+    frame.text:SetText(text)
+end
+
 -- Only toasts created so far (lazily, on first show).
 function RA.ResetToastPositions()
     for _, frame in ipairs(toastFrames) do

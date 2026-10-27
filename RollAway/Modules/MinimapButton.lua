@@ -1,4 +1,4 @@
--- RollAway - MinimapButton.lua
+-- RollAway - Modules/MinimapButton.lua
 -- Minimap button (no library): left click toggles the feature overview, right click the
 -- options, drag moves it (angle saved in the profile). Hidden with minimapButtonHide (QoL > Hide).
 -- Named like a LibDBIcon button ("LibDBIcon10_<name>", .icon / .border / .background) so

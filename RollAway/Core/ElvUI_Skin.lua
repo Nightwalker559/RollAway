@@ -242,8 +242,8 @@ end
 
 -- btn: UIPanelButtonTemplate button that shows panels[key] on click. The fill stays ElvUI's
 -- (a shade lighter than the panel so tabs read as buttons); the border takes classColor on
--- hover and while the tab is active, and the text turns gold. Adds btn.RA_ApplyActive /
--- RA_ApplyInactive / RA_Refresh.
+-- hover and while the tab is active, and the text turns gold. Adds btn.raApplyActive /
+-- raApplyInactive / raRefresh.
 function Skin.OptionTab(btn, panels, key, classColor)
     if not Enabled() then return end
     S:HandleButton(btn)
@@ -265,10 +265,10 @@ function Skin.OptionTab(btn, panels, key, classColor)
         SetTextColor(btn, GRAY)
     end
 
-    btn.RA_ApplyActive   = ApplyActive
-    btn.RA_ApplyInactive = ApplyInactive
+    btn.raApplyActive   = ApplyActive
+    btn.raApplyInactive = ApplyInactive
     -- Re-applies the style for the current state (after Enable()/Disable()).
-    btn.RA_Refresh = function()
+    btn.raRefresh = function()
         if panels[key] and panels[key]:IsShown() then ApplyActive() else ApplyInactive() end
     end
 
@@ -278,7 +278,7 @@ function Skin.OptionTab(btn, panels, key, classColor)
         Paint(true)
         SetTextColor(self, GOLD)
     end)
-    btn:HookScript("OnLeave", function(self) self.RA_Refresh() end)
+    btn:HookScript("OnLeave", function(self) self.raRefresh() end)
 end
 
 -- The player's class color while the ElvUI look applies (tab highlight), else nil.

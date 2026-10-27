@@ -1,4 +1,4 @@
--- RollAway - AutoPass.lua
+-- RollAway - Modules/AutoPass.lua
 -- Bonus roll auto-pass: dungeons, delves, raids (per boss or whole difficulty) and Prey.
 
 local RA   = _G["RollAway"]
@@ -46,17 +46,23 @@ local MIDNIGHT_ZONE_MAPS = {
     [2512] = true,  -- The Coiled Isle
 }
 
--- In a Midnight zone (the map or a parent map is listed)? Returns true/false and the map
--- ID; nil while the map is unknown.
-function RA.IsInMidnightZone()
-    local playerMap = C_Map.GetBestMapForUnit("player")
-    local mapID, hops = playerMap, 0
+-- set[mapID] of the map itself or the nearest parent map that is listed in `set`.
+local function LookupInMapChain(mapID, set)
+    local hops = 0
     while mapID and mapID ~= 0 and hops < 10 do
-        if MIDNIGHT_ZONE_MAPS[mapID] then return true, playerMap end
+        local value = set[mapID]
+        if value ~= nil then return value end
         local info = C_Map.GetMapInfo(mapID)
         mapID = info and info.parentMapID
         hops = hops + 1
     end
+end
+
+-- In a Midnight zone (the map or a parent map is listed)? Returns true/false and the map
+-- ID; nil while the map is unknown.
+function RA.IsInMidnightZone()
+    local playerMap = C_Map.GetBestMapForUnit("player")
+    if LookupInMapChain(playerMap, MIDNIGHT_ZONE_MAPS) then return true, playerMap end
     if not playerMap then return nil end
     return false, playerMap
 end
@@ -88,17 +94,8 @@ function RA.GetZoneLabel()
     if RA.IsInMidnightZone() then
         expansion = EXPANSION_NAME11 or "Midnight"
     else
-        local id, hops = mapID, 0
-        while id and id ~= 0 and hops < 10 do
-            local index = CONTINENT_EXPANSION[id]
-            if index then
-                expansion = _G["EXPANSION_NAME" .. index]
-                break
-            end
-            local parent = C_Map.GetMapInfo(id)
-            id = parent and parent.parentMapID
-            hops = hops + 1
-        end
+        local index = LookupInMapChain(mapID, CONTINENT_EXPANSION)
+        expansion = index and _G["EXPANSION_NAME" .. index]
     end
     return expansion and string.format("%s (%s)", name, expansion) or name
 end

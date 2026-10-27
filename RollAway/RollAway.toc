@@ -24,6 +24,7 @@ Data\DungeonShortNames.lua
 Core\Core.lua
 Core\DB.lua
 Core\Helpers.lua
+Core\Season.lua
 Modules\WhatsNew.lua
 Modules\Misc.lua
 Modules\AutoPass.lua
@@ -35,6 +36,7 @@ Modules\TeleportReminder.lua
 Modules\PortalOverview.lua
 Modules\JoinReminder.lua
 Modules\QoL.lua
+Modules\HideUI.lua
 Modules\PetReminder.lua
 Modules\CraftingSalvage.lua
 Modules\Quests.lua
@@ -54,5 +56,6 @@ Options\OptionsProfile.lua
 Options\OptionsDev.lua
 Options\Options.lua
 Core\Debug.lua
+Core\DevTools.lua
 Core\ElvUI_Skin.lua
 Core\ElvUI_Tags.lua
