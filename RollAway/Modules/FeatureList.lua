@@ -126,7 +126,7 @@ local function BuildSections()
             { "/rawvault",    "cmd_rawvault_info"    },
             { "/rawparagon",  "cmd_rawparagon_info"  },
             { "/rawtank",     "cmd_rawtank_info"     },
-            { "/gilvl",       "cmd_gilvl_info"       },
+            { "/rawilvl",     "cmd_gilvl_info"       },
         } },
     }
     return sections

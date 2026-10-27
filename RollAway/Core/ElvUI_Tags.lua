@@ -1,9 +1,9 @@
 -- RollAway - Core/ElvUI_Tags.lua
--- The [gilvl] tags for ElvUI's unit frames (item level of group members, Modules/GroupIlvl.lua):
---   [gilvl]          284     colored by the thresholds (switch in the QoL page "Group")
---   [gilvl:plain]    284     never colored
---   [gilvl:brackets] [284]   colored like [gilvl]
--- Use them in any ElvUI text field, e.g. Unit Frames > Party > Name: [name] [gilvl].
+-- The [raw:ilvl] tags for ElvUI's unit frames (item level of group members, Modules/GroupIlvl.lua):
+--   [raw:ilvl]           284     colored by the thresholds (switch in the QoL page "Group")
+--   [raw:ilvl:plain]     284     never colored
+--   [raw:ilvl:brackets]  [284]   colored like [raw:ilvl]
+-- Use them in any ElvUI text field, e.g. Unit Frames > Party > Name: [name] [raw:ilvl].
 -- Silent no-op without ElvUI. The tags are always registered (ElvUI keeps text typed
 -- into its fields), they just show nothing while the feature is off.
 
@@ -26,9 +26,9 @@ local TAG_CATEGORY = "|cffd9ba40RollAway|r"
 local EVENTS = "UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE"
 
 local TAGS = {
-    { "gilvl",          nil,        "gilvl_tag_default" },
-    { "gilvl:plain",    "plain",    "gilvl_tag_plain" },
-    { "gilvl:brackets", "brackets", "gilvl_tag_brackets" },
+    { "raw:ilvl",          nil,        "gilvl_tag_default" },
+    { "raw:ilvl:plain",    "plain",    "gilvl_tag_plain" },
+    { "raw:ilvl:brackets", "brackets", "gilvl_tag_brackets" },
 }
 
 for _, tag in ipairs(TAGS) do

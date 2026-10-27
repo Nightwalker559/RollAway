@@ -1,5 +1,5 @@
 -- RollAway - Modules/GroupIlvl.lua
--- Item level of the group's members for ElvUI's unit frames (the [gilvl] tags live in
+-- Item level of the group's members for ElvUI's unit frames (the [raw:ilvl] tags live in
 -- Core/ElvUI_Tags.lua). Your own level is read from the character sheet; everyone else is
 -- inspected one at a time: pick the first member who has no level yet (or whose gear
 -- changed), send NotifyInspect, wait for INSPECT_READY, store the result, repeat. A member
@@ -13,7 +13,7 @@
 --
 -- Active only with ElvUI and RollAwayDB.groupIlvl (QoL page "Group"); the events are
 -- registered only then (RA.ApplyGroupIlvl). The color steps are ours (BANDS), not a setting.
--- /gilvl: rescan, status.
+-- /rawilvl: rescan, status.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -148,7 +148,7 @@ local function ColorFor(ilvl)
     return COLORS[step]
 end
 
--- The scale in its own colors, for the options and /gilvl status.
+-- The scale in its own colors, for the options and /rawilvl status.
 function RA.GetGroupIlvlLegend()
     local parts = { COLORS[1] .. "<" .. BANDS[1] .. "|r" }
     for i = 1, #BANDS do parts[i + 1] = COLORS[i + 1] .. BANDS[i] .. "+|r" end
@@ -403,12 +403,12 @@ function RA.ApplyGroupIlvl()
     NotifyAll()
 end
 
--- /gilvl
+-- /rawilvl
 
 function RA.InitGroupIlvl()
     RA.ApplyGroupIlvl()
 
-    SLASH_ROLLAWAYGILVL1 = "/gilvl"
+    SLASH_ROLLAWAYGILVL1 = "/rawilvl"
     SlashCmdList["ROLLAWAYGILVL"] = function(msg)
         local cmd = msg:lower():match("^%s*(%S*)")
         if cmd == "scan" then

@@ -155,7 +155,7 @@ RA.defaults = {
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
         hunterPetReminder        = false,
-        groupIlvl                = false,  -- ElvUI [gilvl] tags: item level of group members (GroupIlvl.lua)
+        groupIlvl                = false,  -- ElvUI [raw:ilvl] tags: item level of group members (GroupIlvl.lua)
         groupIlvlColored         = true,
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
@@ -220,7 +220,7 @@ RA.defaultsChar = {
     raidAutoPassDifficulty = { lfr = false, normal = false, heroic = false, mythic = false },
     legacy_raids = {},
     prey         = false,
-    groupIlvlCache = {},   -- ElvUI [gilvl] tags: item levels of group members read before (GroupIlvl.lua)
+    groupIlvlCache = {},   -- ElvUI [raw:ilvl] tags: item levels of group members read before (GroupIlvl.lua)
 }
 
 -- Active Legacy Raids table: account-wide (RA.db.global) or per-character.

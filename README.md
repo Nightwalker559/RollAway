@@ -46,7 +46,7 @@ Closes the loot history window once the last roll is finished, with your delay a
 - **Auto-accept invites** from guild members and friends.
 - **Instance join reminder** (Group Finder, Mythic+): shows the listed key level and can open your keystone addon (BigWigs Keystones, Details! Keystones, or the built-in teleport reminder with the exact dungeon portal).
 - **Portal overview** (`/rat`): all dungeon portals of the current season or by expansion, optionally with the keystones of your group.
-- **Group item level** (with ElvUI): the item level of your group members in ElvUI's unit frames through the tags `[gilvl]`, `[gilvl:plain]` and `[gilvl:brackets]`. Off by default.
+- **Group item level** (with ElvUI): the item level of your group members in ElvUI's unit frames through the tags `[raw:ilvl]`, `[raw:ilvl:plain]` and `[raw:ilvl:brackets]`. Off by default.
 - **Ready check reminder** for your talents.
 - **Automatic combat logging** by zone and difficulty, optionally for the current season's raids only.
 
