@@ -2,7 +2,7 @@
 -- The [raw:ilvl] tags for ElvUI's unit frames (item level of group members, Modules/GroupIlvl.lua):
 --   [raw:ilvl]           284     colored by the thresholds (switch in the QoL page "Group")
 --   [raw:ilvl:plain]     284     never colored
---   [raw:ilvl:brackets]  [284]   colored like [raw:ilvl]
+--   [raw:ilvl:brackets]  <284>   colored like [raw:ilvl]
 -- Use them in any ElvUI text field, e.g. Unit Frames > Party > Name: [name] [raw:ilvl].
 -- Silent no-op without ElvUI. The tags are always registered (ElvUI keeps text typed
 -- into its fields), they just show nothing while the feature is off.

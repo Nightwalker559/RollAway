@@ -396,7 +396,7 @@ L["gilvl_no_elvui"]                = "nicht gefunden"
 L["gilvl_help"]                    = "Befehle: /rawilvl scan, /rawilvl status"
 L["gilvl_tag_default"]             = "Gegenstandsstufe der Einheit, eingefärbt nach den Schwellenwerten. Beispiel: 284"
 L["gilvl_tag_plain"]               = "Gegenstandsstufe ohne Farbe. Beispiel: 284"
-L["gilvl_tag_brackets"]            = "Gegenstandsstufe in eckigen Klammern, eingefärbt wie [raw:ilvl]. Beispiel: [284]"
+L["gilvl_tag_brackets"]            = "Gegenstandsstufe in spitzen Klammern, eingefärbt wie [raw:ilvl]. Beispiel: <284>"
 
 ------------------------------------------------------------------------
 -- Handwerk (Salvage-Slot)

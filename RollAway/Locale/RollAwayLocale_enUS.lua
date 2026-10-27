@@ -395,7 +395,7 @@ L["gilvl_no_elvui"]                = "not found"
 L["gilvl_help"]                    = "Commands: /rawilvl scan, /rawilvl status"
 L["gilvl_tag_default"]             = "Item level of the unit, colored by the thresholds. Example: 284"
 L["gilvl_tag_plain"]               = "Item level without color. Example: 284"
-L["gilvl_tag_brackets"]            = "Item level in square brackets, colored like [raw:ilvl]. Example: [284]"
+L["gilvl_tag_brackets"]            = "Item level in angle brackets, colored like [raw:ilvl]. Example: <284>"
 
 ------------------------------------------------------------------------
 -- Crafting (salvage slot)
