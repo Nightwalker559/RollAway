@@ -2,7 +2,7 @@
 
 ---
 
-## 3.1.8 (alpha 2)
+## 3.1.8 (alpha 3)
 
 ### New
 - Portal window: option "Show group keystones" lists the group's keys (name, level, dungeon) under the season portals. Works with or without BigWigs (same key sharing as BigWigs, so both see each other), off by default.
