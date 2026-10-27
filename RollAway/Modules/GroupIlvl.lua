@@ -399,6 +399,7 @@ function RA.ApplyGroupIlvl()
         wipe(dirty)
         wipe(loggedRange)
     end
+    if RA.SetElvUITags then RA.SetElvUITags(IsActive()) end   -- only defined with ElvUI
     NotifyAll()
 end
 
