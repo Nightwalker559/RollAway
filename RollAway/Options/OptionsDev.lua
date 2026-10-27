@@ -22,8 +22,8 @@ local PUBLIC_COMMANDS = {
     { "/rawvault",       "cmd_rawvault_info"  },
     { "/rawparagon",     "cmd_rawparagon_info" },
     { "/rawtank",        "cmd_rawtank_info"   },
-    { "/rawilvl",        "cmd_gilvl_info"     },
 }
+if ElvUI then PUBLIC_COMMANDS[#PUBLIC_COMMANDS + 1] = { "/rawilvl", "cmd_gilvl_info" } end   -- only exists with ElvUI
 local DEV_COMMANDS = {
     { "/rawraids",         "cmd_rawraids_info"       },
     { "/rawdungeons",      "cmd_rawdungeons_info"    },

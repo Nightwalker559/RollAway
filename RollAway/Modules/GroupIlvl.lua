@@ -407,6 +407,7 @@ end
 
 function RA.InitGroupIlvl()
     RA.ApplyGroupIlvl()
+    if not ElvUI then return end   -- no tags to feed: no command either
 
     SLASH_ROLLAWAYGILVL1 = "/rawilvl"
     SlashCmdList["ROLLAWAYGILVL"] = function(msg)
@@ -422,7 +423,7 @@ function RA.InitGroupIlvl()
             local count = 0
             for _ in pairs(cache) do count = count + 1 end
             RA.Print(string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
-            RA.Print(string.format(RA_L["gilvl_status"], count, ElvUI and RA_L["gilvl_found"] or RA_L["gilvl_no_elvui"]))
+            RA.Print(string.format(RA_L["gilvl_status"], count))
         else
             RA.Print(RA_L["gilvl_help"])
         end

@@ -126,9 +126,12 @@ local function BuildSections()
             { "/rawvault",    "cmd_rawvault_info"    },
             { "/rawparagon",  "cmd_rawparagon_info"  },
             { "/rawtank",     "cmd_rawtank_info"     },
-            { "/rawilvl",     "cmd_gilvl_info"       },
         } },
     }
+    if ElvUI then   -- /rawilvl only exists with ElvUI
+        local commands = sections[#sections].commands
+        commands[#commands + 1] = { "/rawilvl", "cmd_gilvl_info" }
+    end
     return sections
 end
 
