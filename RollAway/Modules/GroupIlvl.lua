@@ -157,7 +157,7 @@ end
 
 -- The text of a tag for `unit`; nil, never "", when there is nothing to show: oUF prints a
 -- tag's prefix/suffix literals for every non-nil return, even an empty string.
--- mode: nil = colored (if enabled), "plain" = never colored, "brackets" = <284>
+-- mode: nil = colored (if enabled), "plain" = never colored
 function RA.FormatGroupIlvl(unit, mode)
     if not IsActive() then return nil end
     local guid = UnitGUIDSafe(unit)
@@ -165,7 +165,6 @@ function RA.FormatGroupIlvl(unit, mode)
     if not ilvl then return nil end
 
     local text = tostring(ilvl)
-    if mode == "brackets" then text = "<" .. text .. ">" end
     if mode ~= "plain" and RollAwayDB.groupIlvlColored then
         text = ColorFor(ilvl) .. text .. "|r"
     end
