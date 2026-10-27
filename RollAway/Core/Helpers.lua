@@ -41,6 +41,28 @@ local function DeepCopy(t)
 end
 RA.DeepCopy = DeepCopy
 
+-- Runs fn() on the next frame. While it returns false (not ready: a Blizzard frame or its
+-- data is still missing) it is tried again every `retryDelay` seconds, at most `retries`
+-- more times. Any other return value means done.
+function RA.RunWhenReady(fn, retryDelay, retries)
+    local function Attempt(left)
+        if fn() == false and left > 0 then
+            C_Timer.After(retryDelay, function() Attempt(left - 1) end)
+        end
+    end
+    RunNextFrame(function() Attempt(retries) end)
+end
+
+-- Runs fn() after `count` frames (a UI that settles over several frames; frame-based
+-- like the settling itself, so it scales with the frame rate).
+function RA.RunAfterFrames(count, fn)
+    if count <= 1 then
+        RunNextFrame(fn)
+    else
+        RunNextFrame(function() RA.RunAfterFrames(count - 1, fn) end)
+    end
+end
+
 -- C_Timer handles may be tables or userdata: cancel whatever answers Cancel().
 local function SafeCancelTimer(timer)
     if timer then

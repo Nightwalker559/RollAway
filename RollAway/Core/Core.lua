@@ -672,6 +672,9 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
 
+        -- ElvUI creates roll frames on demand: confirm overlays for the ones that are new.
+        if ElvUI and RA.BuildRollOverlays then RunNextFrame(RA.BuildRollOverlays) end
+
         -- Legacy auto-roll
         if RollAwayDB and RollAwayDB.legacy and RA.ExecuteLegacyRoll then
             local raidKey = LEGACY_ENCOUNTER_MAP[RA.lastLegacyEncounterID]
@@ -695,7 +698,7 @@ f:SetScript("OnEvent", function(_, event, ...)
             if not select(2, GetLootRollItemInfo(rollID)) then ForgetRoll(rollID, "stale (game no longer knows it)") end
         end
 
-        C_Timer.After(0.1, CheckAndClose)
+        RunNextFrame(CheckAndClose)   -- open rolls in the game's history: CheckAndClose polls
 
     elseif event == "CHALLENGE_MODE_MAPS_UPDATE" then
         CheckSeasonData()
@@ -712,7 +715,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if next(RA.activeRolls) then
             DBG("CANCEL_ALL_LOOT_ROLLS")
             for rollID in pairs(RA.activeRolls) do ForgetRoll(rollID, "all cancelled") end
-            C_Timer.After(0.1, CheckAndClose)
+            RunNextFrame(CheckAndClose)
         end
 
     elseif event == "ENCOUNTER_END" then

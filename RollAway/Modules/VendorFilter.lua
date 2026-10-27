@@ -114,8 +114,7 @@ local function IsHousingDecorKnown(itemID)
     return (info.totalNumStored or 0) > 0
 end
 
-local function IsMerchantItemKnown(itemID, index)
-    if not itemID then return false end
+local function CheckMerchantItemKnown(itemID, index)
     -- Item class first: no tooltip scan for non-recipes, the update fires often.
     local isRecipe = select(6, C_Item.GetItemInfoInstant(itemID)) == Enum.ItemClass.Recipe
     if isRecipe and IsRecipeKnown(itemID, index) then return true end
@@ -128,6 +127,31 @@ local function IsMerchantItemKnown(itemID, index)
     -- Last resort for what the APIs miss (transmog ensembles, pets with a unique limit):
     -- Blizzard's own tooltip line (recipes were scanned above).
     return not isRecipe and IsKnownViaTooltip(index)
+end
+
+-- Results per item for one merchant visit: the update fires on every page, purchase and
+-- while item data streams in. Known items stay cached; "not known" only once the item's
+-- data is loaded (before that the answer may be incomplete) and until something can change
+-- it (a purchase, a learned toy / mount / pet / recipe / appearance).
+local knownCache = {}   -- [itemID] = true / false
+
+local function IsMerchantItemKnown(itemID, index)
+    if not itemID then return false end
+    local cached = knownCache[itemID]
+    if cached ~= nil then return cached end
+
+    local known = CheckMerchantItemKnown(itemID, index) and true or false
+    if known or (C_Item.IsItemDataCachedByID and C_Item.IsItemDataCachedByID(itemID)) then
+        knownCache[itemID] = known
+    end
+    return known
+end
+
+-- Drops the "not known" results (known stays known).
+local function ForgetUnknownItems()
+    for itemID, known in pairs(knownCache) do
+        if not known then knownCache[itemID] = nil end
+    end
 end
 
 -- Applying the dim to merchant buttons
@@ -180,6 +204,7 @@ end
 function RA.ResetVendorFilterButtons()
     ForEachMerchantButton(function(button) button:SetAlpha(1) end)
     wipe(lastDebugState)
+    wipe(knownCache)
 end
 
 function RA.ApplyVendorFilterFeature()
@@ -201,13 +226,28 @@ end
 
 -- Initialization
 
+-- Collection changes that can turn an item known while the merchant window is open.
+local COLLECTION_EVENTS = { "NEW_TOY_ADDED", "NEW_MOUNT_ADDED", "NEW_PET_ADDED", "NEW_RECIPE_LEARNED",
+    "TRANSMOG_COLLECTION_SOURCE_ADDED" }
+
 function RA.InitVendorFilter()
     -- Central refresh point Blizzard calls on open, page change, and buy.
     hooksecurefunc("MerchantFrame_UpdateMerchantInfo", RA.ApplyVendorFilterFeature)
+    hooksecurefunc("BuyMerchantItem", ForgetUnknownItems)
 
     local f = CreateFrame("Frame")
+    f:RegisterEvent("MERCHANT_SHOW")
     f:RegisterEvent("MERCHANT_CLOSED")
-    f:SetScript("OnEvent", RA.ResetVendorFilterButtons)
+    for _, event in ipairs(COLLECTION_EVENTS) do f:RegisterEvent(event) end
+    f:SetScript("OnEvent", function(_, event)
+        if event == "MERCHANT_CLOSED" then
+            RA.ResetVendorFilterButtons()
+        elseif event == "MERCHANT_SHOW" then
+            wipe(knownCache)   -- collections change between visits
+        else
+            ForgetUnknownItems()
+        end
+    end)
 
     DBG("[VendorFilter] initialized")
 end

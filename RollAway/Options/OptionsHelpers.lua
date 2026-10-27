@@ -173,6 +173,14 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     return cb
 end
 
+-- Runs fn() once the page's checkboxes have settled: MakeCB re-fits on the next frame and
+-- then lets truncated labels grow for 3 more frames. Right away too, for the common case.
+local CB_SETTLE_FRAMES = 6
+local function RunWhenCheckboxesSettled(fn)
+    RunNextFrame(fn)
+    RA.RunAfterFrames(CB_SETTLE_FRAMES, fn)
+end
+
 -- Gray description text below a checkbox/dropdown/label; anchor, offsets and width
 -- are passed through.
 local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
@@ -601,8 +609,7 @@ local function MakeCategoryPage(panel, headerLine, navWidth, prefix, name, pages
     scroll:SetScrollChild(content)
 
     page:SetScript("OnShow", function()
-        RunNextFrame(function() FitContentHeight(content) end)
-        C_Timer.After(0.3, function() FitContentHeight(content) end)
+        RunWhenCheckboxesSettled(function() FitContentHeight(content) end)
     end)
 
     pages[key] = page
@@ -612,6 +619,7 @@ end
 -- Public exports (Options, OptionsQoL, OptionsDev, OptionsProfile)
 RA.OptionsUI = {
     MakeCategoryPage  = MakeCategoryPage,
+    RunWhenCheckboxesSettled = RunWhenCheckboxesSettled,
     PAGE_W            = PAGE_W,
     ENTRY_W           = ENTRY_W,
     COL_GAP           = COL_GAP,

@@ -154,6 +154,7 @@ local function StateText(on)
 end
 
 local function CreateFrameOnce()
+    RA.EnsureOptions()   -- the rows' checkboxes are the options' own (RA.ToggleControls)
     local f = RA.CreatePanelWindow("RollAwayFeatureListFrame", UIParent, WIDTH, HEIGHT, RA_L["feat_title"])
     f:SetFrameStrata("HIGH")
     RA.MakeDraggable(f)

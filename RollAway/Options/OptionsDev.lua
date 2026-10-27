@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsDev.lua
 -- The "Developer" options page (left nav: Logging / Tests / Tools / Commands), for developer
--- characters only (RA.DEV_CHARS), built once from RA.InitOptions(). The buttons run the dev
+-- characters only (RA.DEV_CHARS), built with the options window (RA.EnsureOptions). The buttons run the dev
 -- commands (RA.RunDevCommand, Debug.lua).
 
 local RA   = _G["RollAway"]

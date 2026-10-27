@@ -141,9 +141,13 @@ end
 
 -- Selects Mythic+ (Blizzard defaults to Mythic) for the selected dungeon: when the form
 -- opens and after another dungeon was picked, never after a manual difficulty pick.
+-- Returns false while the form has no category / dungeon selected yet (RA.RunWhenReady
+-- tries again); another category than dungeons is not its business.
 local function ApplyMythicPlus(ec)
     if not (RollAwayDB and RollAwayDB.lfgAutoMythicPlus) then return end
-    if ec.selectedCategory ~= 2 or not ec.selectedActivity then return end
+    if ec.selectedCategory == nil then return false end
+    if ec.selectedCategory ~= 2 then return end
+    if not ec.selectedActivity then return false end
 
     local current = C_LFGList.GetActivityInfoTable(ec.selectedActivity)
     if not current or current.isMythicPlusActivity then return end
@@ -235,14 +239,16 @@ local function MakeButton(parent, dungeon, index)
     return btn
 end
 
--- One-time initialization, once Blizzard_GroupFinder is ready.
+-- One-time initialization, once Blizzard_GroupFinder is ready. Returns false while its
+-- frame does not exist yet (RA.RunWhenReady tries again); waiting for the season data is
+-- handled here (event, timer as fallback).
 local seasonWait  -- frame that waits for the season data (created when needed)
 
 local function Init()
     if initialized then return end
 
     local ec = LFGListFrame and LFGListFrame.EntryCreation
-    if not ec then return end
+    if not ec then return false end
 
     -- GetCurrentSeason() is -1 until RequestMapInfo is answered.
     if not C_MythicPlus then return end
@@ -283,10 +289,11 @@ local function Init()
     local function HookDD(dd, isDifficultyDropdown)
         if not dd then return end
         dd:HookScript("OnHide", function()
-            C_Timer.After(0.05, function()
+            -- Blizzard stores the pick before the menu closes: next frame.
+            RA.RunWhenReady(function()
                 SyncVisibility()
-                if not isDifficultyDropdown and ec:IsShown() then ApplyMythicPlus(ec) end
-            end)
+                if not isDifficultyDropdown and ec:IsShown() then return ApplyMythicPlus(ec) end
+            end, 0.05, 3)
         end)
     end
     HookDD(ec.GroupDropdown)
@@ -309,11 +316,11 @@ local function Init()
             container:Hide()
         end
         -- Playstyle / Mythic+ independent of the dungeon buttons.
-        C_Timer.After(0.05, function()
+        RA.RunWhenReady(function()
             if not ec:IsShown() then return end
             if RollAwayDB and RollAwayDB.lfgAutoPlaystyle then ApplyDefaultPlaystyle(ec) end
-            ApplyMythicPlus(ec)
-        end)
+            return ApplyMythicPlus(ec)
+        end, 0.05, 3)
     end
 
     ec:HookScript("OnShow", OnEntryCreationShown)
@@ -333,7 +340,7 @@ function RA.InitLFGQuickCreate()
 
     f:SetScript("OnEvent", function(self)
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-        C_Timer.After(0.5, Init)
+        RA.RunWhenReady(Init, 0.5, 6)
     end)
 
     DBG("[LFGQuickCreate] Ready")

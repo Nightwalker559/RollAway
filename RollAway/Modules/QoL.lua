@@ -115,6 +115,7 @@ RA.ShowTalentReminder = ShowTalentReminder
 ------------------------------------------------------------------------
 -- Auction House – "Current Expansion Only" filter. Blizzard keeps it between sessions
 -- once it was set; we apply it on every AH open (first time, and after it was turned off).
+-- The setters return false while the frames are not ready yet (RA.RunWhenReady tries again).
 ------------------------------------------------------------------------
 
 local AH_FILTER_CEO = Enum.AuctionHouseFilter and Enum.AuctionHouseFilter.CurrentExpansionOnly
@@ -128,17 +129,16 @@ end
 local function SetAHExpansionFilter()
     if not RollAwayDB or not RollAwayDB.expansionFilterAH then return end
     if not AH_FILTER_CEO then return end
-    if not (AuctionHouseFrame and AuctionHouseFrame:IsShown()) then return end
+    if not (AuctionHouseFrame and AuctionHouseFrame:IsShown()) then return false end
 
     local sb = AuctionHouseFrame.SearchBar
-    if not (sb and sb:IsShown()) then return end
+    if not (sb and sb:IsShown()) then return false end
 
     local filters = GetAuctionHouseFilters()
-    if filters then
-        if filters[AH_FILTER_CEO] then return end  -- already set
-        filters[AH_FILTER_CEO] = true
-        DBG("[QoL] AH expansion filter applied")
-    end
+    if not filters then return false end
+    if filters[AH_FILTER_CEO] then return end  -- already set
+    filters[AH_FILTER_CEO] = true
+    DBG("[QoL] AH expansion filter applied")
 end
 
 local function SetCraftingOrderExpansionFilter()
@@ -146,12 +146,12 @@ local function SetCraftingOrderExpansionFilter()
     if not AH_FILTER_CEO then return end
 
     local co = ProfessionsCustomerOrdersFrame
-    if not co or not co:IsShown() then return end
+    if not co or not co:IsShown() then return false end
 
     local fd = co.BrowseOrders
                and co.BrowseOrders.SearchBar
                and co.BrowseOrders.SearchBar.FilterDropdown
-    if not fd or not fd.filters then return end
+    if not fd or not fd.filters then return false end
 
     if fd.filters[AH_FILTER_CEO] then return end -- already set (Show hook and interaction event both fire)
     fd.filters[AH_FILTER_CEO] = true
@@ -161,16 +161,22 @@ local function SetCraftingOrderExpansionFilter()
     DBG("[QoL] Crafting Orders expansion filter applied")
 end
 
+local function ApplyAHFilterWhenReady()
+    RA.RunWhenReady(SetAHExpansionFilter, 0.2, 5)
+end
+
+local function ApplyCraftingOrderFilterWhenReady()
+    RA.RunWhenReady(SetCraftingOrderExpansionFilter, 0.2, 5)
+end
+
 local function InitAHFilter()
     local f = CreateFrame("Frame")
     f:RegisterEvent("AUCTION_HOUSE_SHOW")
     f:SetScript("OnEvent", function()
-        C_Timer.After(0.2, SetAHExpansionFilter)
+        ApplyAHFilterWhenReady()
         -- SetDisplayMode hook (tab switches, e.g. Auctionator → Blizzard)
         if AuctionHouseFrame and not AuctionHouseFrame.raDisplayModeHooked then
-            hooksecurefunc(AuctionHouseFrame, "SetDisplayMode", function()
-                C_Timer.After(0.1, SetAHExpansionFilter)
-            end)
+            hooksecurefunc(AuctionHouseFrame, "SetDisplayMode", ApplyAHFilterWhenReady)
             AuctionHouseFrame.raDisplayModeHooked = true
             DBG("[QoL] AH SetDisplayMode hook set")
         end
@@ -180,9 +186,7 @@ local function InitAHFilter()
         local co = ProfessionsCustomerOrdersFrame
         local bo = co and co.BrowseOrders
         if not bo then return false end
-        hooksecurefunc(bo, "Show", function()
-            C_Timer.After(0.2, SetCraftingOrderExpansionFilter)
-        end)
+        hooksecurefunc(bo, "Show", ApplyCraftingOrderFilterWhenReady)
         DBG("[QoL] BrowseOrders:Show hook set")
         return true
     end
@@ -190,8 +194,10 @@ local function InitAHFilter()
     -- NPC crafting boards
     local coEventFrame = CreateFrame("Frame")
     coEventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
-    coEventFrame:SetScript("OnEvent", function()
-        C_Timer.After(0.5, SetCraftingOrderExpansionFilter)
+    coEventFrame:SetScript("OnEvent", function(_, _, interactionType)
+        -- Fires for every NPC window (bank, vendor ...): only the crafting orders board counts.
+        local customerOrders = Enum.PlayerInteractionType and Enum.PlayerInteractionType.ProfessionsCustomerOrders
+        if customerOrders and interactionType == customerOrders then ApplyCraftingOrderFilterWhenReady() end
     end)
 
     if not HookCraftingFrame() then

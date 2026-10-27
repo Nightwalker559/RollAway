@@ -82,9 +82,47 @@ function RA.OnDebugModeChanged(checked)
     for _, check in ipairs(RA.SeasonTabDebugChecks or {}) do check() end
 end
 
--- Main init (Core.lua, ADDON_LOADED)
+-- The window is built on first use (RA.EnsureOptions): hundreds of widgets that cost login
+-- time and are needed only when the options are opened. RA.InitOptions (Core.lua,
+-- ADDON_LOADED) registers the slash commands and stand-ins for the entry points, which build
+-- the window first and then call the real function the build put in their place.
+local BuildOptions
+
+local built = false
+function RA.EnsureOptions()
+    if built then return end
+    built = true
+    BuildOptions()
+end
+
+-- Entry points that exist before the window does (the build defines the real ones).
+local ENTRY_POINTS = { "OpenOptions", "ToggleOptions", "OpenOptionsTab", "OpenQoLCategory" }
 
 function RA.InitOptions()
+    for _, name in ipairs(ENTRY_POINTS) do
+        local standIn
+        standIn = function(...)
+            RA.EnsureOptions()
+            assert(RA[name] ~= standIn, "RollAway: the options window did not define RA." .. name)
+            return RA[name](...)
+        end
+        RA[name] = standIn
+    end
+
+    -- /raw, /rollaway → options window; "/raw features" → feature overview
+    SLASH_ROLLAWAY1 = "/raw"
+    SLASH_ROLLAWAY2 = "/rollaway"
+    SlashCmdList["ROLLAWAY"] = function(msg)
+        local arg = strtrim(msg or ""):lower()
+        if arg == "features" or arg == "funktionen" then
+            RA.ToggleFeatureList()
+        else
+            RA.ToggleOptions()
+        end
+    end
+end
+
+BuildOptions = function()
 
     -- Class color (ElvUI tab highlight)
     local classColor = RA.Skin.ClassColor()
@@ -143,18 +181,6 @@ function RA.InitOptions()
     -- Opens or closes the window (/raw, minimap button right click).
     function RA.ToggleOptions()
         if win:IsShown() then win:Hide() else RA.OpenOptions() end
-    end
-
-    -- /raw, /rollaway → options window; "/raw features" → feature overview
-    SLASH_ROLLAWAY1 = "/raw"
-    SLASH_ROLLAWAY2 = "/rollaway"
-    SlashCmdList["ROLLAWAY"] = function(msg)
-        local arg = strtrim(msg or ""):lower()
-        if arg == "features" or arg == "funktionen" then
-            RA.ToggleFeatureList()
-        else
-            RA.ToggleOptions()
-        end
     end
 
     local featuresBtn = UI.MakeSkinnedButton(win, RA_L["feat_button"], NAV_W)
@@ -441,14 +467,10 @@ function RA.InitOptions()
             gen:SetHeight(math.max(contentHeight, genScroll:GetHeight()))
         end
     end
-    -- Again later and on every show: checkboxes settle (wrapped labels) after a few frames; a
-    -- hidden tab has no layout.
-    RunNextFrame(UpdateGenScrollHeight)
-    C_Timer.After(0.3, UpdateGenScrollHeight)
-    genScroll:HookScript("OnShow", function()
-        RunNextFrame(UpdateGenScrollHeight)
-        C_Timer.After(0.3, UpdateGenScrollHeight)
-    end)
+    -- Again once the checkboxes have settled (wrapped labels) and on every show; a hidden
+    -- tab has no layout.
+    UI.RunWhenCheckboxesSettled(UpdateGenScrollHeight)
+    genScroll:HookScript("OnShow", function() UI.RunWhenCheckboxesSettled(UpdateGenScrollHeight) end)
 
     -- Tab: Dungeons
     local dng = tabPanels["dungeons"]

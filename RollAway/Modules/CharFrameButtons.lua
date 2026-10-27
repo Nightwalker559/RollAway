@@ -309,7 +309,9 @@ function RA.InitCharacterFrameButtons()
     f:SetScript("OnEvent", function(_, event)
         HookPaperDoll()
         -- UnitLevel can be stale on PLAYER_LEVEL_UP, and Blizzard's frame setup follows
-        -- loading screens: let it settle.
+        -- loading screens: next frame, and once more after 0.5s as the safety net (the
+        -- refresh is idempotent).
+        RunNextFrame(function() RA.RefreshCharFrameButtons(event) end)
         C_Timer.After(0.5, function() RA.RefreshCharFrameButtons(event) end)
     end)
 end

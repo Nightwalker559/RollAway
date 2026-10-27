@@ -140,8 +140,8 @@ local groupWaitFallback = RA.CreateOneShotTimer(30, function()
 end)
 local groupWaitFrame = CreateFrame("Frame")
 groupWaitFrame:SetScript("OnEvent", function()
-    -- Let the roster count update first
-    C_Timer.After(0.3, function()
+    -- Next frame: the roster count has settled (the 30s fallback timer covers a miss).
+    RunNextFrame(function()
         if pendingHideStart and GetNumGroupMembers() >= 5 then FinishGroupWait() end
     end)
 end)

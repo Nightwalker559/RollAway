@@ -49,8 +49,10 @@ local function AttachOverlay(btn, getRollID, rollDef)
     btn.raRollOverlay = overlay
     local overlays = overlaysByType[rollDef.dbKey]
     overlays[#overlays + 1] = overlay
+    DBG("[RollConfirm] Overlay attached:", rollDef.dbKey)
 end
 
+-- Returns false while ElvUI's roll frames do not exist yet (RA.RunWhenReady tries again).
 local function BuildOverlays()
     for i = 1, 5 do
         local nativeFrame = _G["GroupLootFrame"..i]
@@ -66,8 +68,9 @@ local function BuildOverlays()
             end
         end
     end
-    DBG("[RollConfirm] Overlays built")
+    if ElvUI and not _G["ElvUI_LootRollFrame1"] then return false end
 end
+RA.BuildRollOverlays = BuildOverlays   -- Core.lua calls it again when a roll starts (ElvUI creates frames on demand)
 
 -- Toggled live from Options.
 function RA.SetRollConfirmEnabled(dbKey, enabled)
@@ -79,7 +82,6 @@ end
 -- Init (Core.lua, ADDON_LOADED)
 function RA.InitRollConfirm()
     -- Blizzard's roll frames exist already; ElvUI builds its own a moment later.
-    BuildOverlays()
-    if ElvUI then C_Timer.After(0.5, BuildOverlays) end
+    RA.RunWhenReady(BuildOverlays, 0.5, 10)
     DBG("RollConfirm initialized")
 end

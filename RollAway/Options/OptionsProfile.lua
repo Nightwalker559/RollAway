@@ -1,7 +1,7 @@
 -- RollAway - Options/OptionsProfile.lua
 -- The "Profile" options page: switch, create, copy, delete and reset profiles
--- (RA.db, Core/DB.lua). Built once from RA.InitOptions().
--- The other options pages are built at ADDON_LOADED with the values of that moment: a
+-- (RA.db, Core/DB.lua). Built with the options window (RA.EnsureOptions).
+-- The other options pages are built once, with the values of that moment: a
 -- profile change takes effect at once but they only refresh after a UI reload (hence the
 -- reload prompt).
 

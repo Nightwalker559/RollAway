@@ -158,10 +158,13 @@ function RA.ShowParagonFrame(quests)
     DBG("[Paragon] Showing frame, count:", #quests)
 end
 
+-- Login check, run again while the quest log is still filling; false = nothing found yet.
+local shownAtLogin = false
 local function CheckAndShow()
-    if not RollAwayDB or not RollAwayDB.paragonAlert then return end
+    if shownAtLogin or not (RollAwayDB and RollAwayDB.paragonAlert) then return end
     local quests = GetAvailableParagonQuests()
-    if #quests == 0 then return end
+    if #quests == 0 then return false end
+    shownAtLogin = true
     RA.ShowParagonFrame(quests)
 end
 
@@ -196,15 +199,16 @@ function RA.InitParagon()
             -- arg1 = isInitialLogin: only on a real login.
             if not arg1 then return end
 
-            -- Wait for the quest log to fill.
-            C_Timer.After(3, CheckAndShow)
+            -- The quest log may still be filling: next frame, once more after 3s.
+            RA.RunWhenReady(CheckAndShow, 3, 1)
 
         elseif event == "QUEST_ACCEPTED" then
             -- arg1 is the questID in modern WoW (Shadowlands+).
             if not (RollAwayDB and RollAwayDB.paragonAlert) then return end
-            -- Short delay so IsOnQuest() / hasRewardPending are reliable. Any quest may be the
-            -- reward of a faction missing in the table: check them all (a few calls).
-            C_Timer.After(0.5, function()
+            -- Any quest may be the reward of a faction missing in the table: check them all
+            -- (a few calls). IsOnQuest() / hasRewardPending can lag the event: once more
+            -- after 0.5s when the quest is not in the list yet.
+            RA.RunWhenReady(function()
                 local quests = GetAvailableParagonQuests()
                 for _, q in ipairs(quests) do
                     if q.questID == arg1 then
@@ -213,7 +217,8 @@ function RA.InitParagon()
                         return
                     end
                 end
-            end)
+                return false
+            end, 0.5, 1)
         end
     end)
 
