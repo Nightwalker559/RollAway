@@ -2,18 +2,21 @@
 
 ---
 
-## 3.1.8 (alpha 1)
+## 3.1.8 (alpha 2)
 
 ### New
 - Portal window: option "Show group keystones" lists the group's keys (name, level, dungeon) under the season portals. Works with or without BigWigs (same key sharing as BigWigs, so both see each other), off by default.
 - Class page (hunters only): the pet reminder also shows when you revive your pet in a current dungeon or raid.
 - Profile page: button "Apply to all characters" puts every other character on the active profile (with a confirmation).
-- Group page (ElvUI only): item level of group members in ElvUI's unit frames via the tags [raw:ilvl], [raw:ilvl:plain], colored by item level steps. Off by default.
+- Group page (ElvUI only): item level of group members in ElvUI's unit frames via the tags [raw:ilvl] and [raw:ilvl:plain], colored by item level steps. Members are inspected up to about 40 m away, and inspect results other addons asked for are used too. Command /rawilvl. Off by default.
 
 ### Fixed
 - Teleport reminder: no longer shows a key level the group did not list (it was guessed from the members' keystones). Only the level from the listing is shown.
 
 ### Changed
+- Options window is built when you first open it (faster login).
+- Vendor filter remembers what it checked during a merchant visit (less work per page and purchase).
+- Auction house filter, Group Finder quick select, Paragon reminder and loot roll confirmation react as soon as the game is ready instead of after fixed delays.
 - Portal window: square (as high as wide).
 - TOC: 12.1.7 added.
 
