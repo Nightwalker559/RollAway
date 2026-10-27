@@ -209,8 +209,14 @@ local function Succeed(guid)
     fails[guid], retryAt[guid], dirty[guid], loggedRange[guid] = nil, nil, nil, nil
 end
 
+-- UnitInRange reaches about 40 m (friendly spell range), far more than the 28 m of
+-- CheckInteractDistance. Its result can be secret or unchecked (checkedRange false): then the
+-- shorter interact distance decides.
 local function Inspectable(unit)
-    return UnitIsConnected(unit) and CanInspect(unit) and CheckInteractDistance(unit, 1)
+    if not (UnitIsConnected(unit) and CanInspect(unit)) then return false end
+    local inRange, checked = UnitInRange(unit)
+    if RA.IsAccessible(inRange) and RA.IsAccessible(checked) and checked then return inRange end
+    return CheckInteractDistance(unit, 1)
 end
 
 function Step()
