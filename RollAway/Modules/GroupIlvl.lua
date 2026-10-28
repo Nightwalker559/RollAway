@@ -19,7 +19,7 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
-local STEP_DELAY    = 1    -- spacing between inspects; the server throttles faster requests
+local STEP_DELAY    = 0.5  -- spacing between inspects; the server throttles faster requests
 local REPLY_TIMEOUT = 3    -- no INSPECT_READY after this long counts as a failure (a late reply is still used)
 local RANGE_RETRY   = 3    -- out of inspect range / offline: look again later, not a failure
 
@@ -209,14 +209,16 @@ local function Succeed(guid)
     fails[guid], retryAt[guid], dirty[guid], loggedRange[guid] = nil, nil, nil, nil
 end
 
--- UnitInRange reaches about 40 m (friendly spell range), far more than the 28 m of
--- CheckInteractDistance. Its result can be secret or unchecked (checkedRange false): then the
--- shorter interact distance decides.
-local function Inspectable(unit)
+-- Returns askable, near: whether the member can be asked at all (online, CanInspect) and
+-- whether he is within about 40 m. UnitInRange reaches 40 m (friendly spell range), far more
+-- than the 28 m of CheckInteractDistance. Its result can be secret or unchecked (checkedRange
+-- false): then the shorter interact distance decides. The server often answers beyond that
+-- range too, so members who are not near are tried when nobody near is left.
+local function InspectState(unit)
     if not (UnitIsConnected(unit) and CanInspect(unit)) then return false end
     local inRange, checked = UnitInRange(unit)
-    if RA.IsAccessible(inRange) and RA.IsAccessible(checked) and checked then return inRange end
-    return CheckInteractDistance(unit, 1)
+    if RA.IsAccessible(inRange) and RA.IsAccessible(checked) and checked then return true, inRange end
+    return true, CheckInteractDistance(unit, 1)
 end
 
 function Step()
@@ -237,6 +239,7 @@ function Step()
 
     local now = GetTime()
     local soonest
+    local far   -- first member who can be asked but is not near: tried only if nobody near is left
     for i = 1, count do
         local unit = units[i]
         local guid = UnitGUIDSafe(unit)
@@ -251,23 +254,35 @@ function Step()
             if not cache[guid] or dirty[guid] then
                 local wake = retryAt[guid]
                 if not wake or wake <= now then
-                    local ok, usable = pcall(Inspectable, unit)
-                    if ok and usable then
+                    local ok, askable, near = pcall(InspectState, unit)
+                    if ok and askable and near then
                         DBG("[GroupIlvl] inspecting", unit)
                         pending = { guid = guid, unit = unit }
                         NotifyInspect(unit)
                         return Schedule(REPLY_TIMEOUT)
                     end
-                    if not loggedRange[guid] then
-                        loggedRange[guid] = true
-                        DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / out of range), checking again every", RANGE_RETRY, "s")
+                    if ok and askable then
+                        far = far or { guid = guid, unit = unit }
+                        wake = nil   -- no retry timer: the far attempt below schedules the next step
+                    else
+                        if not loggedRange[guid] then
+                            loggedRange[guid] = true
+                            DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / not inspectable), checking again every", RANGE_RETRY, "s")
+                        end
+                        wake = now + RANGE_RETRY
+                        retryAt[guid] = wake
                     end
-                    wake = now + RANGE_RETRY
-                    retryAt[guid] = wake
                 end
-                soonest = soonest and math.min(soonest, wake) or wake
+                if wake then soonest = soonest and math.min(soonest, wake) or wake end
             end
         end
+    end
+
+    if far then
+        DBG("[GroupIlvl] nobody near, trying", far.unit)
+        pending = far
+        NotifyInspect(far.unit)
+        return Schedule(REPLY_TIMEOUT)
     end
 
     if soonest then Schedule(math.max(1, soonest - now)) end
