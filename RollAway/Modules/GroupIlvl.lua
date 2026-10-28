@@ -19,9 +19,9 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
-local STEP_DELAY    = 2    -- spacing between inspects; the server throttles faster requests
-local REPLY_TIMEOUT = 5    -- no INSPECT_READY after this long counts as a failure
-local RANGE_RETRY   = 5    -- out of inspect range / offline: look again later, not a failure
+local STEP_DELAY    = 1    -- spacing between inspects; the server throttles faster requests
+local REPLY_TIMEOUT = 3    -- no INSPECT_READY after this long counts as a failure (a late reply is still used)
+local RANGE_RETRY   = 3    -- out of inspect range / offline: look again later, not a failure
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
 -- purple, orange, gold.
@@ -202,7 +202,7 @@ end
 local function Fail(guid)
     local count = (fails[guid] or 0) + 1
     fails[guid] = count
-    retryAt[guid] = GetTime() + math.min(15 * 2 ^ (count - 1), 300)
+    retryAt[guid] = GetTime() + math.min(3 * 2 ^ (count - 1), 120)
 end
 
 local function Succeed(guid)
