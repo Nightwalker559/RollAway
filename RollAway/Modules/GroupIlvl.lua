@@ -439,6 +439,7 @@ function RA.InitGroupIlvl()
             for _ in pairs(cache) do count = count + 1 end
             RA.Print(string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
             RA.Print(string.format(RA_L["gilvl_status"], count))
+            if RA.ElvUITagReport then RA.Print(string.format(RA_L["gilvl_tagcheck"], RA.ElvUITagReport())) end
         else
             RA.Print(RA_L["gilvl_help"])
         end

@@ -86,6 +86,22 @@ function RA.SetElvUITags(enabled)
     end
 end
 
+-- For /rawilvl status: whether ElvUI knows the tag and what it returns for the visible frames.
+function RA.ElvUITagReport()
+    local method = Tags.Methods["raw:ilvl:plain"]
+    local parts = { method and "registered" or "NOT registered" }
+    local seen = {}
+    for _, frame in next, oUF.objects do
+        local unit = frame.unit
+        if method and type(unit) == "string" and not seen[unit] and frame:IsVisible() then
+            seen[unit] = true
+            local ok, text = pcall(method, unit)
+            parts[#parts + 1] = unit .. "=" .. (ok and tostring(text) or "error")
+        end
+    end
+    return table.concat(parts, ", ")
+end
+
 -- New levels arrive one at a time during an inspect sweep. Bursts are merged into a
 -- single pass over ElvUI's frames on the next frame; only frames showing a changed
 -- unit are re-evaluated, which is far cheaper than oUF.Tags:RefreshMethods.
