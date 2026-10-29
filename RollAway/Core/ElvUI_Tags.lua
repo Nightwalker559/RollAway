@@ -86,13 +86,19 @@ function RA.SetElvUITags(enabled)
     end
 end
 
+-- The unit token behind an ElvUI frame: oUF keeps it in __unit (the tags read it from there too).
+local function FrameUnit(frame)
+    local unit = frame.__unit or frame.unit
+    return type(unit) == "string" and unit or nil
+end
+
 -- For /rawilvl status: whether ElvUI knows the tag and what it returns for the visible frames.
 function RA.ElvUITagReport()
     local method = Tags.Methods["raw:ilvl:plain"]
     local parts = { method and "registered" or "NOT registered" }
     local seen = {}
     for _, frame in next, oUF.objects do
-        local unit = frame.unit
+        local unit = FrameUnit(frame)
         if method and type(unit) == "string" and not seen[unit] and frame:IsVisible() then
             seen[unit] = true
             local ok, text = pcall(method, unit)
@@ -111,7 +117,7 @@ local scheduled = false
 local function Flush()
     scheduled = false
     for _, frame in next, oUF.objects do
-        local unit = frame.unit
+        local unit = FrameUnit(frame)
         if unit and frame.UpdateTags and frame:IsVisible() then
             local guid = RA.SafeUnitGUID(unit)
             if guid and changed[guid] then frame:UpdateTags() end
