@@ -289,13 +289,16 @@ function Step()
 end
 
 -- Stores the inspect result for `unit` (must still be `guid`); false when there is none.
-local function StoreInspected(unit, guid)
+-- `harvested`: somebody else's reply; the inspect window fires INSPECT_READY many times while
+-- its items load, so those are only logged when the level changed.
+local function StoreInspected(unit, guid, harvested)
     local ok, ilvl = pcall(C_PaperDollInfo.GetInspectItemLevel, unit)
     if ok and type(ilvl) == "number" and RA.IsAccessible(ilvl) and ilvl > 0
         and UnitGUIDSafe(unit) == guid then
+        local new = cache[guid] ~= math.floor(ilvl + 0.5)
         Succeed(guid)
         SetIlvl(guid, ilvl)
-        DBG("[GroupIlvl]", unit, "item level", ilvl)
+        if new or not harvested then DBG("[GroupIlvl]", unit, "item level", ilvl) end
         return true
     end
     return false
@@ -308,7 +311,7 @@ local function HarvestInspect(guid)
     local units, count = GroupUnits()
     for i = 1, count do
         if UnitGUIDSafe(units[i]) == guid then
-            StoreInspected(units[i], guid)
+            StoreInspected(units[i], guid, true)
             return
         end
     end
