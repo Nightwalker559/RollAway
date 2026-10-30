@@ -21,7 +21,7 @@ local DBG  = RA.DBG
 
 local STEP_DELAY    = 0.5  -- spacing between inspects; the server throttles faster requests
 local REPLY_TIMEOUT = 3    -- no INSPECT_READY after this long counts as a failure (a late reply is still used)
-local RANGE_RETRY   = 3    -- out of inspect range / offline: look again later, not a failure
+local RANGE_RETRY   = 3    -- offline / not inspectable: look again later, not a failure
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
 -- purple, orange, gold.
@@ -38,7 +38,7 @@ for i = 1, 40 do RAID_UNITS[i] = "raid" .. i end
 local cache = {}               -- guid -> item level
 local listeners = {}           -- fn(guid) when a level changed
 local retryAt, fails, dirty = {}, {}, {}
-local loggedRange = {}         -- guid -> true once "cannot be inspected" was logged (once per spell out of range)
+local loggedRange = {}         -- guid -> true once "cannot be inspected" was logged (once per offline spell)
 local pending                  -- { guid, unit } while an inspect request is in flight
 local generation = 0           -- the latest scheduled step wins
 local playerGUID
@@ -209,16 +209,10 @@ local function Succeed(guid)
     fails[guid], retryAt[guid], dirty[guid], loggedRange[guid] = nil, nil, nil, nil
 end
 
--- Returns askable, near: whether the member can be asked at all (online, CanInspect) and
--- whether he is within about 40 m. UnitInRange reaches 40 m (friendly spell range), far more
--- than the 28 m of CheckInteractDistance. Its result can be secret or unchecked (checkedRange
--- false): then the shorter interact distance decides. The server often answers beyond that
--- range too, so members who are not near are tried when nobody near is left.
-local function InspectState(unit)
-    if not (UnitIsConnected(unit) and CanInspect(unit)) then return false end
-    local inRange, checked = UnitInRange(unit)
-    if RA.IsAccessible(inRange) and RA.IsAccessible(checked) and checked then return true, inRange end
-    return true, CheckInteractDistance(unit, 1)
+-- Whether the member can be asked at all (online, CanInspect). No distance check: the server
+-- decides, and a member who is too far away simply does not reply (counted as a failure).
+local function CanAsk(unit)
+    return UnitIsConnected(unit) and CanInspect(unit)
 end
 
 function Step()
@@ -239,7 +233,6 @@ function Step()
 
     local now = GetTime()
     local soonest
-    local far   -- first member who can be asked but is not near: tried only if nobody near is left
     for i = 1, count do
         local unit = units[i]
         local guid = UnitGUIDSafe(unit)
@@ -254,35 +247,23 @@ function Step()
             if not cache[guid] or dirty[guid] then
                 local wake = retryAt[guid]
                 if not wake or wake <= now then
-                    local ok, askable, near = pcall(InspectState, unit)
-                    if ok and askable and near then
+                    local ok, askable = pcall(CanAsk, unit)
+                    if ok and askable then
                         DBG("[GroupIlvl] inspecting", unit)
                         pending = { guid = guid, unit = unit }
                         NotifyInspect(unit)
                         return Schedule(REPLY_TIMEOUT)
                     end
-                    if ok and askable then
-                        far = far or { guid = guid, unit = unit }
-                        wake = nil   -- no retry timer: the far attempt below schedules the next step
-                    else
-                        if not loggedRange[guid] then
-                            loggedRange[guid] = true
-                            DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / not inspectable), checking again every", RANGE_RETRY, "s")
-                        end
-                        wake = now + RANGE_RETRY
-                        retryAt[guid] = wake
+                    if not loggedRange[guid] then
+                        loggedRange[guid] = true
+                        DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / not inspectable), checking again every", RANGE_RETRY, "s")
                     end
+                    wake = now + RANGE_RETRY
+                    retryAt[guid] = wake
                 end
                 if wake then soonest = soonest and math.min(soonest, wake) or wake end
             end
         end
-    end
-
-    if far then
-        DBG("[GroupIlvl] nobody near, trying", far.unit)
-        pending = far
-        NotifyInspect(far.unit)
-        return Schedule(REPLY_TIMEOUT)
     end
 
     if soonest then Schedule(math.max(1, soonest - now)) end
