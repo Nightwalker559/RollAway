@@ -337,7 +337,10 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
             left   = RA_L["qol_gilvl_pos_left"],
             top    = RA_L["qol_gilvl_pos_top"],
             bottom = RA_L["qol_gilvl_pos_bottom"],
-        }, { "name", "right", "left", "top", "bottom" }, "groupIlvlPos", "name", RA.RefreshGroupIlvlFrames)
+        }, { "name", "right", "left", "top", "bottom" }, "groupIlvlPos", "name", function()
+            RA.RefreshGroupIlvlFrames()
+            SetIlvlEnabled(RollAwayDB.groupIlvl)
+        end)
 
         sizeSlider = MakeValueSlider(group, groupChain.Anchor(), -20, -12, {
             min = 8, max = 24, step = 1, value = RollAwayDB.groupIlvlSize,
@@ -354,7 +357,8 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         coloredCB:SetDisabled(not enabled)
         if SetIlvlPosEnabled then
             SetIlvlPosEnabled(enabled)
-            sizeSlider:SetEnabled(enabled)
+            -- In the name row the size follows the name.
+            sizeSlider:SetEnabled(enabled and RollAwayDB.groupIlvlPos ~= "name")
         end
     end
     SetIlvlEnabled(RollAwayDB.groupIlvl)

@@ -52,7 +52,18 @@ end
 local function Place(fs, frame, nameText, compact, text)
     local pos = RollAwayDB.groupIlvlPos
     local font = fs:GetFont()
-    fs:SetFont(font, RollAwayDB.groupIlvlSize or FONT_SIZE_DEFAULT, "OUTLINE")
+    local nameFont, nameSize, nameFlags
+    if nameText and not ANCHORS[pos] then
+        local ok, f, s, fl = pcall(nameText.GetFont, nameText)
+        if ok and f then nameFont, nameSize, nameFlags = f, s, fl end
+    end
+    if nameFont then
+        -- In the name row we look like the name: its font, size and (no) outline.
+        fs:SetFont(nameFont, nameSize, nameFlags)
+    else
+        -- Outside the frame the outline keeps the text readable on any background.
+        fs:SetFont(font, RollAwayDB.groupIlvlSize or FONT_SIZE_DEFAULT, "OUTLINE")
+    end
     fs:ClearAllPoints()
     if ANCHORS[pos] then
         local a = ANCHORS[pos]
