@@ -15,6 +15,8 @@
 local RA = _G["RollAway"]
 
 local FONT_SIZE_DEFAULT = 12
+local BULLET   = "\226\128\162 "   -- "• " between the name and the level
+local NAME_GAP = 4
 
 -- The positions around the frame: our text anchor point, the point of the member frame it hangs
 -- on, and the offset. Any other value means the name row (see Place).
@@ -35,24 +37,45 @@ local function IsPartyUnit(unit)
     return type(unit) == "string" and (unit == "player" or unit:find("^party%d$") ~= nil)
 end
 
--- `nameText`: the frame's name FontString. The default position is the name row: at the right end
--- of the name's box in the raid-style frames (it spans the frame's width, the name is left
--- aligned), right behind the fixed-width name box in the classic frames.
-local function Place(fs, frame, nameText, compact)
+-- A number from a region, nil when it cannot be read (the name's text width is a secret value
+-- when the name itself is one).
+local function Measure(region, method)
+    local ok, value = pcall(region[method], region)
+    if ok and type(value) == "number" and RA.IsAccessible(value) then return value end
+end
+
+-- Sets the text and puts it in place. `nameText`: the frame's name FontString. The default position
+-- is the name row: "Name • 335", the level right behind the name's text, however long the name
+-- is (it stays inside the name's box). When the width of the name cannot be read the level goes
+-- to the end of the name's box instead (raid-style frames: the box spans the frame, the name is
+-- left aligned; classic frames: the box has a fixed width).
+local function Place(fs, frame, nameText, compact, text)
     local pos = RollAwayDB.groupIlvlPos
+    local font = fs:GetFont()
+    fs:SetFont(font, RollAwayDB.groupIlvlSize or FONT_SIZE_DEFAULT, "OUTLINE")
     fs:ClearAllPoints()
     if ANCHORS[pos] then
         local a = ANCHORS[pos]
+        fs:SetText(text)
         fs:SetPoint(a[1], frame, a[2], a[3], a[4])
-    elseif nameText and compact then
-        fs:SetPoint("RIGHT", nameText, "RIGHT", 0, 0)
     elseif nameText then
-        fs:SetPoint("LEFT", nameText, "RIGHT", 3, 0)
+        fs:SetText(BULLET .. text)
+        local nameWidth = Measure(nameText, "GetStringWidth")
+        if nameWidth then
+            local room = Measure(nameText, "GetWidth")
+            if not room or room <= 0 then room = Measure(frame, "GetWidth") or 0 end
+            local x = nameWidth + NAME_GAP
+            if room > 0 then x = math.min(x, math.max(room - fs:GetStringWidth(), 0)) end
+            fs:SetPoint("LEFT", nameText, "LEFT", x, 0)
+        elseif compact then
+            fs:SetPoint("RIGHT", nameText, "RIGHT", 0, 0)
+        else
+            fs:SetPoint("LEFT", nameText, "RIGHT", 3, 0)
+        end
     else
+        fs:SetText(text)
         fs:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
     end
-    local font = fs:GetFont()
-    fs:SetFont(font, RollAwayDB.groupIlvlSize or FONT_SIZE_DEFAULT, "OUTLINE")
 end
 
 -- Shows the level of `unit` on `frame`; hides the text when there is nothing to show.
@@ -67,8 +90,7 @@ local function Show(frame, unit, nameText, compact)
         fs = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         texts[frame] = fs
     end
-    Place(fs, frame, nameText, compact)
-    fs:SetText(text)
+    Place(fs, frame, nameText, compact, text)
     fs:Show()
 end
 
@@ -116,9 +138,11 @@ local function InstallHooks()
     if hooked then return end
     hooked = true
     -- groupType is set on the party/raid member frames only, not on nameplates.
-    hooksecurefunc("CompactUnitFrame_SetUnit", function(frame)
-        if active and frame.groupType then Schedule() end
-    end)
+    local function OnCompactFrame(frame)
+        if active and frame.groupType and not IsInRaid() then Schedule() end
+    end
+    hooksecurefunc("CompactUnitFrame_SetUnit", OnCompactFrame)
+    hooksecurefunc("CompactUnitFrame_UpdateName", OnCompactFrame)   -- the name's width decides where we sit
     if PartyFrame and PartyFrame.UpdatePartyFrames then
         hooksecurefunc(PartyFrame, "UpdatePartyFrames", Schedule)
     end
