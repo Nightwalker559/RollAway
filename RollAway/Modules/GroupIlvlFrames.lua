@@ -80,12 +80,15 @@ local function Refresh()
     end
 
     local inRaid = IsInRaid()
+    local preview = EditModeManagerFrame and EditModeManagerFrame:ArePartyFramesForcedShown()
 
     -- Classic style: party1..party4 (the player has his own frame, which we leave alone).
     local pool = PartyFrame and PartyFrame.PartyMemberFramePool
     if pool then
         for frame in pool:EnumerateActive() do
             local unit = frame.unitToken
+            -- Edit Mode preview: Blizzard fills the frames of missing members with the player.
+            if preview and IsPartyUnit(unit) and not UnitExists(unit) then unit = "player" end
             Show(frame, not inRaid and IsPartyUnit(unit) and unit or nil, frame.Name, false)
         end
     end
