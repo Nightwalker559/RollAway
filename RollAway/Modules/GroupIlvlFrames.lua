@@ -16,7 +16,8 @@ local RA = _G["RollAway"]
 
 local FONT_SIZE_DEFAULT = 12
 
--- Our text anchor point, the point of the member frame it hangs on, and the offset.
+-- The positions around the frame: our text anchor point, the point of the member frame it hangs
+-- on, and the offset. Any other value means the name row (see Place).
 local ANCHORS = {
     right  = { "LEFT",   "RIGHT",  4,  0 },
     left   = { "RIGHT",  "LEFT",  -4,  0 },
@@ -34,16 +35,28 @@ local function IsPartyUnit(unit)
     return type(unit) == "string" and (unit == "player" or unit:find("^party%d$") ~= nil)
 end
 
-local function Place(fs, frame)
-    local a = ANCHORS[RollAwayDB.groupIlvlPos] or ANCHORS.right
+-- `nameText`: the frame's name FontString. The default position is the name row: at the right end
+-- of the name's box in the raid-style frames (it spans the frame's width, the name is left
+-- aligned), right behind the fixed-width name box in the classic frames.
+local function Place(fs, frame, nameText, compact)
+    local pos = RollAwayDB.groupIlvlPos
     fs:ClearAllPoints()
-    fs:SetPoint(a[1], frame, a[2], a[3], a[4])
+    if ANCHORS[pos] then
+        local a = ANCHORS[pos]
+        fs:SetPoint(a[1], frame, a[2], a[3], a[4])
+    elseif nameText and compact then
+        fs:SetPoint("RIGHT", nameText, "RIGHT", 0, 0)
+    elseif nameText then
+        fs:SetPoint("LEFT", nameText, "RIGHT", 3, 0)
+    else
+        fs:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
+    end
     local font = fs:GetFont()
     fs:SetFont(font, RollAwayDB.groupIlvlSize or FONT_SIZE_DEFAULT, "OUTLINE")
 end
 
 -- Shows the level of `unit` on `frame`; hides the text when there is nothing to show.
-local function Show(frame, unit)
+local function Show(frame, unit, nameText, compact)
     local text = unit and RA.FormatGroupIlvl(unit)
     local fs = texts[frame]
     if not text then
@@ -54,7 +67,7 @@ local function Show(frame, unit)
         fs = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         texts[frame] = fs
     end
-    Place(fs, frame)
+    Place(fs, frame, nameText, compact)
     fs:SetText(text)
     fs:Show()
 end
@@ -73,7 +86,7 @@ local function Refresh()
     if pool then
         for frame in pool:EnumerateActive() do
             local unit = frame.unitToken
-            Show(frame, not inRaid and IsPartyUnit(unit) and unit or nil)
+            Show(frame, not inRaid and IsPartyUnit(unit) and unit or nil, frame.Name, false)
         end
     end
 
@@ -84,7 +97,7 @@ local function Refresh()
         for i = 1, #members do
             local frame = members[i]
             local unit = frame.unit
-            Show(frame, not inRaid and IsPartyUnit(unit) and unit or nil)
+            Show(frame, not inRaid and IsPartyUnit(unit) and unit or nil, frame.name, true)
         end
     end
 end

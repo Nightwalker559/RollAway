@@ -332,11 +332,12 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     local SetIlvlPosEnabled, sizeSlider
     if not ElvUI then
         _, _, SetIlvlPosEnabled = groupChain.Dropdown(RA_L["qol_gilvl_pos_label"], 160, {
+            name   = RA_L["qol_gilvl_pos_name"],
             right  = RA_L["qol_gilvl_pos_right"],
             left   = RA_L["qol_gilvl_pos_left"],
             top    = RA_L["qol_gilvl_pos_top"],
             bottom = RA_L["qol_gilvl_pos_bottom"],
-        }, { "right", "left", "top", "bottom" }, "groupIlvlPos", "right", RA.RefreshGroupIlvlFrames)
+        }, { "name", "right", "left", "top", "bottom" }, "groupIlvlPos", "name", RA.RefreshGroupIlvlFrames)
 
         sizeSlider = MakeValueSlider(group, groupChain.Anchor(), -20, -12, {
             min = 8, max = 24, step = 1, value = RollAwayDB.groupIlvlSize,
