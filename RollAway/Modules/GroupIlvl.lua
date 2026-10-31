@@ -1,6 +1,7 @@
 -- RollAway - Modules/GroupIlvl.lua
 -- Item level of the group's members for ElvUI's unit frames (the [raw:ilvl] tags live in
--- Core/ElvUI_Tags.lua). Your own level is read from the character sheet; everyone else is
+-- Core/ElvUI_Tags.lua) and for Blizzard's party frames (Modules/GroupIlvlFrames.lua). Your own
+-- level is read from the character sheet; everyone else is
 -- inspected one at a time: pick the first member who has no level yet (or whose gear
 -- changed), send NotifyInspect, wait for INSPECT_READY, store the result, repeat. A member
 -- is scanned once and the level stays cached while he is in the group: no periodic asking.
@@ -11,8 +12,8 @@
 -- cannot leave a stale unit token behind. The step timer only runs while somebody still
 -- needs an inspect.
 --
--- Active only with ElvUI and RollAwayDB.groupIlvl (QoL page "Group"); the events are
--- registered only then (RA.ApplyGroupIlvl). The color steps are ours (BANDS), not a setting.
+-- Active only with RollAwayDB.groupIlvl (QoL page "Group"); the events are registered only
+-- then (RA.ApplyGroupIlvl). The color steps are ours (BANDS), not a setting.
 -- /rawilvl: rescan, status.
 
 local RA   = _G["RollAway"]
@@ -45,7 +46,7 @@ local playerGUID
 local eventFrame
 
 local function IsActive()
-    return ElvUI ~= nil and RollAwayDB ~= nil and RollAwayDB.groupIlvl == true
+    return RollAwayDB ~= nil and RollAwayDB.groupIlvl == true
 end
 
 -- UnitGUID can hand back a secret inside instances, and a secret as a table key throws.
@@ -399,6 +400,7 @@ function RA.ApplyGroupIlvl()
         wipe(loggedRange)
     end
     if RA.SetElvUITags then RA.SetElvUITags(IsActive()) end   -- only defined with ElvUI
+    RA.SetGroupIlvlFrames(IsActive())
     NotifyAll()
 end
 
@@ -406,7 +408,6 @@ end
 
 function RA.InitGroupIlvl()
     RA.ApplyGroupIlvl()
-    if not ElvUI then return end   -- no tags to feed: no command either
 
     SLASH_ROLLAWAYGILVL1 = "/rawilvl"
     SlashCmdList["ROLLAWAYGILVL"] = function(msg)

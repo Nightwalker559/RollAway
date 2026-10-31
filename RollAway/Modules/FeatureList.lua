@@ -74,7 +74,7 @@ local function BuildSections()
             Qol("group", "qol_lfgqc_label",        "qol_lfgqc_info",        "lfgQuickCreate"),
             Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", "lfgAutoMythicPlus"),
             Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", "lfgAutoPlaystyle"),
-            Qol("group", "qol_gilvl_label",        "qol_gilvl_info",        "groupIlvl", ElvUI ~= nil),
+            Qol("group", "qol_gilvl_label",        "qol_gilvl_info",        "groupIlvl"),
         } },
         { title = "qol_nav_class", show = RA.IsHunter(), items = {
             Qol("class", "qol_pet_reminder_label", "qol_pet_reminder_info", "hunterPetReminder"),
@@ -126,12 +126,9 @@ local function BuildSections()
             { "/rawvault",    "cmd_rawvault_info"    },
             { "/rawparagon",  "cmd_rawparagon_info"  },
             { "/rawtank",     "cmd_rawtank_info"     },
+            { "/rawilvl",     "cmd_gilvl_info"       },
         } },
     }
-    if ElvUI then   -- /rawilvl only exists with ElvUI
-        local commands = sections[#sections].commands
-        commands[#commands + 1] = { "/rawilvl", "cmd_gilvl_info" }
-    end
     return sections
 end
 

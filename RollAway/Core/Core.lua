@@ -155,8 +155,10 @@ RA.defaults = {
         hideMapActivityTracker   = false,
         hideCraftingOutputLog    = false,
         hunterPetReminder        = false,
-        groupIlvl                = false,  -- ElvUI [raw:ilvl] tags: item level of group members (GroupIlvl.lua)
+        groupIlvl                = false,  -- item level of group members: ElvUI [raw:ilvl] tags, default party frames (GroupIlvl.lua)
         groupIlvlColored         = true,
+        groupIlvlPos             = "right",   -- default party frames: side of the member frame (GroupIlvlFrames.lua)
+        groupIlvlSize            = 12,
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list

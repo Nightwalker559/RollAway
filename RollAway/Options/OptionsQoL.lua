@@ -63,14 +63,17 @@ local function NewToggleChain(panel)
 
     -- Label + dropdown belonging to the toggle just added (indented like its description).
     -- Returns the label, the dropdown and a function(enabled) that greys both.
-    function chain.Dropdown(labelText, width, list, order, dbKey, default)
+    function chain.Dropdown(labelText, width, list, order, dbKey, default, onChange)
         local label = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -12)
         label:SetText(labelText)
         local dd = MakeDropdown(panel, label, 0, -4, width)
         dd:SetList(list, order)
         dd:SetValue(RollAwayDB[dbKey] or default)
-        dd:SetCallback("OnValueChanged", function(_, _, value) RollAwayDB[dbKey] = value end)
+        dd:SetCallback("OnValueChanged", function(_, _, value)
+            RollAwayDB[dbKey] = value
+            if onChange then onChange(value) end
+        end)
         anchor, x, y = dd.frame, -20, -14
         return label, dd, function(enabled)
             local shade = enabled and 1 or 0.5
@@ -306,30 +309,49 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     }, { 0, 1, 2, 3, 4 }, "lfgDefaultPlaystyle", 0)
     SetPlaystyleEnabled(RollAwayDB.lfgAutoPlaystyle)
 
-    -- Item level of the group in ElvUI's unit frames (GroupIlvl.lua); only with ElvUI.
-    if ElvUI then
-        local SetIlvlEnabled  -- needs the controls created below
-        groupChain.Add({
-            label = RA_L["qol_gilvl_label"], info = RA_L["qol_gilvl_info"], dbKey = "groupIlvl",
-            onChange = function(checked)
-                RA.ApplyGroupIlvl()
-                SetIlvlEnabled(checked)
-            end,
-        })
-        local coloredCB = groupChain.AddSub({
-            label = RA_L["qol_gilvl_colored_label"], dbKey = "groupIlvlColored",
-            onChange = RA.RefreshGroupIlvlTags,
-        }, "groupIlvl")
+    -- Item level of the group in ElvUI's unit frames and Blizzard's party frames (GroupIlvl.lua,
+    -- GroupIlvlFrames.lua).
+    local SetIlvlEnabled  -- needs the controls created below
+    groupChain.Add({
+        label = RA_L["qol_gilvl_label"], info = RA_L["qol_gilvl_info"], dbKey = "groupIlvl",
+        onChange = function(checked)
+            RA.ApplyGroupIlvl()
+            SetIlvlEnabled(checked)
+        end,
+    })
+    local coloredCB = groupChain.AddSub({
+        label = RA_L["qol_gilvl_colored_label"], dbKey = "groupIlvlColored",
+        onChange = RA.RefreshGroupIlvlTags,
+    }, "groupIlvl")
 
-        local legend = MakeInfoText(group, coloredCB.frame, 4, -10, QOL_INFO_W,
-            string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
+    local legend = MakeInfoText(group, coloredCB.frame, 4, -10, QOL_INFO_W,
+        string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
+    groupChain.Set(legend, 24)
 
-        function SetIlvlEnabled(enabled)
-            coloredCB:SetDisabled(not enabled)
-        end
-        SetIlvlEnabled(RollAwayDB.groupIlvl)
-        groupChain.Set(legend, 24)
+    local SetIlvlPosEnabled
+    _, _, SetIlvlPosEnabled = groupChain.Dropdown(RA_L["qol_gilvl_pos_label"], 160, {
+        right  = RA_L["qol_gilvl_pos_right"],
+        left   = RA_L["qol_gilvl_pos_left"],
+        top    = RA_L["qol_gilvl_pos_top"],
+        bottom = RA_L["qol_gilvl_pos_bottom"],
+    }, { "right", "left", "top", "bottom" }, "groupIlvlPos", "right", RA.RefreshGroupIlvlFrames)
+
+    local sizeSlider = MakeValueSlider(group, groupChain.Anchor(), -20, -12, {
+        min = 8, max = 24, step = 1, value = RollAwayDB.groupIlvlSize,
+        formatLabel = function(v) return string.format("%s  %d", RA_L["qol_gilvl_size_label"], v) end,
+        onChange = function(v)
+            RollAwayDB.groupIlvlSize = v
+            RA.RefreshGroupIlvlFrames()
+        end,
+    })
+    groupChain.Set(sizeSlider, 0, -14)
+
+    function SetIlvlEnabled(enabled)
+        coloredCB:SetDisabled(not enabled)
+        SetIlvlPosEnabled(enabled)
+        sizeSlider:SetEnabled(enabled)
     end
+    SetIlvlEnabled(RollAwayDB.groupIlvl)
 
     -- ── Category: Hide (Blizzard UI elements) ───────────────────────────
     local hideChain = NewToggleChain(hide)

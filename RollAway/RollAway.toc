@@ -42,6 +42,7 @@ Modules\CraftingSalvage.lua
 Modules\Quests.lua
 Modules\TankMarker.lua
 Modules\GroupIlvl.lua
+Modules\GroupIlvlFrames.lua
 Modules\CharFrameButtons.lua
 Modules\VendorFilter.lua
 Modules\Paragon.lua
