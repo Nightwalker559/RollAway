@@ -328,28 +328,33 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         string.format(RA_L["gilvl_thresholds"], RA.GetGroupIlvlLegend()))
     groupChain.Set(legend, 24)
 
-    local SetIlvlPosEnabled
-    _, _, SetIlvlPosEnabled = groupChain.Dropdown(RA_L["qol_gilvl_pos_label"], 160, {
-        right  = RA_L["qol_gilvl_pos_right"],
-        left   = RA_L["qol_gilvl_pos_left"],
-        top    = RA_L["qol_gilvl_pos_top"],
-        bottom = RA_L["qol_gilvl_pos_bottom"],
-    }, { "right", "left", "top", "bottom" }, "groupIlvlPos", "right", RA.RefreshGroupIlvlFrames)
+    -- Position and size only concern Blizzard's party frames; with ElvUI the tags do the work.
+    local SetIlvlPosEnabled, sizeSlider
+    if not ElvUI then
+        _, _, SetIlvlPosEnabled = groupChain.Dropdown(RA_L["qol_gilvl_pos_label"], 160, {
+            right  = RA_L["qol_gilvl_pos_right"],
+            left   = RA_L["qol_gilvl_pos_left"],
+            top    = RA_L["qol_gilvl_pos_top"],
+            bottom = RA_L["qol_gilvl_pos_bottom"],
+        }, { "right", "left", "top", "bottom" }, "groupIlvlPos", "right", RA.RefreshGroupIlvlFrames)
 
-    local sizeSlider = MakeValueSlider(group, groupChain.Anchor(), -20, -12, {
-        min = 8, max = 24, step = 1, value = RollAwayDB.groupIlvlSize,
-        formatLabel = function(v) return string.format("%s  %d", RA_L["qol_gilvl_size_label"], v) end,
-        onChange = function(v)
-            RollAwayDB.groupIlvlSize = v
-            RA.RefreshGroupIlvlFrames()
-        end,
-    })
-    groupChain.Set(sizeSlider, 0, -14)
+        sizeSlider = MakeValueSlider(group, groupChain.Anchor(), -20, -12, {
+            min = 8, max = 24, step = 1, value = RollAwayDB.groupIlvlSize,
+            formatLabel = function(v) return string.format("%s  %d", RA_L["qol_gilvl_size_label"], v) end,
+            onChange = function(v)
+                RollAwayDB.groupIlvlSize = v
+                RA.RefreshGroupIlvlFrames()
+            end,
+        })
+        groupChain.Set(sizeSlider, 0, -14)
+    end
 
     function SetIlvlEnabled(enabled)
         coloredCB:SetDisabled(not enabled)
-        SetIlvlPosEnabled(enabled)
-        sizeSlider:SetEnabled(enabled)
+        if SetIlvlPosEnabled then
+            SetIlvlPosEnabled(enabled)
+            sizeSlider:SetEnabled(enabled)
+        end
     end
     SetIlvlEnabled(RollAwayDB.groupIlvl)
 
