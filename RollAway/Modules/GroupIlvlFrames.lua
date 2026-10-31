@@ -14,7 +14,7 @@
 
 local RA = _G["RollAway"]
 
-local FONT_SIZE_DEFAULT = 12
+local FONT_SIZE_DEFAULT = 10
 local BULLET   = "\226\128\162 "   -- "• " between the name and the level
 local NAME_GAP = 4
 
@@ -46,7 +46,7 @@ end
 
 -- Sets the text and puts it in place. `nameText`: the frame's name FontString. The default position
 -- is the name row: "Name • 335", the level right behind the name's text, however long the name
--- is (it stays inside the name's box). When the width of the name cannot be read the level goes
+-- is. When the width of the name cannot be read the level goes
 -- to the end of the name's box instead (raid-style frames: the box spans the frame, the name is
 -- left aligned; classic frames: the box has a fixed width).
 local function Place(fs, frame, nameText, compact, text)
@@ -62,10 +62,18 @@ local function Place(fs, frame, nameText, compact, text)
         fs:SetText(BULLET .. text)
         local nameWidth = Measure(nameText, "GetStringWidth")
         if nameWidth then
-            local room = Measure(nameText, "GetWidth")
-            if not room or room <= 0 then room = Measure(frame, "GetWidth") or 0 end
-            local x = nameWidth + NAME_GAP
-            if room > 0 then x = math.min(x, math.max(room - fs:GetStringWidth(), 0)) end
+            local box = Measure(nameText, "GetWidth")
+            if box and box <= 0 then box = nil end
+            local x
+            if compact then
+                -- The box ends at the frame's edge: the level stays inside it.
+                x = nameWidth + NAME_GAP
+                if box then x = math.min(x, math.max(box - fs:GetStringWidth(), 0)) end
+            else
+                -- The box is narrower than the frame and cuts a long name off; the level goes
+                -- behind the box then, a little past the frame's edge if it has to.
+                x = math.min(nameWidth, box or nameWidth) + NAME_GAP
+            end
             fs:SetPoint("LEFT", nameText, "LEFT", x, 0)
         elseif compact then
             fs:SetPoint("RIGHT", nameText, "RIGHT", 0, 0)

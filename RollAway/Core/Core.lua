@@ -158,7 +158,7 @@ RA.defaults = {
         groupIlvl                = false,  -- item level of group members: ElvUI [raw:ilvl] tags, default party frames (GroupIlvl.lua)
         groupIlvlColored         = true,
         groupIlvlPos             = "name",    -- default party frames: "name" row or a side of the member frame (GroupIlvlFrames.lua)
-        groupIlvlSize            = 12,
+        groupIlvlSize            = 10,    -- the size of the names in Blizzard's party frames
         autoSalvageSlot          = false,
         salvageSlotActive        = true,
         salvageAllowed           = {},   -- [itemID] = true, ticked in the Professions material list
