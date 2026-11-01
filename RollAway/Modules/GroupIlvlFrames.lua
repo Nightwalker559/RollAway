@@ -105,6 +105,8 @@ local function Show(frame, unit, nameText, compact)
         if fs then fs:Hide() end
         return
     end
+    -- Blizzard hides the name when the frames are set not to show names: nothing to sit behind.
+    if nameText and not nameText:IsShown() then nameText = nil end
     if not fs then
         fs = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         texts[frame] = fs

@@ -20,9 +20,9 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 local DBG  = RA.DBG
 
-local STEP_DELAY    = 0.5  -- spacing between inspects; the server throttles faster requests
-local REPLY_TIMEOUT = 3    -- no INSPECT_READY after this long counts as a failure (a late reply is still used)
-local RANGE_RETRY   = 3    -- offline / not inspectable: look again later, not a failure
+local STEP_DELAY        = 0.5  -- spacing between inspects; the server throttles faster requests
+local REPLY_TIMEOUT      = 3    -- no INSPECT_READY after this long counts as a failure (a late reply is still used)
+local UNAVAILABLE_RETRY  = 3    -- offline / not inspectable: look again later, not a failure
 
 -- Colors below the first threshold and from each threshold up: grey, white, green, blue,
 -- purple, orange, gold.
@@ -36,12 +36,12 @@ local PARTY_UNITS, RAID_UNITS = {}, {}
 for i = 1, 4 do PARTY_UNITS[i] = "party" .. i end
 for i = 1, 40 do RAID_UNITS[i] = "raid" .. i end
 
-local cache = {}               -- guid -> item level
-local listeners = {}           -- fn(guid) when a level changed
+local cache = {}                -- guid -> item level
+local listeners = {}            -- fn(guid) when a level changed
 local retryAt, fails, dirty = {}, {}, {}
-local loggedRange = {}         -- guid -> true once "cannot be inspected" was logged (once per offline spell)
-local pending                  -- { guid, unit } while an inspect request is in flight
-local generation = 0           -- the latest scheduled step wins
+local loggedUnavailable = {}    -- guid -> true once "cannot be inspected" was logged (once per offline spell)
+local pending                   -- { guid, unit } while an inspect request is in flight
+local generation = 0            -- the latest scheduled step wins
 local playerGUID
 local eventFrame
 
@@ -207,7 +207,7 @@ local function Fail(guid)
 end
 
 local function Succeed(guid)
-    fails[guid], retryAt[guid], dirty[guid], loggedRange[guid] = nil, nil, nil, nil
+    fails[guid], retryAt[guid], dirty[guid], loggedUnavailable[guid] = nil, nil, nil, nil
 end
 
 -- Whether the member can be asked at all (online, CanInspect). No distance check: the server
@@ -241,7 +241,7 @@ function Step()
             -- Identity not readable (hidden in a restricted state, or the member is not loaded
             -- yet): look again later, nothing else would wake us up for a group that stays as is.
             DBG("[GroupIlvl] GUID of", unit, "not readable - retry later")
-            local wake = now + RANGE_RETRY
+            local wake = now + UNAVAILABLE_RETRY
             soonest = soonest and math.min(soonest, wake) or wake
         elseif guid ~= playerGUID then
             -- Already scanned (and the gear did not change): nothing to ask.
@@ -255,11 +255,11 @@ function Step()
                         NotifyInspect(unit)
                         return Schedule(REPLY_TIMEOUT)
                     end
-                    if not loggedRange[guid] then
-                        loggedRange[guid] = true
-                        DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / not inspectable), checking again every", RANGE_RETRY, "s")
+                    if not loggedUnavailable[guid] then
+                        loggedUnavailable[guid] = true
+                        DBG("[GroupIlvl]", unit, "cannot be inspected now (offline / not inspectable), checking again every", UNAVAILABLE_RETRY, "s")
                     end
-                    wake = now + RANGE_RETRY
+                    wake = now + UNAVAILABLE_RETRY
                     retryAt[guid] = wake
                 end
                 if wake then soonest = soonest and math.min(soonest, wake) or wake end
@@ -329,7 +329,7 @@ local function OnGroupChanged()
         wipe(retryAt)
         wipe(fails)
         wipe(dirty)
-        wipe(loggedRange)
+        wipe(loggedUnavailable)
         return
     end
     Kick()
@@ -397,7 +397,7 @@ function RA.ApplyGroupIlvl()
         wipe(retryAt)
         wipe(fails)
         wipe(dirty)
-        wipe(loggedRange)
+        wipe(loggedUnavailable)
     end
     if RA.SetElvUITags then RA.SetElvUITags(IsActive()) end   -- only defined with ElvUI
     RA.SetGroupIlvlFrames(IsActive())
