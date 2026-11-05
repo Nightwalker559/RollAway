@@ -10,7 +10,6 @@ local L = _G["RollAwayLocale"]
 L["addon_title"]      = "RollAway & Tools"
 L["options_nav_main"] = "Loot & Rolls"
 L["main_panel_info"]  = "Loot-Verlauf, Bonusroll-Auto-Pass, Roll-Bestätigung und Würfe in Legacy-Schlachtzügen."
-L["main_panel_info_forever"] = "Loot-Verlauf und Roll-Bestätigung."
 
 ------------------------------------------------------------------------
 -- Titel der Popup-Fenster (wofür das Popup steht)

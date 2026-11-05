@@ -15,18 +15,10 @@ RA.RA_L                 = RA_L
 RA.VOIDCORE_CURRENCY_ID = 3418  -- Nebulous Voidcore currency
 
 ------------------------------------------------------------------------
--- Client: retail or WoW Forever (Classic content on the Mainline UI, build 16xxx).
--- Forever has no bonus rolls, legacy raids, Mythic+, Great Vault, Paragon or Midnight
--- content: the retail-only parts stay off there (RA.IS_FOREVER checks in Core, Modules, Options).
-------------------------------------------------------------------------
-local build = tonumber((select(4, GetBuildInfo()))) or 0
-RA.IS_FOREVER = build >= 16000 and build < 20000
-
-------------------------------------------------------------------------
 -- Season configuration
--- BONUS_ROLLS_ENABLED: Bonus Rolls were disabled in S1, re-enabled for S2; never on Forever.
+-- BONUS_ROLLS_ENABLED: Bonus Rolls were disabled in S1, re-enabled for S2.
 ------------------------------------------------------------------------
-RA.BONUS_ROLLS_ENABLED = not RA.IS_FOREVER
+RA.BONUS_ROLLS_ENABLED = true
 RA.ACTIVE_SEASON       = 2
 
 ------------------------------------------------------------------------
@@ -600,12 +592,6 @@ local INIT_ORDER = {
     "InitOptions", "InitDevTools",
 }
 
--- Modules without a counterpart on Forever: their Init does not run there.
-local RETAIL_ONLY_INITS = {
-    InitAutoPass = true, InitJoinReminder = true, InitCharacterFrameButtons = true, InitCraftingSalvage = true,
-    InitParagon = true, InitGreatVault = true, InitLFGQuickCreate = true,
-}
-
 -- Adds `false` for every entry's key (entry[keyField]) missing from tbl.
 local function FillMissing(tbl, entries, keyField)
     for _, entry in ipairs(entries) do
@@ -649,7 +635,7 @@ f:RegisterEvent("START_LOOT_ROLL")
 f:RegisterEvent("LOOT_ROLLS_COMPLETE")
 f:RegisterEvent("CANCEL_LOOT_ROLL")
 f:RegisterEvent("CANCEL_ALL_LOOT_ROLLS")
-if not RA.IS_FOREVER then f:RegisterEvent("CHALLENGE_MODE_MAPS_UPDATE") end
+f:RegisterEvent("CHALLENGE_MODE_MAPS_UPDATE")
 f:RegisterEvent("ENCOUNTER_END")
 f:RegisterEvent("PLAYER_REGEN_DISABLED")
 f:RegisterEvent("GROUP_LEFT")
@@ -691,8 +677,8 @@ f:SetScript("OnEvent", function(_, event, ...)
         -- ElvUI creates roll frames on demand: confirm overlays for the ones that are new.
         if ElvUI and RA.BuildRollOverlays then RunNextFrame(RA.BuildRollOverlays) end
 
-        -- Legacy auto-roll (retail only)
-        if not RA.IS_FOREVER and RollAwayDB and RollAwayDB.legacy and RA.ExecuteLegacyRoll then
+        -- Legacy auto-roll
+        if RollAwayDB and RollAwayDB.legacy and RA.ExecuteLegacyRoll then
             local raidKey = LEGACY_ENCOUNTER_MAP[RA.lastLegacyEncounterID]
             local legacyRaidsDB = GetLegacyRaidsDB()
             if raidKey and legacyRaidsDB and legacyRaidsDB[raidKey] then
@@ -762,7 +748,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if not RA.initialized then return end  -- wait for ADDON_LOADED
         NoteDebugLogSectionEvent()
         UpdateInstanceCache()
-        if not seasonChecked and not RA.IS_FOREVER and C_MythicPlus then C_MythicPlus.RequestMapInfo() end
+        if not seasonChecked and C_MythicPlus then C_MythicPlus.RequestMapInfo() end
         ResetState(event)
         RA.lastLegacyEncounterID = 0
         -- "Shown once per instance" marks: cleared on a fresh login (not on /reload),
@@ -835,7 +821,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 
         for _, initName in ipairs(INIT_ORDER) do
             local init = RA[initName]
-            if init and not (RA.IS_FOREVER and RETAIL_ONLY_INITS[initName]) then init() end
+            if init then init() end
         end
 
         -- Hook Show at startup so auto-hide works on the first roll too.

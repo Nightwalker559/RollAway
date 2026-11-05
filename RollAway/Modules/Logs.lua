@@ -182,18 +182,15 @@ end
 -- Both zone events fire for one zone change: one delayed re-check covers them.
 local recheckPending = false
 
--- Retail only: the difficulty IDs above are retail's, so Forever has no automatic logging.
-if not RA.IS_FOREVER then
-    local logsEventFrame = CreateFrame("Frame")
-    logsEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    logsEventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    logsEventFrame:SetScript("OnEvent", function()
+local logsEventFrame = CreateFrame("Frame")
+logsEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+logsEventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+logsEventFrame:SetScript("OnEvent", function()
+    CheckLogState()
+    if recheckPending then return end
+    recheckPending = true
+    C_Timer.After(1.5, function()
+        recheckPending = false
         CheckLogState()
-        if recheckPending then return end
-        recheckPending = true
-        C_Timer.After(1.5, function()
-            recheckPending = false
-            CheckLogState()
-        end)
     end)
-end
+end)

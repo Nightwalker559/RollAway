@@ -322,11 +322,10 @@ function RA.InitQoL()
     d:RegisterEvent("PLAYER_ENTERING_WORLD")
     d:SetScript("OnEvent", function() CheckDurability() end)
 
-    -- AH / Crafting Orders filter and Great Vault display: retail only
-    if not RA.IS_FOREVER then
-        InitAHFilter()
-        InitVaultCurrency()
-    end
+    -- AH filter
+    InitAHFilter()
+
+    InitVaultCurrency()
 
     DBG("QoL initialized")
 end
