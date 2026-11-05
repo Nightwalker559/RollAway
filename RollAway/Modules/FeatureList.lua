@@ -33,6 +33,7 @@ local function DB(key) return function() return RollAwayDB[key] end end
 local function BuildSections()
     local maxLevel = RA.IsMaxLevel()
     local bonusRolls = RA.BONUS_ROLLS_ENABLED and maxLevel
+    local retail = not RA.IS_FOREVER   -- Forever has none of the retail-only entries below
     local char = RollAwayDBChar
 
     -- `on`: saved key (then a toggle) or a function.
@@ -52,7 +53,7 @@ local function BuildSections()
             { name = "confirm_roll_title", info = "confirm_roll_hint",
               on = function() return AnyTrue(RollAwayDB.confirmRoll) end, open = { tab = "raids" } },
             { name = "legacy_section_title", info = "feat_legacy",
-              on = DB("legacy"), open = { tab = "general" }, toggle = "legacy" },
+              on = DB("legacy"), open = { tab = "general" }, toggle = "legacy", show = retail },
         } },
         { title = "feat_section_bonusroll", show = bonusRolls, items = {
             { name = "feat_name_dungeons", info = "feat_dungeons", open = { tab = "dungeons" },
@@ -71,18 +72,18 @@ local function BuildSections()
         { title = "qol_nav_group", items = {
             Qol("group", "qol_autoaccept_label",   "qol_autoaccept_info",   "autoAcceptInvite"),
             Qol("group", "qol_tankmark_label",     "qol_tankmark_info",     "tankMarkEnabled"),
-            Qol("group", "qol_lfgqc_label",        "qol_lfgqc_info",        "lfgQuickCreate"),
-            Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", "lfgAutoMythicPlus"),
-            Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", "lfgAutoPlaystyle"),
+            Qol("group", "qol_lfgqc_label",        "qol_lfgqc_info",        "lfgQuickCreate", retail),
+            Qol("group", "qol_lfgqc_automplus_label", "qol_lfgqc_automplus_info", "lfgAutoMythicPlus", retail),
+            Qol("group", "qol_lfgqc_autops_label", "qol_lfgqc_autops_info", "lfgAutoPlaystyle", retail),
             Qol("group", "qol_gilvl_label",        "qol_gilvl_info",        "groupIlvl"),
         } },
-        { title = "qol_nav_class", show = RA.IsHunter(), items = {
+        { title = "qol_nav_class", show = RA.IsHunter() and retail, items = {
             Qol("class", "qol_pet_reminder_label", "qol_pet_reminder_info", "hunterPetReminder"),
         } },
         { title = "qol_nav_craft", items = {
-            Qol("craft", "qol_salvage_slot_label", "qol_salvage_slot_info", "autoSalvageSlot"),
-            Qol("craft", "qol_crafting_output_log_label", "qol_crafting_output_log_info", "hideCraftingOutputLog"),
-            Qol("craft", "qol_expansion_filter_label", "qol_expansion_filter_info", "expansionFilterAH"),
+            Qol("craft", "qol_salvage_slot_label", "qol_salvage_slot_info", "autoSalvageSlot", retail),
+            Qol("craft", "qol_crafting_output_log_label", "qol_crafting_output_log_info", "hideCraftingOutputLog", retail),
+            Qol("craft", "qol_expansion_filter_label", "qol_expansion_filter_info", "expansionFilterAH", retail),
             Qol("craft", "qol_autorepair_label",   "qol_autorepair_info",
                 function() return (RollAwayDB.autoRepairMode or "none") ~= "none" end),
             Qol("craft", "qol_vendor_filter_label", "qol_vendor_filter_info", "vendorFilterEnabled"),
@@ -95,10 +96,10 @@ local function BuildSections()
         } },
         { title = "qol_reminder_section", items = {
             Qol("reminder", "qol_durability_label",    "qol_durability_info",    "durabilityWarning"),
-            Qol("reminder", "qol_join_reminder_label", "qol_join_reminder_info", "instanceJoinReminder"),
+            Qol("reminder", "qol_join_reminder_label", "qol_join_reminder_info", "instanceJoinReminder", retail),
             Qol("reminder", "qol_readycheck_label",    "qol_readycheck_info",    "readyCheckReminder"),
-            Qol("reminder", "greatvault_alert_label",  "greatvault_alert_info",  "greatVaultAlert", maxLevel),
-            Qol("reminder", "paragon_alert_label",     "paragon_alert_info",     "paragonAlert"),
+            Qol("reminder", "greatvault_alert_label",  "greatvault_alert_info",  "greatVaultAlert", maxLevel and retail),
+            Qol("reminder", "paragon_alert_label",     "paragon_alert_info",     "paragonAlert", retail),
         } },
         { title = "qol_nav_hide", items = {
             Qol("hide", "qol_hide_errors_label",       "qol_hide_errors_info",       "hideErrorMessages"),
@@ -106,25 +107,25 @@ local function BuildSections()
             Qol("hide", "qol_hide_bossbanner_label",   "qol_hide_bossbanner_info",   "hideBossBanner"),
             Qol("hide", "qol_hide_eventtoasts_label",  "qol_hide_eventtoasts_info",  "hideEventToasts"),
             Qol("hide", "qol_hide_alerts_label",       "qol_hide_alerts_info",       "hideAlerts"),
-            Qol("hide", "qol_map_activity_label",      "qol_map_activity_info",      "hideMapActivityTracker"),
+            Qol("hide", "qol_map_activity_label",      "qol_map_activity_info",      "hideMapActivityTracker", retail),
             Qol("hide", "qol_hide_minimapbtn_label",   "qol_hide_minimapbtn_info",   "minimapButtonHide"),
-            Qol("hide", "qol_omniumfoliant_label",     "qol_omniumfoliant_info",     "hideOmniumfoliantMinimap", maxLevel),
+            Qol("hide", "qol_omniumfoliant_label",     "qol_omniumfoliant_info",     "hideOmniumfoliantMinimap", maxLevel and retail),
         } },
-        { title = "qol_nav_character", show = maxLevel, items = {
+        { title = "qol_nav_character", show = maxLevel and retail, items = {
             Qol("character", "qol_vault_button_label",   "qol_vault_button_info",   "vaultButtonCharFrame"),
             Qol("character", "qol_vault_currency_label", "qol_vault_currency_info", "vaultCurrencyDisplay",
                 RA.BONUS_ROLLS_ENABLED),
         } },
-        { title = "qol_nav_logs", items = {
+        { title = "qol_nav_logs", show = retail, items = {
             Qol("logs", "qol_log_enable_label",        "qol_log_enable_info", "autoLogEnabled"),
             Qol("logs", "qol_log_advlog_reminder_label", nil,                 "advLogReminderEnabled"),
         } },
         { title = "feat_section_commands", commands = {
             { "/raw",         "cmd_raw_info"         },
             { "/rawfeatures", "cmd_rawfeatures_info" },
-            { "/rat",         "cmd_rat_info"         },
-            { "/rawvault",    "cmd_rawvault_info"    },
-            { "/rawparagon",  "cmd_rawparagon_info"  },
+            { "/rat",         "cmd_rat_info",        show = retail },
+            { "/rawvault",    "cmd_rawvault_info",   show = retail },
+            { "/rawparagon",  "cmd_rawparagon_info", show = retail },
             { "/rawtank",     "cmd_rawtank_info"     },
             { "/rawilvl",     "cmd_gilvl_info"       },
         } },
@@ -249,24 +250,26 @@ local function CreateFrameOnce()
             end
 
             for _, cmd in ipairs(section.commands or {}) do
-                local row = CreateFrame("Frame", nil, content)
-                row:SetPoint("TOPLEFT", content, "TOPLEFT", 4, y)
-                row:SetWidth(CONTENT_W)
+                if cmd.show ~= false then
+                    local row = CreateFrame("Frame", nil, content)
+                    row:SetPoint("TOPLEFT", content, "TOPLEFT", 4, y)
+                    row:SetWidth(CONTENT_W)
 
-                local name = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-                name:SetPoint("TOPLEFT", row, "TOPLEFT", 6, -4)
-                name:SetText(cmd[1])
+                    local name = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+                    name:SetPoint("TOPLEFT", row, "TOPLEFT", 6, -4)
+                    name:SetText(cmd[1])
 
-                local info = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-                info:SetPoint("TOPLEFT", row, "TOPLEFT", 120, -5)
-                info:SetWidth(CONTENT_W - 130)
-                info:SetJustifyH("LEFT")
-                info:SetTextColor(0.7, 0.7, 0.7)
-                info:SetText(RA_L[cmd[2]])
+                    local info = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+                    info:SetPoint("TOPLEFT", row, "TOPLEFT", 120, -5)
+                    info:SetWidth(CONTENT_W - 130)
+                    info:SetJustifyH("LEFT")
+                    info:SetTextColor(0.7, 0.7, 0.7)
+                    info:SetText(RA_L[cmd[2]])
 
-                local height = 8 + math.max(name:GetStringHeight(), info:GetStringHeight())
-                row:SetHeight(height)
-                y = y - height - 2
+                    local height = 8 + math.max(name:GetStringHeight(), info:GetStringHeight())
+                    row:SetHeight(height)
+                    y = y - height - 2
+                end
             end
             y = y - 12
         end

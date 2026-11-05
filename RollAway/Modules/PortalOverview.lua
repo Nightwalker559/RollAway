@@ -580,7 +580,9 @@ end
 
 -- /rat: open/close
 
-SLASH_ROLLAWAYPORTALS1 = "/rat"
-SlashCmdList["ROLLAWAYPORTALS"] = function()
-    RA.TogglePortalOverview()
+if not RA.IS_FOREVER then   -- the season portals are Mythic+ teleports
+    SLASH_ROLLAWAYPORTALS1 = "/rat"
+    SlashCmdList["ROLLAWAYPORTALS"] = function()
+        RA.TogglePortalOverview()
+    end
 end

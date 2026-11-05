@@ -340,8 +340,11 @@ end
 ------------------------------------------------------------------------
 
 function RA.InitHideUI()
-    RA.ApplyMapActivityTrackerFeature()
-    InitCraftingOutputLogHide()
+    -- World map overlays and the crafting output log are retail only
+    if not RA.IS_FOREVER then
+        RA.ApplyMapActivityTrackerFeature()
+        InitCraftingOutputLogHide()
+    end
 
     -- Error text, Talking Head, boss banner, event toasts, alerts
     RA.ApplyHideErrorsFeature()

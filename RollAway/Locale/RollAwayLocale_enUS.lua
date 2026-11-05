@@ -9,6 +9,7 @@ _G["RollAwayLocale"] = L
 L["addon_title"]      = "RollAway & Tools"
 L["options_nav_main"] = "Loot & Rolls"
 L["main_panel_info"]  = "Group loot history, bonus roll auto-pass, roll confirmation and legacy raid rolls."
+L["main_panel_info_forever"] = "Group loot history and roll confirmation."
 
 ------------------------------------------------------------------------
 -- Popup window titles (what the popup is for)

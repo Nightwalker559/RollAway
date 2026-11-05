@@ -115,16 +115,19 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     -- Left nav sorted by the shown label (follows the client language); no Character
     -- tab below max level.
     local QOL_NAV_W = 130
+    -- Forever has no Mythic+, Great Vault, Paragon, retail professions or season data: those
+    -- options (and the Character, Class and Logs pages) are left out there.
+    local retail     = not RA.IS_FOREVER
     local isMaxLevel = RA.IsMaxLevel()
     local isHunter   = RA.IsHunter()
 
     local qolNavDefs = {
-        { key = "character", label = RA_L["qol_nav_character"], show = isMaxLevel },
-        { key = "class",     label = RA_L["qol_nav_class"],     show = isHunter },
+        { key = "character", label = RA_L["qol_nav_character"], show = isMaxLevel and retail },
+        { key = "class",     label = RA_L["qol_nav_class"],     show = isHunter and retail },
         { key = "craft",     label = RA_L["qol_nav_craft"] },
         { key = "group",     label = RA_L["qol_nav_group"] },
         { key = "hide",      label = RA_L["qol_nav_hide"] },
-        { key = "logs",      label = RA_L["qol_nav_logs"] },
+        { key = "logs",      label = RA_L["qol_nav_logs"],      show = retail },
         { key = "quests",    label = RA_L["qol_nav_quests"] },
         { key = "reminder",  label = RA_L["qol_reminder_section"] },
     }
@@ -159,12 +162,12 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         return UI.MakeCategoryPage(qolPanel, qolHeaderLine, QOL_NAV_W, "RollAwayQol", name, qolCatPanels, key)
     end
 
-    local character = isMaxLevel and CreateQolCategoryPanel("character", "Character") or nil
-    local classPage = isHunter and CreateQolCategoryPanel("class", "Class") or nil
+    local character = isMaxLevel and retail and CreateQolCategoryPanel("character", "Character") or nil
+    local classPage = isHunter and retail and CreateQolCategoryPanel("class", "Class") or nil
     local craft     = CreateQolCategoryPanel("craft",    "Craft")
     local group     = CreateQolCategoryPanel("group",    "Group")
     local hide      = CreateQolCategoryPanel("hide",     "Hide")
-    local logs      = CreateQolCategoryPanel("logs",     "Logs")
+    local logs      = retail and CreateQolCategoryPanel("logs", "Logs") or nil
     local quests    = CreateQolCategoryPanel("quests",   "Quests")
     local reminder  = CreateQolCategoryPanel("reminder", "Reminder")
 
@@ -210,17 +213,17 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     craftChain.Add({
         label = RA_L["qol_salvage_slot_label"], info = RA_L["qol_salvage_slot_info"],
         dbKey = "autoSalvageSlot", onChange = RA.ApplyCraftingSalvageFeature,
-    })
+    }, retail)
 
     -- Crafting output log
     craftChain.Add({
         label = RA_L["qol_crafting_output_log_label"], info = RA_L["qol_crafting_output_log_info"],
         dbKey = "hideCraftingOutputLog", onChange = RA.ApplyCraftingOutputLogFeature,
-    })
+    }, retail)
 
     craftChain.Add({
         label = RA_L["qol_expansion_filter_label"], info = RA_L["qol_expansion_filter_info"], dbKey = "expansionFilterAH",
-    })
+    }, retail)
 
     -- Auto repair (dropdown: none / player / guild): the label is the option's title, the
     -- description follows the dropdown.
@@ -284,30 +287,32 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         tankIconList, tankIconOrder, "tankMarkIcon", 6)
     SetTankIconEnabled(RollAwayDB.tankMarkEnabled)
 
-    -- Dungeon quick selection in the group finder
-    groupChain.Add({
-        label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
-    })
+    if retail then
+        -- Dungeon quick selection in the group finder
+        groupChain.Add({
+            label = RA_L["qol_lfgqc_label"], info = RA_L["qol_lfgqc_info"], dbKey = "lfgQuickCreate",
+        })
 
-    -- Mythic+ difficulty preselected in the create form
-    groupChain.Add({
-        label = RA_L["qol_lfgqc_automplus_label"], info = RA_L["qol_lfgqc_automplus_info"], dbKey = "lfgAutoMythicPlus",
-    })
+        -- Mythic+ difficulty preselected in the create form
+        groupChain.Add({
+            label = RA_L["qol_lfgqc_automplus_label"], info = RA_L["qol_lfgqc_automplus_info"], dbKey = "lfgAutoMythicPlus",
+        })
 
-    -- Auto playstyle; the dropdown follows the checkbox
-    local SetPlaystyleEnabled  -- needs the dropdown created below
-    groupChain.Add({
-        label = RA_L["qol_lfgqc_autops_label"], info = RA_L["qol_lfgqc_autops_info"], dbKey = "lfgAutoPlaystyle",
-        onChange = function(checked) SetPlaystyleEnabled(checked) end,
-    })
-    _, _, SetPlaystyleEnabled = groupChain.Dropdown(RA_L["qol_lfgqc_playstyle_label"], 230, {  -- "Beförderung angeboten" needs room
-        [0] = RA_L["qol_lfgqc_ps_none"],
-        [1] = RA_L["qol_lfgqc_ps_standard"],
-        [2] = RA_L["qol_lfgqc_ps_relaxed"],
-        [3] = RA_L["qol_lfgqc_ps_competitive"],
-        [4] = RA_L["qol_lfgqc_ps_carry"],
-    }, { 0, 1, 2, 3, 4 }, "lfgDefaultPlaystyle", 0)
-    SetPlaystyleEnabled(RollAwayDB.lfgAutoPlaystyle)
+        -- Auto playstyle; the dropdown follows the checkbox
+        local SetPlaystyleEnabled  -- needs the dropdown created below
+        groupChain.Add({
+            label = RA_L["qol_lfgqc_autops_label"], info = RA_L["qol_lfgqc_autops_info"], dbKey = "lfgAutoPlaystyle",
+            onChange = function(checked) SetPlaystyleEnabled(checked) end,
+        })
+        _, _, SetPlaystyleEnabled = groupChain.Dropdown(RA_L["qol_lfgqc_playstyle_label"], 230, {  -- "Beförderung angeboten" needs room
+            [0] = RA_L["qol_lfgqc_ps_none"],
+            [1] = RA_L["qol_lfgqc_ps_standard"],
+            [2] = RA_L["qol_lfgqc_ps_relaxed"],
+            [3] = RA_L["qol_lfgqc_ps_competitive"],
+            [4] = RA_L["qol_lfgqc_ps_carry"],
+        }, { 0, 1, 2, 3, 4 }, "lfgDefaultPlaystyle", 0)
+        SetPlaystyleEnabled(RollAwayDB.lfgAutoPlaystyle)
+    end
 
     -- Item level of the group in ElvUI's unit frames and Blizzard's party frames (GroupIlvl.lua,
     -- GroupIlvlFrames.lua).
@@ -407,7 +412,7 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     hideChain.Add({
         label = RA_L["qol_map_activity_label"], info = RA_L["qol_map_activity_info"],
         dbKey = "hideMapActivityTracker", onChange = RA.ApplyMapActivityTrackerFeature,
-    })
+    }, retail)
 
     -- RollAway's own minimap button
     hideChain.Add({
@@ -420,62 +425,64 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         label = RA_L["qol_omniumfoliant_label"], info = RA_L["qol_omniumfoliant_info"],
         dbKey = "hideOmniumfoliantMinimap",
         onChange = function() RA.RefreshCharFrameButtons("option toggled") end,
-    }, isMaxLevel)
+    }, isMaxLevel and retail)
 
     -- ── Category: Logs ─────────────────────────────────────────────────
 
-    -- Master toggle
-    local logSubCBs = {}
-    local function UpdateLogSubCBsState()
-        for _, cb in ipairs(logSubCBs) do
-            cb:SetDisabled(not RollAwayDB.autoLogEnabled)
+    if logs then
+        -- Master toggle
+        local logSubCBs = {}
+        local function UpdateLogSubCBsState()
+            for _, cb in ipairs(logSubCBs) do
+                cb:SetDisabled(not RollAwayDB.autoLogEnabled)
+            end
         end
+
+        local _, qolLogMasterInfo = MakeToggle(logs, nil, 0, -8, {
+            label = RA_L["qol_log_enable_label"], info = RA_L["qol_log_enable_info"], dbKey = "autoLogEnabled",
+            onChange = UpdateLogSubCBsState,
+        })
+        -- Compact zone checkbox list (MRT layout, no info texts)
+        local LOG_ZONE_DEFS = {
+            { dbKey = "autoLogScenario",      labelKey = "qol_log_scenario_label"     },
+            { dbKey = "autoLogMythicDungeon", labelKey = "qol_log_dungeon_label"      },
+            { dbKey = "autoLogRaidMythic",    labelKey = "qol_log_raid_mythic_label"  },
+            { dbKey = "autoLogRaidHeroic",    labelKey = "qol_log_raid_heroic_label"  },
+            { dbKey = "autoLogRaidNormal",    labelKey = "qol_log_raid_normal_label"  },
+            { dbKey = "autoLogRaidLFR",       labelKey = "qol_log_raid_lfr_label"     },
+            { dbKey = "autoLogRaidCurrentOnly", labelKey = "qol_log_raid_current_label"  },
+        }
+
+        local logZoneAnchor = qolLogMasterInfo
+        local logZoneOffsetX = -20  -- first item hangs off the (indented) info text, back to x=0
+        for _, def in ipairs(LOG_ZONE_DEFS) do
+            local dbKey = def.dbKey
+            local cb = MakeCB(logs, RA_L[def.labelKey], RollAwayDB[dbKey], function(checked)
+                RollAwayDB[dbKey] = checked
+            end)
+            -- Each later item chains checkbox to checkbox (already at x=0).
+            cb.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", logZoneOffsetX, -10)
+            logZoneOffsetX = 0
+            logZoneAnchor = cb.frame
+            table.insert(logSubCBs, cb)
+        end
+
+        -- Chat notification (own line)
+        local qolLogChatCB = MakeCB(logs, RA_L["qol_log_chatnotify_label"], RollAwayDB.autoLogChatNotify, function(checked)
+            RollAwayDB.autoLogChatNotify = checked
+        end, nil, QOL_CONTENT_W)
+        qolLogChatCB.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", 0, -16)
+        table.insert(logSubCBs, qolLogChatCB)
+
+        -- Advanced Combat Logging reminder: independent of the master toggle (manual loggers).
+        local qolLogAdvReminderCB = MakeCB(logs, RA_L["qol_log_advlog_reminder_label"], RollAwayDB.advLogReminderEnabled, function(checked)
+            RollAwayDB.advLogReminderEnabled = checked
+        end, nil, QOL_CONTENT_W)
+        qolLogAdvReminderCB.frame:SetPoint("TOPLEFT", qolLogChatCB.frame, "BOTTOMLEFT", 0, -10)
+        RA.ToggleControls["advLogReminderEnabled"] = qolLogAdvReminderCB
+
+        UpdateLogSubCBsState()
     end
-
-    local _, qolLogMasterInfo = MakeToggle(logs, nil, 0, -8, {
-        label = RA_L["qol_log_enable_label"], info = RA_L["qol_log_enable_info"], dbKey = "autoLogEnabled",
-        onChange = UpdateLogSubCBsState,
-    })
-    -- Compact zone checkbox list (MRT layout, no info texts)
-    local LOG_ZONE_DEFS = {
-        { dbKey = "autoLogScenario",      labelKey = "qol_log_scenario_label"     },
-        { dbKey = "autoLogMythicDungeon", labelKey = "qol_log_dungeon_label"      },
-        { dbKey = "autoLogRaidMythic",    labelKey = "qol_log_raid_mythic_label"  },
-        { dbKey = "autoLogRaidHeroic",    labelKey = "qol_log_raid_heroic_label"  },
-        { dbKey = "autoLogRaidNormal",    labelKey = "qol_log_raid_normal_label"  },
-        { dbKey = "autoLogRaidLFR",       labelKey = "qol_log_raid_lfr_label"     },
-        { dbKey = "autoLogRaidCurrentOnly", labelKey = "qol_log_raid_current_label"  },
-    }
-
-    local logZoneAnchor = qolLogMasterInfo
-    local logZoneOffsetX = -20  -- first item hangs off the (indented) info text, back to x=0
-    for _, def in ipairs(LOG_ZONE_DEFS) do
-        local dbKey = def.dbKey
-        local cb = MakeCB(logs, RA_L[def.labelKey], RollAwayDB[dbKey], function(checked)
-            RollAwayDB[dbKey] = checked
-        end)
-        -- Each later item chains checkbox to checkbox (already at x=0).
-        cb.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", logZoneOffsetX, -10)
-        logZoneOffsetX = 0
-        logZoneAnchor = cb.frame
-        table.insert(logSubCBs, cb)
-    end
-
-    -- Chat notification (own line)
-    local qolLogChatCB = MakeCB(logs, RA_L["qol_log_chatnotify_label"], RollAwayDB.autoLogChatNotify, function(checked)
-        RollAwayDB.autoLogChatNotify = checked
-    end, nil, QOL_CONTENT_W)
-    qolLogChatCB.frame:SetPoint("TOPLEFT", logZoneAnchor, "BOTTOMLEFT", 0, -16)
-    table.insert(logSubCBs, qolLogChatCB)
-
-    -- Advanced Combat Logging reminder: independent of the master toggle (manual loggers).
-    local qolLogAdvReminderCB = MakeCB(logs, RA_L["qol_log_advlog_reminder_label"], RollAwayDB.advLogReminderEnabled, function(checked)
-        RollAwayDB.advLogReminderEnabled = checked
-    end, nil, QOL_CONTENT_W)
-    qolLogAdvReminderCB.frame:SetPoint("TOPLEFT", qolLogChatCB.frame, "BOTTOMLEFT", 0, -10)
-    RA.ToggleControls["advLogReminderEnabled"] = qolLogAdvReminderCB
-
-    UpdateLogSubCBsState()
 
     -- ── Category: Quests ───────────────────────────────────────────────
     -- Every change registers only the events still needed.
@@ -533,55 +540,57 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         label = RA_L["qol_durability_label"], info = RA_L["qol_durability_info"], dbKey = "durabilityWarning",
     })
 
-    -- Instance join reminder
-    local _, qolJoinInfo = remChain.Add({
-        label = RA_L["qol_join_reminder_label"], info = RA_L["qol_join_reminder_info"], dbKey = "instanceJoinReminder",
-    })
+    if retail then
+        -- Instance join reminder
+        local _, qolJoinInfo = remChain.Add({
+            label = RA_L["qol_join_reminder_label"], info = RA_L["qol_join_reminder_info"], dbKey = "instanceJoinReminder",
+        })
 
-    -- Sub-option: keystone companion addon (BigWigs / Details! / Teleport reminder, one of them)
-    local qolKeyAddonLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    qolKeyAddonLabel:SetPoint("TOPLEFT", qolJoinInfo, "BOTTOMLEFT", 0, -10)
-    qolKeyAddonLabel:SetWidth(QOL_INFO_W)  -- wraps instead of running off the panel
-    qolKeyAddonLabel:SetJustifyH("LEFT")
-    qolKeyAddonLabel:SetText(RA_L["qol_join_keyaddon_label"])
+        -- Sub-option: keystone companion addon (BigWigs / Details! / Teleport reminder, one of them)
+        local qolKeyAddonLabel = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        qolKeyAddonLabel:SetPoint("TOPLEFT", qolJoinInfo, "BOTTOMLEFT", 0, -10)
+        qolKeyAddonLabel:SetWidth(QOL_INFO_W)  -- wraps instead of running off the panel
+        qolKeyAddonLabel:SetJustifyH("LEFT")
+        qolKeyAddonLabel:SetText(RA_L["qol_join_keyaddon_label"])
 
-    -- One per line (three side by side do not fit).
-    local cbBigWigs = MakeCB(reminder, RA_L["qol_join_keyaddon_bigwigs"], nil, nil)
-    cbBigWigs.frame:SetPoint("TOPLEFT", qolKeyAddonLabel, "BOTTOMLEFT", 0, -6)
+        -- One per line (three side by side do not fit).
+        local cbBigWigs = MakeCB(reminder, RA_L["qol_join_keyaddon_bigwigs"], nil, nil)
+        cbBigWigs.frame:SetPoint("TOPLEFT", qolKeyAddonLabel, "BOTTOMLEFT", 0, -6)
 
-    local cbDetails = MakeCB(reminder, RA_L["qol_join_keyaddon_details"], nil, nil)
-    cbDetails.frame:SetPoint("TOPLEFT", cbBigWigs.frame, "BOTTOMLEFT", 0, -4)
+        local cbDetails = MakeCB(reminder, RA_L["qol_join_keyaddon_details"], nil, nil)
+        cbDetails.frame:SetPoint("TOPLEFT", cbBigWigs.frame, "BOTTOMLEFT", 0, -4)
 
-    local cbTeleport = MakeCB(reminder, RA_L["qol_join_keyaddon_teleport"], nil, nil)
-    cbTeleport.frame:SetPoint("TOPLEFT", cbDetails.frame, "BOTTOMLEFT", 0, -4)
+        local cbTeleport = MakeCB(reminder, RA_L["qol_join_keyaddon_teleport"], nil, nil)
+        cbTeleport.frame:SetPoint("TOPLEFT", cbDetails.frame, "BOTTOMLEFT", 0, -4)
 
-    local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, QOL_INFO_W, RA_L["qol_join_keyaddon_info"])
-    remChain.Set(qolKeyAddonInfo, 20, -20)
+        local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, QOL_INFO_W, RA_L["qol_join_keyaddon_info"])
+        remChain.Set(qolKeyAddonInfo, 20, -20)
 
-    -- Checkbox state from the saved choice + live addon detection. An addon not detected
-    -- yet (BigWigs' "key" command is often not registered right after login) does not
-    -- clear the saved choice: the box just greys out. The teleport reminder is always available.
-    local function RefreshKeyAddonCheckboxes()
-        cbBigWigs:SetValue(RollAwayDB.joinReminderKeyAddon == "bigwigs")
-        cbDetails:SetValue(RollAwayDB.joinReminderKeyAddon == "details")
-        cbTeleport:SetValue(RollAwayDB.joinReminderKeyAddon == "teleport")
+        -- Checkbox state from the saved choice + live addon detection. An addon not detected
+        -- yet (BigWigs' "key" command is often not registered right after login) does not
+        -- clear the saved choice: the box just greys out. The teleport reminder is always available.
+        local function RefreshKeyAddonCheckboxes()
+            cbBigWigs:SetValue(RollAwayDB.joinReminderKeyAddon == "bigwigs")
+            cbDetails:SetValue(RollAwayDB.joinReminderKeyAddon == "details")
+            cbTeleport:SetValue(RollAwayDB.joinReminderKeyAddon == "teleport")
 
-        cbBigWigs:SetDisabled(not RA.IsBigWigsKeyAvailable())
-        cbDetails:SetDisabled(not RA.IsDetailsKeyAvailable())
+            cbBigWigs:SetDisabled(not RA.IsBigWigsKeyAvailable())
+            cbDetails:SetDisabled(not RA.IsDetailsKeyAvailable())
+        end
+
+        -- Each checkbox sets its choice, "none" when unchecked.
+        for choice, cb in pairs({ bigwigs = cbBigWigs, details = cbDetails, teleport = cbTeleport }) do
+            cb:SetCallback("OnValueChanged", function(_, _, value)
+                RollAwayDB.joinReminderKeyAddon = value and choice or "none"
+                RefreshKeyAddonCheckboxes()
+            end)
+        end
+
+        RefreshKeyAddonCheckboxes()
+
+        -- Re-check on every open (addon load order).
+        qolPanel:HookScript("OnShow", RefreshKeyAddonCheckboxes)
     end
-
-    -- Each checkbox sets its choice, "none" when unchecked.
-    for choice, cb in pairs({ bigwigs = cbBigWigs, details = cbDetails, teleport = cbTeleport }) do
-        cb:SetCallback("OnValueChanged", function(_, _, value)
-            RollAwayDB.joinReminderKeyAddon = value and choice or "none"
-            RefreshKeyAddonCheckboxes()
-        end)
-    end
-
-    RefreshKeyAddonCheckboxes()
-
-    -- Re-check on every open (addon load order).
-    qolPanel:HookScript("OnShow", RefreshKeyAddonCheckboxes)
 
     -- Ready check talent reminder (+ sub-option: show the active spec)
     local qolShowSpecCB  -- referenced in the toggle's callback below
@@ -597,12 +606,12 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     -- Great Vault notification (hidden below max level; the next toggle moves up)
     remChain.Add({
         label = RA_L["greatvault_alert_label"], info = RA_L["greatvault_alert_info"], dbKey = "greatVaultAlert",
-    }, isMaxLevel)
+    }, isMaxLevel and retail)
 
     -- Paragon notification
     remChain.Add({
         label = RA_L["paragon_alert_label"], info = RA_L["paragon_alert_info"], dbKey = "paragonAlert",
-    })
+    }, retail)
 
     -- Look of the toasts: font size, position
     local fontSlider = MakeValueSlider(reminder, remChain.Anchor(), -20, -12, {
