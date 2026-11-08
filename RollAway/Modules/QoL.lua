@@ -98,8 +98,16 @@ local function ShowDurabilityWarning(pct)
     durabilityTimer.Start()
 end
 
+local durabilityPending = false  -- a check came up in combat and waits for the end of the fight
+
+-- `force` (test command) shows the toast regardless of durability and combat.
 local function CheckDurability(force)
     if not RollAwayDB or not RollAwayDB.durabilityWarning then return end
+    if not force and InCombatLockdown() then
+        durabilityPending = true
+        return
+    end
+    durabilityPending = false
     local pct = GetLowestDurability()
     if force or pct <= DURA_THRESHOLD then
         ShowDurabilityWarning(force and 0.25 or pct)
@@ -320,7 +328,10 @@ function RA.InitQoL()
     local d = CreateFrame("Frame")
     d:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
     d:RegisterEvent("PLAYER_ENTERING_WORLD")
-    d:SetScript("OnEvent", function() CheckDurability() end)
+    d:RegisterEvent("PLAYER_REGEN_ENABLED")
+    d:SetScript("OnEvent", function(_, event)
+        if event ~= "PLAYER_REGEN_ENABLED" or durabilityPending then CheckDurability() end
+    end)
 
     -- AH filter
     InitAHFilter()

@@ -12,6 +12,7 @@
 
 ### Fixed
 - Teleport reminder: no longer shows a key level the group did not list (it was guessed from the members' keystones). Only the level from the listing is shown.
+- Durability warning: no longer pops up during combat. It waits for the end of the fight and shows once if your durability is still low.
 
 ### Changed
 - Options window is built when you first open it (faster login).
