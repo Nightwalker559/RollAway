@@ -9,7 +9,6 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
 local UI                = RA.OptionsUI
-local MakeSectionHeader = UI.MakeSectionHeader
 local MakeDropdown      = UI.MakeDropdown
 local MakeSkinnedButton = UI.MakeSkinnedButton
 local MakeInfoMark      = UI.MakeInfoMark
@@ -219,8 +218,7 @@ function RA.BuildProfileOptions(parent, registerPage)
     panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
     registerPage("profile", RA_L["profile_section_title"], panel)
 
-    local title, headerLine = MakeSectionHeader(panel, panel, -10, RA_L["profile_panel_title"])
-    RA.AddHeaderLogo(panel, headerLine)
+    local title, _, headerLine = UI.MakePageHeader(panel, RA_L["profile_panel_title"], RA_L["profile_panel_sub"], 0, 16)
     MakeInfoMark(panel, title, RA_L["profile_panel_title"], RA_L["profile_panel_info"])
 
     -- ── Active profile ───────────────────────────────────────────────

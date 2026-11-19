@@ -21,7 +21,6 @@ local ENTRY_W            = UI.ENTRY_W
 local COL_GAP            = UI.COL_GAP
 local MakeSectionHeader  = UI.MakeSectionHeader
 local MakeCB             = UI.MakeCB
-local MakeInfoText       = UI.MakeInfoText
 local MakeTemplateSlider = UI.MakeTemplateSlider
 local MakeInfoMark       = UI.MakeInfoMark
 local MakeCheckboxRow    = UI.MakeCheckboxRow
@@ -202,19 +201,8 @@ BuildOptions = function()
     panel:SetAllPoints(content)
     RegisterPage("main", RA_L["options_nav_main"], panel)
 
-    -- Fixed header (like the QoL page)
-    local mainTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    mainTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -10)
-    mainTitle:SetText(RA_L["options_nav_main"])
-
-    local mainInfo = MakeInfoText(panel, mainTitle, 0, -6, 510, RA_L["main_panel_info"])
-
-    local mainHeaderLine = panel:CreateTexture(nil, "ARTWORK")
-    mainHeaderLine:SetHeight(1)
-    mainHeaderLine:SetPoint("TOPLEFT", mainInfo, "BOTTOMLEFT", 0, -10)
-    mainHeaderLine:SetPoint("RIGHT", panel, "RIGHT", -32, 0)
-    mainHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    RA.AddHeaderLogo(panel, mainHeaderLine)
+    -- This panel fills the content frame, the other pages are inset by 16: same header position.
+    local _, _, mainHeaderLine = UI.MakePageHeader(panel, RA_L["options_nav_main"], RA_L["main_panel_info"], 16, 32)
 
     -- Tab definitions
     local tabDefs = {

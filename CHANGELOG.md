@@ -2,6 +2,13 @@
 
 ---
 
+## 3.1.9
+
+### Changed
+- Options pages: the header (title, subtitle, line, logo) sits in the same place on every page; the Profile page has a short subtitle again.
+
+---
+
 ## 3.1.8
 
 ### New

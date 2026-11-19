@@ -193,6 +193,25 @@ local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
     return info
 end
 
+-- Fixed header of an options page, the same on every page: title, one-line gray subtitle,
+-- the line below it and the addon logo at the line's right end. leftX / rightInset place the
+-- header inside `panel`. Returns title, subtitle, line.
+local function MakePageHeader(panel, titleText, infoText, leftX, rightInset)
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", leftX, -10)
+    title:SetText(titleText)
+
+    local info = MakeInfoText(panel, title, 0, -6, 510, infoText)
+
+    local line = panel:CreateTexture(nil, "ARTWORK")
+    line:SetHeight(1)
+    line:SetPoint("TOPLEFT", info, "BOTTOMLEFT", 0, -10)
+    line:SetPoint("RIGHT", panel, "RIGHT", -rightInset, 0)
+    line:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    RA.AddHeaderLogo(panel, line)
+    return title, info, line
+end
+
 -- Width of a QoL category's content (between nav and scrollbar); descriptions are indented 20.
 local QOL_CONTENT_W = PAGE_W
 local QOL_INFO_W    = QOL_CONTENT_W - 20
@@ -662,6 +681,7 @@ RA.OptionsUI = {
     MakeCheckBox      = MakeCheckBox,
     MakeInfoText      = MakeInfoText,
     MakeInfoMark      = MakeInfoMark,
+    MakePageHeader    = MakePageHeader,
     MakeToggle        = MakeToggle,
     MakeDropdown      = MakeDropdown,
     MakeValueSlider   = MakeValueSlider,

@@ -99,19 +99,7 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     qolPanel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
     registerPage("qol", RA_L["qol_section_title"], qolPanel)
 
-    -- Fixed header
-    local qolTitle = qolPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    qolTitle:SetPoint("TOPLEFT", qolPanel, "TOPLEFT", 0, -10)
-    qolTitle:SetText(RA_L["qol_panel_title"])
-
-    local qolPanelInfo = MakeInfoText(qolPanel, qolTitle, 0, -6, 510, RA_L["qol_panel_info"])
-
-    local qolHeaderLine = qolPanel:CreateTexture(nil, "ARTWORK")
-    qolHeaderLine:SetHeight(1)
-    qolHeaderLine:SetPoint("TOPLEFT", qolPanelInfo, "BOTTOMLEFT", 0, -10)
-    qolHeaderLine:SetPoint("RIGHT", qolPanel, "RIGHT", -16, 0)
-    qolHeaderLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    RA.AddHeaderLogo(qolPanel, qolHeaderLine)
+    local _, _, qolHeaderLine = UI.MakePageHeader(qolPanel, RA_L["qol_panel_title"], RA_L["qol_panel_info"], 0, 16)
 
     -- Left nav sorted by the shown label (follows the client language); no Character
     -- tab below max level.

@@ -58,19 +58,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
     registerPage("dev", RA_L["dev_section_title"], panel)
 
-    -- Fixed header
-    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -10)
-    title:SetText(RA_L["dev_panel_title"])
-
-    local panelInfo = MakeInfoText(panel, title, 0, -6, 510, RA_L["dev_panel_info"])
-
-    local headerLine = panel:CreateTexture(nil, "ARTWORK")
-    headerLine:SetHeight(1)
-    headerLine:SetPoint("TOPLEFT", panelInfo, "BOTTOMLEFT", 0, -10)
-    headerLine:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
-    headerLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    RA.AddHeaderLogo(panel, headerLine)
+    local _, _, headerLine = UI.MakePageHeader(panel, RA_L["dev_panel_title"], RA_L["dev_panel_info"], 0, 16)
 
     -- Left nav in working order.
     local navDefs = {
