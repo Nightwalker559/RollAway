@@ -200,11 +200,40 @@ local QOL_INFO_W    = QOL_CONTENT_W - 20
 -- Checkboxes the feature overview can switch, by saved key (MakeToggle registers its own).
 RA.ToggleControls = {}
 
--- Checkbox bound to RollAwayDB[opts.dbKey] with its gray description (opts.info) below.
--- Placed (xOffset, yOffset) below `anchor` (nil: from the parent's top-left).
--- opts.onChange(checked) runs after saving; opts.width / opts.infoWidth set the widths,
--- else the box grows with its label up to opts.maxWidth (default QOL_CONTENT_W) and wraps.
--- Returns checkbox, info.
+-- Gold "!" right of a checkbox label: hovering it shows the description as a tooltip.
+-- Returns the invisible 1x1 anchor frame (indented 20 like the old description text, so the
+-- next element hangs below it); hiding it hides the "!" too.
+local function MakeInfoButton(parent, cb, title, text)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetSize(1, 1)
+    holder:SetPoint("TOPLEFT", cb.frame, "BOTTOMLEFT", 20, -2)
+    if text and text ~= "" then
+        local btn = CreateFrame("Button", nil, holder)
+        btn:SetSize(18, 20)
+        btn:SetPoint("TOPLEFT", cb.frame, "TOPRIGHT", 2, -2)
+        local mark = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        mark:SetAllPoints()
+        mark:SetText("!")
+        btn:SetScript("OnEnter", function(self)
+            mark:SetTextColor(1, 1, 1)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(title, 1, 0.82, 0)
+            GameTooltip:AddLine(text, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        btn:SetScript("OnLeave", function()
+            mark:SetTextColor(1, 0.82, 0)
+            GameTooltip:Hide()
+        end)
+    end
+    return holder
+end
+
+-- Checkbox bound to RollAwayDB[opts.dbKey]; its description (opts.info) is the tooltip of a
+-- "!" behind the label. Placed (xOffset, yOffset) below `anchor` (nil: from the parent's
+-- top-left). opts.onChange(checked) runs after saving; opts.width sets the width, else the
+-- box grows with its label up to opts.maxWidth (default QOL_CONTENT_W) and wraps.
+-- Returns checkbox, anchor (what the next element hangs below).
 local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     local cb = MakeCB(parent, opts.label, RollAwayDB[opts.dbKey], function(checked)
         RollAwayDB[opts.dbKey] = checked
@@ -216,8 +245,7 @@ local function MakeToggle(parent, anchor, xOffset, yOffset, opts)
     else
         cb.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
     end
-    local info = MakeInfoText(parent, cb.frame, 20, -6, opts.infoWidth or QOL_INFO_W, opts.info)
-    return cb, info
+    return cb, MakeInfoButton(parent, cb, opts.label, opts.info)
 end
 
 -- Dropdown in the game's current style (WowStyle1DropdownTemplate, radio menu). Methods:
