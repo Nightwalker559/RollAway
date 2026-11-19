@@ -54,6 +54,12 @@ function RA.GroupIlvlAvailable()
     return ElvUI ~= nil or RA.groupIlvlDefaultUI == true
 end
 
+-- Locale key of the option's description (options page and feature overview share it).
+function RA.GroupIlvlInfoKey()
+    if not RA.GroupIlvlAvailable() then return "qol_gilvl_info_locked" end
+    return (ElvUI and not RA.groupIlvlDefaultUI) and "qol_gilvl_info_elvui" or "qol_gilvl_info"
+end
+
 local function IsActive()
     return RollAwayDB ~= nil and RollAwayDB.groupIlvl == true and RA.GroupIlvlAvailable()
 end

@@ -597,7 +597,7 @@ L["whatsnew_groupkeys_title"]   = "Group keystones in the portal window"
 L["whatsnew_groupkeys_desc"]    = "The portal window can list your group's keystones (name, level, dungeon) below the season portals. Off by default."
 L["whatsnew_groupkeys_location"] = "Portal window (/rat) > Options"
 L["whatsnew_gilvl_title"]       = "Item level of group members"
-L["whatsnew_gilvl_desc"]        = "Shows the item level of your party members next to Blizzard's party frames, and in ElvUI's unit frames with the tags [raw:ilvl] and [raw:ilvl:plain]. Off by default."
+L["whatsnew_gilvl_desc"]        = "Shows the item level of your party members in ElvUI's unit frames with the tags [raw:ilvl] and [raw:ilvl:plain]. Off by default. Blizzard's party frames follow later."
 L["whatsnew_gilvl_location"]    = "Options > QoL > Group"
 L["whatsnew_options_label"]     = "Options:"
 

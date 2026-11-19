@@ -315,9 +315,8 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     -- GroupIlvlFrames.lua).
     local SetIlvlEnabled  -- needs the controls created below
     local ilvlAvailable = RA.GroupIlvlAvailable()
-    local ilvlInfo = RA_L[ElvUI and not RA.groupIlvlDefaultUI and "qol_gilvl_info_elvui" or "qol_gilvl_info"]
     local ilvlCB = groupChain.Add({
-        label = RA_L["qol_gilvl_label"], info = ilvlAvailable and ilvlInfo or RA_L["qol_gilvl_info_locked"],
+        label = RA_L["qol_gilvl_label"], info = RA_L[RA.GroupIlvlInfoKey()],
         dbKey = "groupIlvl",
         onChange = function(checked)
             RA.ApplyGroupIlvl()

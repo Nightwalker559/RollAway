@@ -598,7 +598,7 @@ L["whatsnew_groupkeys_title"]   = "Gruppen-Keys im Portalfenster"
 L["whatsnew_groupkeys_desc"]    = "Das Portalfenster kann unter den Season-Portalen die Keys deiner Gruppe auflisten (Name, Stufe, Dungeon). Standardmäßig aus."
 L["whatsnew_groupkeys_location"] = "Portalfenster (/rat) > Optionen"
 L["whatsnew_gilvl_title"]       = "Gegenstandsstufe der Gruppenmitglieder"
-L["whatsnew_gilvl_desc"]        = "Zeigt die Gegenstandsstufe deiner Gruppenmitglieder neben den Gruppenfenstern von Blizzard und in ElvUIs Einheitenfenstern mit den Tags [raw:ilvl] und [raw:ilvl:plain]. Standardmäßig aus."
+L["whatsnew_gilvl_desc"]        = "Zeigt die Gegenstandsstufe deiner Gruppenmitglieder in ElvUIs Einheitenfenstern mit den Tags [raw:ilvl] und [raw:ilvl:plain]. Standardmäßig aus. Blizzards Gruppenfenster folgen später."
 L["whatsnew_gilvl_location"]    = "Optionen > QoL > Gruppe"
 L["whatsnew_options_label"]     = "Optionen:"
 
