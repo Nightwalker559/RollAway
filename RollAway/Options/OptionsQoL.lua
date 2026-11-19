@@ -312,13 +312,20 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     -- Item level of the group in ElvUI's unit frames and Blizzard's party frames (GroupIlvl.lua,
     -- GroupIlvlFrames.lua).
     local SetIlvlEnabled  -- needs the controls created below
-    groupChain.Add({
-        label = RA_L["qol_gilvl_label"], info = RA_L["qol_gilvl_info"], dbKey = "groupIlvl",
+    local ilvlAvailable = RA.GroupIlvlAvailable()
+    local ilvlInfo = RA_L[ElvUI and not RA.groupIlvlDefaultUI and "qol_gilvl_info_elvui" or "qol_gilvl_info"]
+    local ilvlCB = groupChain.Add({
+        label = RA_L["qol_gilvl_label"], info = ilvlAvailable and ilvlInfo or RA_L["qol_gilvl_info_locked"],
+        dbKey = "groupIlvl",
         onChange = function(checked)
             RA.ApplyGroupIlvl()
             SetIlvlEnabled(checked)
         end,
     })
+    if not ilvlAvailable then
+        ilvlCB:SetValue(false)
+        ilvlCB:SetDisabled(true)
+    end
     local coloredCB = groupChain.AddSub({
         label = RA_L["qol_gilvl_colored_label"], dbKey = "groupIlvlColored",
         onChange = RA.RefreshGroupIlvlTags,
@@ -330,7 +337,7 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
 
     -- Position and size only concern Blizzard's party frames; with ElvUI the tags do the work.
     local SetIlvlPosEnabled, sizeSlider
-    if not ElvUI then
+    if not ElvUI and RA.groupIlvlDefaultUI then
         _, _, SetIlvlPosEnabled = groupChain.Dropdown(RA_L["qol_gilvl_pos_label"], 160, {
             name   = RA_L["qol_gilvl_pos_name"],
             right  = RA_L["qol_gilvl_pos_right"],
@@ -354,14 +361,14 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     end
 
     function SetIlvlEnabled(enabled)
-        coloredCB:SetDisabled(not enabled)
+        coloredCB:SetDisabled(not (enabled and ilvlAvailable))
         if SetIlvlPosEnabled then
             SetIlvlPosEnabled(enabled)
             -- In the name row the size follows the name.
             sizeSlider:SetEnabled(enabled and RollAwayDB.groupIlvlPos ~= "name")
         end
     end
-    SetIlvlEnabled(RollAwayDB.groupIlvl)
+    SetIlvlEnabled(RollAwayDB.groupIlvl and ilvlAvailable)
 
     -- ── Category: Hide (Blizzard UI elements) ───────────────────────────
     local hideChain = NewToggleChain(hide)

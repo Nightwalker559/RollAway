@@ -14,6 +14,8 @@
 --
 -- Active only with RollAwayDB.groupIlvl (QoL page "Group"); the events are registered only
 -- then (RA.ApplyGroupIlvl). The color steps are ours (BANDS), not a setting.
+-- Blizzard's party frames are locked (RA.groupIlvlDefaultUI = false) until the secret-value
+-- behavior of their names is tested in a dungeon: without ElvUI the feature cannot be switched on.
 -- /rawilvl: rescan, status.
 
 local RA   = _G["RollAway"]
@@ -45,8 +47,15 @@ local generation = 0            -- the latest scheduled step wins
 local playerGUID
 local eventFrame
 
+RA.groupIlvlDefaultUI = false   -- unlock for Blizzard's party frames once tested in a dungeon
+
+-- ElvUI's tags are always available; Blizzard's party frames only once unlocked.
+function RA.GroupIlvlAvailable()
+    return ElvUI ~= nil or RA.groupIlvlDefaultUI == true
+end
+
 local function IsActive()
-    return RollAwayDB ~= nil and RollAwayDB.groupIlvl == true
+    return RollAwayDB ~= nil and RollAwayDB.groupIlvl == true and RA.GroupIlvlAvailable()
 end
 
 -- UnitGUID can hand back a secret inside instances, and a secret as a table key throws.
@@ -400,7 +409,7 @@ function RA.ApplyGroupIlvl()
         wipe(loggedUnavailable)
     end
     if RA.SetElvUITags then RA.SetElvUITags(IsActive()) end   -- only defined with ElvUI
-    RA.SetGroupIlvlFrames(IsActive())
+    RA.SetGroupIlvlFrames(IsActive() and RA.groupIlvlDefaultUI == true)
     NotifyAll()
 end
 
@@ -417,7 +426,7 @@ function RA.InitGroupIlvl()
                 Rescan()
                 RA.Print(RA_L["gilvl_rescan"])
             else
-                RA.Print(RA_L["gilvl_inactive"])
+                RA.Print(RA_L[RA.GroupIlvlAvailable() and "gilvl_inactive" or "gilvl_locked"])
             end
         elseif cmd == "status" then
             local count = 0

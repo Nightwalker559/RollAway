@@ -8,7 +8,7 @@
 - Portal window: option "Show group keystones" lists the group's keys (name, level, dungeon) under the season portals. Works with or without BigWigs (same key sharing as BigWigs, so both see each other), off by default.
 - Class page (hunters only): the pet reminder also shows when you revive your pet in a current dungeon or raid.
 - Profile page: button "Apply to all characters" puts every other character on the active profile (with a confirmation).
-- Group page: item level of party members next to Blizzard's party frames (both styles, position and font size selectable) and, with ElvUI, in its unit frames via the tags [raw:ilvl] and [raw:ilvl:plain] (the tags only appear in ElvUI's tag list while the option is on). Colored by item level steps. Members are inspected one at a time without a distance check (the server decides), and inspect results other addons asked for are used too. Command /rawilvl. Off by default.
+- Group page: item level of party members in ElvUI's unit frames via the tags [raw:ilvl] and [raw:ilvl:plain] (the tags only appear in ElvUI's tag list while the option is on). Colored by item level steps. Members are inspected one at a time without a distance check (the server decides), and inspect results other addons asked for are used too. Command /rawilvl. Off by default. Blizzard's party frames are built in but locked until tested, so without ElvUI the option is not available yet.
 
 ### Fixed
 - Teleport reminder: no longer shows a key level the group did not list (it was guessed from the members' keystones). Only the level from the listing is shown.
