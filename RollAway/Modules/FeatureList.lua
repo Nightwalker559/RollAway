@@ -9,8 +9,8 @@ local RA_L = RA.RA_L
 -- CONTENT_W: rows run up to the scroll frame's right edge (frame width 400 - 12 - 30 = 358, 4 margin
 -- on the left); checkbox and On/Off sit 4px from there, i.e. 10px from the scroll bar.
 local WIDTH, HEIGHT, CONTENT_W = 400, 640, 354
--- Name / description of a row end 10px left of the checkbox (22px, 4px from the edge); the text
--- starts 6px in.
+-- The name of a row ends 10px left of the checkbox (22px, 4px from the edge); the text starts
+-- 6px in. The description is the tooltip of a "!" behind the name.
 local TEXT_W = CONTENT_W - 6 - 4 - 22 - 10
 
 local function AnyTrue(t)
@@ -222,13 +222,7 @@ local function CreateFrameOnce()
 
                     local height = 4 + name:GetStringHeight() + 6
                     if item.info then
-                        local info = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-                        info:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -3)
-                        info:SetWidth(TEXT_W)
-                        info:SetJustifyH("LEFT")
-                        info:SetTextColor(0.7, 0.7, 0.7)
-                        info:SetText(RA_L[item.info])
-                        height = height + info:GetStringHeight() + 3
+                        RA.OptionsUI.MakeInfoMark(row, name, RA_L[item.name], RA_L[item.info])
                     end
                     row:SetHeight(height)
 

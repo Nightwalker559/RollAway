@@ -200,32 +200,41 @@ local QOL_INFO_W    = QOL_CONTENT_W - 20
 -- Checkboxes the feature overview can switch, by saved key (MakeToggle registers its own).
 RA.ToggleControls = {}
 
--- Gold "!" right of a checkbox label: hovering it shows the description as a tooltip.
--- Returns the invisible 1x1 anchor frame (indented 20 like the old description text, so the
--- next element hangs below it); hiding it hides the "!" too.
+-- Gold "!" behind `target`; hovering it shows `text` as a tooltip under `title`. `target` is
+-- a label (the "!" follows the end of its text) or, with onFrame, a frame such as a checkbox
+-- row (the "!" hangs at its right edge). `parent` owns the "!": hiding it hides the "!" too.
+local function MakeInfoMark(parent, target, title, text, onFrame)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(18, 20)
+    if onFrame then
+        btn:SetPoint("TOPLEFT", target, "TOPRIGHT", 2, -2)
+    else
+        btn:SetPoint("LEFT", target, "LEFT", target:GetStringWidth() + 4, 0)
+    end
+    local mark = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    mark:SetAllPoints()
+    mark:SetText("!")
+    btn:SetScript("OnEnter", function(self)
+        mark:SetTextColor(1, 1, 1)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(title, 1, 0.82, 0)
+        GameTooltip:AddLine(text, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function()
+        mark:SetTextColor(1, 0.82, 0)
+        GameTooltip:Hide()
+    end)
+    return btn
+end
+
+-- The "!" of a checkbox row made by MakeToggle. Returns the invisible 1x1 anchor frame
+-- (indented 20, so the next element hangs below it); hiding it hides the "!" too.
 local function MakeInfoButton(parent, cb, title, text)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetSize(1, 1)
     holder:SetPoint("TOPLEFT", cb.frame, "BOTTOMLEFT", 20, -2)
-    if text and text ~= "" then
-        local btn = CreateFrame("Button", nil, holder)
-        btn:SetSize(18, 20)
-        btn:SetPoint("TOPLEFT", cb.frame, "TOPRIGHT", 2, -2)
-        local mark = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        mark:SetAllPoints()
-        mark:SetText("!")
-        btn:SetScript("OnEnter", function(self)
-            mark:SetTextColor(1, 1, 1)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(title, 1, 0.82, 0)
-            GameTooltip:AddLine(text, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
-        btn:SetScript("OnLeave", function()
-            mark:SetTextColor(1, 0.82, 0)
-            GameTooltip:Hide()
-        end)
-    end
+    if text and text ~= "" then MakeInfoMark(holder, cb.frame, title, text, true) end
     return holder
 end
 
@@ -344,16 +353,6 @@ local function MakeTemplateSlider(parent, globalName, anchor, opts)
 
     RA.Skin.StepSlider(slider)
     return slider, minLabel, maxLabel
-end
-
-local function MakeHintText(parent, anchorLine, text)
-    local hint = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    hint:SetPoint("TOPLEFT", anchorLine, "BOTTOMLEFT", 0, -8)
-    hint:SetWidth(PAGE_W)
-    hint:SetJustifyH("LEFT")
-    hint:SetNonSpaceWrap(true)
-    hint:SetText(text)
-    return hint
 end
 
 -- ScrollFrame with the game's slim scroll bar, shown only when there is something to
@@ -659,12 +658,12 @@ RA.OptionsUI = {
     MakeCB            = MakeCB,
     MakeCheckBox      = MakeCheckBox,
     MakeInfoText      = MakeInfoText,
+    MakeInfoMark      = MakeInfoMark,
     MakeToggle        = MakeToggle,
     MakeDropdown      = MakeDropdown,
     MakeValueSlider   = MakeValueSlider,
     MakeSkinnedButton = MakeSkinnedButton,
     MakeTemplateSlider = MakeTemplateSlider,
-    MakeHintText      = MakeHintText,
     MakeScrollFrame   = MakeScrollFrame,
     MakeTabSelector   = MakeTabSelector,
     MakeCheckboxRow   = MakeCheckboxRow,

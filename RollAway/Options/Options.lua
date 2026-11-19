@@ -23,7 +23,7 @@ local MakeSectionHeader  = UI.MakeSectionHeader
 local MakeCB             = UI.MakeCB
 local MakeInfoText       = UI.MakeInfoText
 local MakeTemplateSlider = UI.MakeTemplateSlider
-local MakeHintText       = UI.MakeHintText
+local MakeInfoMark       = UI.MakeInfoMark
 local MakeCheckboxRow    = UI.MakeCheckboxRow
 local MakeSeasonTabs     = UI.MakeSeasonTabs
 local MakeCheckboxGrid   = UI.MakeCheckboxGrid
@@ -61,6 +61,15 @@ local function MakeComingSoonLabel(seasonPanel)
     label:SetPoint("TOPLEFT", seasonPanel, "TOPLEFT", 0, -8)
     label:SetTextColor(0.5, 0.5, 0.5, 1)
     label:SetText(RA_L["season_coming_soon"])
+end
+
+-- Tab heading whose "!" carries the explanation of the whole tab.
+local function MakeTabHeader(panel, title, info)
+    local header = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    header:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -10)
+    header:SetText(title)
+    MakeInfoMark(panel, header, title, info)
+    return header
 end
 
 -- `list` sorted by the localized name RA_L[keyPrefix..entry.key].
@@ -317,7 +326,7 @@ BuildOptions = function()
     visMainLabel:SetPoint("TOPLEFT", 0, -10)
     visMainLabel:SetText(RA_L["visibility_section_title"])
 
-    local visMainInfo = MakeInfoText(gen, visMainLabel, 0, -6, PAGE_W, RA_L["visibility_info"])
+    MakeInfoMark(gen, visMainLabel, RA_L["visibility_section_title"], RA_L["visibility_info"])
 
     -- Master switch: turns the Group Loot History auto-close/auto-hide off (timer,
     -- watchdog, hide-in-raid): plain default WoW. Wired up below, once the controls it
@@ -328,7 +337,7 @@ BuildOptions = function()
         RollAwayDB.lootFrameAutoCloseDisabled = checked
         if SetLootFrameFeatureEnabled then SetLootFrameFeatureEnabled(not checked) end
     end)
-    cbFrameFeatureDisable.frame:SetPoint("TOPLEFT", visMainInfo, "BOTTOMLEFT", 0, -14)
+    cbFrameFeatureDisable.frame:SetPoint("TOPLEFT", visMainLabel, "BOTTOMLEFT", 0, -12)
     RA.ToggleControls["lootFrameAutoCloseDisabled"] = cbFrameFeatureDisable
 
     -- Row 1: delay (left), safety timeout (right)
@@ -373,9 +382,9 @@ BuildOptions = function()
     hideLabel:SetPoint("TOPLEFT", delayMin, "BOTTOMLEFT", -19, -20)  -- the min label sits 19px in
     hideLabel:SetText(RA_L["hide_in_raid_label"])
 
-    local hideInfo = MakeInfoText(gen, hideLabel, 0, -4, PAGE_W, RA_L["hide_in_raid_info"])
+    local hideMark = MakeInfoMark(gen, hideLabel, RA_L["hide_in_raid_label"], RA_L["hide_in_raid_info"])
 
-    local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideInfo, RAID_DIFF_ITEMS,
+    local hideRow, hideRowCheckboxes = MakeCheckboxRow(gen, hideLabel, RAID_DIFF_ITEMS,
         RollAwayDB.hideInRaidBuckets, function(k, checked)
             RollAwayDB.hideInRaidBuckets[k] = checked
         end)
@@ -385,7 +394,8 @@ BuildOptions = function()
         RollAwayDB.hideInLegacyRaids = checked
     end)
     cbHideLegacy.frame:SetPoint("TOPLEFT", hideRow, "BOTTOMLEFT", 0, -14)
-    local hideLegacyInfo = MakeInfoText(gen, cbHideLegacy.frame, 20, -6, PAGE_W - 20, RA_L["hide_in_legacy_info"])
+    local hideLegacyMark = MakeInfoMark(cbHideLegacy.frame, cbHideLegacy.frame, RA_L["hide_in_legacy_label"],
+        RA_L["hide_in_legacy_info"], true)
 
     -- Master switch logic and initial state.
     SetLootFrameFeatureEnabled = function(enabled)
@@ -397,16 +407,16 @@ BuildOptions = function()
         for _, cb in ipairs(hideRowCheckboxes) do
             cb:SetDisabled(not enabled)
         end
-        hideInfo:SetAlpha(alpha)
+        hideMark:SetAlpha(alpha)
         hideLabel:SetAlpha(alpha)
         cbHideLegacy:SetDisabled(not enabled)
-        hideLegacyInfo:SetAlpha(alpha)
+        hideLegacyMark:SetAlpha(alpha)
     end
     SetLootFrameFeatureEnabled(not RollAwayDB.lootFrameAutoCloseDisabled)
 
     -- Bonus roll reminder (own section: shown when entering a Mythic dungeon/raid).
     local reminderSectionLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    reminderSectionLabel:SetPoint("TOPLEFT", hideLegacyInfo, "BOTTOMLEFT", -20, -16)
+    reminderSectionLabel:SetPoint("TOPLEFT", cbHideLegacy.frame, "BOTTOMLEFT", 0, -20)
     reminderSectionLabel:SetText(RA_L["bonusroll_reminder_section_title"])
 
     local cbReminder = MakeCB(gen, RA_L["reminder_label"], RollAwayDB.showReminder, function(checked)
@@ -420,35 +430,29 @@ BuildOptions = function()
     cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -10)
     RA.ToggleControls["showReminder"] = cbReminder
 
-    local reminderInfo = MakeInfoText(gen, cbReminder.frame, 20, -6, PAGE_W - 20, RA_L["reminder_info"])
+    MakeInfoMark(cbReminder.frame, cbReminder.frame, RA_L["reminder_label"], RA_L["reminder_info"], true)
 
     -- Safety net: warns when entering content with an active auto-pass.
     local cbWarn = MakeCB(gen, RA_L["autopass_warning_label"], RollAwayDB.autoPassWarning, function(checked)
         RollAwayDB.autoPassWarning = checked
     end)
-    cbWarn.frame:SetPoint("TOPLEFT", reminderInfo, "BOTTOMLEFT", -20, -10)
+    cbWarn.frame:SetPoint("TOPLEFT", cbReminder.frame, "BOTTOMLEFT", 0, -12)
     RA.ToggleControls["autoPassWarning"] = cbWarn
-    local warnInfo = MakeInfoText(gen, cbWarn.frame, 20, -6, PAGE_W - 20, RA_L["autopass_warning_info"])
+    MakeInfoMark(cbWarn.frame, cbWarn.frame, RA_L["autopass_warning_label"], RA_L["autopass_warning_info"], true)
 
     -- Hidden without bonus rolls or below max level (like the tabs above).
     local showBonusRollReminder = RA.BONUS_ROLLS_ENABLED and not belowMaxLevel
     if not showBonusRollReminder then
         reminderSectionLabel:Hide()
         cbReminder.frame:Hide()
-        reminderInfo:Hide()
         cbWarn.frame:Hide()
-        warnInfo:Hide()
     end
 
     -- Row 3: Legacy
     local legacyLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    -- warnInfo / hideLegacyInfo are indented 20: -20 returns to the margin. The label hangs
-    -- below hideLegacyInfo (below hideRow it would cover the legacy-hide checkbox).
-    if showBonusRollReminder then
-        legacyLabel:SetPoint("TOPLEFT", warnInfo, "BOTTOMLEFT", -20, -14)
-    else
-        legacyLabel:SetPoint("TOPLEFT", hideLegacyInfo, "BOTTOMLEFT", -20, -14)
-    end
+    -- The label hangs below the last visible checkbox (below hideRow it would cover the
+    -- legacy-hide checkbox).
+    legacyLabel:SetPoint("TOPLEFT", (showBonusRollReminder and cbWarn or cbHideLegacy).frame, "BOTTOMLEFT", 0, -18)
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
     -- onChange is set below (cbLegacy:SetCallback) once legacyTabBtn exists; the
@@ -474,8 +478,7 @@ BuildOptions = function()
 
     -- Tab: Dungeons
     local dng = tabPanels["dungeons"]
-    local dngHint = MakeHintText(dng, dng, RA_L["season1_hint"])
-    dngHint:SetPoint("TOPLEFT", dng, "TOPLEFT", 0, -10)
+    local dngHeader = MakeTabHeader(dng, RA_L["tab_dungeons"], RA_L["season1_hint"])
 
     -- Forward-declared: the master checkbox locks/unlocks them; MakeCheckboxGrid fills them.
     local dngS1Checkboxes = {}
@@ -491,7 +494,7 @@ BuildOptions = function()
         RollAwayDBChar.dungeonAutoPassAll = checked
         ApplyDungeonAllLock()
     end)
-    dngAllCB.frame:SetPoint("TOPLEFT", dngHint, "BOTTOMLEFT", 0, -10)
+    dngAllCB.frame:SetPoint("TOPLEFT", dngHeader, "BOTTOMLEFT", 0, -12)
 
     -- Full-width anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local dngSeasonAnchor = CreateFrame("Frame", nil, dng)
@@ -515,8 +518,7 @@ BuildOptions = function()
 
     -- Tab: Delves
     local dlv = tabPanels["delves"]
-    local dlvHint = MakeHintText(dlv, dlv, RA_L["season1_delve_hint"])
-    dlvHint:SetPoint("TOPLEFT", dlv, "TOPLEFT", 0, -10)
+    local dlvHeader = MakeTabHeader(dlv, RA_L["tab_delves"], RA_L["season1_delve_hint"])
 
     -- All delves (any season): OR with the per-delve boxes.
     local dlvAllCheckboxes = {}
@@ -529,7 +531,7 @@ BuildOptions = function()
         RollAwayDBChar.delveAutoPassAll = checked
         ApplyDelveAllLock()
     end)
-    dlvAllCB.frame:SetPoint("TOPLEFT", dlvHint, "BOTTOMLEFT", 0, -10)
+    dlvAllCB.frame:SetPoint("TOPLEFT", dlvHeader, "BOTTOMLEFT", 0, -12)
 
     -- One page grouped by patch; 12.1 (Season 2) delves stay hidden until RA.ACTIVE_SEASON is 2.
     local dlvSections = {
@@ -580,17 +582,16 @@ BuildOptions = function()
 
     -- Tab: Raids
     local raidPanel = tabPanels["raids"]
-    local raidHint = MakeHintText(raidPanel, raidPanel, RA_L["raid_hint"])
-    raidHint:SetPoint("TOPLEFT", raidPanel, "TOPLEFT", 0, -10)
+    local raidHeader = MakeTabHeader(raidPanel, RA_L["tab_raids"], RA_L["raid_hint"])
 
     -- Roll confirmation popups (any loot roll, not tied to season data).
     local rollConfirmLabel = raidPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    rollConfirmLabel:SetPoint("TOPLEFT", raidHint, "BOTTOMLEFT", 0, -12)
+    rollConfirmLabel:SetPoint("TOPLEFT", raidHeader, "BOTTOMLEFT", 0, -14)
     rollConfirmLabel:SetText(RA_L["confirm_roll_title"])
 
-    local rollConfirmHint = MakeHintText(raidPanel, rollConfirmLabel, RA_L["confirm_roll_hint"])
+    MakeInfoMark(raidPanel, rollConfirmLabel, RA_L["confirm_roll_title"], RA_L["confirm_roll_hint"])
 
-    local rollConfirmRow = MakeCheckboxRow(raidPanel, rollConfirmHint, {
+    local rollConfirmRow = MakeCheckboxRow(raidPanel, rollConfirmLabel, {
         { key = "need",     label = RA_L["confirm_type_need"] },
         { key = "greed",    label = RA_L["confirm_type_greed"] },
         { key = "transmog", label = RA_L["confirm_type_transmog"] },
@@ -605,9 +606,9 @@ BuildOptions = function()
     raidDiffLabel:SetPoint("TOPLEFT", rollConfirmRow, "BOTTOMLEFT", 0, -12)
     raidDiffLabel:SetText(RA_L["raid_diff_autopass_title"])
 
-    local raidDiffHint = MakeHintText(raidPanel, raidDiffLabel, RA_L["raid_diff_autopass_hint"])
+    MakeInfoMark(raidPanel, raidDiffLabel, RA_L["raid_diff_autopass_title"], RA_L["raid_diff_autopass_hint"])
 
-    local raidDiffRow = MakeCheckboxRow(raidPanel, raidDiffHint, RAID_DIFF_ITEMS,
+    local raidDiffRow = MakeCheckboxRow(raidPanel, raidDiffLabel, RAID_DIFF_ITEMS,
         RollAwayDBChar.raidAutoPassDifficulty, function(k, checked)
             RollAwayDBChar.raidAutoPassDifficulty[k] = checked
         end)
@@ -674,18 +675,18 @@ BuildOptions = function()
     local preyLabel = preyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     preyLabel:SetPoint("TOPLEFT", preyPanel, "TOPLEFT", 0, -10)
     preyLabel:SetText(RA_L["prey_title"])
-    local preyHint = MakeHintText(preyPanel, preyLabel, RA_L["prey_hint"])
+    MakeInfoMark(preyPanel, preyLabel, RA_L["prey_title"], RA_L["prey_hint"])
 
     local preyCB = MakeCB(preyPanel, RA_L["prey_toggle_label"], RollAwayDBChar.prey, function(checked)
         RollAwayDBChar.prey = checked
     end)
-    preyCB.frame:SetPoint("TOPLEFT", preyHint, "BOTTOMLEFT", 0, -14)
+    preyCB.frame:SetPoint("TOPLEFT", preyLabel, "BOTTOMLEFT", 0, -14)
     RA.ToggleControls["char:prey"] = preyCB  -- a per-character setting
 
     -- Tab: Legacy raids
     local legacyPanel = tabPanels["legacy"]
-    local _, legacyLine = MakeSectionHeader(legacyPanel, legacyPanel, -10, RA_L["legacy_tab_title"])
-    local legacyHint = MakeHintText(legacyPanel, legacyLine, RA_L["legacy_tab_hint"])
+    local legacyTitle, legacyLine = MakeSectionHeader(legacyPanel, legacyPanel, -10, RA_L["legacy_tab_title"])
+    MakeInfoMark(legacyPanel, legacyTitle, RA_L["legacy_tab_title"], RA_L["legacy_tab_hint"])
 
     local legacyRaidCBs = {}
     local function RefreshLegacyRaidCheckboxes()
@@ -705,7 +706,7 @@ BuildOptions = function()
         RA.db.global.legacyAccountWide = checked
         RefreshLegacyRaidCheckboxes()
     end)
-    legacyAccountWideCB.frame:SetPoint("TOPLEFT", legacyHint, "BOTTOMLEFT", 0, -14)
+    legacyAccountWideCB.frame:SetPoint("TOPLEFT", legacyLine, "BOTTOMLEFT", 0, -14)
 
     local legacyRollLabel = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     legacyRollLabel:SetPoint("TOPLEFT", legacyAccountWideCB.frame, "BOTTOMLEFT", 0, -14)

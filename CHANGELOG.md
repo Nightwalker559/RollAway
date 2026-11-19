@@ -19,7 +19,7 @@
 - Vendor filter remembers what it checked during a merchant visit (less work per page and purchase).
 - Auction house filter, Group Finder quick select, Paragon reminder and loot roll confirmation react as soon as the game is ready instead of after fixed delays.
 - Portal window: square (as high as wide).
-- QoL options: the description of a toggle is now a tooltip on a gold "!" behind its label (shorter pages).
+- Options and feature overview: descriptions are tooltips on a gold "!" behind the name (shorter pages).
 - TOC: 12.1.7 added.
 
 ---

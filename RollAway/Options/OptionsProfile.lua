@@ -12,7 +12,7 @@ local UI                = RA.OptionsUI
 local MakeSectionHeader = UI.MakeSectionHeader
 local MakeDropdown      = UI.MakeDropdown
 local MakeSkinnedButton = UI.MakeSkinnedButton
-local MakeHintText      = UI.MakeHintText
+local MakeInfoMark      = UI.MakeInfoMark
 
 -- Profile import/export (profile only; Dungeons/Raids/Delves/Prey are per character in
 -- RollAwayDBChar). Format: "RollAway1:" + Base64(CBOR(profile without defaults)) via
@@ -219,13 +219,13 @@ function RA.BuildProfileOptions(parent, registerPage)
     panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
     registerPage("profile", RA_L["profile_section_title"], panel)
 
-    local _, headerLine = MakeSectionHeader(panel, panel, -10, RA_L["profile_panel_title"])
+    local title, headerLine = MakeSectionHeader(panel, panel, -10, RA_L["profile_panel_title"])
     RA.AddHeaderLogo(panel, headerLine)
-    local hint = MakeHintText(panel, headerLine, RA_L["profile_panel_info"])
+    MakeInfoMark(panel, title, RA_L["profile_panel_title"], RA_L["profile_panel_info"])
 
     -- ── Active profile ───────────────────────────────────────────────
     local activeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    activeLabel:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -18)
+    activeLabel:SetPoint("TOPLEFT", headerLine, "BOTTOMLEFT", 0, -22)
     activeLabel:SetText(RA_L["profile_active_label"])
 
     local activeDD = MakeDropdown(panel, activeLabel, 0, -4, 220)

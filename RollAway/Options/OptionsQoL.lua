@@ -9,6 +9,7 @@ local RA_L = RA.RA_L
 local UI      = RA.OptionsUI
 local MakeCB  = UI.MakeCB
 local MakeInfoText = UI.MakeInfoText
+local MakeInfoMark = UI.MakeInfoMark
 local MakeToggle = UI.MakeToggle
 local MakeDropdown = UI.MakeDropdown
 local MakeValueSlider = UI.MakeValueSlider
@@ -238,7 +239,8 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     autoRepairDD:SetCallback("OnValueChanged", function(_, _, value)
         RollAwayDB.autoRepairMode = value
     end)
-    craftChain.Set(MakeInfoText(craft, autoRepairDD.frame, 20, -6, QOL_INFO_W, RA_L["qol_autorepair_info"]), 20, -14)
+    MakeInfoMark(craft, autoRepairLabel, RA_L["qol_autorepair_label"], RA_L["qol_autorepair_info"])
+    craftChain.Set(autoRepairDD.frame, 0, -14)
 
     -- Vendor filter: dims known items (reset when turned off)
     craftChain.Add({
@@ -562,8 +564,8 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     local cbTeleport = MakeCB(reminder, RA_L["qol_join_keyaddon_teleport"], nil, nil)
     cbTeleport.frame:SetPoint("TOPLEFT", cbDetails.frame, "BOTTOMLEFT", 0, -4)
 
-    local qolKeyAddonInfo = MakeInfoText(reminder, cbTeleport.frame, 20, -6, QOL_INFO_W, RA_L["qol_join_keyaddon_info"])
-    remChain.Set(qolKeyAddonInfo, 20, -20)
+    MakeInfoMark(reminder, qolKeyAddonLabel, RA_L["qol_join_keyaddon_label"], RA_L["qol_join_keyaddon_info"])
+    remChain.Set(cbTeleport.frame, 0, -20)
 
     -- Checkbox state from the saved choice + live addon detection. An addon not detected
     -- yet (BigWigs' "key" command is often not registered right after login) does not

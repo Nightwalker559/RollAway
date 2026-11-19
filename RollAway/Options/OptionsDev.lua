@@ -9,6 +9,7 @@ local RA_L = RA.RA_L
 local UI      = RA.OptionsUI
 local MakeCB  = UI.MakeCB
 local MakeInfoText = UI.MakeInfoText
+local MakeInfoMark = UI.MakeInfoMark
 local MakeToggle = UI.MakeToggle
 local MakeSkinnedButton = UI.MakeSkinnedButton
 local QOL_INFO_W    = UI.QOL_INFO_W
@@ -132,8 +133,8 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
         end
     end
 
-    -- A dev command button with its description (and slash command) below; anchor = what it
-    -- hangs below (nil: page top). Returns the description as the next anchor.
+    -- A dev command button; its "!" shows the slash command and description. anchor = what
+    -- it hangs below (nil: page top). Returns the button as the next anchor.
     local function AddAction(page, anchor, x, y, command, labelKey, slash)
         local btn = MakeSkinnedButton(page, RA_L[labelKey], 200)
         if anchor then
@@ -145,8 +146,8 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
         actionButtons[#actionButtons + 1] = { btn = btn, command = command }
 
         local infoKey = "cmd_" .. command:lower() .. "_info"
-        return MakeInfoText(page, btn, 0, -4, QOL_INFO_W,
-            "|cffFFFFFF" .. slash .. "|r  " .. RA_L[infoKey])
+        MakeInfoMark(btn, btn, RA_L[labelKey], "|cffFFFFFF" .. slash .. "|r  " .. RA_L[infoKey], true)
+        return btn
     end
 
     -- Logging: debug mode, errors only, log window
@@ -181,16 +182,16 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     gatedButtons[#gatedButtons + 1] = clearBtn
     gatedButtons[#gatedButtons + 1] = resetBtn
 
-    local logHint = MakeInfoText(logPage, openBtn, 0, -6, QOL_INFO_W, RA_L["dev_log_hint"])
+    MakeInfoMark(logPage, logHeader, RA_L["dev_log_window_label"], RA_L["dev_log_hint"])
 
     -- Log filter (RA.DEBUG_CATEGORIES): two columns of checkboxes plus All / None.
     local filterHeader = logPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    filterHeader:SetPoint("TOPLEFT", logHint, "BOTTOMLEFT", 0, -18)
+    filterHeader:SetPoint("TOPLEFT", openBtn, "BOTTOMLEFT", 0, -18)
     filterHeader:SetText(RA_L["dev_filter_title"])
-    local filterInfo = MakeInfoText(logPage, filterHeader, 0, -6, QOL_INFO_W, RA_L["dev_filter_info"])
+    MakeInfoMark(logPage, filterHeader, RA_L["dev_filter_title"], RA_L["dev_filter_info"])
 
     local allBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_all"], 80)
-    allBtn:SetPoint("TOPLEFT", filterInfo, "BOTTOMLEFT", 0, -8)
+    allBtn:SetPoint("TOPLEFT", filterHeader, "BOTTOMLEFT", 0, -10)
     local noneBtn = MakeSkinnedButton(logPage, RA_L["dev_filter_none"], 80)
     noneBtn:SetPoint("LEFT", allBtn, "RIGHT", 8, 0)
 
@@ -229,15 +230,15 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
         RA.SetTankMarkerTest(checked)
     end)
     tankTestCB.frame:SetPoint("TOPLEFT", testsAnchor, "BOTTOMLEFT", 0, -22)
-    local tankTestInfo = MakeInfoText(testsPage, tankTestCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_tank_test_info"])
+    MakeInfoMark(tankTestCB.frame, tankTestCB.frame, RA_L["dev_tank_test_label"], RA_L["dev_tank_test_info"], true)
     gatedChecks[#gatedChecks + 1] = { cb = tankTestCB, get = RA.IsTankMarkerTest }
 
     -- Session-only switch (RA.devTest): bonus roll auto-pass in old content (e.g. MoP).
     local oldRaidCB = MakeCB(testsPage, RA_L["dev_oldraid_test_label"], RA.devTest.oldRaidAutoPass, function(checked)
         RA.devTest.oldRaidAutoPass = checked
     end)
-    oldRaidCB.frame:SetPoint("TOPLEFT", tankTestInfo, "BOTTOMLEFT", -20, -22)
-    MakeInfoText(testsPage, oldRaidCB.frame, 20, -6, QOL_INFO_W - 20, RA_L["dev_oldraid_test_info"])
+    oldRaidCB.frame:SetPoint("TOPLEFT", tankTestCB.frame, "BOTTOMLEFT", 0, -22)
+    MakeInfoMark(oldRaidCB.frame, oldRaidCB.frame, RA_L["dev_oldraid_test_label"], RA_L["dev_oldraid_test_info"], true)
     gatedChecks[#gatedChecks + 1] = { cb = oldRaidCB, get = function() return RA.devTest.oldRaidAutoPass end }
 
     -- Tools: diagnostics into the log
