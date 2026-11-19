@@ -42,3 +42,15 @@ RA.RAIDS[2][#RA.RAIDS[2] + 1] =
 -- encounterID 3513 confirmed on the PTR (Developer > raid dump).
 RA.RAIDS[2][#RA.RAIDS[2] + 1] =
     { key = "kithix", encounterID = 3513, raid = "unbinding_of_kithix" }
+
+-- Raid map IDs (instanceID of GetInstanceInfo) that get the reminder -> raid key above.
+-- Read by Reminder.lua, PetReminder.lua and /rawnames; one entry per raid of a season.
+RA.REMINDER_RAID_MAP_IDS = {
+    [2912] = "voidspire",        -- The Voidspire (S1)
+    [2939] = "dreamrift",        -- The Dreamrift (S1)
+    [2913] = "march_queldanas",  -- March on Quel'Danas (S1)
+    [1592] = "sporefall",        -- Sporefall (12.0.7, S1)
+    [3004] = "venomous_abyss",   -- The Venomous Abyss (S2)
+    [2987] = "tidebound_grotto", -- Tidebound Grotto (S2, one boss)
+    [3095] = "unbinding_of_kithix", -- The Unbinding of Kith'ix (12.1.5, one boss)
+}

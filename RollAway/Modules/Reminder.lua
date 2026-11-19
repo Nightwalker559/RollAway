@@ -9,18 +9,8 @@ local DUNGEON_MAP = RA.DUNGEON_MAP
 
 local VOIDCORE_COST = { dungeons = 1, raids = 2 }
 
--- Raid mapIDs (instanceID of GetInstanceInfo) that get the reminder -> raid key of Data/Raids.lua.
-local REMINDER_RAID_MAP_IDS = {
-    [2912] = "voidspire",        -- The Voidspire (S1)
-    [2939] = "dreamrift",        -- The Dreamrift (S1)
-    [2913] = "march_queldanas",  -- March on Quel'Danas (S1)
-    [1592] = "sporefall",        -- Sporefall (12.0.7, S1)
-    [3004] = "venomous_abyss",   -- The Venomous Abyss (S2)
-    [2987] = "tidebound_grotto", -- Tidebound Grotto (S2, one boss)
-    [3095] = "unbinding_of_kithix", -- The Unbinding of Kith'ix (12.1.5, one boss)
-}
-
-RA.REMINDER_RAID_MAP_IDS = REMINDER_RAID_MAP_IDS   -- also read by /rawnames (Core/Debug.lua)
+-- Raids that get the reminder: instanceID -> raid key (Data/Raids.lua).
+local REMINDER_RAID_MAP_IDS = RA.REMINDER_RAID_MAP_IDS
 
 local TIMER_DURATION = 20
 

@@ -1,10 +1,10 @@
 -- RollAway - Modules/GroupIlvl.lua
 -- Item level of the group's members for ElvUI's unit frames (the [raw:ilvl] tags live in
 -- Core/ElvUI_Tags.lua) and for Blizzard's party frames (Modules/GroupIlvlFrames.lua). Your own
--- level is read from the character sheet; everyone else is
--- inspected one at a time: pick the first member who has no level yet (or whose gear
--- changed), send NotifyInspect, wait for INSPECT_READY, store the result, repeat. A member
--- is scanned once and the level stays cached while he is in the group: no periodic asking.
+-- level is read from the character sheet; everyone else is inspected one at a time: pick the
+-- first member who has no level yet (or whose gear changed), send NotifyInspect, wait for
+-- INSPECT_READY, store the result, repeat. A member is scanned once and the level stays cached
+-- while they are in the group: no periodic asking.
 -- Inspect replies that other addons or the inspect window triggered are used as well.
 -- The cache is also kept per character (RollAwayDBChar.groupIlvlCache) and survives /reload;
 -- it is dropped when a member leaves, when you leave the group and on a fresh login.
@@ -206,7 +206,7 @@ end
 
 local function Kick(delay)
     if pending then return end
-    Schedule(delay or 0.5)
+    Schedule(delay or STEP_DELAY)
 end
 
 local function Fail(guid)

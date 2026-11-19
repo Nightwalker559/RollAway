@@ -231,14 +231,10 @@ function RA.BuildProfileOptions(parent, registerPage)
     local activeDD = MakeDropdown(panel, activeLabel, 0, -4, 220)
 
     -- ── New / Reset (act on the active profile) ─────────────────────
-    local function MakeButton(label, width)
-        return MakeSkinnedButton(panel, label, width)
-    end
-
-    local newBtn = MakeButton(RA_L["profile_new_button"], 90)
+    local newBtn = MakeSkinnedButton(panel, RA_L["profile_new_button"], 90)
     newBtn:SetPoint("LEFT", activeDD.frame, "RIGHT", 16, 0)
 
-    local resetBtn = MakeButton(RA_L["profile_reset_button"], 130)
+    local resetBtn = MakeSkinnedButton(panel, RA_L["profile_reset_button"], 130)
     resetBtn:SetPoint("LEFT", newBtn, "RIGHT", 8, 0)
 
     -- ── Other profile: copy from / delete ────────────────────────────
@@ -248,10 +244,10 @@ function RA.BuildProfileOptions(parent, registerPage)
 
     local otherDD = MakeDropdown(panel, otherLabel, 0, -4, 220)
 
-    local copyBtn = MakeButton(RA_L["profile_copy_button"], 90)
+    local copyBtn = MakeSkinnedButton(panel, RA_L["profile_copy_button"], 90)
     copyBtn:SetPoint("LEFT", otherDD.frame, "RIGHT", 16, 0)
 
-    local deleteBtn = MakeButton(RA_L["profile_delete_button"], 90)
+    local deleteBtn = MakeSkinnedButton(panel, RA_L["profile_delete_button"], 90)
     deleteBtn:SetPoint("LEFT", copyBtn, "RIGHT", 8, 0)
 
     -- ── Import / Export (act on the active profile) ──────────────────
@@ -264,14 +260,14 @@ function RA.BuildProfileOptions(parent, registerPage)
     exportInfoName:SetPoint("LEFT", exportInfoText, "RIGHT", 4, 0)
     exportInfoName:SetJustifyH("LEFT")
 
-    local importBtn = MakeButton(RA_L["profile_import_button"], 90)
+    local importBtn = MakeSkinnedButton(panel, RA_L["profile_import_button"], 90)
     importBtn:SetPoint("TOPLEFT", exportInfoText, "BOTTOMLEFT", 0, -6)
 
-    local exportBtn = MakeButton(RA_L["profile_export_button"], 90)
+    local exportBtn = MakeSkinnedButton(panel, RA_L["profile_export_button"], 90)
     exportBtn:SetPoint("LEFT", importBtn, "RIGHT", 8, 0)
 
     -- ── All characters (active profile for every other known character) ──
-    local allBtn = MakeButton(RA_L["profile_all_button"], 200)
+    local allBtn = MakeSkinnedButton(panel, RA_L["profile_all_button"], 200)
     allBtn:SetPoint("TOPLEFT", importBtn, "BOTTOMLEFT", 0, -24)
 
     -- ── Data wiring ───────────────────────────────────────────────────
