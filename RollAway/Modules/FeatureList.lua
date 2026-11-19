@@ -10,8 +10,10 @@ local RA_L = RA.RA_L
 -- on the left); checkbox and On/Off sit 4px from there, i.e. 10px from the scroll bar.
 local WIDTH, HEIGHT, CONTENT_W = 400, 640, 354
 -- The name of a row ends 10px left of the checkbox (22px, 4px from the edge); the text starts
--- 6px in. The description is the tooltip of a "!" behind the name.
-local TEXT_W = CONTENT_W - 6 - 4 - 22 - 10
+-- NAME_X in. The description is the tooltip of a "!" in a fixed column left of the name, so
+-- all marks line up and every name starts at the same x.
+local NAME_X = 22
+local TEXT_W = CONTENT_W - NAME_X - 4 - 22 - 10
 
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
@@ -194,7 +196,7 @@ local function CreateFrameOnce()
                     row:SetWidth(CONTENT_W)
 
                     local name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-                    name:SetPoint("TOPLEFT", row, "TOPLEFT", 6, -4)
+                    name:SetPoint("TOPLEFT", row, "TOPLEFT", NAME_X, -4)
                     name:SetWidth(TEXT_W)
                     name:SetJustifyH("LEFT")
                     name:SetText(RA_L[item.name])
@@ -222,7 +224,7 @@ local function CreateFrameOnce()
 
                     local height = 4 + name:GetStringHeight() + 6
                     if item.info then
-                        RA.OptionsUI.MakeInfoMark(row, name, RA_L[item.name], RA_L[item.info])
+                        RA.OptionsUI.MakeInfoMark(row, row, RA_L[item.name], RA_L[item.info], "column")
                     end
                     row:SetHeight(height)
 

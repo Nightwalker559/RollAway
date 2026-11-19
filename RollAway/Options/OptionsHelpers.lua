@@ -200,13 +200,16 @@ local QOL_INFO_W    = QOL_CONTENT_W - 20
 -- Checkboxes the feature overview can switch, by saved key (MakeToggle registers its own).
 RA.ToggleControls = {}
 
--- Gold "!" behind `target`; hovering it shows `text` as a tooltip under `title`. `target` is
--- a label (the "!" follows the end of its text) or, with onFrame, a frame such as a checkbox
--- row (the "!" hangs at its right edge). `parent` owns the "!": hiding it hides the "!" too.
+-- Gold "!" at `target`; hovering it shows `text` as a tooltip under `title`. `target` is a
+-- label (the "!" follows the end of its text) or, with onFrame, a frame: true = the "!" hangs
+-- at its right edge (checkbox row), "column" = it sits in its top-left corner (fixed column
+-- left of the text). `parent` owns the "!": hiding it hides the "!" too.
 local function MakeInfoMark(parent, target, title, text, onFrame)
     local btn = CreateFrame("Button", nil, parent)
     btn:SetSize(18, 20)
-    if onFrame then
+    if onFrame == "column" then
+        btn:SetPoint("TOPLEFT", target, "TOPLEFT", 2, -1)
+    elseif onFrame then
         btn:SetPoint("TOPLEFT", target, "TOPRIGHT", 2, -2)
     else
         btn:SetPoint("LEFT", target, "LEFT", target:GetStringWidth() + 4, 0)
