@@ -9,6 +9,8 @@
 
 ### Changed
 - Options pages: the header (title, subtitle, line, logo) sits in the same place on every page; the Profile page has a short subtitle again.
+- Options pages: the Legacy tab has no divider lines any more, the Open World heading has the same size as the other tabs, and spacing is the same on every tab (first row under a heading, block gaps, checkbox grids, Legacy raid columns).
+- Options pages: checkbox labels are left-aligned, so they no longer shift by a pixel from tab to tab.
 
 ---
 

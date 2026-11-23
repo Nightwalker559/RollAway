@@ -19,7 +19,7 @@ local UI                = RA.OptionsUI
 local PAGE_W             = UI.PAGE_W
 local ENTRY_W            = UI.ENTRY_W
 local COL_GAP            = UI.COL_GAP
-local MakeSectionHeader  = UI.MakeSectionHeader
+local ROW_GAP            = UI.ROW_GAP
 local MakeCB             = UI.MakeCB
 local MakeTemplateSlider = UI.MakeTemplateSlider
 local MakeInfoMark       = UI.MakeInfoMark
@@ -420,7 +420,7 @@ BuildOptions = function()
             if frame and frame:IsShown() then frame:Hide() end
         end
     end)
-    cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -10)
+    cbReminder.frame:SetPoint("TOPLEFT", reminderSectionLabel, "BOTTOMLEFT", 0, -12)
     RA.ToggleControls["showReminder"] = cbReminder
 
     MakeInfoMark(cbReminder.frame, cbReminder.frame, RA_L["reminder_label"], RA_L["reminder_info"], true)
@@ -445,13 +445,13 @@ BuildOptions = function()
     local legacyLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     -- The label hangs below the last visible checkbox (below hideRow it would cover the
     -- legacy-hide checkbox).
-    legacyLabel:SetPoint("TOPLEFT", (showBonusRollReminder and cbWarn or cbHideLegacy).frame, "BOTTOMLEFT", 0, -18)
+    legacyLabel:SetPoint("TOPLEFT", (showBonusRollReminder and cbWarn or cbHideLegacy).frame, "BOTTOMLEFT", 0, -20)
     legacyLabel:SetText(RA_L["legacy_section_title"])
 
     -- onChange is set below (cbLegacy:SetCallback) once legacyTabBtn exists; the
     -- widget has a single OnValueChanged slot, one given here would be overwritten.
     local cbLegacy = MakeCB(gen, RA_L["legacy_enable_label"], RollAwayDB.legacy, nil)
-    cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -10)
+    cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -12)
     RA.ToggleControls["legacy"] = cbLegacy
 
 
@@ -491,7 +491,8 @@ BuildOptions = function()
 
     -- Full-width anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local dngSeasonAnchor = CreateFrame("Frame", nil, dng)
-    dngSeasonAnchor:SetPoint("TOPLEFT", dngAllCB.frame, "BOTTOMLEFT", 0, 0)
+    -- The tab row sits 10 below the anchor's 1px: -3 makes the 14 every other block gap has.
+    dngSeasonAnchor:SetPoint("TOPLEFT", dngAllCB.frame, "BOTTOMLEFT", 0, -3)
     dngSeasonAnchor:SetSize(PAGE_W, 1)
 
     local dngSeasons = MakeSeasonTabs(dng, dngSeasonAnchor, SeasonTabDefs())
@@ -568,7 +569,7 @@ BuildOptions = function()
         if #section.items == 0 then
             dlvPrevAnchor, dlvPrevOffsetY = secLabel, -8
         else
-            dlvPrevAnchor, dlvPrevOffsetY = leftEntries[math.floor((#section.items - 1) / 2)], -16
+            dlvPrevAnchor, dlvPrevOffsetY = leftEntries[math.floor((#section.items - 1) / 2)], -14
         end
     end
     ApplyDelveAllLock()
@@ -579,7 +580,7 @@ BuildOptions = function()
 
     -- Roll confirmation popups (any loot roll, not tied to season data).
     local rollConfirmLabel = raidPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    rollConfirmLabel:SetPoint("TOPLEFT", raidHeader, "BOTTOMLEFT", 0, -14)
+    rollConfirmLabel:SetPoint("TOPLEFT", raidHeader, "BOTTOMLEFT", 0, -12)
     rollConfirmLabel:SetText(RA_L["confirm_roll_title"])
 
     MakeInfoMark(raidPanel, rollConfirmLabel, RA_L["confirm_roll_title"], RA_L["confirm_roll_hint"])
@@ -596,7 +597,7 @@ BuildOptions = function()
 
     -- Auto-pass by raid difficulty (all seasons/bosses, OR with the per-boss boxes).
     local raidDiffLabel = raidPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    raidDiffLabel:SetPoint("TOPLEFT", rollConfirmRow, "BOTTOMLEFT", 0, -12)
+    raidDiffLabel:SetPoint("TOPLEFT", rollConfirmRow, "BOTTOMLEFT", 0, -14)
     raidDiffLabel:SetText(RA_L["raid_diff_autopass_title"])
 
     MakeInfoMark(raidPanel, raidDiffLabel, RA_L["raid_diff_autopass_title"], RA_L["raid_diff_autopass_hint"])
@@ -608,7 +609,7 @@ BuildOptions = function()
 
     -- Full-width anchor for the season tabs (MakeSeasonTabs takes the panel width from it).
     local raidSeasonAnchor = CreateFrame("Frame", nil, raidPanel)
-    raidSeasonAnchor:SetPoint("TOPLEFT", raidDiffRow, "BOTTOMLEFT", 0, 0)
+    raidSeasonAnchor:SetPoint("TOPLEFT", raidDiffRow, "BOTTOMLEFT", 0, -3)  -- 14 to the tab row, like Dungeons
     raidSeasonAnchor:SetSize(PAGE_W, 1)
 
     local raidSeasons = MakeSeasonTabs(raidPanel, raidSeasonAnchor, SeasonTabDefs())
@@ -665,7 +666,7 @@ BuildOptions = function()
 
     -- Tab: Prey
     local preyPanel = tabPanels["prey"]
-    local preyLabel = preyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    local preyLabel = preyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     preyLabel:SetPoint("TOPLEFT", preyPanel, "TOPLEFT", 0, -10)
     preyLabel:SetText(RA_L["prey_title"])
     MakeInfoMark(preyPanel, preyLabel, RA_L["prey_title"], RA_L["prey_hint"])
@@ -673,12 +674,14 @@ BuildOptions = function()
     local preyCB = MakeCB(preyPanel, RA_L["prey_toggle_label"], RollAwayDBChar.prey, function(checked)
         RollAwayDBChar.prey = checked
     end)
-    preyCB.frame:SetPoint("TOPLEFT", preyLabel, "BOTTOMLEFT", 0, -14)
+    preyCB.frame:SetPoint("TOPLEFT", preyLabel, "BOTTOMLEFT", 0, -12)
     RA.ToggleControls["char:prey"] = preyCB  -- a per-character setting
 
     -- Tab: Legacy raids
     local legacyPanel = tabPanels["legacy"]
-    local legacyTitle, legacyLine = MakeSectionHeader(legacyPanel, legacyPanel, -10, RA_L["legacy_tab_title"])
+    local legacyTitle = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    legacyTitle:SetPoint("TOPLEFT", legacyPanel, "TOPLEFT", 0, -10)
+    legacyTitle:SetText(RA_L["legacy_tab_title"])
     MakeInfoMark(legacyPanel, legacyTitle, RA_L["legacy_tab_title"], RA_L["legacy_tab_hint"])
 
     local legacyRaidCBs = {}
@@ -699,7 +702,7 @@ BuildOptions = function()
         RA.db.global.legacyAccountWide = checked
         RefreshLegacyRaidCheckboxes()
     end)
-    legacyAccountWideCB.frame:SetPoint("TOPLEFT", legacyLine, "BOTTOMLEFT", 0, -14)
+    legacyAccountWideCB.frame:SetPoint("TOPLEFT", legacyTitle, "BOTTOMLEFT", 0, -12)
 
     local legacyRollLabel = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     legacyRollLabel:SetPoint("TOPLEFT", legacyAccountWideCB.frame, "BOTTOMLEFT", 0, -14)
@@ -725,7 +728,7 @@ BuildOptions = function()
             if dbKey == "legacyPass" then RefreshRollChainState() end
         end)
         if not prevRollCB then
-            rollCB.frame:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -10)
+            rollCB.frame:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -8)
         else
             rollCB.frame:SetPoint("LEFT", prevRollCB, "RIGHT", 16, 0)
         end
@@ -734,17 +737,12 @@ BuildOptions = function()
     end
     RefreshRollChainState()
 
-    local legacyRaidLine = legacyPanel:CreateTexture(nil, "ARTWORK")
-    legacyRaidLine:SetHeight(1)
-    legacyRaidLine:SetWidth(PAGE_W)
-    legacyRaidLine:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -44)
-    legacyRaidLine:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-
     -- One expansion column: header, then its raids' checkboxes, bound to the legacy raid table
     -- active at click time (character or account-wide).
     local function MakeLegacyRaidColumn(xOffset, headerKey, raids)
         local header = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-        header:SetPoint("TOPLEFT", legacyRaidLine, "BOTTOMLEFT", xOffset, -14)
+        -- label 8 + checkbox row 24 + the 14 every block gap has
+        header:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", xOffset, -46)
         header:SetText(RA_L[headerKey])
 
         local prev = header
@@ -753,7 +751,8 @@ BuildOptions = function()
             local legCB = MakeCB(legacyPanel, RA_L[r.label], RA.GetLegacyRaidsDB()[key], function(checked)
                 RA.GetLegacyRaidsDB()[key] = checked
             end)
-            legCB.frame:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -6)
+            -- Same rhythm as the checkbox grids: 8 under the header, ROW_GAP between rows.
+            legCB.frame:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, prev == header and -8 or -ROW_GAP)
             table.insert(legacyRaidCBs, { cb = legCB, key = key })
             prev = legCB.frame
         end

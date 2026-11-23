@@ -11,7 +11,8 @@ local PAGE_W = 576
 -- Grid layout constants (all tabs)
 local COL_GAP = 24
 local ENTRY_W = (PAGE_W - COL_GAP) / 2
-local ENTRY_H = 26
+-- ENTRY_H = a checkbox row's height (MakeCB), so a grid row sits flush like a checkbox row.
+local ENTRY_H = 24
 local ROW_GAP = 6
 
 -- Tab label colors (active / inactive), also used by ElvUI_Skin.lua.
@@ -19,18 +20,6 @@ local GOLD = { r = 0.85, g = 0.73, b = 0.25 }
 local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
 
 -- UI helpers
-
-local function MakeSectionHeader(parent, anchorFrame, anchorOffsetY, text)
-    local lbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    lbl:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", 0, anchorOffsetY)
-    lbl:SetText(text)
-    local line = parent:CreateTexture(nil, "ARTWORK")
-    line:SetHeight(1)
-    line:SetPoint("TOPLEFT", lbl, "BOTTOMLEFT", 0, -6)
-    line:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
-    line:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    return lbl, line
-end
 
 -- Full single-line width of `text` in the font `fs` uses (a label's own GetStringWidth is
 -- cut by the checkbox width and ElvUI's re-fonting: long labels ended in "...").
@@ -47,6 +36,7 @@ local CB_BOX_WIDTH  = 24  -- checkbox graphic left of the label
 local CB_SLACK      = 16  -- breathing room after the label
 local CB_LINE_H     = 14
 local CB_BOX_SIZE   = 22
+local CB_TEXT_GAP   = 10  -- box edge to the label's first letter (the label is left-aligned, so every row starts alike)
 
 -- Sizes the checkbox to its label (up to widthOverride / maxWidth); a longer label wraps
 -- onto more lines (frame and label grow, so what hangs below moves down).
@@ -58,14 +48,14 @@ local function SetCBLines(cb, lines)
     if lines > 1 then
         -- Top-anchored: the first line stays beside the box.
         box:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -1)
-        text:SetPoint("TOPLEFT", box, "TOPRIGHT", 2, -4)
+        text:SetPoint("TOPLEFT", box, "TOPRIGHT", CB_TEXT_GAP, -4)
         text:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -4)
         text:SetJustifyV("TOP")
         text:SetHeight(lines * CB_LINE_H)
         frame:SetHeight(lines * CB_LINE_H + 8)
     else
         box:SetPoint("LEFT", frame, "LEFT", 0, 0)
-        text:SetPoint("LEFT", box, "RIGHT", 2, 0)
+        text:SetPoint("LEFT", box, "RIGHT", CB_TEXT_GAP, 0)
         text:SetPoint("RIGHT", frame, "RIGHT")
         text:SetJustifyV("MIDDLE")
         text:SetHeight(18)
@@ -77,7 +67,7 @@ end
 local function FitCB(cb, label, widthOverride, maxWidth)
     local textW   = MeasureLabelWidth(cb.text, label)
     local width   = widthOverride or math.min(CB_BOX_WIDTH + textW + CB_SLACK, maxWidth)
-    local lines   = math.max(1, math.ceil(textW / (width - CB_BOX_WIDTH - 6)))
+    local lines   = math.max(1, math.ceil(textW / (width - CB_BOX_SIZE - CB_TEXT_GAP)))
     cb:SetWidth(width)
     SetCBLines(cb, lines)
 end
@@ -123,6 +113,7 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     local box = MakeCheckBox(frame)
 
     local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    text:SetJustifyH("LEFT")   -- the font's default is centered
     text:SetText(label)
     box:SetChecked(checked and true or false)
 
@@ -614,7 +605,7 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
                 MakeGridCheckbox(entry, RA_L["boss_"..b.key], dbTable, b.key)
             end
             prevAnchor  = leftEntries[math.floor((#section.bosses - 1) / 2)]
-            prevOffsetY = -16
+            prevOffsetY = -14
         end
     end
     return prevAnchor, prevOffsetY
@@ -672,11 +663,11 @@ RA.OptionsUI = {
     PAGE_W            = PAGE_W,
     ENTRY_W           = ENTRY_W,
     COL_GAP           = COL_GAP,
-    GOLD              = GOLD,
+    ROW_GAP           = ROW_GAP,
+    GOLD             = GOLD,
     QOL_CONTENT_W     = QOL_CONTENT_W,
     QOL_INFO_W        = QOL_INFO_W,
     GRAY              = GRAY,
-    MakeSectionHeader = MakeSectionHeader,
     MakeCB            = MakeCB,
     MakeCheckBox      = MakeCheckBox,
     MakeInfoText      = MakeInfoText,
