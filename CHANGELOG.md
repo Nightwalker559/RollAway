@@ -4,6 +4,9 @@
 
 ## 3.1.9
 
+### New
+- Feedback button in the options window and the feature overview: shows the GitHub issues link to copy.
+
 ### Changed
 - Options pages: the header (title, subtitle, line, logo) sits in the same place on every page; the Profile page has a short subtitle again.
 

@@ -629,6 +629,8 @@ L["feat_quests_accept"]      = "Nimmt normale, tägliche und wöchentliche Quest
 L["cmd_rawfeatures_info"]    = "Diese Funktionsübersicht öffnen"
 L["feat_button"]             = "Funktionen"
 L["feat_combat"]             = "Im Kampf nicht möglich."
+L["feat_feedback_button"]    = "Feedback"
+L["feat_feedback_prompt"]    = "Feedback, Fehler und Ideen auf GitHub (Strg+C zum Kopieren des Links):"
 
 ------------------------------------------------------------------------
 -- Entwickler

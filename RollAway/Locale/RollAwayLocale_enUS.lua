@@ -628,6 +628,8 @@ L["feat_quests_accept"]      = "Accepts regular, daily and weekly quests as tick
 L["cmd_rawfeatures_info"]    = "Open this feature overview"
 L["feat_button"]             = "Features"
 L["feat_combat"]             = "Not possible in combat."
+L["feat_feedback_button"]    = "Feedback"
+L["feat_feedback_prompt"]    = "Feedback, bugs and ideas on GitHub (Ctrl+C to copy the link):"
 
 ------------------------------------------------------------------------
 -- Developer

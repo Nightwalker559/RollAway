@@ -196,6 +196,11 @@ BuildOptions = function()
     featuresBtn:SetScript("OnClick", RA.ToggleFeatureList)
     RA.Skin.LiftedButton(featuresBtn, classColor)
 
+    local feedbackBtn = UI.MakeSkinnedButton(win, RA_L["feat_feedback_button"], NAV_W)
+    feedbackBtn:SetPoint("BOTTOMLEFT", featuresBtn, "TOPLEFT", 0, 4)
+    feedbackBtn:SetScript("OnClick", RA.ShowFeedback)
+    RA.Skin.LiftedButton(feedbackBtn, classColor)
+
     -- Main page: tabs General / Dungeons / Raids / Delves / Prey / Legacy
     local panel = CreateFrame("Frame", nil, content)
     panel:SetAllPoints(content)

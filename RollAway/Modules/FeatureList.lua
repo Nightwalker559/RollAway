@@ -15,6 +15,39 @@ local WIDTH, HEIGHT, CONTENT_W = 400, 640, 354
 local NAME_X = 22
 local TEXT_W = CONTENT_W - NAME_X - 4 - 22 - 10
 
+-- WoW cannot open links, so the feedback button shows the address to copy (Ctrl+C).
+local FEEDBACK_URL = "https://github.com/Nightwalker559/RollAway/issues"
+-- Room under the list for the feedback button.
+local FOOTER_H = 40
+
+RA.RegisterPopup("ROLLAWAY_FEEDBACK", {
+    text         = RA_L["feat_feedback_prompt"],
+    button1      = OKAY,
+    hasEditBox   = true,
+    editBoxWidth = 350,
+    maxLetters   = 0,
+    OnShow = function(dialog)
+        local editBox = dialog:GetEditBox()
+        editBox:SetText(FEEDBACK_URL)
+        editBox:HighlightText()
+        editBox:SetFocus()
+        if not editBox.raCopyCloseHooked then
+            editBox.raCopyCloseHooked = true
+            editBox:HookScript("OnKeyDown", function(_, key)
+                if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) then
+                    -- Deferred: closing on keydown pre-empted the clipboard copy.
+                    RunNextFrame(function() dialog:Hide() end)
+                end
+            end)
+        end
+    end,
+    EditBoxOnEnterPressed  = function(editBox) editBox:GetParent():Hide() end,
+    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
+})
+
+-- Shared by the overview and the options window.
+function RA.ShowFeedback() StaticPopup_Show("ROLLAWAY_FEEDBACK") end
+
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
     for _, v in pairs(t) do
@@ -170,7 +203,11 @@ local function CreateFrameOnce()
 
     local scroll = RA.OptionsUI.MakeScrollFrame(f, "RollAwayFeatureListScroll")
     scroll:SetPoint("TOPLEFT",     f, "TOPLEFT",      12, -64)
-    scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30,  12)
+    scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30,  FOOTER_H + 12)
+
+    local feedbackBtn = RA.OptionsUI.MakeSkinnedButton(f, RA_L["feat_feedback_button"], 140)
+    feedbackBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 14)
+    feedbackBtn:SetScript("OnClick", RA.ShowFeedback)
 
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(CONTENT_W + 4, 1)
