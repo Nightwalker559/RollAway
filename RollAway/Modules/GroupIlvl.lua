@@ -225,6 +225,14 @@ local function Succeed(guid)
     fails[guid], retryAt[guid], dirty[guid], loggedUnavailable[guid] = nil, nil, nil, nil
 end
 
+-- Forgets every member's retry and failure state.
+local function ForgetAttempts()
+    wipe(retryAt)
+    wipe(fails)
+    wipe(dirty)
+    wipe(loggedUnavailable)
+end
+
 -- Whether the member can be asked at all (online, CanInspect). No distance check: the server
 -- decides, and a member who is too far away simply does not reply (counted as a failure).
 local function CanAsk(unit)
@@ -341,10 +349,7 @@ local function OnGroupChanged()
     PruneCache()
     if not IsInGroup() then
         pending = nil
-        wipe(retryAt)
-        wipe(fails)
-        wipe(dirty)
-        wipe(loggedUnavailable)
+        ForgetAttempts()
         return
     end
     Kick()
@@ -409,10 +414,7 @@ function RA.ApplyGroupIlvl()
         generation = generation + 1   -- a scheduled step does nothing any more
         pending = nil
         Drop(NONE)
-        wipe(retryAt)
-        wipe(fails)
-        wipe(dirty)
-        wipe(loggedUnavailable)
+        ForgetAttempts()
     end
     if RA.SetElvUITags then RA.SetElvUITags(IsActive()) end   -- only defined with ElvUI
     RA.SetGroupIlvlFrames(IsActive() and RA.groupIlvlDefaultUI == true)

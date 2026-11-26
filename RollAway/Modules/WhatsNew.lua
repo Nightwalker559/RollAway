@@ -37,12 +37,7 @@ local function CreateWhatsNewFrame()
     local sf = CreateFrame("ScrollFrame", "RollAwayWhatsNewScroll", f)
     sf:SetPoint("TOPLEFT",     f, "TOPLEFT",      12, -32)
     sf:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT",  -12,  44)
-    sf:EnableMouseWheel(true)
-    sf:SetScript("OnMouseWheel", function(self, delta)
-        local current = self:GetVerticalScroll()
-        local max     = self:GetVerticalScrollRange()
-        self:SetVerticalScroll(math.max(0, math.min(max, current - delta * 30)))
-    end)
+    RA.EnableWheelScroll(sf)
 
     -- Content: fixed width (440 - insets - scrollbar - margins = 380), height grows with the cards
     local CARD_W = 380
@@ -98,7 +93,7 @@ local function CreateWhatsNewFrame()
 
     -- OK button
     local okBtn = CreateFrame("Button", "RollAwayWhatsNewOkay", f, "UIPanelButtonTemplate")
-    okBtn:SetSize(90, 24)
+    okBtn:SetSize(90, 22)
     okBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 12)
     okBtn:SetText(RA_L["reminder_okay"])
     RA.Skin.Button(okBtn)

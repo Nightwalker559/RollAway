@@ -1,5 +1,5 @@
 -- RollAway - Modules/Reminder.lua
--- Popup reminder when entering Mythic dungeons or raids (Season 1 & 2).
+-- Popup reminder when entering Mythic dungeons or raids of the addon's season data.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -171,7 +171,8 @@ function RA.ShowReminder()
 
     -- No Voidcores: nothing to say
     local voidcoreInfo = C_CurrencyInfo.GetCurrencyInfo(RA.VOIDCORE_CURRENCY_ID)
-    local voidcoreQty  = voidcoreInfo and voidcoreInfo.quantity or 0
+    -- RA.devTest.voidcores: pretended amount while /rawreminder runs.
+    local voidcoreQty  = RA.devTest.voidcores or (voidcoreInfo and voidcoreInfo.quantity) or 0
     if voidcoreQty == 0 then
         DBG("Reminder: no Voidcores – skipping")
         return

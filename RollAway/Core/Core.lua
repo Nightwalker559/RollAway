@@ -16,7 +16,8 @@ RA.VOIDCORE_CURRENCY_ID = 3418  -- Nebulous Voidcore currency
 
 ------------------------------------------------------------------------
 -- Season configuration
--- BONUS_ROLLS_ENABLED: Bonus Rolls were disabled in S1, re-enabled for S2.
+-- BONUS_ROLLS_ENABLED: false for a season without bonus rolls (their options and the
+-- auto-pass are then off).
 ------------------------------------------------------------------------
 RA.BONUS_ROLLS_ENABLED = true
 RA.ACTIVE_SEASON       = 2
@@ -58,7 +59,7 @@ local SEASON1_DELVES        = RA.DELVES[1]
 local SEASON2_DELVES        = RA.DELVES[2]
 local SEASON1_RAIDS         = RA.RAIDS[1]
 local SEASON2_RAIDS         = RA.RAIDS[2]
-local SEASON1_LEGACY_RAIDS  = RA.LEGACY_RAIDS
+local LEGACY_RAID_BOSSES    = RA.LEGACY_RAIDS
 
 ------------------------------------------------------------------------
 -- Lookup maps, built once at load
@@ -75,7 +76,7 @@ for _, d in ipairs(SEASON1_DELVES)       do DELVE_MAP[d.mapID]                = 
 for _, d in ipairs(SEASON2_DELVES)       do DELVE_MAP[d.mapID]                = d.key  end
 for _, b in ipairs(SEASON1_RAIDS)        do RAID_ENCOUNTER_MAP[b.encounterID] = b.key  end
 for _, b in ipairs(SEASON2_RAIDS)        do RAID_ENCOUNTER_MAP[b.encounterID] = b.key  end
-for _, b in ipairs(SEASON1_LEGACY_RAIDS) do LEGACY_ENCOUNTER_MAP[b.encounterID] = b.raid end
+for _, b in ipairs(LEGACY_RAID_BOSSES)   do LEGACY_ENCOUNTER_MAP[b.encounterID] = b.raid end
 
 RA.DUNGEON_MAP          = DUNGEON_MAP
 RA.DELVE_MAP            = DELVE_MAP
@@ -399,8 +400,7 @@ end
 RA.DebugInstanceDump = DebugInstanceDump
 
 local function HasActiveRolls()
-    for _ in pairs(RA.activeRolls) do return true end
-    return false
+    return next(RA.activeRolls) ~= nil
 end
 
 -- True while the game's own loot history still has a drop without winner/all-passed in a
@@ -485,12 +485,18 @@ local function ForgetRoll(rollID, reason)
     DBG("Roll finished:", rollID, "|", reason, "| active left:", CountActiveRolls())
 end
 
+-- Stops a running close countdown and the poll for open rolls in the loot history.
+local function CancelCloseTimers()
+    RA.SafeCancelTimer(RA.closeTimer)
+    RA.SafeCancelTimer(RA.historyPoll)
+    RA.closeTimer, RA.historyPoll = nil, nil
+end
+
 -- Resets roll state and timers – does not touch the loot history frame.
 local function ResetState(reason)
     DBG("ResetState:", reason)
     CancelAllRollTimers()
-    if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
-    if RA.historyPoll then RA.SafeCancelTimer(RA.historyPoll); RA.historyPoll = nil end
+    CancelCloseTimers()
     wipe(RA.activeRolls)
     RA.lastEncounterID = 0
     RA.bonusRollEncounterID = nil
@@ -618,9 +624,9 @@ function RA.InitCharDB()
     FillMissing(RollAwayDBChar.delves_s2,    SEASON2_DELVES,   "key")
     FillMissing(RollAwayDBChar.raids,        SEASON1_RAIDS,    "key")
     FillMissing(RollAwayDBChar.raids,        SEASON2_RAIDS,    "key")
-    FillMissing(RollAwayDBChar.legacy_raids, SEASON1_LEGACY_RAIDS, "raid")
+    FillMissing(RollAwayDBChar.legacy_raids, LEGACY_RAID_BOSSES, "raid")
     -- Account-wide mirror, used with legacyAccountWide.
-    FillMissing(RA.db.global.legacy_raids,   SEASON1_LEGACY_RAIDS, "raid")
+    FillMissing(RA.db.global.legacy_raids,   LEGACY_RAID_BOSSES, "raid")
 
     -- Delves removed from the game pool stay disabled.
     if RA.ACTIVE_SEASON >= 2 then
@@ -628,6 +634,14 @@ function RA.InitCharDB()
             if d.removedAfterS1 then RollAwayDBChar.delves[d.key] = false end
         end
     end
+end
+
+-- Reminder popups after a zone change.
+local reminderShowTimer
+
+local function ShowZoneReminders()
+    if RA.ShowReminder then RA.ShowReminder() end
+    if RA.ShowPetReminder then RA.ShowPetReminder() end
 end
 
 local f = CreateFrame("Frame")
@@ -653,8 +667,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         -- LOOT_ROLLS_COMPLETE reports the lootHandle, not the rollID, so keep it.
         RA.activeRolls[arg1] = lootHandle or true
 
-        if RA.closeTimer then RA.SafeCancelTimer(RA.closeTimer); RA.closeTimer = nil end
-        if RA.historyPoll then RA.SafeCancelTimer(RA.historyPoll); RA.historyPoll = nil end
+        CancelCloseTimers()
 
         -- Watchdog: force-closes the frame if the roll never ends cleanly.
         if not RA.rollTimers[arg1] and not (RollAwayDB and RollAwayDB.lootFrameAutoCloseDisabled) then
@@ -761,22 +774,12 @@ f:SetScript("OnEvent", function(_, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then RA.petReminderArmed = not select(2, ...) end
         LogInstanceSummary()
         if ShouldHideInInstance() then HideHistoryFrameAtOnce() end
-        -- Both events fire for one zone change: the newest request wins (token),
-        -- so ShowReminder runs once.
-        if RA.reminderShowTimer then RA.SafeCancelTimer(RA.reminderShowTimer) end
-        RA.reminderShowToken = (RA.reminderShowToken or 0) + 1
-        local myReminderToken = RA.reminderShowToken
-        local function FireReminder()
-            RA.reminderShowTimer = nil
-            if RA.reminderShowToken ~= myReminderToken then return end  -- superseded
-            if RA.ShowReminder then RA.ShowReminder() end
-            if RA.ShowPetReminder then RA.ShowPetReminder() end
-        end
         -- Now, and again after 1.5s: instance info and the Voidcore currency can be
-        -- stale right after a fast zone / login. ShowReminder is idempotent.
-        if RA.ShowReminder then RA.ShowReminder() end
-        if RA.ShowPetReminder then RA.ShowPetReminder() end
-        RA.reminderShowTimer = C_Timer.NewTimer(1.5, FireReminder)
+        -- stale right after a fast zone / login. Both events fire for one zone change:
+        -- the newest delayed call replaces the older one. ShowReminder is idempotent.
+        RA.SafeCancelTimer(reminderShowTimer)
+        ShowZoneReminders()
+        reminderShowTimer = C_Timer.NewTimer(1.5, ShowZoneReminders)
 
     elseif event == "ADDON_LOADED" and arg1 == addonName then
 

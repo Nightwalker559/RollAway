@@ -1,6 +1,6 @@
 -- RollAway - Options/OptionsQoL.lua
 -- The "QoL" page of the options window, built with the options window (RA.EnsureOptions). Left nav (sorted by the
--- shown label): Character / Crafting & Vendors / Group / Hide / Logs / Quests / Reminder.
+-- shown label): Character / Class / Crafting & Vendors / Group / Hide / Logs / Quests / Reminder.
 -- Keep BuildSections (Modules/FeatureList.lua) in step when an option moves or is added.
 
 local RA   = _G["RollAway"]
@@ -94,12 +94,8 @@ end
 -- parent: the options window's content frame; registerPage(key, label, page): adds the
 -- page to the window's list; classColor: for the ElvUI tab highlight (nil without ElvUI).
 function RA.BuildQoLOptions(parent, registerPage, classColor)
-    local qolPanel = CreateFrame("Frame", nil, parent)
-    qolPanel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
-    qolPanel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
-    registerPage("qol", RA_L["qol_section_title"], qolPanel)
-
-    local _, _, qolHeaderLine = UI.MakePageHeader(qolPanel, RA_L["qol_panel_title"], RA_L["qol_panel_info"], 0, 16)
+    local qolPanel, _, qolHeaderLine = UI.MakeSubPage(parent, registerPage, "qol",
+        RA_L["qol_section_title"], RA_L["qol_panel_title"], RA_L["qol_panel_info"])
 
     -- Left nav sorted by the shown label (follows the client language); no Character
     -- tab below max level.
@@ -122,26 +118,8 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
     end
     table.sort(qolNavDefs, function(a, b) return a.label:lower() < b.label:lower() end)
 
-    local qolCatPanels  = {}
-    local qolNavButtons = {}
-    local ShowQolCategory = UI.MakeTabSelector(qolCatPanels, qolNavButtons)
-
-    local prevNavBtn
-    for _, def in ipairs(qolNavDefs) do
-        local key = def.key
-        local btn = CreateFrame("Button", nil, qolPanel, "UIPanelButtonTemplate")
-        btn:SetSize(QOL_NAV_W, 24)
-        btn:SetText(def.label)
-        if prevNavBtn then
-            btn:SetPoint("TOP", prevNavBtn, "BOTTOM", 0, -4)
-        else
-            btn:SetPoint("TOPLEFT", qolHeaderLine, "BOTTOMLEFT", 0, -14)
-        end
-        prevNavBtn = btn
-        btn:SetScript("OnClick", function() ShowQolCategory(key) end)
-        RA.Skin.OptionTab(btn, qolCatPanels, key, classColor)
-        qolNavButtons[key] = btn
-    end
+    local qolCatPanels, _, ShowQolCategory =
+        UI.MakeCategoryNav(qolPanel, qolHeaderLine, QOL_NAV_W, qolNavDefs, classColor)
 
     -- A ScrollFrame per category (UI.MakeCategoryPage).
     local function CreateQolCategoryPanel(key, name)
@@ -623,6 +601,4 @@ function RA.BuildQoLOptions(parent, registerPage, classColor)
         RA.OpenOptions("qol")
         ShowQolCategory(qolCatPanels[key] and key or qolNavDefs[1].key)
     end
-
-    return qolPanel
 end

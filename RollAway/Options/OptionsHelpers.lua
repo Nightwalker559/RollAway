@@ -21,8 +21,8 @@ local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
 
 -- UI helpers
 
--- Full single-line width of `text` in the font `fs` uses (a label's own GetStringWidth is
--- cut by the checkbox width and ElvUI's re-fonting: long labels ended in "...").
+-- Full single-line width of `text` in the font `fs` uses. A label's own GetStringWidth is
+-- cut by the checkbox width and ElvUI's re-fonting (long labels would end in "...").
 local widthProbe
 local function MeasureLabelWidth(fs, text)
     widthProbe = widthProbe or UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -420,6 +420,42 @@ local function MakeTabSelector(panels, buttons)
     end
 end
 
+-- A page of the window's list besides the main one (QoL, Profile, Developer): inset by 16,
+-- registered, with the shared header. Returns panel, title, header line.
+local function MakeSubPage(parent, registerPage, key, label, title, info)
+    local panel = CreateFrame("Frame", nil, parent)
+    panel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
+    panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
+    registerPage(key, label, panel)
+    local titleText, _, line = MakePageHeader(panel, title, info, 0, 16)
+    return panel, titleText, line
+end
+
+-- Category buttons down the left of a page, below its header line. defs: { key, label } in
+-- shown order; classColor: ElvUI tab highlight. Returns pages (filled by MakeCategoryPage),
+-- buttons and show(key).
+local function MakeCategoryNav(panel, headerLine, width, defs, classColor)
+    local pages, buttons = {}, {}
+    local show = MakeTabSelector(pages, buttons)
+    local previous
+    for _, def in ipairs(defs) do
+        local key = def.key
+        local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+        btn:SetSize(width, 24)
+        btn:SetText(def.label)
+        if previous then
+            btn:SetPoint("TOP", previous, "BOTTOM", 0, -4)
+        else
+            btn:SetPoint("TOPLEFT", headerLine, "BOTTOMLEFT", 0, -14)
+        end
+        previous = btn
+        btn:SetScript("OnClick", function() show(key) end)
+        RA.Skin.OptionTab(btn, pages, key, classColor)
+        buttons[key] = btn
+    end
+    return pages, buttons, show
+end
+
 -- A row of checkboxes below anchorFrame. Returns the row's invisible full-width container
 -- (an anchor for what comes next, e.g. MakeSeasonTabs) and the checkboxes.
 local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf, gap)
@@ -659,6 +695,8 @@ end
 -- Public exports (Options, OptionsQoL, OptionsDev, OptionsProfile)
 RA.OptionsUI = {
     MakeCategoryPage  = MakeCategoryPage,
+    MakeCategoryNav   = MakeCategoryNav,
+    MakeSubPage       = MakeSubPage,
     RunWhenCheckboxesSettled = RunWhenCheckboxesSettled,
     PAGE_W            = PAGE_W,
     ENTRY_W           = ENTRY_W,

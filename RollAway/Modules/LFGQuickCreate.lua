@@ -243,6 +243,7 @@ end
 -- frame does not exist yet (RA.RunWhenReady tries again); waiting for the season data is
 -- handled here (event, timer as fallback).
 local seasonWait  -- frame that waits for the season data (created when needed)
+local fallbackPending = false  -- one fallback timer at a time, whoever calls Init
 
 local function Init()
     if initialized then return end
@@ -263,7 +264,13 @@ local function Init()
             end)
         end
         seasonWait:RegisterEvent("CHALLENGE_MODE_MAPS_UPDATE")
-        C_Timer.After(3, Init)
+        if not fallbackPending then
+            fallbackPending = true
+            C_Timer.After(3, function()
+                fallbackPending = false
+                Init()
+            end)
+        end
         return
     end
 

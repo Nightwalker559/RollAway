@@ -20,33 +20,22 @@ local FEEDBACK_URL = "https://github.com/Nightwalker559/RollAway/issues"
 -- Room under the list for the feedback button.
 local FOOTER_H = 40
 
-RA.RegisterPopup("ROLLAWAY_FEEDBACK", {
-    text         = RA_L["feat_feedback_prompt"],
-    button1      = OKAY,
-    hasEditBox   = true,
-    editBoxWidth = 350,
-    maxLetters   = 0,
-    OnShow = function(dialog)
-        local editBox = dialog:GetEditBox()
-        editBox:SetText(FEEDBACK_URL)
-        editBox:HighlightText()
-        editBox:SetFocus()
-        if not editBox.raCopyCloseHooked then
-            editBox.raCopyCloseHooked = true
-            editBox:HookScript("OnKeyDown", function(_, key)
-                if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) then
-                    -- Deferred: closing on keydown pre-empted the clipboard copy.
-                    RunNextFrame(function() dialog:Hide() end)
-                end
-            end)
-        end
-    end,
-    EditBoxOnEnterPressed  = function(editBox) editBox:GetParent():Hide() end,
-    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
-})
+RA.RegisterCopyPopup("ROLLAWAY_FEEDBACK", RA_L["feat_feedback_prompt"])
 
 -- Shared by the overview and the options window.
-function RA.ShowFeedback() StaticPopup_Show("ROLLAWAY_FEEDBACK") end
+function RA.ShowFeedback() StaticPopup_Show("ROLLAWAY_FEEDBACK", nil, nil, FEEDBACK_URL) end
+
+-- The commands everyone has, also listed on the Developer page (OptionsDev.lua).
+-- { command, locale key of the description, alias = second spelling }
+RA.PUBLIC_COMMANDS = {
+    { "/raw",         "cmd_raw_info",         alias = "/rollaway" },
+    { "/rawfeatures", "cmd_rawfeatures_info" },
+    { "/rat",         "cmd_rat_info"         },
+    { "/rawvault",    "cmd_rawvault_info"    },
+    { "/rawparagon",  "cmd_rawparagon_info"  },
+    { "/rawtank",     "cmd_rawtank_info"     },
+    { "/rawilvl",     "cmd_gilvl_info"       },
+}
 
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
@@ -154,15 +143,7 @@ local function BuildSections()
             Qol("logs", "qol_log_enable_label",        "qol_log_enable_info", "autoLogEnabled"),
             Qol("logs", "qol_log_advlog_reminder_label", nil,                 "advLogReminderEnabled"),
         } },
-        { title = "feat_section_commands", commands = {
-            { "/raw",         "cmd_raw_info"         },
-            { "/rawfeatures", "cmd_rawfeatures_info" },
-            { "/rat",         "cmd_rat_info"         },
-            { "/rawvault",    "cmd_rawvault_info"    },
-            { "/rawparagon",  "cmd_rawparagon_info"  },
-            { "/rawtank",     "cmd_rawtank_info"     },
-            { "/rawilvl",     "cmd_gilvl_info"       },
-        } },
+        { title = "feat_section_commands", commands = RA.PUBLIC_COMMANDS },
     }
     return sections
 end

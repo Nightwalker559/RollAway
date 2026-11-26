@@ -208,8 +208,8 @@ end
 RA.ShowJoinReminder = ShowJoinReminder
 
 -- name, isMythicPlus, dungeon (current-season entry, activityID == dungeon.lfgID) for an
--- LFG activity ID; nil if it is neither an M+
--- dungeon nor a current raid. M+ names come from RA_L (the addon's language).
+-- LFG activity ID; nil if it is neither an M+ dungeon nor a current raid. M+ names come
+-- from RA_L (the addon's language).
 local function GetNameFromActivityID(activityID)
     local act = activityID and C_LFGList.GetActivityInfoTable(activityID)
     if not act then return nil end
@@ -348,11 +348,13 @@ function RA.InitJoinReminder()
     -- Groups without a Group Finder listing get no reminder, by design. Called from
     -- GROUP_ROSTER_UPDATE and the poll; the poll runs until resolved or ungrouped.
     local function TryResolveAndShow()
-        if not RollAwayDB or not RollAwayDB.instanceJoinReminder then return end
+        -- Reset also while the option is off: a stale state would swallow the next group's
+        -- reminder after switching it on.
         if not IsInGroup() then
             ResetGroupState()
             return
         end
+        if not RollAwayDB or not RollAwayDB.instanceJoinReminder then StopPoll(); return end
         if resolvedEntryID then StopPoll(); return end -- already shown for this group
 
         -- Not resolved yet: keep checking.

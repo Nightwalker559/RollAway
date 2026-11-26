@@ -65,7 +65,7 @@ L["hide_in_legacy_info"]      = "Schlachtzüge aus Dragonflight und The War With
 L["reminder_label"]                   = "Erinnerung anzeigen beim Betreten von Dungeons & Schlachtzügen"
 L["reminder_info"]                    = "Zeigt ein Popup beim Betreten eines Mythic-Dungeons oder Schlachtzugs und erinnert dich, deine Auto-Pass-Einstellungen zu überprüfen."
 L["autopass_warning_label"]           = "Warnen, wenn für den betretenen Inhalt ein Auto-Pass aktiv ist"
-L["autopass_warning_info"]            = "Sicherheitsnetz gegen eine vergessene Checkbox: zeigt beim Betreten eines Mythic-Dungeons oder Schlachtzugs eine kurze Warnung, aber nur wenn dort ein Bonusroll Auto-Pass aktiv ist - auch bei ausgeschaltetem Reminder darüber. Sonst bleibt es still."
+L["autopass_warning_info"]            = "Sicherheitsnetz gegen eine vergessene Checkbox: zeigt beim Betreten eines Mythic-Dungeons oder Schlachtzugs eine kurze Warnung, aber nur wenn dort ein Bonusroll Auto-Pass aktiv ist - auch bei ausgeschalteter Erinnerung darüber. Sonst bleibt es still."
 L["bonusroll_reminder_section_title"] = "Bonusroll"
 
 ------------------------------------------------------------------------
@@ -99,7 +99,7 @@ L["confirm_type_pass"]     = "Passen"
 ------------------------------------------------------------------------
 -- Season-Reiter, Patches und gemeinsame Labels
 ------------------------------------------------------------------------
-L["season1_title"]       = "Season 1"
+L["season1_tab"]         = "Season 1"
 L["season2_tab"]         = "Season 2 (12.1)"
 L["season3_tab"]         = "Season 3 (12.2)"
 L["season_coming_soon"]  = "Demnächst verfügbar"
@@ -111,7 +111,7 @@ L["label_removed"]       = "(entfernt)"
 ------------------------------------------------------------------------
 -- Reiter Dungeons
 ------------------------------------------------------------------------
-L["season1_hint"]               = "Hake einen Dungeon an, um den Bonus Roll nach jedem Abschluss automatisch zu passen. Nicht angehakte Dungeons sind davon nicht betroffen."
+L["dungeon_hint"]               = "Hake einen Dungeon an, um den Bonus Roll nach jedem Abschluss automatisch zu passen. Nicht angehakte Dungeons sind davon nicht betroffen."
 L["dungeon_autopass_all_label"] = "ALLE Dungeons automatisch passen (jede Season)"
 
 ------------------------------------------------------------------------
@@ -257,7 +257,7 @@ L["boss_kithix"]              = "Kith'ix"
 ------------------------------------------------------------------------
 -- Reiter Tiefen
 ------------------------------------------------------------------------
-L["season1_delve_hint"]       = "Hake eine Tiefe an, um den Bonus Roll nach jedem Abschluss automatisch zu passen. Nicht angehakte Tiefen sind davon nicht betroffen."
+L["delve_hint"]               = "Hake eine Tiefe an, um den Bonus Roll nach jedem Abschluss automatisch zu passen. Nicht angehakte Tiefen sind davon nicht betroffen."
 L["delve_autopass_all_label"] = "ALLE Tiefen automatisch passen (jede Season)"
 
 ------------------------------------------------------------------------
@@ -469,7 +469,7 @@ L["qol_durability_label"]          = "Haltbarkeitswarnung anzeigen"
 L["qol_durability_info"]           = "Zeigt eine Warnung, wenn die niedrigste Haltbarkeit deiner Ausrüstung auf 30% oder darunter fällt."
 L["qol_durability_warning"]        = "Niedrige Haltbarkeit: %s"
 L["qol_join_reminder_label"]       = "Instanzname beim Gruppen-Join anzeigen"
-L["qol_join_reminder_info"]        = "Zeigt den Instanznamen beim Gruppenbeitritt an. Verschwindet nach 6 Sekunden."
+L["qol_join_reminder_info"]        = "Zeigt den Instanznamen beim Gruppenbeitritt an. Verschwindet 6 Sekunden, nachdem die Gruppe voll ist (Schlachtzug: sofort; spätestens 30 Sekunden plus diese 6)."
 L["qol_autoaccept_label"]          = "Einladungen von Gilde/Freunden automatisch annehmen"
 L["qol_autoaccept_info"]           = "Nimmt Gruppeneinladungen von Gildenmitgliedern, Freunden und Battle.net-Freunden automatisch an."
 L["qol_autorepair_label"]          = "Automatische Reparatur"
@@ -485,7 +485,7 @@ L["qol_autorepair_guild"]          = "Gilde"
 L["qol_autorepair_msg_player"]     = "Automatisch repariert für %s (Spieler)"
 L["qol_autorepair_msg_guild"]      = "Automatisch repariert für %s (Gildenbank)"
 L["qol_join_keyaddon_label"]       = "Begleit-Addon für Schlüsselsteine mit Hinweis öffnen:"
-L["qol_join_keyaddon_info"]        = "Öffnet die gewählte Teleport-Hilfe bei Mythisch-Plus-Gruppen. Schließt nach Teleport, spätestens nach 20 Sekunden. Schlachtzüge nutzen den Hinweis oben."
+L["qol_join_keyaddon_info"]        = "Öffnet die gewählte Teleport-Hilfe bei Mythisch-Plus-Gruppen. BigWigs und Details! schließen nach dem Teleport, spätestens nach 20 Sekunden; der RollAway-Hinweis bleibt, bis du ihn benutzt oder schließt. Schlachtzüge nutzen den Hinweis oben."
 L["qol_join_keyaddon_bigwigs"]     = "BigWigs"
 L["qol_join_keyaddon_details"]     = "Details!"
 L["qol_join_keyaddon_teleport"]    = "RollAway Teleport-Hinweis"

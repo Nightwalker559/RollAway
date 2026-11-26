@@ -16,15 +16,8 @@ local QOL_INFO_W    = UI.QOL_INFO_W
 
 local NAV_W = 130
 
--- Commands for the Commands page: { command text, locale key of the description }.
-local PUBLIC_COMMANDS = {
-    { "/raw  /rollaway", "cmd_raw_info"       },
-    { "/rat",            "cmd_rat_info"       },
-    { "/rawvault",       "cmd_rawvault_info"  },
-    { "/rawparagon",     "cmd_rawparagon_info" },
-    { "/rawtank",        "cmd_rawtank_info"   },
-    { "/rawilvl",        "cmd_gilvl_info"     },
-}
+-- Developer commands for the Commands page: { command text, locale key of the description }.
+-- The public ones are RA.PUBLIC_COMMANDS (FeatureList.lua).
 local DEV_COMMANDS = {
     { "/rawraids",         "cmd_rawraids_info"       },
     { "/rawdungeons",      "cmd_rawdungeons_info"    },
@@ -47,18 +40,15 @@ local DEV_COMMANDS = {
 local function CommandLines(list)
     local lines = {}
     for i, entry in ipairs(list) do
-        lines[i] = "|cffFFFFFF" .. entry[1] .. "|r  " .. RA_L[entry[2]]
+        local command = entry.alias and (entry[1] .. "  " .. entry.alias) or entry[1]
+        lines[i] = "|cffFFFFFF" .. command .. "|r  " .. RA_L[entry[2]]
     end
     return table.concat(lines, "\n")
 end
 
 function RA.BuildDevOptions(parent, registerPage, classColor)
-    local panel = CreateFrame("Frame", nil, parent)
-    panel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
-    panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
-    registerPage("dev", RA_L["dev_section_title"], panel)
-
-    local _, _, headerLine = UI.MakePageHeader(panel, RA_L["dev_panel_title"], RA_L["dev_panel_info"], 0, 16)
+    local panel, _, headerLine = UI.MakeSubPage(parent, registerPage, "dev",
+        RA_L["dev_section_title"], RA_L["dev_panel_title"], RA_L["dev_panel_info"])
 
     -- Left nav in working order.
     local navDefs = {
@@ -68,26 +58,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
         { key = "commands", label = RA_L["dev_nav_commands"] },
     }
 
-    local catPanels  = {}
-    local navButtons = {}
-    local ShowCategory = UI.MakeTabSelector(catPanels, navButtons)
-
-    local prevNavBtn
-    for _, def in ipairs(navDefs) do
-        local key = def.key
-        local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-        btn:SetSize(NAV_W, 24)
-        btn:SetText(def.label)
-        if prevNavBtn then
-            btn:SetPoint("TOP", prevNavBtn, "BOTTOM", 0, -4)
-        else
-            btn:SetPoint("TOPLEFT", headerLine, "BOTTOMLEFT", 0, -14)
-        end
-        prevNavBtn = btn
-        btn:SetScript("OnClick", function() ShowCategory(key) end)
-        RA.Skin.OptionTab(btn, catPanels, key, classColor)
-        navButtons[key] = btn
-    end
+    local catPanels, _, ShowCategory = UI.MakeCategoryNav(panel, headerLine, NAV_W, navDefs, classColor)
 
     -- A scroll frame per category (UI.MakeCategoryPage).
     local function CreateCategoryPanel(key, name)
@@ -244,7 +215,7 @@ function RA.BuildDevOptions(parent, registerPage, classColor)
     local publicHeader = commandsPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     publicHeader:SetPoint("TOPLEFT", commandsPage, "TOPLEFT", 0, -8)
     publicHeader:SetText(RA_L["dev_commands_public"])
-    local publicList = MakeInfoText(commandsPage, publicHeader, 0, -6, QOL_INFO_W, CommandLines(PUBLIC_COMMANDS))
+    local publicList = MakeInfoText(commandsPage, publicHeader, 0, -6, QOL_INFO_W, CommandLines(RA.PUBLIC_COMMANDS))
 
     local devHeader = commandsPage:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     devHeader:SetPoint("TOPLEFT", publicList, "BOTTOMLEFT", 0, -18)

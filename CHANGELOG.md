@@ -11,6 +11,16 @@
 - Options pages: the header (title, subtitle, line, logo) sits in the same place on every page; the Profile page has a short subtitle again.
 - Options pages: the Legacy tab has no divider lines any more, the Open World heading has the same size as the other tabs, and spacing is the same on every tab (first row under a heading, block gaps, checkbox grids, Legacy raid columns).
 - Options pages: checkbox labels are left-aligned, so they no longer shift by a pixel from tab to tab.
+- Legacy tab: the roll type checkboxes have the same spacing as on the Raids tab.
+- Option descriptions for the join reminder and the keystone companion addon say when they close.
+- Vendor filter: less work while the merchant's item data is loading.
+
+### Fixed
+- Profile import: settings you had switched off stay off (they came back on when their default was on), and the ticked salvage materials are imported too.
+- Portal window: opened for the first time during combat, it now shows correctly after the fight.
+- Join reminder: switching it off and on again between groups no longer swallows the next reminder.
+- Ctrl+C in another popup no longer closes it after you used the export or feedback popup.
+- Group Finder quick select: waiting for the season data no longer piles up retry timers.
 
 ---
 

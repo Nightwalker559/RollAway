@@ -16,7 +16,7 @@ local RAID_LOG_OPTION = {
 }
 
 -- "Current season raids only" is on and this raid is not in the running season
--- (RA.IsCurrentSeasonRaid, Data/LegacyRaids.lua).
+-- (RA.IsCurrentSeasonRaid, Core/Season.lua).
 local function SkipLegacyRaid()
     return RollAwayDB.autoLogRaidCurrentOnly == true and not RA.IsCurrentSeasonRaid(RA.cachedInstanceID)
 end

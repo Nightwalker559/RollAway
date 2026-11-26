@@ -17,6 +17,17 @@ function RA.FindSeasonDungeon(field, value)
     end
 end
 
+-- Iterator over the raids (isRaid) or dungeons of the Encounter Journal's selected tier:
+-- for journalID, name, mapID in RA.JournalInstances(isRaid) do ... end
+function RA.JournalInstances(isRaid)
+    local index = 0
+    return function()
+        index = index + 1
+        local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, isRaid)
+        if journalID then return journalID, name, mapID end
+    end
+end
+
 -- Current season from the game: the Encounter Journal's last tier ("Current Season")
 -- lists the running season's raids and dungeons by map ID (= instanceID of
 -- GetInstanceInfo). Nothing to maintain; the legacy list (Data/LegacyRaids.lua) is the
@@ -35,12 +46,9 @@ function RA.GetCurrentSeasonInstances(isRaid)
     local previous = EJ_GetCurrentTier()
     EJ_SelectTier(lastTier)
 
-    local set, index = {}, 1
-    while true do
-        local journalID, _, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, isRaid)
-        if not journalID then break end
+    local set = {}
+    for _, _, mapID in RA.JournalInstances(isRaid) do
         if mapID then set[mapID] = true end
-        index = index + 1
     end
     if previous then EJ_SelectTier(previous) end
 

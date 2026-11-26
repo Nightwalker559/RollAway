@@ -41,7 +41,7 @@ local RAID_DIFF_ITEMS = {
 -- Season sub-tabs of the Dungeons and Raids tabs; other seasons are dev-only (debug mode).
 local function SeasonTabDefs()
     return {
-        { key = "s1", label = RA_L["season1_title"], devOnly = (RA.ACTIVE_SEASON ~= 1), default = (RA.ACTIVE_SEASON == 1) },
+        { key = "s1", label = RA_L["season1_tab"], devOnly = (RA.ACTIVE_SEASON ~= 1), default = (RA.ACTIVE_SEASON == 1) },
         { key = "s2", label = RA_L["season2_tab"],   devOnly = (RA.ACTIVE_SEASON ~= 2), default = (RA.ACTIVE_SEASON == 2) },
         { key = "s3", label = RA_L["season3_tab"],   devOnly = true },
     }
@@ -313,13 +313,8 @@ BuildOptions = function()
     gen:SetHeight(1) -- placeholder; recalculated dynamically once content is laid out
     genScroll:SetScrollChild(gen)
 
-
     -- Visibility section
-    local visMainLabel = gen:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    visMainLabel:SetPoint("TOPLEFT", 0, -10)
-    visMainLabel:SetText(RA_L["visibility_section_title"])
-
-    MakeInfoMark(gen, visMainLabel, RA_L["visibility_section_title"], RA_L["visibility_info"])
+    local visMainLabel = MakeTabHeader(gen, RA_L["visibility_section_title"], RA_L["visibility_info"])
 
     -- Master switch: turns the Group Loot History auto-close/auto-hide off (timer,
     -- watchdog, hide-in-raid): plain default WoW. Wired up below, once the controls it
@@ -454,7 +449,6 @@ BuildOptions = function()
     cbLegacy.frame:SetPoint("TOPLEFT", legacyLabel, "BOTTOMLEFT", 0, -12)
     RA.ToggleControls["legacy"] = cbLegacy
 
-
     -- Scroll child height = last General element, one frame later (GetTop/GetBottom need the layout).
     local lastGenElement = cbLegacy.frame
     local function UpdateGenScrollHeight()
@@ -471,7 +465,7 @@ BuildOptions = function()
 
     -- Tab: Dungeons
     local dng = tabPanels["dungeons"]
-    local dngHeader = MakeTabHeader(dng, RA_L["tab_dungeons"], RA_L["season1_hint"])
+    local dngHeader = MakeTabHeader(dng, RA_L["tab_dungeons"], RA_L["dungeon_hint"])
 
     -- Forward-declared: the master checkbox locks/unlocks them; MakeCheckboxGrid fills them.
     local dngS1Checkboxes = {}
@@ -512,7 +506,7 @@ BuildOptions = function()
 
     -- Tab: Delves
     local dlv = tabPanels["delves"]
-    local dlvHeader = MakeTabHeader(dlv, RA_L["tab_delves"], RA_L["season1_delve_hint"])
+    local dlvHeader = MakeTabHeader(dlv, RA_L["tab_delves"], RA_L["delve_hint"])
 
     -- All delves (any season): OR with the per-delve boxes.
     local dlvAllCheckboxes = {}
@@ -666,10 +660,7 @@ BuildOptions = function()
 
     -- Tab: Prey
     local preyPanel = tabPanels["prey"]
-    local preyLabel = preyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    preyLabel:SetPoint("TOPLEFT", preyPanel, "TOPLEFT", 0, -10)
-    preyLabel:SetText(RA_L["prey_title"])
-    MakeInfoMark(preyPanel, preyLabel, RA_L["prey_title"], RA_L["prey_hint"])
+    local preyLabel = MakeTabHeader(preyPanel, RA_L["prey_title"], RA_L["prey_hint"])
 
     local preyCB = MakeCB(preyPanel, RA_L["prey_toggle_label"], RollAwayDBChar.prey, function(checked)
         RollAwayDBChar.prey = checked
@@ -679,10 +670,7 @@ BuildOptions = function()
 
     -- Tab: Legacy raids
     local legacyPanel = tabPanels["legacy"]
-    local legacyTitle = legacyPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    legacyTitle:SetPoint("TOPLEFT", legacyPanel, "TOPLEFT", 0, -10)
-    legacyTitle:SetText(RA_L["legacy_tab_title"])
-    MakeInfoMark(legacyPanel, legacyTitle, RA_L["legacy_tab_title"], RA_L["legacy_tab_hint"])
+    local legacyTitle = MakeTabHeader(legacyPanel, RA_L["legacy_tab_title"], RA_L["legacy_tab_hint"])
 
     local legacyRaidCBs = {}
     local function RefreshLegacyRaidCheckboxes()
@@ -709,32 +697,21 @@ BuildOptions = function()
     legacyRollLabel:SetText(RA_L["legacy_roll_label"])
 
     -- Need / Greed / Transmog are the fallback chain; Pass replaces it (the others grey out).
-    local rollDefs = {
-        { dbKey = "legacyNeed",     labelKey = "legacy_roll_need"     },
-        { dbKey = "legacyGreed",    labelKey = "legacy_roll_greed"    },
-        { dbKey = "legacyTransmog", labelKey = "legacy_roll_transmog" },
-        { dbKey = "legacyPass",     labelKey = "legacy_roll_pass"     },
-    }
-    local chainCBs = {}
+    local rollCBs  -- Need, Greed, Transmog, Pass
     local function RefreshRollChainState()
-        for _, cb in ipairs(chainCBs) do cb:SetDisabled(RollAwayDB.legacyPass == true) end
+        for i = 1, 3 do rollCBs[i]:SetDisabled(RollAwayDB.legacyPass == true) end
     end
-    local prevRollCB = nil
-    for _, rd in ipairs(rollDefs) do
-        local dbKey = rd.dbKey
-        local rollCB = MakeCB(legacyPanel, RA_L[rd.labelKey], RollAwayDB[dbKey], function(checked)
-            RollAwayDB[dbKey] = checked
-            DBG("[Legacy UI]", dbKey, "=", tostring(checked))
-            if dbKey == "legacyPass" then RefreshRollChainState() end
-        end)
-        if not prevRollCB then
-            rollCB.frame:SetPoint("TOPLEFT", legacyRollLabel, "BOTTOMLEFT", 0, -8)
-        else
-            rollCB.frame:SetPoint("LEFT", prevRollCB, "RIGHT", 16, 0)
-        end
-        prevRollCB = rollCB.frame
-        if dbKey ~= "legacyPass" then chainCBs[#chainCBs + 1] = rollCB end
-    end
+    local _
+    _, rollCBs = MakeCheckboxRow(legacyPanel, legacyRollLabel, {
+        { key = "legacyNeed",     label = RA_L["legacy_roll_need"]     },
+        { key = "legacyGreed",    label = RA_L["legacy_roll_greed"]    },
+        { key = "legacyTransmog", label = RA_L["legacy_roll_transmog"] },
+        { key = "legacyPass",     label = RA_L["legacy_roll_pass"]     },
+    }, RollAwayDB, function(dbKey, checked)
+        RollAwayDB[dbKey] = checked
+        DBG("[Legacy UI]", dbKey, "=", tostring(checked))
+        if dbKey == "legacyPass" then RefreshRollChainState() end
+    end)
     RefreshRollChainState()
 
     -- One expansion column: header, then its raids' checkboxes, bound to the legacy raid table

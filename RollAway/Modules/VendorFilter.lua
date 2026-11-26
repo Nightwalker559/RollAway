@@ -207,6 +207,15 @@ function RA.ResetVendorFilterButtons()
     wipe(knownCache)
 end
 
+local secondPassPending = false
+
+local function SecondPass()
+    secondPassPending = false
+    if MerchantFrame and MerchantFrame:IsShown() and RollAwayDB and RollAwayDB.vendorFilterEnabled then
+        ForEachMerchantButton(ApplyVendorFilterButton)
+    end
+end
+
 function RA.ApplyVendorFilterFeature()
     if not (RollAwayDB and RollAwayDB.vendorFilterEnabled) then
         RA.ResetVendorFilterButtons()
@@ -217,11 +226,10 @@ function RA.ApplyVendorFilterFeature()
     ForEachMerchantButton(ApplyVendorFilterButton)
 
     -- Blizzard sets some slot IDs one frame later: a second pass catches buttons that read 0.
-    RunNextFrame(function()
-        if MerchantFrame and MerchantFrame:IsShown() and RollAwayDB and RollAwayDB.vendorFilterEnabled then
-            ForEachMerchantButton(ApplyVendorFilterButton)
-        end
-    end)
+    -- One per frame (the update bursts while item data streams in).
+    if secondPassPending then return end
+    secondPassPending = true
+    RunNextFrame(SecondPass)
 end
 
 -- Initialization
