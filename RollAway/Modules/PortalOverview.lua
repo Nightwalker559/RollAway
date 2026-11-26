@@ -285,23 +285,12 @@ local function CreateOverviewFrame()
     ApplyMetrics()
     overviewFrame = RA.CreatePanelWindow("RollAwayPortalOverviewFrame", UIParent, frameWidth, frameWidth,
         RA_L["portal_overview_title"])
-    local pos = RollAwayDB and RollAwayDB.portalOverviewPos
-    if pos then
-        overviewFrame:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
-    else
-        overviewFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
-    end
     overviewFrame:SetFrameStrata("HIGH")
     overviewFrame:SetClampedToScreen(true)
-    RA.MakeDraggable(overviewFrame)
-    overviewFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local point, _, relPoint, x, y = self:GetPoint()
-        if RollAwayDB then
-            RollAwayDB.portalOverviewPos = { point = point, relPoint = relPoint, x = x, y = y }
-        end
-    end)
-    RA.SafeSetShown(overviewFrame, false)
+    RA.MakeSavedDraggable(overviewFrame, "portalOverviewPos", 0, 100)
+    -- A plain Hide is allowed even in combat: no secure buttons yet. RA.SafeSetShown must not
+    -- be used before SetScript("OnEvent") below, which would drop its deferred-show hook.
+    overviewFrame:Hide()
 
     -- Tabs (Blizzard tab template; names must be "<frameName>Tab<index>" for
     -- PanelTemplates_UpdateTabs).
@@ -346,12 +335,7 @@ local function CreateOverviewFrame()
 
     CreateSettingsPanel()
 
-    scrollFrame:EnableMouseWheel(true)
-    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local newScroll = self:GetVerticalScroll() - delta * 30
-        newScroll = math.max(0, math.min(newScroll, self:GetVerticalScrollRange()))
-        self:SetVerticalScroll(newScroll)
-    end)
+    RA.EnableWheelScroll(scrollFrame)
 
     -- Tab 2 with nothing learned
     overviewFrame.emptyText = overviewFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

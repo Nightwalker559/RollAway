@@ -9,7 +9,6 @@ local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
 
 local UI                = RA.OptionsUI
-local MakeSectionHeader = UI.MakeSectionHeader
 local MakeDropdown      = UI.MakeDropdown
 local MakeSkinnedButton = UI.MakeSkinnedButton
 local MakeInfoMark      = UI.MakeInfoMark
@@ -41,16 +40,24 @@ end
 
 -- Copies only keys of RA.defaults.profile whose imported type matches the default (a
 -- garbage or edited string cannot smuggle in bad types). Unknown keys are dropped,
--- missing ones get the default.
+-- missing ones get the default. An empty default table is an ID set ([itemID] = true,
+-- salvageAllowed): it is replaced by the imported entries of that shape.
 local function ApplyImportedProfile(target, defaults, imported)
     for k, defaultVal in pairs(defaults) do
         if type(defaultVal) == "table" then
             target[k] = target[k] or {}
             local sub = (type(imported[k]) == "table") and imported[k] or {}
-            ApplyImportedProfile(target[k], defaultVal, sub)
+            if next(defaultVal) == nil then
+                wipe(target[k])
+                for id, on in pairs(sub) do
+                    if type(id) == "number" and on == true then target[k][id] = true end
+                end
+            else
+                ApplyImportedProfile(target[k], defaultVal, sub)
+            end
         else
             local v = imported[k]
-            target[k] = (type(v) == type(defaultVal)) and v or defaultVal
+            if type(v) == type(defaultVal) then target[k] = v else target[k] = defaultVal end
         end
     end
 end
@@ -143,30 +150,7 @@ RegisterConfirmPopup("ROLLAWAY_PROFILE_ALL", {
     end,
 })
 
-RA.RegisterPopup("ROLLAWAY_PROFILE_EXPORT", {
-    text         = RA_L["profile_export_prompt"],
-    button1      = OKAY,
-    hasEditBox   = true,
-    editBoxWidth = 350,
-    maxLetters   = 0,
-    OnShow = function(dialog, data)
-        local editBox = dialog:GetEditBox()
-        editBox:SetText(data or "")
-        editBox:HighlightText()
-        editBox:SetFocus()
-        if not editBox.raCopyCloseHooked then
-            editBox.raCopyCloseHooked = true
-            editBox:HookScript("OnKeyDown", function(_, key)
-                if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) then
-                    -- Deferred: closing on keydown pre-empted the clipboard copy.
-                    RunNextFrame(function() dialog:Hide() end)
-                end
-            end)
-        end
-    end,
-    EditBoxOnEnterPressed  = CloseDialog,
-    EditBoxOnEscapePressed = CloseDialog,
-})
+RA.RegisterCopyPopup("ROLLAWAY_PROFILE_EXPORT", RA_L["profile_export_prompt"])
 
 RegisterEditPopup("ROLLAWAY_PROFILE_IMPORT", {
     text         = RA_L["profile_import_prompt"],
@@ -214,13 +198,8 @@ end
 
 -- Page: Profile (parent / registerPage: see RA.BuildQoLOptions)
 function RA.BuildProfileOptions(parent, registerPage)
-    local panel = CreateFrame("Frame", nil, parent)
-    panel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
-    panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
-    registerPage("profile", RA_L["profile_section_title"], panel)
-
-    local title, headerLine = MakeSectionHeader(panel, panel, -10, RA_L["profile_panel_title"])
-    RA.AddHeaderLogo(panel, headerLine)
+    local panel, title, headerLine = UI.MakeSubPage(parent, registerPage, "profile",
+        RA_L["profile_section_title"], RA_L["profile_panel_title"], RA_L["profile_panel_sub"])
     MakeInfoMark(panel, title, RA_L["profile_panel_title"], RA_L["profile_panel_info"])
 
     -- ── Active profile ───────────────────────────────────────────────
@@ -378,6 +357,4 @@ function RA.BuildProfileOptions(parent, registerPage)
     end)
 
     Refresh()
-
-    return panel
 end

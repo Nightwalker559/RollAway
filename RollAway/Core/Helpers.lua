@@ -156,6 +156,50 @@ function RA.MakeDraggable(frame)
     frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
 end
 
+-- Popup that only shows a text to copy (addons cannot write to the clipboard or open
+-- links): StaticPopup_Show(name, nil, nil, text). Ctrl+C closes it.
+local copyPopups = {}  -- [popup name] = true
+
+function RA.RegisterCopyPopup(name, prompt)
+    local function Close(editBox) editBox:GetParent():Hide() end
+    copyPopups[name] = true
+    RA.RegisterPopup(name, {
+        text         = prompt,
+        button1      = OKAY,
+        hasEditBox   = true,
+        editBoxWidth = 350,
+        maxLetters   = 0,
+        OnShow = function(dialog, data)
+            local editBox = dialog:GetEditBox()
+            editBox:SetText(data or "")
+            editBox:HighlightText()
+            editBox:SetFocus()
+            if not editBox.raCopyCloseHooked then
+                editBox.raCopyCloseHooked = true
+                editBox:HookScript("OnKeyDown", function(_, key)
+                    -- The edit box serves other popups too (the hook stays): copy popups only.
+                    local owner = editBox:GetParent()
+                    if key == "C" and (IsControlKeyDown() or IsMetaKeyDown()) and copyPopups[owner.which] then
+                        -- Deferred: closing on keydown pre-empted the clipboard copy.
+                        RunNextFrame(function() owner:Hide() end)
+                    end
+                end)
+            end
+        end,
+        EditBoxOnEnterPressed  = Close,
+        EditBoxOnEscapePressed = Close,
+    })
+end
+
+-- Mouse wheel scrolling for a plain ScrollFrame (no scroll bar).
+function RA.EnableWheelScroll(scrollFrame)
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local target = self:GetVerticalScroll() - delta * 30
+        self:SetVerticalScroll(math.max(0, math.min(target, self:GetVerticalScrollRange())))
+    end)
+end
+
 -- Window in the game's current standard style (DefaultPanelTemplate: stone background,
 -- metal NineSlice border, title bar) with the standard close button (frame.CloseButton).
 function RA.CreatePanelWindow(name, parent, width, height, title)
@@ -182,6 +226,25 @@ function RA.AddHeaderLogo(page, headerLine)
     icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
     icon:SetPoint("BOTTOMRIGHT", headerLine, "TOPRIGHT", 0, 6)
     return icon
+end
+
+-- MakeDraggable for a window whose position is kept in the profile (RollAwayDB[dbKey]);
+-- without a saved one it sits at (x, y) from the screen center.
+function RA.MakeSavedDraggable(frame, dbKey, x, y)
+    RA.MakeDraggable(frame)
+    local pos = RollAwayDB and RollAwayDB[dbKey]
+    if pos then
+        frame:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
+    else
+        frame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+    end
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local point, _, relPoint, px, py = self:GetPoint()
+        if RollAwayDB then
+            RollAwayDB[dbKey] = { point = point, relPoint = relPoint, x = px, y = py }
+        end
+    end)
 end
 
 -- Like MakeDraggable, but honors qolReminderLockPosition (checked on every drag).

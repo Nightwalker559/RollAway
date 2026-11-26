@@ -15,6 +15,28 @@ local WIDTH, HEIGHT, CONTENT_W = 400, 640, 354
 local NAME_X = 22
 local TEXT_W = CONTENT_W - NAME_X - 4 - 22 - 10
 
+-- WoW cannot open links, so the feedback button shows the address to copy (Ctrl+C).
+local FEEDBACK_URL = "https://github.com/Nightwalker559/RollAway/issues"
+-- Room under the list for the feedback button.
+local FOOTER_H = 40
+
+RA.RegisterCopyPopup("ROLLAWAY_FEEDBACK", RA_L["feat_feedback_prompt"])
+
+-- Shared by the overview and the options window.
+function RA.ShowFeedback() StaticPopup_Show("ROLLAWAY_FEEDBACK", nil, nil, FEEDBACK_URL) end
+
+-- The commands everyone has, also listed on the Developer page (OptionsDev.lua).
+-- { command, locale key of the description, alias = second spelling }
+RA.PUBLIC_COMMANDS = {
+    { "/raw",         "cmd_raw_info",         alias = "/rollaway" },
+    { "/rawfeatures", "cmd_rawfeatures_info" },
+    { "/rat",         "cmd_rat_info"         },
+    { "/rawvault",    "cmd_rawvault_info"    },
+    { "/rawparagon",  "cmd_rawparagon_info"  },
+    { "/rawtank",     "cmd_rawtank_info"     },
+    { "/rawilvl",     "cmd_gilvl_info"       },
+}
+
 local function AnyTrue(t)
     if type(t) ~= "table" then return false end
     for _, v in pairs(t) do
@@ -121,15 +143,7 @@ local function BuildSections()
             Qol("logs", "qol_log_enable_label",        "qol_log_enable_info", "autoLogEnabled"),
             Qol("logs", "qol_log_advlog_reminder_label", nil,                 "advLogReminderEnabled"),
         } },
-        { title = "feat_section_commands", commands = {
-            { "/raw",         "cmd_raw_info"         },
-            { "/rawfeatures", "cmd_rawfeatures_info" },
-            { "/rat",         "cmd_rat_info"         },
-            { "/rawvault",    "cmd_rawvault_info"    },
-            { "/rawparagon",  "cmd_rawparagon_info"  },
-            { "/rawtank",     "cmd_rawtank_info"     },
-            { "/rawilvl",     "cmd_gilvl_info"       },
-        } },
+        { title = "feat_section_commands", commands = RA.PUBLIC_COMMANDS },
     }
     return sections
 end
@@ -170,7 +184,11 @@ local function CreateFrameOnce()
 
     local scroll = RA.OptionsUI.MakeScrollFrame(f, "RollAwayFeatureListScroll")
     scroll:SetPoint("TOPLEFT",     f, "TOPLEFT",      12, -64)
-    scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30,  12)
+    scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30,  FOOTER_H + 12)
+
+    local feedbackBtn = RA.OptionsUI.MakeSkinnedButton(f, RA_L["feat_feedback_button"], 140)
+    feedbackBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 14)
+    feedbackBtn:SetScript("OnClick", RA.ShowFeedback)
 
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(CONTENT_W + 4, 1)

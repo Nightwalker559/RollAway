@@ -1,11 +1,14 @@
 -- RollAway - Core/DevTools.lua
 -- Developer tools for the dev characters: event logger, dev slash commands (/rawtest,
 -- /rawraids, ...) and the Encounter Journal / season / name dumps. They write to the debug
--- log window (Core/Debug.lua). Loaded last.
+-- log window (Core/Debug.lua).
 
 local RA   = _G["RollAway"]
 local DBG  = RA.DBG
 local RA_L = RA.RA_L
+
+-- Dump output: always shown, whatever the log filter says.
+local function Log(...) RA.AppendDebugLogUnfiltered(...) end
 
 ------------------------------------------------------------------------
 -- Event logger
@@ -108,17 +111,13 @@ local function TestReminders()
     RA.cachedDiffID               = 16
     RollAwayDBChar.lastReminderInstID = nil
 
-    -- Pretend to own 3 Voidcores (restored even if ShowReminder errors).
-    local origGetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
-    C_CurrencyInfo.GetCurrencyInfo = function(id)
-        if id == RA.VOIDCORE_CURRENCY_ID then return { quantity = 3 } end
-        return origGetCurrencyInfo(id)
-    end
+    -- Pretend to own 3 Voidcores (not by replacing the game's function: that taints it).
+    RA.devTest.voidcores = 3
     local savedMythicPass = RollAwayDBChar.raidAutoPassDifficulty.mythic
     RollAwayDBChar.raidAutoPassDifficulty.mythic = true
     local ok, err = pcall(WithSettings, { showReminder = false, autoPassWarning = true }, RA.ShowReminder)
     RollAwayDBChar.raidAutoPassDifficulty.mythic = savedMythicPass
-    C_CurrencyInfo.GetCurrencyInfo = origGetCurrencyInfo
+    RA.devTest.voidcores = nil
 
     RA.cachedInstanceType         = savedType
     RA.cachedInstanceID           = savedID
@@ -186,7 +185,6 @@ end
 -- map ID = the instanceID of GetInstanceInfo), marking the current season and what
 -- the addon knows.
 local function DumpJournalTiers(isRaid)
-    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local tag = isRaid and "[Raids]" or "[Dungeons]"
     local here = RA.cachedInstanceID
     local current = RA.GetCurrentSeasonInstances(isRaid)
@@ -195,10 +193,8 @@ local function DumpJournalTiers(isRaid)
         "| you are in instance:", here, "| current season set:", current and "yes" or "empty")
     for tier = 1, EJ_GetNumTiers() do
         EJ_SelectTier(tier)
-        local entries, index = {}, 1
-        while true do
-            local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, isRaid)
-            if not journalID then break end
+        local entries = {}
+        for _, name, mapID in RA.JournalInstances(isRaid) do
             local marks = {}
             if isRaid and RA.LEGACY_RAID_INSTANCES[mapID] then marks[#marks + 1] = "legacy list" end
             if not isRaid and RA.DUNGEON_MAP[mapID] then marks[#marks + 1] = "addon: " .. RA.DUNGEON_MAP[mapID] end
@@ -206,7 +202,6 @@ local function DumpJournalTiers(isRaid)
             if mapID == here then marks[#marks + 1] = "HERE" end
             entries[#entries + 1] = string.format("%s [map %s%s%s]", name, tostring(mapID),
                 #marks > 0 and ", " or "", table.concat(marks, ", "))
-            index = index + 1
         end
         Log(string.format("%s tier %d %s: %s", tag, tier, tostring((EJ_GetTierInfo(tier))),
             #entries > 0 and table.concat(entries, "; ") or "-"))
@@ -235,7 +230,6 @@ end
 -- /rawbosses [tier|all]: the bosses of every raid of a journal tier (default: the
 -- last = current season) with their encounter IDs; known bosses show their key.
 local function DumpRaidBosses(arg)
-    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local numTiers = EJ_GetNumTiers()
     local first, last = numTiers, numTiers
     if arg == "all" then
@@ -247,10 +241,7 @@ local function DumpRaidBosses(arg)
     for tier = first, last do
         EJ_SelectTier(tier)
         Log("[Bosses] tier", tier, tostring((EJ_GetTierInfo(tier))))
-        local raidIndex = 1
-        while true do
-            local journalID, raidName, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(raidIndex, true)
-            if not journalID then break end
+        for journalID, raidName, mapID in RA.JournalInstances(true) do
             local bosses = {}
             for _, boss in ipairs(JournalBosses(journalID)) do
                 local known = KnownBossKey(boss.encounterID)
@@ -259,7 +250,6 @@ local function DumpRaidBosses(arg)
             end
             Log(string.format("[Bosses] %s [map %s]: %s", raidName, tostring(mapID),
                 #bosses > 0 and table.concat(bosses, "; ") or "-"))
-            raidIndex = raidIndex + 1
         end
     end
     restore()
@@ -313,7 +303,6 @@ local function CollectMythicPlusActivities()
 end
 
 local function DumpSeasonData()
-    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local numTiers = EJ_GetNumTiers()
     local maxExpansionTier = math.min(numTiers, (LE_EXPANSION_LEVEL_CURRENT or (numTiers - 2)) + 1)
     local restore = SaveJournalSelection()
@@ -323,12 +312,8 @@ local function DumpSeasonData()
     local expansionOf = {}
     for tier = 1, maxExpansionTier do
         EJ_SelectTier(tier)
-        local index = 1
-        while true do
-            local journalID, _, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, false)
-            if not journalID then break end
+        for _, _, mapID in RA.JournalInstances(false) do
             if mapID then expansionOf[mapID] = EXPANSION_KEYS[tier] or "?" end
-            index = index + 1
         end
     end
 
@@ -363,10 +348,7 @@ local function DumpSeasonData()
     -- Raid bosses of the season's raids that the addon does not know yet.
     EJ_SelectTier(numTiers)
     Log("[Season] Raid bosses unknown to the addon in the current season (Data/Raids.lua, RA.RAIDS[n]; skip world bosses):")
-    local raidIndex = 1
-    while true do
-        local journalID, raidName, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(raidIndex, true)
-        if not journalID then break end
+    for journalID, raidName, mapID in RA.JournalInstances(true) do
         local lines, known = {}, 0
         for _, boss in ipairs(JournalBosses(journalID)) do
             if KnownBossKey(boss.encounterID) then
@@ -378,19 +360,16 @@ local function DumpSeasonData()
         end
         Log(string.format("[Season] -- %s (mapID %s): %d unknown, %d known", raidName, tostring(mapID), #lines, known))
         for _, line in ipairs(lines) do Log(line) end
-        raidIndex = raidIndex + 1
     end
 
     restore()
 end
 
 -- /rawnames: the game's own names for every locale key that holds a game name, one line
--- each (`[Names] <key> | <id> | <name>`), in the client's language. Run it in deDE and enUS,
--- save both logs (Claude Tools\RollAway\locale/data) and compare with locale_names_check.lua.
--- Dungeons without a map ID in the data are checked
--- against `ejdungeon` lines: every journal dungeon (map ID | name).
+-- each (`[Names] <key> | <id> | <name>`), in the client's language. Run it in deDE and enUS
+-- and compare both logs with the locale check. Dungeons without a map ID in the data are
+-- checked against the `ejdungeon` lines: every journal dungeon (map ID | name).
 local function DumpNames()
-    local function Log(...) RA.AppendDebugLogUnfiltered(...) end
     local function Line(key, id, name)
         Log(string.format("[Names] %s | %s | %s", key, tostring(id or "-"), tostring(name or "?")))
     end
@@ -421,30 +400,31 @@ local function DumpNames()
     local seenMap, seenBoss = {}, {}
     for tier = 1, EJ_GetNumTiers() do
         EJ_SelectTier(tier)
-        local index = 1
-        while true do
-            local journalID, name, _, _, _, _, _, _, _, _, mapID = EJ_GetInstanceByIndex(index, false)
-            if not journalID then break end
+        for _, name, mapID in RA.JournalInstances(false) do
             if mapID and not seenMap[mapID] then
                 seenMap[mapID] = true
                 Line("ejdungeon", mapID, name)
             end
-            index = index + 1
         end
-        index = 1
-        while true do
-            local journalID = EJ_GetInstanceByIndex(index, true)
-            if not journalID then break end
+        for journalID in RA.JournalInstances(true) do
             for _, boss in ipairs(JournalBosses(journalID)) do
                 if boss.encounterID and not seenBoss[boss.encounterID] then
                     seenBoss[boss.encounterID] = true
                     Line("ejboss", boss.encounterID, boss.name)
                 end
             end
-            index = index + 1
         end
     end
     restore()
+end
+
+-- A command that writes a dump into the log and tells in chat whether it worked.
+-- argOf (optional) turns the typed text into the dump's argument.
+local function RegisterDumpCommand(name, doneKey, dump, argOf)
+    RegisterDevCommand(name, function(msg)
+        local ok, err = pcall(dump, argOf and argOf(msg))
+        RA.Print(ok and RA_L[doneKey] or ("/" .. name:lower() .. ": " .. tostring(err)))
+    end)
 end
 
 local function RegisterSlashCommands()
@@ -467,35 +447,15 @@ local function RegisterSlashCommands()
 
     RegisterDevCommand("RAWREMINDER", TestReminders)
 
-    -- /rawraids → Encounter Journal tiers and raids into the log
-    RegisterDevCommand("RAWRAIDS", function()
-        local ok, err = pcall(DumpJournalTiers, true)
-        RA.Print(ok and RA_L["cmd_rawraids_done"] or ("/rawraids: " .. tostring(err)))
-    end)
-
+    -- /rawraids, /rawdungeons → Encounter Journal tiers with their raids / dungeons
+    RegisterDumpCommand("RAWRAIDS", "cmd_rawraids_done", DumpJournalTiers, function() return true end)
+    RegisterDumpCommand("RAWDUNGEONS", "cmd_rawdungeons_done", DumpJournalTiers, function() return false end)
     -- /rawseason → paste-ready Lua for the running season's dungeons and raid bosses
-    RegisterDevCommand("RAWSEASON", function()
-        local ok, err = pcall(DumpSeasonData)
-        RA.Print(ok and RA_L["cmd_rawseason_done"] or ("/rawseason: " .. tostring(err)))
-    end)
-
-    -- /rawbosses [tier|all] → raid bosses with their encounter IDs into the log
-    RegisterDevCommand("RAWBOSSES", function(msg)
-        local ok, err = pcall(DumpRaidBosses, strtrim(msg or ""):lower())
-        RA.Print(ok and RA_L["cmd_rawbosses_done"] or ("/rawbosses: " .. tostring(err)))
-    end)
-
+    RegisterDumpCommand("RAWSEASON", "cmd_rawseason_done", DumpSeasonData)
+    -- /rawbosses [tier|all] → raid bosses with their encounter IDs
+    RegisterDumpCommand("RAWBOSSES", "cmd_rawbosses_done", DumpRaidBosses, function(msg) return strtrim(msg or ""):lower() end)
     -- /rawnames → the game's names for every locale key that holds one (see DumpNames)
-    RegisterDevCommand("RAWNAMES", function()
-        local ok, err = pcall(DumpNames)
-        RA.Print(ok and RA_L["cmd_rawnames_done"] or ("/rawnames: " .. tostring(err)))
-    end)
-
-    -- /rawdungeons → Encounter Journal tiers, dungeons and the Mythic+ pool into the log
-    RegisterDevCommand("RAWDUNGEONS", function()
-        local ok, err = pcall(DumpJournalTiers, false)
-        RA.Print(ok and RA_L["cmd_rawdungeons_done"] or ("/rawdungeons: " .. tostring(err)))
-    end)
+    RegisterDumpCommand("RAWNAMES", "cmd_rawnames_done", DumpNames)
 
     -- /rawreset → reset reminder state
     RegisterDevCommand("RAWRESET", function()

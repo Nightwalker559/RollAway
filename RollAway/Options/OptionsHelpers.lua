@@ -11,7 +11,8 @@ local PAGE_W = 576
 -- Grid layout constants (all tabs)
 local COL_GAP = 24
 local ENTRY_W = (PAGE_W - COL_GAP) / 2
-local ENTRY_H = 26
+-- ENTRY_H = a checkbox row's height (MakeCB), so a grid row sits flush like a checkbox row.
+local ENTRY_H = 24
 local ROW_GAP = 6
 
 -- Tab label colors (active / inactive), also used by ElvUI_Skin.lua.
@@ -20,20 +21,8 @@ local GRAY = { r = 0.5,  g = 0.5,  b = 0.5  }
 
 -- UI helpers
 
-local function MakeSectionHeader(parent, anchorFrame, anchorOffsetY, text)
-    local lbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    lbl:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", 0, anchorOffsetY)
-    lbl:SetText(text)
-    local line = parent:CreateTexture(nil, "ARTWORK")
-    line:SetHeight(1)
-    line:SetPoint("TOPLEFT", lbl, "BOTTOMLEFT", 0, -6)
-    line:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
-    line:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    return lbl, line
-end
-
--- Full single-line width of `text` in the font `fs` uses (a label's own GetStringWidth is
--- cut by the checkbox width and ElvUI's re-fonting: long labels ended in "...").
+-- Full single-line width of `text` in the font `fs` uses. A label's own GetStringWidth is
+-- cut by the checkbox width and ElvUI's re-fonting (long labels would end in "...").
 local widthProbe
 local function MeasureLabelWidth(fs, text)
     widthProbe = widthProbe or UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -47,6 +36,7 @@ local CB_BOX_WIDTH  = 24  -- checkbox graphic left of the label
 local CB_SLACK      = 16  -- breathing room after the label
 local CB_LINE_H     = 14
 local CB_BOX_SIZE   = 22
+local CB_TEXT_GAP   = 10  -- box edge to the label's first letter (the label is left-aligned, so every row starts alike)
 
 -- Sizes the checkbox to its label (up to widthOverride / maxWidth); a longer label wraps
 -- onto more lines (frame and label grow, so what hangs below moves down).
@@ -58,14 +48,14 @@ local function SetCBLines(cb, lines)
     if lines > 1 then
         -- Top-anchored: the first line stays beside the box.
         box:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -1)
-        text:SetPoint("TOPLEFT", box, "TOPRIGHT", 2, -4)
+        text:SetPoint("TOPLEFT", box, "TOPRIGHT", CB_TEXT_GAP, -4)
         text:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -4)
         text:SetJustifyV("TOP")
         text:SetHeight(lines * CB_LINE_H)
         frame:SetHeight(lines * CB_LINE_H + 8)
     else
         box:SetPoint("LEFT", frame, "LEFT", 0, 0)
-        text:SetPoint("LEFT", box, "RIGHT", 2, 0)
+        text:SetPoint("LEFT", box, "RIGHT", CB_TEXT_GAP, 0)
         text:SetPoint("RIGHT", frame, "RIGHT")
         text:SetJustifyV("MIDDLE")
         text:SetHeight(18)
@@ -77,7 +67,7 @@ end
 local function FitCB(cb, label, widthOverride, maxWidth)
     local textW   = MeasureLabelWidth(cb.text, label)
     local width   = widthOverride or math.min(CB_BOX_WIDTH + textW + CB_SLACK, maxWidth)
-    local lines   = math.max(1, math.ceil(textW / (width - CB_BOX_WIDTH - 6)))
+    local lines   = math.max(1, math.ceil(textW / (width - CB_BOX_SIZE - CB_TEXT_GAP)))
     cb:SetWidth(width)
     SetCBLines(cb, lines)
 end
@@ -123,6 +113,7 @@ local function MakeCB(parent, label, checked, onChange, widthOverride, maxWidth)
     local box = MakeCheckBox(frame)
 
     local text = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    text:SetJustifyH("LEFT")   -- the font's default is centered
     text:SetText(label)
     box:SetChecked(checked and true or false)
 
@@ -191,6 +182,25 @@ local function MakeInfoText(parent, anchor, xOffset, yOffset, width, text)
     info:SetTextColor(0.6, 0.6, 0.6, 1)
     info:SetText(text)
     return info
+end
+
+-- Fixed header of an options page, the same on every page: title, one-line gray subtitle,
+-- the line below it and the addon logo at the line's right end. leftX / rightInset place the
+-- header inside `panel`. Returns title, subtitle, line.
+local function MakePageHeader(panel, titleText, infoText, leftX, rightInset)
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", leftX, -10)
+    title:SetText(titleText)
+
+    local info = MakeInfoText(panel, title, 0, -6, 510, infoText)
+
+    local line = panel:CreateTexture(nil, "ARTWORK")
+    line:SetHeight(1)
+    line:SetPoint("TOPLEFT", info, "BOTTOMLEFT", 0, -10)
+    line:SetPoint("RIGHT", panel, "RIGHT", -rightInset, 0)
+    line:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    RA.AddHeaderLogo(panel, line)
+    return title, info, line
 end
 
 -- Width of a QoL category's content (between nav and scrollbar); descriptions are indented 20.
@@ -410,6 +420,42 @@ local function MakeTabSelector(panels, buttons)
     end
 end
 
+-- A page of the window's list besides the main one (QoL, Profile, Developer): inset by 16,
+-- registered, with the shared header. Returns panel, title, header line.
+local function MakeSubPage(parent, registerPage, key, label, title, info)
+    local panel = CreateFrame("Frame", nil, parent)
+    panel:SetPoint("TOPLEFT",     parent, "TOPLEFT",      16, 0)
+    panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 0)
+    registerPage(key, label, panel)
+    local titleText, _, line = MakePageHeader(panel, title, info, 0, 16)
+    return panel, titleText, line
+end
+
+-- Category buttons down the left of a page, below its header line. defs: { key, label } in
+-- shown order; classColor: ElvUI tab highlight. Returns pages (filled by MakeCategoryPage),
+-- buttons and show(key).
+local function MakeCategoryNav(panel, headerLine, width, defs, classColor)
+    local pages, buttons = {}, {}
+    local show = MakeTabSelector(pages, buttons)
+    local previous
+    for _, def in ipairs(defs) do
+        local key = def.key
+        local btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+        btn:SetSize(width, 24)
+        btn:SetText(def.label)
+        if previous then
+            btn:SetPoint("TOP", previous, "BOTTOM", 0, -4)
+        else
+            btn:SetPoint("TOPLEFT", headerLine, "BOTTOMLEFT", 0, -14)
+        end
+        previous = btn
+        btn:SetScript("OnClick", function() show(key) end)
+        RA.Skin.OptionTab(btn, pages, key, classColor)
+        buttons[key] = btn
+    end
+    return pages, buttons, show
+end
+
 -- A row of checkboxes below anchorFrame. Returns the row's invisible full-width container
 -- (an anchor for what comes next, e.g. MakeSeasonTabs) and the checkboxes.
 local function MakeCheckboxRow(parent, anchorFrame, items, dbTable, onClickKeyOf, gap)
@@ -595,7 +641,7 @@ local function MakeBossSectionGrid(parent, anchorFrame, sections, dbTable, label
                 MakeGridCheckbox(entry, RA_L["boss_"..b.key], dbTable, b.key)
             end
             prevAnchor  = leftEntries[math.floor((#section.bosses - 1) / 2)]
-            prevOffsetY = -16
+            prevOffsetY = -14
         end
     end
     return prevAnchor, prevOffsetY
@@ -649,19 +695,22 @@ end
 -- Public exports (Options, OptionsQoL, OptionsDev, OptionsProfile)
 RA.OptionsUI = {
     MakeCategoryPage  = MakeCategoryPage,
+    MakeCategoryNav   = MakeCategoryNav,
+    MakeSubPage       = MakeSubPage,
     RunWhenCheckboxesSettled = RunWhenCheckboxesSettled,
     PAGE_W            = PAGE_W,
     ENTRY_W           = ENTRY_W,
     COL_GAP           = COL_GAP,
-    GOLD              = GOLD,
+    ROW_GAP           = ROW_GAP,
+    GOLD             = GOLD,
     QOL_CONTENT_W     = QOL_CONTENT_W,
     QOL_INFO_W        = QOL_INFO_W,
     GRAY              = GRAY,
-    MakeSectionHeader = MakeSectionHeader,
     MakeCB            = MakeCB,
     MakeCheckBox      = MakeCheckBox,
     MakeInfoText      = MakeInfoText,
     MakeInfoMark      = MakeInfoMark,
+    MakePageHeader    = MakePageHeader,
     MakeToggle        = MakeToggle,
     MakeDropdown      = MakeDropdown,
     MakeValueSlider   = MakeValueSlider,

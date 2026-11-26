@@ -1,6 +1,6 @@
 -- RollAway - Core/Debug.lua
 -- Debug log: the window DBG() writes to (RA.AppendDebugLog) and the category filter.
--- The dev commands and dumps that use it: Core/DevTools.lua. Loaded last.
+-- The dev commands and dumps that use it: Core/DevTools.lua.
 
 local RA   = _G["RollAway"]
 local RA_L = RA.RA_L
@@ -63,20 +63,9 @@ local function CreateDebugLogFrame()
         size and size.w or 560, size and size.h or 360, LOG_TITLE)
     f:SetResizable(true)
     f:SetResizeBounds(380, 200, 1400, 1000)
-    local pos = RollAwayDB.debugLogPos
-    if pos then
-        f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
-    else
-        f:SetPoint("CENTER")
-    end
     f:SetFrameStrata("DIALOG")
     f:SetClampedToScreen(true)
-    RA.MakeDraggable(f)
-    f:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local point, _, relPoint, x, y = self:GetPoint()
-        RollAwayDB.debugLogPos = { point = point, relPoint = relPoint, x = x, y = y }
-    end)
+    RA.MakeSavedDraggable(f, "debugLogPos", 0, 0)
     debugLogTitle = f:GetTitleText()
 
     local scrollFrame = CreateFrame("ScrollFrame", "RollAwayDebugLogScroll", f, "ScrollFrameTemplate")
@@ -174,7 +163,7 @@ RA.DEBUG_CATEGORIES = {
     { key = "tank",     prefixes = { "[TankMarker" } },
     { key = "gilvl",    prefixes = { "[GroupIlvl]" } },
     { key = "qol",      prefixes = { "[QoL]", "[Misc]", "[VendorFilter]", "[Quests]", "[GreatVault]",
-                                     "[Paragon]", "[CharFrameButtons]", "QoL" } },
+                                     "[Paragon]", "[CharFrameButtons]", "[Salvage]", "[PetReminder]", "QoL" } },
     { key = "events",   prefixes = { "[Event]" } },
     { key = "other",    prefixes = {} },
 }
@@ -207,9 +196,9 @@ end
 
 local bypassFilter = false
 
--- Wall clock + GetTime() are not in sync, so seconds (date) and milliseconds
--- (GetTime) came from two clocks and could run backwards. One whole-second
--- offset ties both to GetTime(); it is at most 1s off the real clock.
+-- Wall clock and GetTime() are not in sync: taking seconds from one and milliseconds
+-- from the other could run backwards. One whole-second offset ties both to GetTime(),
+-- at most 1s off the real clock.
 local clockOffset
 
 local function DebugTimestamp()

@@ -98,7 +98,7 @@ L["confirm_type_pass"]     = "Pass"
 ------------------------------------------------------------------------
 -- Season tabs, patches and shared labels
 ------------------------------------------------------------------------
-L["season1_title"]       = "Season 1"
+L["season1_tab"]         = "Season 1"
 L["season2_tab"]         = "Season 2 (12.1)"
 L["season3_tab"]         = "Season 3 (12.2)"
 L["season_coming_soon"]  = "Coming soon"
@@ -110,7 +110,7 @@ L["label_removed"]       = "(removed)"
 ------------------------------------------------------------------------
 -- Dungeons tab
 ------------------------------------------------------------------------
-L["season1_hint"]               = "Check a dungeon to automatically pass the bonus roll whenever you complete it. Unchecked dungeons are not affected."
+L["dungeon_hint"]               = "Check a dungeon to automatically pass the bonus roll whenever you complete it. Unchecked dungeons are not affected."
 L["dungeon_autopass_all_label"] = "Auto-pass ALL dungeons (any season)"
 
 ------------------------------------------------------------------------
@@ -256,7 +256,7 @@ L["boss_kithix"]              = "Kith'ix"
 ------------------------------------------------------------------------
 -- Delves tab
 ------------------------------------------------------------------------
-L["season1_delve_hint"]       = "Check a delve to automatically pass the bonus roll whenever you complete it. Unchecked delves are not affected."
+L["delve_hint"]               = "Check a delve to automatically pass the bonus roll whenever you complete it. Unchecked delves are not affected."
 L["delve_autopass_all_label"] = "Auto-pass ALL delves (any season)"
 
 ------------------------------------------------------------------------
@@ -468,7 +468,7 @@ L["qol_durability_label"]          = "Show durability warning"
 L["qol_durability_info"]           = "Displays a warning when your lowest item durability drops to 30% or below."
 L["qol_durability_warning"]        = "Low Durability: %s"
 L["qol_join_reminder_label"]       = "Show instance name when joining a group"
-L["qol_join_reminder_info"]        = "Displays the instance name when you join a group. Disappears after 6 seconds."
+L["qol_join_reminder_info"]        = "Displays the instance name when you join a group. It disappears 6 seconds after the group is full (raids: right away; at the latest 30 seconds plus these 6)."
 L["qol_autoaccept_label"]          = "Automatically accept invites from guild/friends"
 L["qol_autoaccept_info"]           = "Accepts group invites from guild members, friends, and Battle.net friends automatically."
 L["qol_autorepair_label"]          = "Auto Repair"
@@ -484,7 +484,7 @@ L["qol_autorepair_guild"]          = "Guild"
 L["qol_autorepair_msg_player"]     = "Auto-repaired for %s (player funds)"
 L["qol_autorepair_msg_guild"]      = "Auto-repaired for %s (guild funds)"
 L["qol_join_keyaddon_label"]       = "Open keystone companion addon with reminder:"
-L["qol_join_keyaddon_info"]        = "Opens the selected teleport helper for Mythic+ groups. Closes on teleport, or after 20 seconds. Raids use the reminder above."
+L["qol_join_keyaddon_info"]        = "Opens the selected teleport helper for Mythic+ groups. BigWigs and Details! close on teleport or after 20 seconds, the RollAway reminder stays until you use or close it. Raids use the reminder above."
 L["qol_join_keyaddon_bigwigs"]     = "BigWigs"
 L["qol_join_keyaddon_details"]     = "Details!"
 L["qol_join_keyaddon_teleport"]    = "RollAway Teleport Reminder"
@@ -525,6 +525,7 @@ L["profile_migration_default"]    = "Reset to defaults"
 L["profile_section_title"]      = "Profile"
 L["profile_panel_title"]        = "Profile"
 L["profile_panel_info"]         = "Settings are character-specific by default. Use profiles to share settings between characters, or keep separate setups per character/spec. Bonus Roll selections (Dungeons/Raids/Delves/Prey) are always per-character, never part of a profile."
+L["profile_panel_sub"]          = "Share settings between characters or keep them separate."
 L["profile_active_label"]       = "Active profile:"
 L["profile_other_label"]        = "Other profile:"
 L["profile_none_available"]     = "No other profiles"
@@ -627,6 +628,8 @@ L["feat_quests_accept"]      = "Accepts regular, daily and weekly quests as tick
 L["cmd_rawfeatures_info"]    = "Open this feature overview"
 L["feat_button"]             = "Features"
 L["feat_combat"]             = "Not possible in combat."
+L["feat_feedback_button"]    = "Feedback"
+L["feat_feedback_prompt"]    = "Feedback, bugs and ideas on GitHub (Ctrl+C to copy the link):"
 
 ------------------------------------------------------------------------
 -- Developer
